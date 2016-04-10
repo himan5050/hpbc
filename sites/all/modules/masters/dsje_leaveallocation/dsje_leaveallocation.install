@@ -1,0 +1,54 @@
+<?php
+function dsje_leaveallocation_schema() {
+
+  //designation table
+   $schema['tbl_leaveallocation'] = array(
+							 'fields' => array(
+											   'leavetype_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'leavetype_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'no_of_leave' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												  'timestamp' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+											   ),
+							 'indexes' => array(
+												'leavetype_id' => array('leavetype_id'),
+												),
+							 'primary key' => array('leavetype_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_leaveallocation_install() {
+	drupal_install_schema('dsje_leaveallocation');
+}
+
+function dsje_leaveallocation_uninstall() {
+	drupal_uninstall_schema('dsje_leaveallocation');
+}

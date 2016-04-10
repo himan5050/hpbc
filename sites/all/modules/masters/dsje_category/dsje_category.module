@@ -1,0 +1,515 @@
+<?php
+function dsje_category_init() {
+	//drupal_add_css(drupal_get_path('module', 'dsje_language') .'/dsje_language.css');
+	
+}
+
+
+function dsje_category_perm() {
+	return array('edit dsje_category','administer dsje_category', 'create dsje_category', 'view dsje_category');
+}
+
+function dsje_category_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_category', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_category', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_category', $account);
+	}
+	
+}
+
+function dsje_category_menu() {
+	
+	
+	$items['admin/dsje/listcategory'] = array(
+										'title' => t('List Of Lawyer Category'),
+										'description' => 'Allow user to View category',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewcategory12',
+										'access arguments' => array('administer dsje_category'),
+													 
+									  );
+	
+	$items['admin/dsje/listcategory/addcategory'] = array(
+										'title' => t('Create category'),
+										'description' => 'Allow user to add category',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_category',
+										'access arguments' => array('administer dsje_category'),
+													 
+									  );
+   	$items['admin/dsje/listcategory/edit/category/%'] = array(
+								
+										'title' => t('Edit category'),
+										'description' => 'Allow user to add category',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addcategoryedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_category'),
+													 
+									  );
+   $items['admin/dsje/listcategory/view/category/%'] = array(
+								
+										'title' => t('View category'),
+										'description' => 'Allow user to add category',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addcategoryview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_category'),
+													 
+									  );
+     $items['admin/dsje/del/category/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'category_delete12',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_category'),
+													 
+									  );
+    $items['admin/dsje/enable/category/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'category12_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_category'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing category
+ */
+
+function viewcategory12(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjecategory', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('Lawyer Category'), 'field' => 'category_name', 'sort' => 'asc'),
+		array('data' => t('Status'), 'field' => 'status', 'sort' => 'asc'),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of  Lawyer Category', 'admin/dsje/listcategory/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!='' || $_REQUEST['searchtextstatus']!=''){
+   $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "UPPER(category_name) LIKE '".$val."' ";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(category_name) LIKE '".$val."' AND status='".$status."')";
+	 }
+	
+	
+	
+	 $query = "SELECT category_id, category_name, status FROM tbl_categories where ".$searchquery." ".tablesort_sql($header);
+	 $sqlcount = "SELECT COUNT(*) AS count  FROM tbl_categories where ".$searchquery." ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT category_id, category_name, status FROM tbl_categories ".tablesort_sql($header);
+ }
+ 
+ global $base_url;
+$action = $base_url.'/admin/dsje/listcategory';
+
+ $t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+
+ $output = '<form method="POST" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!='' || $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'dsjecategory', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listcategory');
+	}
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjecategory', 'code01', NULL),"admin/dsje/listcategory/addcategory");
+   	$lising = getMessage( 'dsjecategory', 'code02', NULL);
+		
+	$output .='<tr>
+	
+	
+	
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listcategory/edit/category/".$row->category_id,array('attributes'=>array('id'=>'edit-category-id')));
+		$viewurl = l("View","admin/dsje/listcategory/view/category/".$row->category_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/category/$row->category_id/$row->category_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/category/$row->category_id/$row->category_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->category_name)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_category(){
+ return drupal_get_form('dsje_category_form');
+}
+
+function dsje_category_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lawyer Category', 'admin/dsje/listcategory');
+  if($array[3] == 'addcategory'){
+     $breadcrumb[] = l('Add Lawyer category', 'admin/dsje/listcategory/addcategory');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['category_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Category Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+		'#maxlength' =>45,
+	    '#attributes' => array('onkeypress' => 'return alphabet(event)'),
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+   $form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listcategory'),
+); 
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dsje_category_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $category_name = trim($values['category_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('category_name',$category_name,'category');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_categories` (`category_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$category_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjecategory', 'code05', array("0"=>$category_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listcategory');
+	}
+}
+
+function dsje_category_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$category_name = trim($values['category_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('category_name',$category_name,'category');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_categories} where UCASE(category_name)= '".strtoupper($category_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjecategory', 'code06', array("0"=>$category_name));
+			form_set_error('category_name', $message);
+		}
+	}	
+}
+
+function dsje_addcategoryedit($category_id){
+ return drupal_get_form('dsje_category_form_edit',$category_id);
+}
+
+function dsje_category_form_edit(&$form_states,$category_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of  Lawyer Category', 'admin/dsje/listcategory');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Lawyer Category', 'admin/dsje/listcategory/edit/category/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlcategory = "select * from tbl_categories where category_id=$category_id";
+	$rescategory = db_query($sqlcategory);
+	$rscategory = db_fetch_object($rescategory);
+	
+	$form['category_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscategory->category_id,
+	);
+	
+	$form['category_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Category Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rscategory->category_name,
+		'#size' =>41,
+		'#maxlength' =>45,
+	    '#attributes' => array('onkeypress' => 'return alphabet(event)'),
+	);
+	
+	$form['prev_category_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscategory->category_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rscategory->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listcategory'),
+);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dsje_category_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$category_id = $values['category_id'];
+	$category_name = ParseData($values['category_name']);
+	$prev_category_name = ParseData($values['prev_category_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('category_name',$category_name,'category');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_categories} where LOWER(category_name)= '".strtolower($category_name)."' GROUP BY category_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_category_name), strtolower($category_name))==0){
+			db_query("UPDATE `tbl_categories` set `category_name` = '".$category_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where category_id='".$category_id."'");
+			
+			$message = getMessage('dsjecategory', 'code11', array("0"=>$category_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listcategory");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_categories` set `category_name` = '".$category_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where category_id='".$category_id."'");
+				
+				$message = getMessage('dsjecategory', 'code11', array("0"=>$category_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listcategory");	
+			
+			}else{
+				db_query("UPDATE `tbl_categories` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where category_id='".$category_id."'");
+				
+				$message = getMessage('dsjecategory', 'code06', array("0"=>$category_name));
+				form_set_error('category_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_category_theme() {
+	
+	return array(
+				 
+		'dsje_category_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_category_form',
+                                 ),
+        'dsje_category_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_category_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_category_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_category_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_category_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function category_delete12($sid, $sno){
+  $category_id =  $sid;
+  db_query("UPDATE {tbl_categories} SET status=0 WHERE category_id ='".$category_id."'");
+  $message = getMessage('dsjecategory', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listcategory");
+ }
+
+
+  function category12_enable($sid, $sno){
+    $category_id =  $sid;
+    db_query("UPDATE {tbl_categories} SET status=1 WHERE category_id ='".$category_id."'");
+  
+    $message = getMessage('dsjecategory', 'code10', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listcategory");
+  }
+
+  function dsje_addcategoryview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of  Lawyer Category', 'admin/dsje/listcategory');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Lawyer Category', 'admin/dsje/listcategory/view/category/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from tbl_categories where category_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>Category Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td width="50%">Category:</td><td class="normal">'.ucwords($rs->category_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+
+$output .='<tr class="evenrow"><td class="back" align="center" colspan="2">'.l(t('Back'), 'admin/dsje/listcategory').'</td></tr>';
+ $output .='</table>';
+ return $output;
+  }
+	
+	

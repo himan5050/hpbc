@@ -1,0 +1,701 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/fdrCheque.inc');
+
+function headMaster_node_info() {
+	return array (
+					'headMaster' => array (
+										'name' => t('List of Head Master(Budget)'),
+										'module' => 'headMaster',
+										'description' => "Creates Head Master(Budget)",
+										'has_title' => TRUE,
+										'title_label' => t('Head Master(Budget)'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function headMaster_perm() {
+	return array('edit headMaster','administer headMaster', 'create headMaster', 'view headMaster');
+}
+
+function headMaster_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit headMaster', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create headMaster', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view headMaster', $account);
+	}
+}
+ 
+ function headMaster_menu(){
+	 $items['list/headMasterList'] = array(
+		   'title' => 'List of Head Master(Budget)',
+		   'page callback' => 'headMaster_list',
+		   'access arguments' => array('administer headMaster'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewheadMaster/%'] = array(
+								'title' => t('view Head Master(Budget)'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_headMaster',
+								'page arguments' => array(1),
+								'access arguments' => array('administer headMaster'),
+		                        
+						);
+  
+  $items['admin/dsje/del/headMaster/%'] =  array(
+	               						 'title' => t('Delete Head Master(Budget)'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'headMaster_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer headMaster'),
+													 
+	);
+ $items['admin/dsje/enable/headMaster/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'headMaster_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer headMaster'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function headMaster_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjeheadMaster', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	//array('data' => t('Due Date'), 'field' => 'tbl_headmaster.date_due', 'sort' => 'asc'),
+	array('data' => t('Code'), 'field' => 'code', 'sort' => 'asc'),
+	array('data' => t('Name'), 'field' => 'name1', 'sort' => 'asc'),
+	
+	array('data' => t('Action'),'class'=>'addeditview'),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Head Master(Budget)', 'list/headMasterList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid, code,name1 FROM {node} INNER JOIN tbl_headmaster ON (node.nid=tbl_headmaster.nid)
+	  WHERE  ( code LIKE '".$val."' OR name1 LIKE '".$val."' ) ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_headmaster ON (node.nid=tbl_headmaster.nid)
+	 WHERE  (  code LIKE '".$val."' OR name1 LIKE '".$val."' ) ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	    $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid,code,name1 FROM {node}
+	 INNER JOIN tbl_headmaster ON (node.nid=tbl_headmaster.nid)".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/headMasterList';
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjeheadMaster', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/headMasterList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage('dsjeheadMaster', 'code01', NULL),"node/add/headMaster");
+   	$lising = getMessage('dsjeheadMaster', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewheadMaster/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/headMaster/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/headMaster/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			//array('data' => date('d-m-Y',strtotime($rs->date_due)),
+			array('data' => $cnode->code),
+			array('data' => ucwords($cnode->name1)),
+           
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	return $output .=theme('pager', NULL, 20,0 );
+  }
+
+function headMaster_delete($nid){
+   $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("Delete from {tbl_headmaster} WHERE courtcase_id ='".$courtcase_id."'");
+
+$finding=db_query("select nid from {tbl_budgetreceived} where head2='".$node->vid."'");
+$fufu=db_fetch_object($finding);
+if($fufu->nid==''){
+
+drupal_set_message("The head cannot be deleted as it is mapped with the Budget Received");
+
+}else{
+
+  db_query("DELETE from {tbl_headmaster} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  $message=getMessage('dsjeheadMaster','code07',array("0"=>$node->code));
+  drupal_set_message($message);
+}
+  drupal_goto("list/headMasterList");
+ }
+
+function headMaster_enable($nid){
+  
+  $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("UPDATE {tbl_headmaster} SET 	statusnodal =1 WHERE nid ='".$node->nid."'");
+  //drupal_set_message('Vehicle Insurance has been enabled successfully.');
+  //drupal_goto("list/headMasterList");
+
+  $vid= $node->vid;
+  
+ $finding=db_query("select nid from {tbl_budgetreceived} where head2='".$vid."'");
+$fufu=db_fetch_object($finding);
+$fu=$fufu->nid;
+if($fu){drupal_set_message("The head cannot be deleted as it is mapped with the Budget Received");
+
+
+}else{
+
+ db_query("DELETE from {tbl_headmaster} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  
+  $message=getMessage('dsjeheadMaster','code07',array("0"=>$node->code));
+  drupal_set_message($message);
+}
+  drupal_goto("list/headMasterList");
+ }
+
+
+function headMaster_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Head Master(Budget)', 'list/headMasterList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Head Master ', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Head Master ', 'node/add/headMaster'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+  
+	
+		
+	////////////////////////////////////
+	
+	
+	
+	
+	$form['prev_code']=array(
+		'#type'=>'hidden',
+		
+		'#default_value'=> $node->code,
+		);
+	 
+	 $form['code'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Code'),
+	 '#required' =>TRUE,
+	 '#size' =>45,
+	 '#maxlength'=>45,
+	
+	 '#default_value' => $node->code,
+	 '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+  );	
+		
+ $form['name1'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Name'),
+	 '#required' =>TRUE,
+	 '#size' =>45,
+	 '#maxlength'=>45,
+	 '#default_value'=>$node->name1,
+	 '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+  );	
+
+$form['fund'] = array(
+	'#type' => 'select',
+	'#title' => t('Source of Fund'),
+	'#required' => TRUE,
+	'#default_value' =>$node->fund,
+	'#options' => SourceOfFund(), 
+	);
+	
+	
+	$form['type1'] = array(
+	'#type' => 'select',
+	'#title' => t('Type'),
+	'#required' => TRUE,
+	'#default_value' =>$node->type1,
+	'#options' => HeadType(), 
+	);
+
+		
+
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/headMasterList'),	
+);
+
+
+return $form;
+} 
+
+
+function getcode($code){
+  $sql = "select * from {tbl_headmaster} where code='".$code."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->code=='' )
+  return 0;
+  else 
+  return $rs;
+   
+}
+
+function getcode_edit($code,$prev_code){
+  $sql = "select * from {tbl_headmaster} where code='".$code."' AND code != '".$prev_code."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->code=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+
+
+function headMaster_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	$array = explode('/',$_GET['q']);
+	/*$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Head Master(Budget)', 'list/headMasterList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Head Master ', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add Head Master ', 'node/add/headMaster');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+	*/
+
+$breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Head Master(Budget)', 'list/headMasterList');
+        if(arg(1) !='add'){
+		  $breadcrumb[] = l('Edit Head Master', 'node/'.$array[1].'/edit');	
+		}else{
+         $breadcrumb[] = l('Add Head Master', 'node/add/headMaster');
+      
+		}
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+
+
+
+$prev_code=$form->code;
+	$code=$form->code;
+
+
+if($form->prev_code == ''){
+	 $statusid = getcode($code); 
+		if($statusid){
+		form_set_error('code',$code.t('Code already exist.'));
+		
+		}
+		}
+		else {
+	 $statusid = getcode_edit($code,$form->prev_code); 
+		if($statusid){
+		form_set_error('code',$code.t('Code already exist.'));
+		
+		}
+		
+		}
+	alphanumeric('code',$form->code,'Code');
+alphanumeric('name1',$form->name1,'Name');
+	
+	
+
+
+	
+	 
+}
+
+/**
+ *hook_form_alter
+ */
+function headMaster_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='headMaster_node_form'){
+	 
+	 $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	 
+	 
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function headMaster_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+ $prev_code=$node->code;
+	$code=$node->code;
+	$name1=$node->name1;
+	$fund=$node->fund;
+	$type1=$node->type1;
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+//  echo '<pre>';
+ // print_r($node); exit;
+//drupal_set_message($node->code);exit;
+db_query ("INSERT INTO {tbl_headmaster} (`vid`, `nid`,`code`, `fund`,`name1`,`type1`) VALUES ('".$vid."','".$nid."','".$code."','".$fund."','".$name1."','".$type1."')");
+
+
+	
+  //  drupal_set_message('Vehicle Insurance Entry has been saved successfully.');
+	$message=getMessage('dsjeheadMaster','code05',array("0"=>$node->code));
+  drupal_set_message($message);
+	drupal_goto("list/headMasterList");
+
+ 
+ 
+ }
+
+function headMaster_update($node){
+	
+	$code=$node->code;
+	$name1=$node->name1;
+	
+ $fund=$node->fund;
+ $type1=$node->type1;
+    
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   
+	
+	
+	db_query("UPDATE {tbl_headmaster} SET `code`='".$code."',`fund`='".$fund."',`type1`='".$type1."',`name1`='".$name1."' WHERE nid='".$nid."'");
+	
+	
+	//drupal_set_message('Head Master(Budget) have been updated successfully.');
+	
+	$message=getMessage('dsjeheadMaster','code06',array("0"=>$node->code));
+  drupal_set_message($message);
+	drupal_goto("list/headMasterList");
+	
+	
+}
+
+
+function headMaster_theme() {
+	
+	return array(
+				 
+		'headMaster_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'headMaster_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+
+
+/*function headMaster_cron(){
+
+//$curr_date=date();
+$start=date('Y-m-d');
+
+$selDate=db_query("select * from {tbl_headmaster} ");
+
+while($rs=db_fetch_object($selDate)){
+
+$date_diff=dateDiffByDays($start,$rs->date_to);
+
+if($date_diff==15 && $rs->remind_mail==0 && $rs->notification==84){
+
+
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+//$to = $u->mail;
+	$finduid=db_query("select * from {users_roles} where rid=13");
+$reg_no=db_fetch_object($reg);
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name1,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+if(createMail('headMaster', $ms->mail,'',$parameter,''))
+{
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_headmaster} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+
+}
+}
+}
+
+else if($date_diff==3 && $rs->remind_mail==1 && $rs->notification==84){
+
+
+
+
+//$to = $u->mail;
+	
+	$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+	$reg_no=db_fetch_object($reg);
+	$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('headMaster', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_headmaster} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+}}
+
+}
+
+
+else if($date_diff==0 && $rs->remind_mail <= 3 && $rs->notification==84){
+
+
+
+
+
+
+//$to = $u->mail;
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+$reg_no=db_fetch_object($reg);
+$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('headMaster_today', $ms->mail,'',$parameter,'')){
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_headmaster} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+} 
+
+}
+}}
+
+
+}
+
+
+*/
+
+
+
+
+
+
+
+
+
+ 
+function headMaster_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_headmaster ON (node.nid=tbl_headmaster.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+  
+function view_headMaster($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Head Master(Budget)', 'list/headMasterList');
+   if($array[0] == 'viewheadMaster'){
+     $breadcrumb[] = l('View Head Master(Budget)', 'viewheadMaster/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from {tbl_headmaster} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from {users} where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+//$add_type=getLookupName($rs->add_type);
+//$regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+//$regno= db_fetch_object($regnowa);
+//$notification=getLookupName($rs->notification);
+
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-conatiner">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Head Master(Budget)</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Code:</td><td class="normal"> '.ucwords($rs->code).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Name:</td><td class="normal">'.ucwords ($rs->name1).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Source of Fund:</td><td class="normal"> '.ucwords(getLookupName($rs->fund)).'</td></tr>';
+//$output .='<tr class="oddrow" colspan="2"><td>PERIOD</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Type:</td><td class="normal"> '.ucwords(getLookupName($rs->type1)).'</td></tr>';
+$output .='<tr class="evenrow"><td align="center" class="back" colspan="2">'.l(t('Back'), 'list/headMasterList').'</td></tr>'; 
+ $output .='</table>';
+return $output ;
+}

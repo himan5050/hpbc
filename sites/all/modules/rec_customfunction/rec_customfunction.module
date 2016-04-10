@@ -1,0 +1,4583 @@
+<?php
+global $root_path, $xpathObj;
+
+function rec_customfunction_init() {
+	global $root_path, $xpathObj, $emailObj;
+	$xpathObj = simplexml_load_file("app_msg.xml");
+	$emailObj = simplexml_load_file("email_config.xml");
+
+}
+
+function getMessage($moduleName, $errCode, $param){
+global $xpathObj;
+$moduleName = trim($moduleName);
+$errCode = trim($errCode);
+$param = $param;
+$result = $xpathObj->xpath("/message/$moduleName/NodeId[@id='".$errCode."']");
+$errCodeValue =  $result[0]['value'];
+	for($i = 0; $i < count($param); $i++){
+		$errCodeValue = str_replace("{".$i."}", $param[$i], $errCodeValue);
+	}	
+	
+	
+return t("$errCodeValue"); 
+}
+
+function selectbankbranchaddresses(){
+     $sqloffice = "select bankbranch_id,bankbranch_name  from tbl_bankbranch where status ='1'  ORDER BY bankbranch_name ASC";
+	$resoffice =db_query($sqloffice);
+	if($resoffice){
+      $officearray[''] = '--Select--'; 
+	  while($rsoffice = db_fetch_object($resoffice)){
+	    $officearray[$rsoffice->bankbranch_id] = ucwords($rsoffice->bankbranch_name);
+	  }
+	}
+	return $officearray;
+}
+
+function getcorpid($sec){
+
+$val="select corporation_id from tbl_corporations where corporation_name='".$sec."'";
+$val2=db_query($val);
+$val3=db_fetch_object($val2);
+$val4=$val3->corporation_name;
+
+return $val4;
+}
+
+function pincodelength($mobile_number,$field_name){
+  if($mobile_number != ''){
+     if(strlen($mobile_number) >6 || strlen($mobile_number) <6){
+	    form_set_error($field_name, t('Pincode should be 6 characters long.'));
+	 }
+  }
+}
+
+function checknolength($mobile_number,$field_name){
+  if($mobile_number != ''){
+     if(strlen($mobile_number) >6 || strlen($mobile_number) <6){
+	    form_set_error($field_name, t('Cheque No should be 6 characters long.'));
+	 }
+  }
+}
+
+function panlength($mobile_number,$field_name){
+  if($mobile_number != ''){
+     if(strlen($mobile_number) >10 || strlen($mobile_number) <10){
+	    form_set_error($field_name, t('Pan should be 10 characters long.'));
+	 }
+  }
+}
+
+function alphabet($field_name,$value,$field){
+  $AllowRegex  = '^[a-zA-Z/ /]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($field_name,'Only characters (A-Z, a-z) are allowed in '.$field.'.');
+	  return 1;
+	}
+	return 0;
+}
+
+
+function getLookupId($name)
+{
+
+$h=db_query("select lookup_id from tbl_lookups where lookup_name='".$name."'");
+$d=db_fetch_object($h);
+ 
+ return $d->lookup_id;
+
+
+
+}
+
+
+function getRole($uid){
+   $sqlrole = "select * from users_roles where uid='".$uid."'";
+  $res = db_query($sqlrole);
+  $rs = db_fetch_object($res);
+
+   return $rs->rid;
+}
+
+
+
+
+function custom_mail($uid,$username,$password,$email,$profile_name){
+    global $base_url;
+    $to      = $email;
+	$user=  user_load($uid);
+    $useremail = $user->mail;
+	
+	$headers = "MIME-Version: 1.0" . "\r\n";
+    $headers .= "Content-type:text/html;charset=iso-8859-1" . "\r\n";
+	$headers .= 'From: '.$useremail;
+	$subject = 'Dsje Login Details';
+	$message = 'Dear '.$profile_name.',<br /><br />';
+	$message .='Congratulations your account with Dsje has been successfully created. <br />The details of your registration are included below<br />';
+	$message .='<br />Username :: '.$username;
+	$message .='<br />Password :: '.$password;
+	$message .='<br /><br />To login, please click on Login URL<br />';
+	$message .=$base_url.'<br /><br />With best wishes<br />Dsje TEAM';
+	
+	//ini_set("smtp_port","25");
+	 
+	mail($to, $subject, $message, $headers);
+ 
+   $headers = "MIME-Version: 1.0" . "\r\n";
+   $headers .= "Content-type:text/html;charset=iso-8859-1" . "\r\n";
+   $subjectsender ='New Registration Details';
+ //  $messagesender = 'You created a new member for '.$post;
+   mail($useremail, $subjectsender, $messagesender, $headers);
+}
+
+
+
+function SourceOfFund() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=92";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+if($rssender->lookup_id==246 || $rssender->lookup_id==247){
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+}
+}
+
+}
+return $senderarray;
+}
+
+
+
+function relationships() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=111";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+
+
+function FinancialYear() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=89";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function HeadType() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=91";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' and (lookup_id=248 or lookup_id=249) ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+function selectSoft() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=81";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+function SelectfdrType() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=87";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+
+function SelectStatusfdr() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=88";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+
+
+
+
+function SelectChequeStatus() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=85";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+///////////////////
+
+function getAmortisationTable($accountid = '')
+{
+	if($accountid)
+	{
+		$sql = "SELECT * FROM tbl_loan_amortisaton WHERE loanacc_id = '".$accountid."'";
+		$res = db_query($sql);
+		$output .='<table width="100%" border="0" cellspacing="2" cellpadding="1">
+			<tr>
+			<th>Date</th>
+			<th>Other Charges Paid</th>
+			<th>LD Paid</th>
+			<th>Interest Paid</th>
+			<th>Principal Paid</th>
+			<th>Ending Balance</th>
+			<th>Installment Paid</th>
+			</tr>';
+		while($a = db_fetch_object($res))
+		{
+			$output .='<tr>';
+			$output .='<td>'.$a->payment_date.'</td>';
+			$output .='<td>'.$a->other_charges_paid.'</td>';
+			$output .='<td>'.$a->LD_paid.'</td>';
+			$output .='<td>'.$a->interest_paid.'</td>';
+			$output .='<td>'.$a->principal_paid.'</td>';
+			$output .='<td>'.$a->ending_balance.'</td>';
+			$output .='<td>'.$a->installment_paid.'</td>';
+			$output .='</tr>';
+		}
+		return  $output .='</table>';
+	}
+}
+
+
+function GetBankBranch($bankbranch_id){
+  $sql = "select bankbranch_name from  tbl_bankbranch where  bankbranch_id='".$bankbranch_id."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->bankbranch_name;
+}
+
+//////
+function getloanview($lid)
+{	
+ $query = "SELECT
+           tbl_loan_detail.scheme_name,
+           tbl_loan_detail.capital_subsidy,
+           tbl_loan_detail.project_cost,
+           tbl_loan_detail.loan_requirement,
+           tbl_loan_detail.work_place,tbl_loan_detail.loan_amount,
+           tbl_loan_detail.reg_number,
+           tbl_loan_detail.application_date,
+           tbl_loan_detail.application_date,
+           tbl_loan_detail.physical_verification_date,
+           tbl_loan_detail.sanction_date,
+           tbl_loan_detail.aggrement_date,
+           tbl_loan_detail.licenseno,
+           tbl_loan_detail.licenseexpiry,
+           tbl_loan_detail.loan_status,
+           tbl_loan_detail.agreement,
+           tbl_loan_detail.documents,
+           tbl_loan_detail.disbursed_amount,
+           tbl_loan_detail.disbursed_date,
+           tbl_loan_detail.bank_acc_no,
+           tbl_loan_detail.bank,
+           tbl_loan_detail.bank_branch,
+           tbl_loan_detail.b_ROI,
+       
+           tbl_loanee_detail.loanee_id, 
+           tbl_loanee_detail.refno, 
+           tbl_loanee_detail.account_id,      
+           tbl_loanee_detail.fname,
+           tbl_loanee_detail.lname,
+           tbl_loanee_detail.fh_name,
+           tbl_loanee_detail.phone,
+           tbl_loanee_detail.dob,
+           tbl_loanee_detail.gender,
+           tbl_loanee_detail.education,
+           tbl_loanee_detail.religion,
+           tbl_loanee_detail.category,
+           tbl_loanee_detail.address1,
+           tbl_loanee_detail.address2,
+           tbl_loanee_detail.caste,
+           tbl_loanee_detail.disability,
+           tbl_loanee_detail.family_income,
+           tbl_loanee_detail.income_cat,
+           tbl_loanee_detail.UID,
+           tbl_loanee_detail.email,
+           tbl_loanee_detail.mobile,      
+           tbl_loanee_detail.landline,
+           tbl_loanee_detail.address_type,
+           tbl_loanee_detail.address1,
+           tbl_loanee_detail.village,
+           tbl_loanee_detail.post_office,
+           tbl_loanee_detail.state,    
+           tbl_loanee_detail.district,
+           tbl_loanee_detail.tehsil,      
+           tbl_loanee_detail.block,
+           tbl_loanee_detail.panchayat,
+           tbl_loanee_detail.pincode,
+           tbl_loanee_detail.corp_branch,
+	   tbl_dsjestate.state_name,
+           tbl_tehsil.tehsil_name,
+           tbl_cast.cast_name,
+           tbl_district.district_name,
+           tbl_block.block_name,
+           tbl_scheme_master.scheme_name,
+           tbl_scheme_master.loan_type,
+           tbl_corporations.corporation_name
+
+        FROM tbl_loanee_detail
+        INNER JOIN tbl_loan_detail ON (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+        INNER JOIN tbl_tehsil ON (tbl_loanee_detail.tehsil=tbl_tehsil.tehsil_id)
+        INNER JOIN tbl_cast ON  (tbl_loanee_detail.caste=tbl_cast.cast_id)
+        INNER JOIN tbl_district ON  (tbl_loanee_detail.district=tbl_district.district_id)
+        INNER JOIN tbl_block ON  (tbl_loanee_detail.block=tbl_block.block_id)
+        INNER JOIN tbl_scheme_master ON (tbl_loan_detail.scheme_name=tbl_scheme_master.loan_scheme_id)
+        INNER JOIN tbl_corporations  ON (tbl_loanee_detail.corp_branch=tbl_corporations.corporation_id)
+        INNER JOIN tbl_dsjestate  ON    (tbl_loanee_detail.state=tbl_dsjestate.state_id)
+
+        where tbl_loan_detail.loan_id ='".$lid."'";
+	$res = db_query($query);
+	$row = db_fetch_object($res);
+	if($row->loanee_id)
+	{
+            function getemptyloan($val = ''){
+                if($val)
+                    return $val;
+                else
+                    return 'N/A';
+            }
+            
+            $path = $_SERVER['DOCUMENT_ROOT']."sites/default/files/loan/";
+            $amountdis = '';	
+	
+	$sqlh = "select sum(amount) as amountdis from tbl_loan_disbursement where loanee_id='".$row->loanee_id." ' group by loanee_id";
+	$resh = db_query($sqlh);
+	if($rsh = db_fetch_object($resh)){
+		$amountdis=$rsh->amountdis;
+	}
+	if($amountdis)
+	{
+		$amountdis = 'Rs.'.number_format($amountdis,2,'.','');
+	}else{
+		$amountdis = 'N/A';
+	}
+	$repaymentamount = '';
+	$sqlht = "select sum(amount) as reamountdis from tbl_loan_repayment where loanee_id='".$row->loanee_id."' group by loanee_id";
+	$resht = db_query($sqlht);
+	if($rsht = db_fetch_object($resht)){
+		$repaymentamount = $rsht->reamountdis;
+	}
+	if($repaymentamount)
+	{
+		$repaymentamount = 'Rs.'.number_format($repaymentamount,2,'.','');
+	}else{
+		$repaymentamount = 'N/A';
+	}
+	
+	
+	
+	$state=getLookupName($row->state);
+	$gender=getLookupName($row->gender);
+	//$caste=getLookupName($row->caste);
+	$addtype=getLookupName($row->address_type);
+	$religion=getLookupName($row->religion);
+	$category=getLookupName($row->category);
+	$disability = getLookupName($row->disability);
+	//$panchayat=getLookupName($row->panchayat);
+	
+	$income=getLookupName($row->income_cat);
+	
+
+	$dob = ($row->dob == '0000-00-00')?'N/A':date('d-m-Y',strtotime($row->dob));
+	global $base_url;
+	$fileurl = $base_url.'/sites/default/files/loan/';
+	
+		$output ='<table>';
+		$output .='<tr class="oddrow"><td align="center" colspan="2"><h2>View Loan</h2></td></tr>';
+		$output .='</table ><br />';
+		$output .='<table >';
+		$output .='<tr class="oddrow"><td align="center" colspan="4"><h2>Personal Detail</h2></td></tr>';
+		$output .='<tr class="evenrow"><td  width="25%">First Name</td><td width="25%" class="normal">'.ucwords (getemptyloan($row->fname)).'</td><td width="25%">Last Name</td><td width="25%" class="normal">'.ucwords (getemptyloan($row->lname)).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Father/Husband Name</td><td class="normal">'.ucwords (getemptyloan($row->fh_name)).'</td><td >Reg No.</td><td class="normal">'.getemptyloan($row->reg_number).'</td></tr>';
+
+		$output .= '<tr class="evenrow"><td>Date of Birth</td><td class="normal">'.$dob.'</td><td>Gender</td><td class="normal">'.getemptyloan($gender).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Education</td><td class="normal">'.ucwords (getemptyloan($row->education)).'</td><td>Disability</td><td class="normal">'.ucwords (getemptyloan($disability)).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Category</td><td class="normal">'.ucwords (getemptyloan($category)).'</td><td>Annual Family Income</td><td class="normal">'.getemptyloan(round($row->family_income)).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Income Category</td><td class="normal">'.getemptyloan($income).'</td><td>Religion</td><td class="normal">'.ucwords (getemptyloan($religion)).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Caste</td><td class="normal">'.ucwords (getemptyloan($row->cast_name)).'</td><td>UID(Adhar Card No.)</td><td class="normal">'.ucwords (getemptyloan($row->UID)).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Email</td><td class="normal">'.ucwords (getemptyloan($row->email)).'</td><td>Mobile</td><td class="normal">'.getemptyloan($row->mobile).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Phone</td><td class="normal">'.ucwords (getemptyloan($row->phone)).'</td></tr>';
+                $output .= l('Edit Personal Detail','edit-personal/'.$lid);
+                $output .='</table ><br />';
+                        
+			
+			
+	$panchayat = '';	
+	if($row->panchayat)
+	{
+		$psqlht = "select * from tbl_panchayt where panchayt_id='".$row->panchayat."'";
+		$pancha = db_query($psqlht);
+		$prsht = db_fetch_object($pancha);
+		$panchayat=$prsht->panchayt_name;
+	}
+			
+		$output .='<table >';
+		$output .='<tr class="evenrow"><td align="center" colspan="4"><h2>Address Detail</h2></td></tr>';
+		$output .='<tr class="oddrow"><td width="25%">Address Type</td><td width="25%" class="normal">'.ucwords (getemptyloan($addtype)).'</td><td>Address Line1</td><td class="normal">'.ucwords (getemptyloan($row->address1)).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Address Line2</td><td class="normal">'.ucwords (getemptyloan($row->address2)).'</td><td  width="25%">State</td><td width="25%"  class="normal">'.ucwords (getemptyloan($row->state_name)).'</td></tr>';
+		$output .='<tr class="oddrow"><td>District</td><td class="normal">'.ucwords (getemptyloan($row->district_name)).'</td><td>Tehsil</td><td class="normal">'.ucwords (getemptyloan($row->tehsil_name)).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Block</td><td class="normal">'.ucwords (getemptyloan($row->block_name)).'</td><td>Panchayat</td><td class="normal">'.ucwords (getemptyloan($panchayat)).'</td></tr>';	
+		$output .='<tr class="oddrow"><td>Post Office</td><td class="normal">'.ucwords (getemptyloan($row->post_office)).'</td><td width="25%">Village</td><td width="25%" class="normal">'.ucwords (getemptyloan($row->village)).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Pincode</td><td class="normal">'.getemptyloan($row->pincode).'</td></tr>';	
+		$output .= l('Edit Address Detail','edit-address');
+                $output .='</table ><br />';
+		
+		$output .='<table >';
+		$output .='<tr class="evenrow"><td align="center" colspan="4"><h2>Project Detail</h2></td></tr>';
+		$output .='<tr class="oddrow"><td width="25%">Scheme</td><td width="25%" class="normal">'.ucwords (getemptyloan($row->scheme_name)).'</td><td width="25%">Project Cost</td><td width="25%" class="normal">'.getemptyloan(round($row->project_cost)).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Branch Office</td><td class="normal">'.ucwords (getemptyloan($row->corporation_name)).'</td><td>Place of Work</td><td class="normal">'.ucwords (getemptyloan($row->work_place)).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Loan Amount</td><td class="normal">'.getemptyloan(round($row->loan_requirement)).'</td><td>Capital Subsidy</td><td class="normal">'.getemptyloan(round($row->capital_subsidy)).'</td></tr>';
+		
+		
+	$output .='</table ><br />';
+	
+		$output .='<table>'; 
+	
+		$gsql="select * from tbl_guarantor_detail where  loanee_id ='".$row->loanee_id."' ";
+		$gres = db_query($gsql);
+		
+		while($row2 = db_fetch_object($gres))
+		{
+			$gnature=getLookupName($row2->gnature);
+			$gtype=getLookupName($row2->gtype);
+			$office_addr_certified = ($row2->office_addr_certified=='1')?'YES':'NO';	
+			$superannuation_date = ($row2->superannuation_date == '0000-00-00')?'N/A':date('d-m-Y',strtotime(getemptyloan($row2->superannuation_date)));
+		$output .='<tr class="oddrow"><td align="center" colspan="4"><h2>Guarantor Detail</h2></td></tr>';
+		
+	    $output .='<tr class="evenrow"><td width="25%">Guarantor Type</td><td class="normal" width="25%">'.getemptyloan($gtype).'</td><td width="25%">Nature of Guaranty </td><td width="25%" class="normal">'.getemptyloan($gnature).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Guarantor Name</td><td class="normal">'.ucwords (getemptyloan($row2->gname)).'</td><td>Amount of Guaranty</td><td class="normal">'.getemptyloan(round($row2->gamount)).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Name of Unit</td><td class="normal">'.ucwords (getemptyloan($row2->unit_name)).'</td><td>Basic Pay</td><td class="normal">'.getemptyloan(round($row2->basic_pay)).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Total Pay</td><td class="normal">'.getemptyloan(round($row2->total_pay)).'</td><td>Superannuation Date</td><td class="normal">'.$superannuation_date.'</td></tr>';
+		$output .='<tr class="evenrow"><td>Address </td><td class="normal">'.ucwords (getemptyloan($row2->address)).'</td><td>Designation</td><td class="normal">'.ucwords (getemptyloan($row2->designation)).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Office Address Certified </td><td class="normal">'.$office_addr_certified.'</td></tr>';
+		}
+                $output .= l('Edit Guarantor Detail','edit-gaurantor');
+		$output .='</table ><br />';
+
+
+////////////////////////////////////////////////////////// Transaction Detail ////////////////////////////////////////////////////////////			
+		
+	$sanction_date = ($row->sanction_date == '0000-00-00')?'':date('d-m-Y',strtotime($row->sanction_date));
+		
+	if($row->loan_type == '148' && $sanction_date){
+		$output .='<table >'; 
+		
+		$output .='<tr class="oddrow"><td align="center" colspan="4"><h2>Transaction Detail</h2></td></tr>';
+		$output .='<tr class="evenrow"><td colspan="2" width="25%"> Sanctioned Date </td><td width="25%" class="normal" colspan="2">'.$sanction_date.'</td></tr>
+	<tr class="oddrow"><td colspan="2" width="25%"> Loan Sanctioned Amount </td><td width="25%" class="normal" colspan="2">Rs.'.round(getemptyloan($row->loan_requirement)).'</td></tr>
+<tr class="evenrow"><td colspan="2" width="25%"> Disbursed Amount</td><td class="normal" colspan="2" width="25%">'.round($amountdis).'</td></tr>
+	<tr class="oddrow"><td colspan="2" width="25%"> Repayment Amount </td><td width="25%" class="normal" colspan="2">'.round($repaymentamount).'</td></tr>
+	
+	';
+	$output .='</table ><br /> ';
+	
+	}
+	if($row->loan_type == '147' && $sanction_date)
+	{
+		$disbursed_date = ($row->disbursed_date != '0000-00-00')?date('d-m-Y',strtotime($row->disbursed_date)):'N/A';
+		$output .='<table >'; 
+		
+		$output .='<tr class="evenrow"><td align="center" colspan="4"><h2>Transaction Detail</h2></td></tr>';
+		$output .='<tr class="oddrow"><td colspan="2" width="25%"> Sanction Date </td><td width="25%" class="normal" colspan="2">'.$sanction_date.'</td></tr>
+		<tr class="evenrow"><td colspan="2" width="25%"> Loan Sanctioned Amount </td><td width="25%" class="normal" colspan="2">Rs.'.round(getemptyloan($row->loan_requirement)).'</td></tr>';
+		if($row->bank_acc_no)
+		{
+			$output .='<tr class="oddrow"><td colspan="2" width="25%"> Account No. </td><td width="25%" class="normal" colspan="2">'.getemptyloan($row->bank_acc_no).'</td></tr>
+			<tr class="evenrow"><td colspan="2" width="25%"> Disbursed Amount</td><td class="normal" colspan="2" width="25%">Rs.'.round(getemptyloan($row->disbursed_amount)).'</td></tr>
+		
+			<tr class="oddrow"><td colspan="2" width="25%"> Disbursed Date</td><td width="25%" class="normal" colspan="2">'.$disbursed_date.'</td></tr>
+			<tr class="evenrow"><td colspan="2" width="25%"> Bank Name </td><td width="25%" class="normal" colspan="2">'.getemptyloan(getBankName($row->bank)).'</td></tr>
+			<tr class="oddrow"><td colspan="2" width="25%"> Bank Branch </td><td width="25%" class="normal" colspan="2">'.getemptyloan(GetBankBranch($row->bank_branch)).'</td></tr>
+			<tr class="evenrow"><td colspan="2" width="25%"> Rate of Intrest</td><td width="25%" class="normal" colspan="2">'.getemptyloan($row->b_ROI).'</td></tr>
+		
+			';
+		}
+		$output .='</table ><br /> ';
+	}
+	global $base_url;
+	$licenseexpiry = ($row->licenseexpiry == '0000-00-00')?'N/A':date('d-m-Y',strtotime($row->licenseexpiry));
+	$output .='<table >'; 
+	$output .='<tr class="oddrow"><td align="center" colspan="4"><h2>Other Details</h2></td></tr>';
+	$output .='<tr class="evenrow"><td width="25%">License No.</td><td class="normal" width="25%">'.getemptyloan($row->licenseno).'</td><td width="25%">Expiry Date</td><td class="normal" width="25%">'.$licenseexpiry.'</td></tr><tr class="oddrow"><td width="25%">Reference No.</td><td class="normal" width="25%">'.getemptyloan($row->refno).'</td></tr>';
+	
+	$dsql="select ml.loanDoc_name,mld.loan_file from tbl_loan_documents mld,tbl_loandocs ml where mld.document_id = ml.loanDoc_id AND mld.loanee_id ='".$row->loanee_id."' ";
+	$dresh = db_query($dsql);
+	$output .='<tr class="evenrow" valign="top"><td colspan="2">Document Required</td><td class="normal" colspan="2">';
+	 while($rowd = db_fetch_object($dresh)){
+		$output .='<div style="width:150px; float:left;">'.$rowd->loanDoc_name;
+		$output .='</div><div><a href="'.$base_url.'/loan/downloadfile/'.$rowd->loan_file.'" target="_blank">Download here</a></div>';
+	}
+	$output .= '</td></tr>';
+		
+		
+		//$output .= '<tr class="oddrow"><td colspan="4" align="center" class="back">'.l(t('Back'), 'loan/listloans').'</td></tr>';
+		
+	
+	$output .='
+	
+	</table>';
+	}else{
+		$output .= '<span style="color:red;"><b>No Records Found.</b></span><br>';
+	}
+	return $output;
+	
+}
+//////////////////
+
+function getalrview($account_id)
+{
+	
+	
+ $query = "SELECT
+tbl_loan_detail.scheme_name,tbl_loan_detail.project_cost,tbl_loan_detail.loan_requirement,tbl_loan_detail.work_place,tbl_loan_detail.loan_amount,tbl_loan_detail.reg_number,tbl_loan_detail.application_date,tbl_loan_detail.application_date,tbl_loan_detail.physical_verification_date,tbl_loan_detail.sanction_date,tbl_loan_detail.aggrement_date,tbl_loan_detail.licenseno,tbl_loan_detail.licenseexpiry,tbl_loan_detail.loan_status,tbl_loan_detail.agreement,tbl_loan_detail.documents,
+
+
+       tbl_loanee_detail.loanee_id, tbl_loanee_detail.account_id,      
+tbl_loanee_detail.fname,tbl_loanee_detail.lname,tbl_loanee_detail.fh_name,tbl_loanee_detail.dob,tbl_loanee_detail.gender,tbl_loanee_detail.education,tbl_loanee_detail.religion,tbl_loanee_detail.category,tbl_loanee_detail.address1,tbl_loanee_detail.address2,
+     
+tbl_loanee_detail.caste,tbl_loanee_detail.disability,tbl_loanee_detail.family_income,tbl_loanee_detail.income_cat,tbl_loanee_detail.UID,tbl_loanee_detail.email,tbl_loanee_detail.
+       mobile,      
+tbl_loanee_detail.landline,tbl_loanee_detail.address_type,tbl_loanee_detail.address1,tbl_loanee_detail.village,
+       tbl_loanee_detail.post_office,tbl_loanee_detail.state,    
+tbl_loanee_detail.district,tbl_loanee_detail.tehsil,      
+tbl_loanee_detail.block,tbl_loanee_detail.panchayat,tbl_loanee_detail.pincode,
+       tbl_loanee_detail.corp_branch,
+	   tbl_dsjestate.state_name,
+tbl_tehsil.tehsil_name,
+tbl_cast.cast_name,
+tbl_district.district_name,
+tbl_block.block_name,
+tbl_scheme_master.scheme_name,
+tbl_corporations.corporation_name
+
+
+
+         FROM tbl_loanee_detail
+        INNER JOIN tbl_loan_detail ON (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+        INNER JOIN tbl_tehsil ON
+(tbl_loanee_detail.tehsil=tbl_tehsil.tehsil_id)
+    INNER JOIN tbl_cast ON  (tbl_loanee_detail.caste=tbl_cast.cast_id)
+        INNER JOIN tbl_district ON
+(tbl_loanee_detail.district=tbl_district.district_id)
+        INNER JOIN tbl_block ON  (tbl_loanee_detail.block=tbl_block.block_id)
+    INNER JOIN tbl_scheme_master ON
+(tbl_loan_detail.scheme_name=tbl_scheme_master.loan_scheme_id)
+         INNER JOIN tbl_corporations  ON
+(tbl_loanee_detail.corp_branch=tbl_corporations.corporation_id)
+         
+INNER JOIN tbl_dsjestate  ON
+(tbl_loanee_detail.state=tbl_dsjestate.state_id)
+
+         where tbl_loanee_detail.account_id ='".$account_id."'";
+	$res = db_query($query);
+	$row = db_fetch_object($res);
+	
+	
+			$addr=$row->office_addr_certified;
+			if ($addr=='0')
+		{
+		 $result='YES';	
+		}
+		else
+		{
+			$result='NO';
+			}
+			
+		function getemptyloan($val)
+		{
+		if($val != '')
+		  {
+		  return $val;
+		  }
+		  else
+		  {
+		  return 'NA';
+		  }
+		}
+			
+		
+		
+		
+		$output = <<<EOD
+ 	
+EOD;
+
+    $path = $_SERVER['DOCUMENT_ROOT']."sites/default/files/loan/loanee/"; 	
+	
+	 $sqlh = "select sum(amount) as amountdis from tbl_loan_disbursement where loanee_id='".$row->loanee_id."'";
+	  $resh = db_query($sqlh);
+	 if($rsh = db_fetch_object($resh)){
+	  
+	 
+	  $amountdis=$rsh->amountdis;
+	
+	
+	 }
+	 
+	  $sqlht = "select sum(amount) as reamountdis from tbl_loan_repayment where loanee_id='".$row->loanee_id."'";
+	  $resht = db_query($sqlht);
+	 if($rsht = db_fetch_object($resht)){
+	  
+	 
+	  $reamountdis=$rsht->reamountdis;
+	
+	
+	 }
+	
+	$document=$row->documents;
+	$state=getLookupName($row->state);
+	$gender=getLookupName($row->gender);
+	$caste=getLookupName($row->caste);
+	$addtype=getLookupName($row->address_type);
+	$religion=getLookupName($row->religion);
+	$category=getLookupName($row->category);
+	$gtype=getLookupName($row->gtype);
+	$gnature=getLookupName($row->gnature);
+	$income=getLookupName($row->income_cat);
+	$income=getLookupName($row->income_cat);
+	$disability = getLookupName($row->disability);
+	
+
+	
+	global $base_url;
+	$fileurl = $base_url.'/sites/default/files/loan/';
+	
+		$output .='<table >';
+		$output .='<tr class="oddrow"><td align="center" colspan="2"><h2>View Loan</h2></td></tr>';
+		$output .='</table ><br />';
+		$output .='<table >';
+		$output .='<tr class="oddrow"><td align="center" colspan="4"><h2>Personal Detail</h2></td></tr>';
+		$output .='<tr class="evenrow"><td width="25%">First Name</td><td width="25%" class="normal">'.getemptyloan($row->fname).'</td><td width="25%">Last Name</td><td width="25%" class="normal">'.getemptyloan($row->lname).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Father/Husband Name</td><td class="normal">'.getemptyloan($row->fh_name).'</td><td >Reg No.</td><td class="normal">'.getemptyloan($row->reg_number).'</td></tr>';
+
+		$output .= '<tr class="evenrow"><td>Date of Birth</td><td class="normal">'.date('d-m-Y',strtotime(getemptyloan($row->dob))).'</td><td>Gender</td><td class="normal">'.getemptyloan($gender).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Education</td><td class="normal">'.getemptyloan($row->education).'</td><td>Disability</td><td class="normal">'.getemptyloan($disability).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Category</td><td class="normal">'.getemptyloan($category).'</td><td>Annual Family Income</td><td class="normal">'.getemptyloan(round($row->family_income)).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Income Category</td><td class="normal">'.getemptyloan($income).'</td><td>Religion</td><td class="normal">'.getemptyloan($religion).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Caste</td><td class="normal">'.getemptyloan($row->cast_name).'</td><td>UID(Adhar Card No.)</td><td class="normal">'.getemptyloan($row->UID).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Email</td><td class="normal">'.getemptyloan($row->email).'</td><td>Mobile</td><td class="normal">'.getemptyloan($row->mobile).'</td></tr>';
+			$output .='</table ><br />';
+			
+		$output .='<table >';
+		$output .='<tr class="evenrow"><td align="center" colspan="4"><h2>Address Detail</h2></td></tr>';
+		$output .='<tr class="oddrow"><td width="25%">Address Type</td><td width="25%" class="normal">'.getemptyloan($addtype).'</td><td>Address Line1</td><td class="normal">'.getemptyloan($row->address1).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Address Line2</td><td class="normal">'.getemptyloan($row->address2).'</td><td  width="25%">State</td><td width="25%"  class="normal">'.getemptyloan($row->state_name).'</td></tr>';
+		$output .='<tr class="oddrow"><td>District</td><td class="normal">'.getemptyloan($row->district_name).'</td><td>Tehsil</td><td class="normal">'.getemptyloan($row->tehsil_name).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Block</td><td class="normal">'.getemptyloan($row->block_name).'</td><td>Panchayat</td><td class="normal">'.getemptyloan($row->panchayt_name).'</td></tr>';	
+		$output .='<tr class="oddrow"><td>Post Office</td><td class="normal">'.getemptyloan($row->post_office).'</td><td width="25%">Village</td><td width="25%" class="normal">'.getemptyloan($row->village).'</td></tr>';
+		$output .='<tr class="evenrow"><td colspan="2">Pincode</td><td colspan="2" class="normal">'.getemptyloan($row->pincode).'</td></tr>';	
+		$output .='</table ><br />';
+		
+		$output .='<table >';
+		$output .='<tr class="evenrow"><td align="center" colspan="4"><h2>Project Detail</h2></td></tr>';
+		$output .='<tr class="oddrow"><td width="25%">Scheme</td><td width="25%" class="normal">'.getemptyloan($row->scheme_name).'</td><td width="25%">Project Cost</td><td width="25%" class="normal">'.getemptyloan(round($row->project_cost)).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Branch Office</td><td class="normal">'.getemptyloan($row->corporation_name).'</td><td>Place of Work</td><td class="normal">'.getemptyloan($row->work_place).'</td></tr>';
+		$output .='<tr class="oddrow"><td colspan="2">Loan Amount</td><td class="normal" colspan="2">'.getemptyloan(round($row->loan_amount)).'</td></tr>';
+		
+		
+	$output .='</table ><br />';
+	
+		$output .='<table >'; 
+		//tbl_guarantor_detail.gname,tbl_guarantor_detail.gamount,tbl_guarantor_detail.unit_name,tbl_guarantor_detail.gtype,	tbl_guarantor_detail.gnature,	tbl_guarantor_detail.basic_pay,tbl_guarantor_detail.total_pay,tbl_guarantor_detail.address,tbl_guarantor_detail.designation,tbl_guarantor_detail.superannuation_date
+		
+		$gsql="select * from tbl_guarantor_detail where  loanee_id ='".$row->loanee_id."' ";
+		$gres = db_query($gsql);
+		
+		while($row2 = db_fetch_object($gres))
+		{
+			
+		$output .='<tr class="oddrow"><td align="center" colspan="4"><h2>Guarantor Detail</h2></td></tr>';
+		
+	    $output .='<tr class="evenrow"><td width="25%">Guarantor Type</td><td class="normal" width="25%">'.getemptyloan($gtype).'</td><td width="25%">Nature of Guaranty </td><td width="25%" class="normal">'.getemptyloan($gnature).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Guarantor Name</td><td class="normal">'.getemptyloan($row2->gname).'</td><td>Amount of Guaranty</td><td class="normal">'.getemptyloan(round($row2->gamount)).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Name of Unit</td><td class="normal">'.getemptyloan($row2->unit_name).'</td><td>Basic Pay</td><td class="normal">'.getemptyloan($row2->basic_pay).'</td></tr>';
+		$output .='<tr class="oddrow"><td>Total Pay</td><td class="normal">'.getemptyloan($row2->total_pay).'</td><td>Superannuation Date</td><td class="normal">'.date('d-m-Y',strtotime(getemptyloan($row2->superannuation_date))).'</td></tr>';
+		$output .='<tr class="evenrow"><td>Address </td><td class="normal">'.getemptyloan($row2->address).'</td><td>Designation</td><td class="normal">'.getemptyloan($row2->designation).'</td></tr>';
+		$output .='<tr class="oddrow"><td colspan="2">Office Address Certified </td><td colspan="2" class="normal">'.getemptyloan($result).'</td></tr>';
+		}
+		$output .='</table ><br /> ';
+		
+			$output .='<table >'; 
+			$output .='<tr class="oddrow"><td align="center" colspan="4"><h2>Transaction Detail</h2></td></tr>';
+		    $output .='<tr class="evenrow"><td colspan="2" width="25%"> Disbursed Amount</td><td class="normal" colspan="2" width="25%">'.getemptyloan(round($amountdis)).'</td></tr>
+		<tr class="oddrow"><td colspan="2" width="25%"> Repayment Amount </td><td width="25%" class="normal" colspan="2">'.getemptyloan(round($reamountdis)).'</td></tr>
+		<tr class="evenrow"><td colspan="2" width="25%"> Sanction Date </td><td width="25%" class="normal" colspan="2">'.date('d-m-Y',strtotime(getemptyloan($row->sanction_date))).'</td></tr>
+		<tr class="oddrow"><td colspan="2" width="25%"> Loan Sanctioned Amount </td><td width="25%" class="normal" colspan="2">'.getemptyloan(round($row->loan_requirement)).'</td></tr>
+		
+		';
+		$output .='</table ><br /> ';
+		
+		$output .='<table >'; 
+		$output .='<tr class="oddrow"><td align="center" colspan="4"><h2>Other Details</h2></td></tr>';
+		$output .='<tr class="evenrow"><td width="25%">License No.</td><td class="normal" width="25%">'.getemptyloan($row->licenseno).'</td><td width="25%">Expiry Date</td><td class="normal" width="25%">'.date('d-m-Y',strtotime(getemptyloan($row->licenseexpiry))).'</td></tr>';
+		
+		$output .='<tr class="oddrow"><td colspan="2">Document Required</td><td class="normal" colspan="2">';
+		if($document)
+		{
+		
+		
+			$output .='<a href="'.$fileurl.$document.'" target="_blank">Download here</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.$document.'';
+	
+		}
+		
+		
+		$output .='</td></tr><tr class="evenrow"><td colspan="4" align="center">
+	<input type="hidden" value="Bank" name="loan_typetext" id="loan_typetextid" />
+	<input type="button" class="form-submit" value="Back" id="back" name="back" onClick="history.back(-1)"/>
+
+	</td></tr>';
+	
+		
+		
+	
+	$output .='
+	
+	</table>';
+	
+	return $output;
+	
+}
+
+/////////////////
+
+function SelectFDRStatus() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=86";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function SelectAssetType() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=84";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+
+
+
+
+
+
+function vacancyStatus() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=77";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+function deputationType() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=76";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function SelectDesignation() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=34";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+function selectnodaldesignation($utility_id){
+  $sqldesignation = "select designation_id, designation_name FROM tbl_nodal_designation where utility_id='$utility_id' AND status=1 ORDER BY designation_name ASC";
+
+
+  $resdesignation =db_query($sqldesignation);
+  $designationarray[''] = '--Select--';
+  if($resdesignation){
+     while($rsdesignation = db_fetch_object($resdesignation)){
+	   $designationarray[$rsdesignation->designation_id] = $rsdesignation->designation_name;
+	 }
+  }
+  return $designationarray;
+} 
+
+
+function amt($uid,$amount)
+  {
+  $kk= "SELECT total FROM tbl_dispatchaccounts where tbl_dispatchaccounts.account_uid='".$uid."'";
+  $ss=db_query($kk);
+  $amount1=db_fetch_object($ss);
+
+  $balance=($amount1->total)-($amount);
+  if ($balance>=0)
+    return ($balance);
+        else
+
+        return -1;
+
+  }
+
+
+
+// utilities category
+
+function selectutilitiescategory(){
+	$sqlcategory = "select * from tbl_utilities where utility_status=1";
+	 $rescategory = db_query($sqlcategory);
+	 $utilitycat[''] = '--Select--';
+	 while($rscategory = db_fetch_object($rescategory)){
+		$utilitycat[$rscategory->utility_id] = $rscategory->utility_name;
+	 }
+	 return $utilitycat;
+}
+
+function Institute(){
+  $sqlinst = "select * from tbl_institute_details where status=1";
+  $resinst = db_query($sqlinst);
+  while($rsinst = db_fetch_object($resinst)){
+  $rsinst->institute_name; 
+  }
+  return $rsinst;
+}
+
+function getorg($org_id){
+    $sqlorg = "select * from tbl_organizations where org_id =$org_id";
+        $resorg = db_query($sqlorg);
+	$rsorg = db_fetch_object($resorg);
+	return $rsorg->org_name;
+  }
+ function getutilityy($utility_id){
+    $sqlutility1 = "select * from tbl_utilities_details where utilitycat_id=$utility_id";
+        $resutility1 = db_query($sqlutility1);
+	$obj = db_fetch_object($resutility1);
+	return $obj->utilitycat_name;
+  }
+ function geinst($institute_id){
+    $sqlinst = "select * from tbl_institute_details  where institute_id =$institute_id";
+        $resinst = db_query($sqlinst);
+	$rsinst = db_fetch_object($resinst);
+	return $rsinst->institute_name;
+  }
+   function getfaculty($faculty_id){
+    $sqlfaculty = "select * from tbl_organizations where faculty_id =$faculty_id";
+        $resfaculty = db_query($sqlfaculty);
+	$rsfaculty = db_fetch_object($resfaculty);
+	return $rsfaculty->faculty_name;
+  }
+//organization
+
+function selectorganization(){
+	 $sqlorg = "select * from tbl_organizations where status=1 ORDER BY org_name ASC";
+	 $resorg = db_query($sqlorg);
+	 $org[''] = '--Select--';
+	 while($rsorg = db_fetch_object($resorg)){
+		$org[$rsorg->org_id] = $rsorg->org_name;
+	 }
+    return $org;
+}
+
+//state
+
+function selectstate(){
+	$status = 1;
+    settype($status, 'integer');
+	//$sqlcountry = "select * from tbl_dsjestate where status=1 ORDER BY state_name ASC";
+	$sqlcountry = sprintf("select * from tbl_dsjestate where status=%d ORDER BY state_name ASC",$status);
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--Select--'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->state_id] = ucwords($rscountry->state_name);
+	  }
+	}
+	return $countryarray;
+}
+
+function selectcourt(){
+  $sqlcountry = "select * from tbl_courtcase";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--Select--'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->courtcase_id] = $rscountry->case_no;
+	  }
+	}
+	return $countryarray;
+}
+
+
+function selectcategorycourt(){
+  $sqlcountry = "select * from tbl_categories where status=1 ORDER BY category_name ASC";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--Select--'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->category_id] = ucwords($rscountry->category_name);
+	  }
+	}
+	return $countryarray;
+}
+
+//zone
+function selectdistrict1(){
+  $sqlzone = "select * from tbl_district where status=1 order by tbl_district.district_name";
+	$reszone =db_query($sqlzone);
+	$zonearray[''] = '--Select--';
+	if($reszone){
+      while($rszone = db_fetch_object($reszone)){
+	    $zonearray[$rszone->district_id] = ucwords($rszone->district_name);
+	  }
+	}
+	
+	return $zonearray;
+}
+
+
+
+//zone di wise
+
+function selectzone_id($id){
+  $sqlzone = "select * from tbl_zones where status=1 and zone_id='".$id."'";
+	$reszone =db_query($sqlzone);
+	$zonearray[''] = '--Select--';
+	if($reszone){
+      while($rszone = db_fetch_object($reszone)){
+	    $zonearray[$rszone->zone_id] = $rszone->zone_name;
+	  }
+	}
+	
+	return $zonearray;
+}
+
+
+
+//city
+
+function selecttehsil12(){
+  $sqlcity = "select * from tbl_tehsil where status=1";
+	$rescity =db_query($sqlcity);
+	if($rescity){
+      $cityarray[''] = '--Select--';
+	  while($rscity = db_fetch_object($rescity)){
+	    $cityarray[$rscity->tehsil_id] = $rscity->tehsil_name;
+	  }
+	}
+	return $cityarray;
+}
+
+
+//valid email
+function isValidEmail($field_name,$email){
+	
+	$pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+	if (!$email || !eregi($pattern, $email)){
+		form_set_error($field_name,t("Invalid Email-Id."));
+		return 1;
+	} 
+	return 0;
+}
+
+//valid phone
+function isValidPhone($field_name,$number){
+	if(!ereg("^[0-9]{2,6}-[0-9]{3,10}$", $number)) {
+        form_set_error($field_name,t("Please enter your valid phone number like xxx-xxxxx."));
+		return 1;
+	} 
+	return 0;
+}
+
+//valid fax
+function isValidfax($field_name,$number){
+	if(!ereg("^[0-9]{2,6}-[0-9]{3,10}$", $number)) {
+        form_set_error($field_name,t("Please enter your valid Fax number like xxx-xxxxx."));
+		return 1;
+	} 
+	return 0;
+}
+
+//valid mobile
+
+function isValidMobile($field_name,$number){
+	if(!ereg("^[0-9]{10,15}$", $number)) {
+        form_set_error($field_name,t("Please enter your valid Mobile number."));
+		return 1;
+	} 
+	return 0;
+}
+
+//valid url
+
+function isValidUrl($field_name,$url){
+  if (!preg_match('|^http(s)?://[a-z0-9-]+(.[a-z0-9-]+)*(:[0-9]+)?(/.*)?$|i', $url)) {
+    form_set_error($field_name,t("Please enter your valid Url."));
+		return 1;
+	} 
+	return 0;
+  
+  /*if (!preg_match ("/^[a-z0-9][a-z0-9\-]+[a-z0-9](\.[a-z]{2,4})+$/i", $url)) {
+    form_set_error($field_name,t("Please enter your valid Url."));
+  } */
+}
+
+//valid pin
+
+function isValidPin($field_name,$number){
+	if(!$number || !ereg("^[0-9]{1,10}$", $number)) {
+        form_set_error($field_name,t("Please enter your valid Pin Code."));
+		return 1;
+	} 
+	return 0;
+}
+
+//valid phone without std
+function isValidPhonewstd($field_name,$number){
+ if(!ereg("^[0-9]{1,10}$", $number)) {
+        form_set_error($field_name,t("Please enter your valid Phone Number."));
+		return 1;
+	} 
+	return 0;
+}
+
+//valid std
+function isValidstd($field_name,$number){
+ if(!ereg("^[0-9]{1,10}$", $number)) {
+        form_set_error($field_name,t("Please enter your valid Std Code."));
+		return 1;
+	} 
+	return 0;
+}
+
+/*function isValidaccount($field_name){
+ if(!ereg("^[0-9]{1,14}$", $field_name)) {
+     form_set_error($field_name,t("Please enter your valid Account Number."));   
+ }
+ 
+}*/
+
+//geting permission
+
+function getPerm($uid,$perm){
+  $sql = "select permission.perm from users_roles INNER JOIN permission ON (users_roles.rid=permission.rid)where users_roles.uid=$uid";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $arrayperm = explode(',',$rs->perm);
+  
+  //$sqlperm = "select perm from permission where rid=$rs->rid";
+  //$resperm = db_query($sqlperm);
+  //$rsperm = db_fetch_object($resperm);
+  //$arrayperm = explode(',',$rsperm->perm);
+
+  for($i=0;$i<sizeof($arrayperm); $i++){
+  
+   if(trim($arrayperm[$i]) == $perm){
+     return 'all'; 
+   }
+  }
+  return 'view';
+
+
+}
+
+//parse data
+
+function parseData($strText) {
+		//returns safe code for preloading in the RTE
+		$tmpString = $strText;	
+		//convert all types of single quotes
+		$tmpString = str_replace(chr(145), chr(39), $tmpString);
+		$tmpString = str_replace(chr(146), chr(39), $tmpString);
+		$tmpString = str_replace("'", "&#39;", $tmpString);	
+		//convert all types of double quotes
+		$tmpString = str_replace(chr(147), chr(34), $tmpString);
+		$tmpString = str_replace(chr(148), chr(34), $tmpString);
+		//	$tmpString = str_replace("\"", "\"", $tmpString);	
+		//replace carriage returns & line feeds
+		$tmpString = str_replace(chr(10), " ", $tmpString);
+		//$tmpString = str_replace(chr(13), " ", $tmpString);	
+		return $tmpString;
+	}
+
+
+function status($status){
+  if($status==1){$val= 'Yes';}else{ $val= 'No'; }
+	return $val;
+}
+
+//program master
+
+function SelectProgram(){
+    $sqlprogram = "select * from tbl_program_master where user_type='Program Officer'";
+	$resprogram = db_query($sqlprogram);
+	$programarray =array(''=>'--Select--');
+	while($rsprogram = db_fetch_object($resprogram)){
+	  $programarray[$rsprogram->nid] = $rsprogram->program_name;
+	}
+	return $programarray;
+}
+
+
+function selectOfficeHod(){
+    $sqlOffice = "SELECT office_id, office_hod FROM tbl_offices where office_status='1'";
+	$restOffice = db_query($sqlOffice);
+	$arrOfficeHod =array(''=>'--Select--');
+	while($obj = db_fetch_object($restOffice)){
+	  $arrOfficeHod[$obj->office_id] = $obj->office_hod;
+	}
+	return $arrOfficeHod;
+}
+
+
+//Nodal officer
+function SelectNodal(){
+    $sqlnodal = "select tbl_nodal_master.officer_name,tbl_nodal_master.nid from tbl_nodal_master INNER JOIN users_roles ON(users_roles.uid=tbl_nodal_master.nodal_uid) where users_roles.rid=4";
+	$resnodal = db_query($sqlnodal);
+	$nodalarray =array(''=>'--Select--');
+	while($rsnodal = db_fetch_object($resnodal)){
+	  $nodalarray[$rsnodal->nid] = $rsnodal->officer_name;
+	}
+    return $nodalarray;
+}
+//offices
+
+function SelectOffice(){
+    $sqloffice = "select * from tbl_offices";
+	$resoffice = db_query($sqloffice);
+	$officearray =array(''=>'--Select--');
+	while($rsoffice = db_fetch_object($resoffice)){
+	  $officearray[$rsoffice->office_id] = $rsoffice->office_name;
+	}
+	return $officearray;
+}
+
+//mou types
+
+function SelectMoutypes(){
+  $sqlmou = "select * from tbl_moutypes where moutype_status=1";
+  $resmou = db_query($sqlmou);
+  $mouarray=array(''=>'--Select--');
+  while($rsmou = db_fetch_object($resmou)){
+    $mouarray[$rsmou->moutype_id] = $rsmou->moutype_name;
+  }
+  return $mouarray;
+}
+
+//Utility Type
+
+function SelectUtilitytype(){
+  $tbl_utilities = "select * from tbl_utilities where utility_status=1";
+  $restbl_utilities = db_query($tbl_utilities);
+  $tbl_utilitiesarray=array(''=>'--Select--');
+  while($rstbl_utilities = db_fetch_object($restbl_utilities)){
+    $tbl_utilitiesarray[$rstbl_utilities->utility_id] = $rstbl_utilities->utility_name;
+  }
+  return $tbl_utilitiesarray;
+}
+
+//utility Contact Person
+
+function SelectUtilityContact(){
+  $sqlcontact  = "select contact_id,name from tbl_utilities_contact";
+  $rescontact = db_query($sqlcontact);
+  $contact = array(''=>'--Select--');
+  while($rscontact = db_fetch_object($rescontact)){
+    $contact[$rscontact->contact_id] = $rscontact->name;
+  }
+  return $contact;
+}
+
+//select program
+
+function SelectPrograms(){
+  $sqlprogram = "select * from tbl_programes";
+   $resprogram = db_query($sqlprogram);
+   $program[''] = '--Select--';
+   while($rsprogram = db_fetch_object($resprogram)){
+     $program[$rsprogram->programlist_id]=$rsprogram->programlist_name;
+   }
+   return $program;
+}
+
+
+
+function SenderDetails() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=19";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function VehicleType() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=29";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+function SelectAction() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=28";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+
+function CorporationType() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=26";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+function selectComplaintType() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=43";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function selectChangeType() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=49";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+function selectRelated() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=44";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+function selectPriority() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=45";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function helpdeskStatus() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=46";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function helpdeskStatus2() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=51";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Fixed--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+function helpdeskStatus5() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=46";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+if($rssender->lookup_id==137){continue;}
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+function helpdeskAssign()
+{
+
+$rid1=db_query("select * from users,users_roles where users.uid=users_roles.uid and (users_roles.rid=10 OR users_roles.rid=11)");
+
+$senderarray['']= '--Select--';
+if($rid1){
+
+while($rid = db_fetch_object($rid1)){
+
+$senderarray[$rid->uid] = ucwords($rid->name);
+
+}
+}
+return $senderarray;
+}
+
+function AddressType() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=27";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function employeeStatus() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=42";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+function NewOrganization() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=41";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+
+
+function DurationYears() {
+
+$kk= "SELECT lookupType_id,lookupType_name FROM tbl_lookuptypes WHERE lookupType_id=36";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+function DurationMonths() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=37";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+function DurationDays() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=38";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+function DeputationStatus() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=39";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function SelectDepartment() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=19";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+function SelectDepartment22() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=34";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+
+
+function EmployeeType() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=33";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+function Notification() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=30";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+//$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+
+function inboundStatus() {
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=25";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function DispatchMode() {
+
+$kk= "select lookupType_id FROM tbl_lookuptypes where lookupType_id=20";
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "select * from tbl_lookups where status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+$ressender= db_query ($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function inboundMode() {
+
+$kk= "select lookupType_id FROM tbl_lookuptypes where lookupType_id=24";
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "select * from tbl_lookups where status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+$ressender= db_query ($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+function DispatchType() {
+
+$kk= "select lookupType_id FROM tbl_lookuptypes where lookupType_id=21";
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "select * from tbl_lookups where status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+$ressender= db_query ($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+
+
+//connection
+function SelectConnection(){
+	 $sqlcon = "select * from tbl_connections where status=1";
+	 $rescon = db_query($sqlcon);
+	 $conn[''] ='--Select--';
+	 while($rscon = db_fetch_object($rescon)){
+		$conn[$rscon->connection_id] = $rscon->connection_name;
+	 }
+	 return $conn;
+}
+
+//Equipments
+
+function SelectEquipments(){
+  $sqlequip = "select * from tbl_equipments where equipment_status=1";
+  $resequip = db_query($sqlequip);
+  $equip[''] ='--Select--';
+  while($rsequip = db_fetch_object($resequip)){
+    $equip[$rsequip->equipment_id] = $rsequip->equipment_name; 
+  }
+  return $equip;
+}
+
+//Faculty
+
+function SelectFaculty(){
+  $sqlefac = "select * from tbl_faculties where faculty_status=1";
+  $resfac = db_query($sqlefac);
+  $fac[''] ='--Select--';
+  while($rsfac = db_fetch_object($resfac)){
+    $fac[$rsfac->faculty_id] = $rsfac->faculty_name; 
+  }
+  return $fac;
+}
+
+//institute
+
+function SelectInstitute(){
+  $sqlinst = "select * from tbl_institute_details where status=1 and institute_type='Other'";
+  $resinst = db_query($sqlinst);
+  $inst[''] ='--Select--';
+  while($rsinst = db_fetch_object($resinst)){
+    $inst[$rsinst->institute_id] = $rsinst->institute_name; 
+  }
+  return $inst;
+}
+
+function SelectInstitutebilateral($utility_id){
+ $sqlinst = "select * from tbl_institute_details where status=1 and institute_type='Own' and utility_id='".$utility_id."' ORDER BY institute_name ASC";
+  $resinst = db_query($sqlinst);
+  $inst[''] ='--Select--';
+  while($rsinst = db_fetch_object($resinst)){
+    $inst[$rsinst->institute_id] = $rsinst->institute_name; 
+	$k=1;
+  }
+  if($k !=1){
+    $inst[] = 'No Institute in this Utility';
+  }
+
+  return $inst;
+}
+
+//institute co-ordinator
+
+function SelectInstituteCo(){
+  $sqlinstc = "select hod from tbl_institute_details where 	status=1";
+  $resinstc = db_query($sqlinstc);
+  $instc[''] ='--Select--';
+  while($rsinstc = db_fetch_object($resinstc)){
+    $instc[$rsinstc->hod] = $rsinstc->hod; 
+  }
+  return $instc;
+}
+
+
+//institute contact person
+function SelectInstituteContact(){
+  $sqlinstco = "select name,contact_id from tbl_institute_contact";
+  $resinstco = db_query($sqlinstco);
+  $instco[''] ='--Select--';
+  while($rsinstco = db_fetch_object($resinstco)){
+    $instco[$rsinstco->contact_id] = $rsinstco->name; 
+  }
+  return $instco;
+}
+
+function getUtility($utility_id){
+    $sqlutility = "select * from tbl_utilities where utility_id =$utility_id";
+	
+	$resutility = db_query($sqlutility);
+	$rsutlity = db_fetch_object($resutility);
+	return $rsutlity->utility_name;
+  }
+
+  function getDesignation($designationid){
+    $sqldesignation = "select * from tbl_designations where designation_id =$designationid";
+	$resdesignation = db_query($sqldesignation);
+	$rsdesignation = db_fetch_object($resdesignation);
+	return $rsdesignation->designation_name;
+  }
+   
+  
+        function getcast($castid){
+    $sqlcast = "select * from tbl_cast_categories where cast_category_id =$castid";
+	$rescast = db_query($sqlcast);
+	$rscast = db_fetch_object($rescast);
+	return $rscast->cast_category_name;
+  }
+	
+	
+  
+  
+
+  
+
+//get Status
+
+function getStatus($status){
+  if($status == 1){
+	  return 'Yes';
+  }else{
+      return 'No';
+  }
+}
+
+
+//getUser
+
+function getUser($uid){
+  if($uid ==''){
+	  return 'No updation';
+  }
+  else{
+    $cuser = user_load($uid);
+	return $cuser->name;
+  }
+}
+
+
+function SelectParticipant(){
+  $sqlParticipant = "SELECT participant_id, participant_name, participant_username FROM tbl_participant_master WHERE status='1'";
+	$restParticipant = db_query($sqlParticipant);
+	$participantArr = array();
+	//$participantArr = array(''=>'--Select--');
+	while($obj = db_fetch_object($restParticipant)){
+		$participantArr[$obj->participant_id] = $obj->participant_name;
+	}
+  return $participantArr;
+}
+
+
+//select venue
+
+function SelectVenue(){
+  $sql = "select venue_id,venue_name from tbl_venues WHERE venue_status='1'";
+  $res = db_query($sql);
+  $varray = array(''=>'--Select--');
+  while($rs = db_fetch_object($res)){
+    $varray[$rs->venue_id] = $rs->venue_name;
+  }
+
+  return $varray;
+}
+
+//is valid number
+function isValidNumber($message,$field_name,$value){
+	if(!ereg("^[0-9]{1,10}$", $value)) {
+        form_set_error($field_name,$message);
+	} 
+}
+
+function GetVenue($venue_id){
+  $sql = "select venue_name from tbl_venues where venue_id=".$venue_id;
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->venue_name;
+}
+
+
+
+function getdistrict($district_id){
+  $sql = "select district_name from tbl_district where district_id='".$district_id."'ORDER BY district_name ASC";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->district_name;
+}
+
+function getscheme1($loan_scheme_id){
+  $sql = "select scheme_name from tbl_scheme_master where loan_scheme_id='".$loan_scheme_id."' LIMIT 1";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->scheme_name;
+}
+
+function getROI($loan_id){
+  $sql = "select ROI from tbl_loan_detail where loan_id='".$loan_id."' LIMIT 1";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->ROI;
+}
+
+function getNameEmail($branchid = '',$role = '',$uid = ''){
+	$branchcond = "";
+	$ucond = "";
+	$branchcond = "";
+	if($uid)
+		$ucond = " AND u.uid = '".$uid."'";
+	if($role)
+		$rcond = " AND ur.rid = '".$role."'";
+	if($branchid)
+		$branchcond = " AND j.current_officeid = '".$branchid."'";
+  $sql = "select u.mail,u.name from tbl_joinings j,users u,users_roles ur,tbl_corporations c where u.uid = j.program_uid AND j.current_officeid = c.corporation_id AND ur.uid = u.uid $rcond $branchcond $ucond LIMIT 1";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return serialize(array($rs->mail,$rs->name));
+}
+
+function getState($state_id){
+  $sql = "select state_name from tbl_dsjestate where state_id='".$state_id."' ORDER BY state_name ASC";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->state_name;
+}
+
+function getlookupType($lookupType_id){
+  $sql = "select lookupType_name from tbl_lookuptypes where lookupType_id=$lookupType_id";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->lookupType_name;
+}
+
+function gettehsil($tehsil_id){
+  $sql = "select tehsil_name from tbl_tehsil where tehsil_id='".$tehsil_id."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->tehsil_name;
+}
+
+function getblock($block_id){
+  $sql = "select block_name from tbl_block where block_id='".$block_id."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->block_name;
+}
+
+function getpanchayt($panchayt_id){
+  $sql = "select panchayt_name from tbl_panchayt where panchayt_id='".$panchayt_id."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->panchayt_name;
+}
+
+function getcategoryname($category_id){
+  $sql = "select category_name from tbl_categories where category_id='".$category_id."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->category_name;
+}
+
+function getcourtname($court_name_id){
+  $sql = "select court_name_name from tbl_court_names where court_name_id='".$court_name_id."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->court_name_name;
+}
+
+
+function getlawyername($lawyer_id){
+  $sql = "select lawyer_name from tbl_lawyer where lawyer_id='".$lawyer_id."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->lawyer_name;
+}
+
+
+function dateDiffByDays($start, $end) {
+	$start_ts = strtotime($start);
+	$end_ts = strtotime($end);
+	$diff = $end_ts - $start_ts;
+	return round($diff / 86400);
+}
+
+
+function dateDiffByYear($start, $end){
+
+$date1 = $start; //"2007-03-24";
+$date2 = $end; //"2009-06-26";
+$diff = abs(strtotime($date2) - strtotime($date1));
+return $years = floor($diff / (365*60*60*24));
+//$months = floor(($diff - $years * 365*60*60*24) / (30*60*60*24));
+//$days = floor(($diff - $years * 365*60*60*24 - $months*30*60*60*24)/ (60*60*24));
+}
+
+function dateDiffBymonths($start, $end){
+
+$date1 = $start; //"2007-03-24";
+$date2 = $end; //"2009-06-26";
+$diff = abs(strtotime($date2) - strtotime($date1));
+//$years = floor($diff / (365*60*60*24));
+return $months = floor(($diff - $years * 365*60*60*24) / (30*60*60*24));
+//$days = floor(($diff - $years * 365*60*60*24 - $months*30*60*60*24)/ (60*60*24));
+}
+
+
+
+function selectTime(){
+return array (''=>'--Select--','07:00 am'=>'07:00 am','07:05 am'=>'07:05 am','07:10 am'=>'07:10 am','07:15 am'=>'07:15 am','07:20 am'=>'07:20 am','07:25 am'=>'07:25 am','07:30 am'=>'07:30 am','07:35 am'=>'07:35 am','07:40 am'=>'07:40 am','07:45 am'=>'07:45 am','07:50 am'=>'07:50 am','07:55 am'=>'07:55 am','08:00 am'=>'08:00 am','08:05 am'=>'08:05 am','08:10 am'=>'08:10 am','08:15 am'=>'08:15 am','08:20 am'=>'08:20 am','08:25 am'=>'08:25 am','08:30 am'=>'08:30 am','08:35 am'=>'08:35 am','08:40 am'=>'08:40 am','08:45 am'=>'08:45 am','08:50 am'=>'08:50 am','08:55 am'=>'08:55 am','09:00 am'=>'09:00 am','09:05 am'=>'09:05 am','09:10 am'=>'09:10 am','09:15 am'=>'09:15 am','09:20 am'=>'09:20 am','09:25 am'=>'09:25 am','09:30 am'=>'09:30 am','09:35 am'=>'09:35 am','09:40 am'=>'09:40 am','09:45 am'=>'09:45 am','09:50 am'=>'09:50 am','09:55 am'=>'09:55 am','10:00 am'=>'10:00 am','10:05 am'=>'10:05 am','10:10 am'=>'10:10 am','10:15 am'=>'10:15 am','10:20 am'=>'10:20 am','10:25 am'=>'10:25 am','10:30 am'=>'10:30 am','10:35 am'=>'10:35 am','10:40 am'=>'10:40 am','10:45 am'=>'10:45 am','10:50 am'=>'10:50 am','10:55 am'=>'10:55 am','11:00 am'=>'11:00 am','11:05 am'=>'11:05 am','11:10 am'=>'11:10 am','11:15 am'=>'11:15 am','11:20 am'=>'11:20 am','11:25 am'=>'11:25 am','11:30 am'=>'11:30 am','11:35 am'=>'11:35 am','11:40 am'=>'11:40 am','11:45 am'=>'11:45 am','11:50 am'=>'11:50 am','11:55 am'=>'11:55 am','12:00 am'=>'12:00 am','12:05 pm'=>'12:05 pm','12:10 pm'=>'12:10 pm','12:15 pm'=>'12:15 pm','12:20 pm'=>'12:20 pm','12:25 pm'=>'12:25 pm','12:30 pm'=>'12:30 pm','12:35 pm'=>'12:35 pm','12:40 pm'=>'12:40 pm','12:45 pm'=>'12:45 pm','12:50 pm'=>'12:50 pm','12:55 pm'=>'12:55 pm', '01:00 pm'=>'01:00 pm', '01:05 pm'=>'01:05 pm','01:10 pm'=>'01:10 pm','01:15 pm'=>'01:15 pm','01:20 pm'=>'01:20 pm','01:25 pm'=>'01:25 pm','01:30 pm'=>'01:30 pm','01:35 pm'=>'01:35 pm','01:40 pm'=>'01:40 pm','01:45 pm'=>'01:45 pm','01:50 pm'=>'01:50 pm','01:55 pm'=>'01:55 pm','02:00 pm'=>'02:00 pm','02:05 pm'=>'02:05 pm','02:10 pm'=>'02:10 pm','02:15 pm'=>'02:15 pm','02:20 pm'=>'02:20 pm','02:25 pm'=>'02:25 pm','02:30 pm'=>'02:30 pm','02:35 pm'=>'02:35 pm','02:40 pm'=>'02:40 pm','02:45 pm'=>'02:45 pm','02:50 pm'=>'02:50 pm','02:55 pm'=>'02:55 pm', '03:00 pm'=>'03:00 pm','03:05 pm'=>'03:05 pm','03:10 pm'=>'03:10 pm','03:15 pm'=>'03:15 pm','03:20 pm'=>'03:20 pm','03:25 pm'=>'03:25 pm','03:30 pm'=>'03:30 pm','03:35 pm'=>'03:35 pm','03:40 pm'=>'03:40 pm','03:45 pm'=>'03:45 pm','03:50 pm'=>'03:50 pm','03:55 pm'=>'03:55 pm','04:00 pm'=>'04:00 pm','04:05 pm'=>'04:05 pm','04:10 pm'=>'04:10 pm','04:15 pm'=>'04:15 pm','04:20 pm'=>'04:20 pm','04:25 pm'=>'04:25 pm','04:30 pm'=>'04:30 pm','04:35 pm'=>'04:35 pm','04:40 pm'=>'04:40 pm','04:45 pm'=>'04:45 pm','04:50 pm'=>'04:50 pm','04:55 pm'=>'04:55 pm','05:00 pm'=>'05:00 pm','05:05 pm'=>'05:05 pm','05:10 pm'=>'05:10 pm','05:15 pm'=>'05:15 pm','05:20 pm'=>'05:20 pm','05:25 pm'=>'05:25 pm','05:30 pm'=>'05:30 pm','05:35 pm'=>'05:35 pm','05:40 pm'=>'05:40 pm','05:45 pm'=>'05:45 pm','05:50 pm'=>'05:50 pm','05:55 pm'=>'05:55 pm','06:00 pm'=>'06:00 pm','06:05 pm'=>'06:05 pm','06:10 pm'=>'06:10 pm','06:15 pm'=>'06:15 pm','06:20 pm'=>'06:20 pm','06:25 pm'=>'06:25 pm','06:30 pm'=>'06:30 pm','06:35 pm'=>'06:35 pm','06:40 pm'=>'06:40 pm','06:45 pm'=>'06:45 pm','06:50 pm'=>'06:50 pm','06:55 pm'=>'06:55 pm','07:00 pm'=>'07:00 pm','07:05 pm'=>'07:05 pm','07:10 pm'=>'07:10 pm','07:15 pm'=>'07:15 pm','07:20 pm'=>'07:20 pm','07:25 pm'=>'07:25 pm','07:30 pm'=>'07:30 pm','07:35 pm'=>'07:35 pm','07:40 pm'=>'07:40 pm','07:45 pm'=>'07:45 pm','07:50 pm'=>'07:50 pm','07:55 pm'=>'07:55 pm','08:00 pm'=>'08:00 pm','08:05 pm'=>'08:05 pm','08:10 pm'=>'08:10 pm','08:15 pm'=>'08:15 pm','08:20 pm'=>'08:20 pm','08:25 pm'=>'08:25 pm','08:30 pm'=>'08:30 pm','08:35 pm'=>'08:35 pm','08:40 pm'=>'08:40 pm','08:45 pm'=>'08:45 pm','08:50 pm'=>'08:50 pm','08:55 pm'=>'08:55 pm','09:00 pm'=>'09:00 pm');
+}
+
+
+function textonlyn($field_name,$value,$field){
+  $AllowRegex  = '^[a-zA-Z0-9(.) / /]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($field_name,'Only characters (A-Z, a-z, 0-9) are allowed in '.$field.'.');
+	  return 1;
+	}
+	return 0;
+}
+
+function textonlyncourt($field_name,$value,$field){
+  $AllowRegex  = '^[A-Za-z]+$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($field_name,'Only characters (A-Z, a-z, 0-9) are allowed in '.$field.'.');
+	  return 1;
+	}
+	return 0;
+}
+
+function alphanumeric($field_name,$value,$field){
+  $AllowRegex  = '^[a-zA-Z0-9 / /]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($field_name,'Only characters (A-Z, a-z, 0-9) are allowed in '.$field.'.');
+	  return 1;
+	}
+	return 0;
+}
+function alphanumeric1($field_name,$value,$field){
+  
+  
+ // $AllowRegex  = '^[a-zA-Z0-9/ /]*$';
+ // $AllowRegex  = '^[A-Z a-z 0-9 \-\]*$';
+   $AllowRegex  = '^[A-Z 0-9 -]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($field_name,'Only characters (A-Z, a-z, 0-9, -) are allowed in '.$field.'.');
+	  return 1;
+	}
+	return 0;
+}
+function alphanumericwithdot($field_name,$value,$field){
+  $AllowRegex  = '^[a-zA-Z0-9, (.)/ /]*$';
+	if(!eregi($AllowRegex,$value)){
+form_set_error($field_name,'Only characters (A-Z, a-z, 0-9 (-)(/)(,) and dot) are allowed in '.$field.'.');
+	  return 1;
+	}
+	return 0;
+}
+
+
+function searchRestrict($val)
+{
+ $AllowRegex  = '^[a-zA-Z0-9.() \\(\)]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error('Only alphabets (A-Z, a-z, 0-9) are allowed in ');
+	  return 1;
+	}
+	return 0;
+}
+
+
+
+
+function paypay($field_name,$value,$field){
+ $val = explode(".",$value);
+ if(sizeof($val) > 2){
+   form_set_error($field_name,'Only numbers and one dot are allowed in '.$field.'.');
+    return 1;
+ }
+  $AllowRegex  = "^([\.0-9]+([0-9]+)?$)";
+ // $AllowRegex1 = "(^\d*\.?\d*[1-9]+\d*$)|(^[1-9]+\d*\.\d*$)";
+    //  $AllowRegex  = " ^[0-9]\d*(\.\d+)?$";
+		if(!eregi($AllowRegex,$value)){
+          form_set_error($field_name,'Only numbers and one dot are allowed in '.$field.'.');
+          return 1;
+        }
+        return 0;
+}
+
+
+function textcoursename($field_name,$value,$field){
+  $AllowRegex  = '^[a-zA-Z0-9.() \\(\)]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($field_name,'Only alphabets (A-Z, a-z, 0-9) are allowed in '.$field.'.');
+	  return 1;
+	}
+	return 0;
+}
+
+function textonlywithdotne($field_name,$value,$field){
+  $AllowRegex  = '^[A-Z 0-9 \/\,\.\&\<\>\-]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($field_name,'Only the characters "A-Z", "a-z","0-9", ",", ".", "/" and "-" are allowed in '.$field.'.');
+	   return 1;
+	}
+	return 0;
+	
+}
+
+
+function textonlynw($field_name,$value,$field){
+  $AllowRegex  = '^[A-Z 0-9]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($field_name,'Only the characters (A-Z, a-z, 0-9) are allowed in '.$field.'.');
+	  return 1;
+	}
+	return 0;
+}
+
+function fononlyn($field_name,$value,$field){
+  $AllowRegex  = '^[0-9]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($field_name,'Only the characters (0-9) are allowed in '.$field.'.');
+	  return 1;
+	}
+	return 0;
+}
+
+function fononlyn1($value){
+  $AllowRegex  = '^[0-9]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($value,'Only the characters (0-9) are allowed in Phone No');
+	  return 1;
+	}
+	return 0;
+}
+
+function feecharge($value){
+  $AllowRegex  = '^[0-9]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($value,'Only the characters (0-9) are allowed in Fee Charge Per Case');
+	  return 1;
+	}
+	return 0;
+}
+
+
+function emailonly($value){
+  $AllowRegex  = '^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($value,'Only valid character are allowed in E-mail field');
+	  return 1;
+	}
+	return 0;
+}
+
+function textonlynw1($value){
+  $AllowRegex  = '^[A-Z 0-9]*$';
+	if(!eregi($AllowRegex,$value)){
+	  form_set_error($value,'Only the characters (A-Z, a-z, 0-9) are allowed in Lawyer Name');
+	  return 1;
+	}
+	return 0;
+}
+
+
+
+//2/14/2011
+
+//custom function 
+
+function GetZoneCountryWise($country_id){
+	$sqlzone = "select zone_name,zone_id from tbl_zones where status='1' and country_id='".$country_id."' ORDER BY zone_name ASC";
+	$reszone =db_query($sqlzone);
+	if($reszone){
+      $zonearray[''] = '--Select--'; 
+	  while($rszone = db_fetch_object($reszone)){
+	    $zonearray[$rszone->zone_id] = $rszone->zone_name;
+	  }
+	}
+	return $zonearray;
+}
+
+
+function GetDistrictStateWise($state_id){
+	$sqlzone = "select district_name,district_id from tbl_district where status='1' and state_id='".$state_id."' ORDER BY district_name ASC";
+	$reszone =db_query($sqlzone);
+	if($reszone){
+      $zonearray[''] = '--Select--'; 
+	  while($rszone = db_fetch_object($reszone)){
+	    $zonearray[$rszone->district_id] = ucwords($rszone->district_name);
+	  }
+	}
+	return $zonearray;
+}
+
+
+
+
+function getDistrictwise($district_id){
+	$sqlzone = "select district_name,district_id from tbl_district where status='1' and state_id='".$state_id."' ORDER BY district_name ASC";
+	$reszone =db_query($sqlzone);
+	if($reszone){
+      $zonearray[''] = '--Select--'; 
+	  while($rszone = db_fetch_object($reszone)){
+	    $zonearray[$rszone->district_id] = ucwords($rszone->district_name);
+	  }
+	}
+	return $zonearray;
+}
+
+
+
+
+
+function GetStateZoneWise($zone_id,$country_id){
+    $sqlstate = "select state_name,state_id from tbl_states where status='1' and zone_id = '".$zone_id."' and country_id='".$country_id."' ORDER BY state_name ASC";
+	
+	
+	$resstate =db_query($sqlstate);
+	if($resstate){
+      $statearray[''] = '--Select--'; 
+	  while($rsstate = db_fetch_object($resstate)){
+	    $statearray[$rsstate->state_id] = $rsstate->state_name;
+	  }
+	}
+	return $statearray;
+}
+
+
+function GetTehsilDistrictWise($district_id,$state_id){
+    $sqlstate = "select tehsil_name,tehsil_id from tbl_tehsil where status='1' and district_id = '".$district_id."' and state_id='".$state_id."' ORDER BY tehsil_name ASC";
+	
+	
+	$resstate =db_query($sqlstate);
+	if($resstate){
+      $statearray[''] = '--Select--'; 
+	  while($rsstate = db_fetch_object($resstate)){
+	    $statearray[$rsstate->tehsil_id] = ucwords($rsstate->tehsil_name);
+	  }
+	}
+	return $statearray;
+}
+
+function GetCityStateWise($tehsil_id,$district_id,$state_id){
+    $sqlcity = "select block_id,block_name from tbl_block where status='1' or state_id='".$state_id."' or district_id = '".$district_id."' or tehsil_id='".$tehsil_id."' ORDER BY block_name ASC";
+	$rescity =db_query($sqlcity);
+	if($rescity){
+      $cityarray[''] = '--Select--'; 
+	  while($rscity = db_fetch_object($rescity)){
+	    $cityarray[$rscity->block_id] = ucwords($rscity->block_name);
+	  }
+	}
+	return $cityarray;
+}
+
+
+function GetpanchaytStateWise($block_id,$tehsil_id,$district_id,$state_id){
+    $sqlcity = "select panchayt_id,panchayt_name from tbl_panchayt where status='1' or state_id='".$state_id."' or district_id = '".$district_id."' or tehsil_id='".$tehsil_id."' or block_id='".$block_id."' ORDER BY panchayt_name ASC";
+	$rescity =db_query($sqlcity);
+	if($rescity){
+      $cityarray[''] = '--Select--'; 
+	  while($rscity = db_fetch_object($rescity)){
+	    $cityarray[$rscity->panchayt_id] = ucwords($rscity->panchayt_name);
+	  }
+	}
+	return $cityarray;
+}
+
+
+/**
+ * Verify the syntax of the given name.
+ */
+function custom_user_validate_name($name,$string) {
+ //drupal_set_message($name);
+  if (!strlen($name))
+	{
+	// form_set_error($string, t('You must enter a username.'));
+	}
+  if (substr($name, 0, 1) == ' ')
+	{
+	 form_set_error($string, t('The username cannot begin with a space.'));
+	}
+  if (substr($name, -1) == ' ')
+	{
+	 form_set_error($string, t('The username cannot end with a space.'));
+	}
+  if (strpos($name, ' ') !== FALSE) 
+	{
+	 form_set_error($string, t('The username cannot contain multiple spaces in a row.'));
+	}
+  if (ereg("[^\x80-\xF7 [:alnum:]@_.-]", $name))
+   {
+    form_set_error($string, t('The username contains an illegal character.'));
+  }
+  if (preg_match('/[\x{80}-\x{A0}'.          // Non-printable ISO-8859-1 + NBSP
+                   '\x{AD}'.                 // Soft-hyphen
+                   '\x{2000}-\x{200F}'.      // Various space characters
+                   '\x{2028}-\x{202F}'.      // Bidirectional text overrides
+                   '\x{205F}-\x{206F}'.      // Various text hinting characters
+                   '\x{FEFF}'.               // Byte order mark
+                   '\x{FF01}-\x{FF60}'.      // Full-width latin
+                   '\x{FFF9}-\x{FFFD}'.      // Replacement characters
+                   '\x{0}]/u',               // NULL byte
+                   $name)) {
+    //return t('The username contains an illegal character.');
+	form_set_error($string, t('The username contains an illegal character.'));
+  }
+  if (strpos($name, '@') !== FALSE && !eregi('@([0-9a-z](-?[0-9a-z])*.)+[a-z]{2}([zmuvtg]|fo|me)?$', $name)){
+    form_set_error($string, t('The username is not a valid authentication ID.'));
+  }
+ 
+ }
+
+
+ function custom_Password_validate_name($name,$string) {
+ //drupal_set_message($name);
+  if (!strlen($name))
+	{
+	// form_set_error($string, t('You must enter a Password.'));
+	}
+  if (substr($name, 0, 1) == ' ')
+	{
+	 form_set_error($string, t('The Password cannot begin with a space.'));
+	}
+  if (substr($name, -1) == ' ')
+	{
+	 form_set_error($string, t('The Password cannot end with a space.'));
+	}
+  if (strpos($name, ' ') !== FALSE) 
+	{
+	 form_set_error($string, t('The Password cannot contain multiple spaces in a row.'));
+	}
+ /* if (ereg("[^\x80-\xF7 [:alnum:]@_.-]", $name))
+   {
+    form_set_error($string, t('The Password contains an illegal character.'));
+  }
+  if (preg_match('/[\x{80}-\x{A0}'.          // Non-printable ISO-8859-1 + NBSP
+                   '\x{AD}'.                 // Soft-hyphen
+                   '\x{2000}-\x{200F}'.      // Various space characters
+                   '\x{2028}-\x{202F}'.      // Bidirectional text overrides
+                   '\x{205F}-\x{206F}'.      // Various text hinting characters
+                   '\x{FEFF}'.               // Byte order mark
+                   '\x{FF01}-\x{FF60}'.      // Full-width latin
+                   '\x{FFF9}-\x{FFFD}'.      // Replacement characters
+                   '\x{0}]/u',               // NULL byte
+                   $name)) {
+    //return t('The username contains an illegal character.');
+	form_set_error($string, t('The Password contains an illegal character.'));
+  }*/
+  if(!preg_match('^.*(?=.{8,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%&+=]).*$^',$name)){
+    form_set_error($string, t('The Password Must be at least 8 characters,
+     Must contain at least one lower case letter, one upper case letter, one digit and one special character,
+    Valid special characters are -   @#$%^&+=
+'));
+  }
+  /*if (strpos($name, '@') !== FALSE && !eregi('@([0-9a-z](-?[0-9a-z])*.)+[a-z]{2}([zmuvtg]|fo|me)?$', $name)){
+    form_set_error($string, t('The Password  is not a valid authentication ID.'));
+  }*/
+ 
+ }
+
+
+ //date difference
+
+ function dateDiff($time1, $time2, $precision = 6) {
+    // If not numeric then convert texts to unix timestamps
+    if (!is_int($time1)) {
+      $time1 = strtotime($time1);
+    }
+    if (!is_int($time2)) {
+      $time2 = strtotime($time2);
+    }
+ 
+    // If time1 is bigger than time2
+    // Then swap time1 and time2
+    if ($time1 > $time2) {
+      $ttime = $time1;
+      $time1 = $time2;
+      $time2 = $ttime;
+    }
+ 
+    // Set up intervals and diffs arrays
+    //$intervals = array('year','month','day','week','minute','second');
+ $intervals = array('year');
+    $diffs = array();
+ 
+    // Loop thru all intervals
+    foreach ($intervals as $interval) {
+      // Set default diff to 0
+      $diffs[$interval] = 0;
+      // Create temp time from time1 and interval
+      $ttime = strtotime("+1 " . $interval, $time1);
+      // Loop until temp time is smaller than time2
+      while ($time2 >= $ttime) {
+ $time1 = $ttime;
+ $diffs[$interval]++;
+ // Create new temp time from time1 and interval
+ $ttime = strtotime("+1 " . $interval, $time1);
+      }
+    }
+ 
+    $count = 0;
+    $times = array();
+    // Loop thru all diffs
+    foreach ($diffs as $interval => $value) {
+      // Break if we have needed precission
+      if ($count >= $precision) {
+ break;
+      }
+      // Add value and interval 
+      // if value is bigger than 0
+     /* if ($value > 0) {
+ // Add s if value is not 1
+ if ($value != 1) {
+   $interval .= "s";
+ }
+ // Add value and interval to times array
+ $times[] = $value . " " . $interval;
+ $count++;
+      }*/
+   // Add value and interval to times array
+ $times[] = $value;
+ $count++;
+    }
+ 
+    // Return string with times
+    return $times; //imes implode(", ", $times);
+  }
+
+
+  function getUtilitydetails($utilitycat_id){
+    $sql = "select utilitycat_name from tbl_utilities_details where utilitycat_id='".$utilitycat_id."'";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	return $rs->utilitycat_name;
+  }
+ 
+
+  function SelectNationality()
+  {
+    $kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=22";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+  }
+  
+    function SelectReligion()
+  {
+     $kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=5";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+  }
+  
+     function SelectCaste()
+  {
+    $kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=35";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+  }
+  
+    function SelectGender()
+  {
+    $kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookuptypes WHERE lookupType_id=1";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+  }
+  
+  
+function SelectOffices(){
+     $sqloffice = "select corporation_id,corporation_name,corporation_type  from tbl_corporations where status ='1' ORDER BY corporation_name ASC";
+	$resoffice =db_query($sqloffice);
+	if($resoffice){
+      $officearray[''] = '--Select--'; 
+	  while($rsoffice = db_fetch_object($resoffice)){
+	    $officearray[$rsoffice->corporation_id] = ucwords($rsoffice->corporation_name.'('.getLookupName($rsoffice->corporation_type).')');
+	  }
+	}
+	return $officearray;
+}
+
+
+function selectnametitle(){
+  $sql = "select nametitle_id,nametitle_name from tbl_nametitle ORDER BY nametitle_name ASC";
+  $res = db_query($sql);
+  $name = array(''=>'--Select--');
+  while($rs = db_fetch_object($res)){
+    $name[$rs->nametitle_id] = $rs->nametitle_name;
+  }
+  return $name;
+}
+
+
+
+
+function getTitle($nametitle_id){
+  $sql = "select nametitle_name from tbl_nametitle where nametitle_id='".$nametitle_id."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->nametitle_name;
+}
+
+function IcontactPerson($institute_id){
+  $sql = "select contact_id,name from tbl_institute_contact where institute_id='".$institute_id."'";
+  $res = db_query($sql);
+  $name = array(''=>'--Select--');
+  while($rs = db_fetch_object($res)){
+    $name[$rs->contact_id]= $rs->name;
+  }
+  return $name;
+}
+
+
+function getUserUtility($uid){
+    $sqlu = "select utilityid from tbl_nodal_master where nodal_uid='".$uid."'";
+	$resu = db_query($sqlu);
+	$rsu = db_fetch_object($resu);
+	return $utilityid = $rsu->utilityid;
+}
+
+
+function getLookupName($lookup_id)
+{
+if($lookup_id){
+		$h=db_query("select lookup_name from tbl_lookups where lookup_id='".$lookup_id."'");
+		$d=db_fetch_object($h);
+		 
+		 return $d->lookup_name;
+ }
+
+}
+
+
+function selectbankbranchaddress($bankname){
+     $sqloffice = "select bankbranch_id,bankbranch_name  from tbl_bankbranch where status ='1' and bank_id='".$bankname."' ORDER BY bankbranch_name ASC";
+	$resoffice =db_query($sqloffice);
+	if($resoffice){
+      $officearray[''] = '--Select--'; 
+	  while($rsoffice = db_fetch_object($resoffice)){
+	    $officearray[$rsoffice->bankbranch_id] = ucwords($rsoffice->bankbranch_name);
+	  }
+	}
+	return $officearray;
+}
+
+
+
+function employeegrade2(){
+     $sqloffice = "select employeeGrade_id,employeeGrade_name  from tbl_employeegrades where status ='1' ORDER BY employeeGrade_name ASC";
+	$resoffice =db_query($sqloffice);
+	if($resoffice){
+      $officearray[''] = '--Select--'; 
+	  while($rsoffice = db_fetch_object($resoffice)){
+	    $officearray[$rsoffice->employeeGrade_id] = ucwords($rsoffice->employeeGrade_name);
+	  }
+	}
+	return $officearray;
+}
+
+
+function getemployeegrade2($employeegrade_id)
+{
+$h=db_query("select employeeGrade_name from tbl_employeegrades where employeeGrade_id='".$employeegrade_id."'ORDER BY employeeGrade_name ASC");
+$d=db_fetch_object($h);
+ 
+ return $d->employeeGrade_name;
+
+}
+
+function getCorporationName($corporation_id)
+{
+$h=db_query("select corporation_name from tbl_corporations where corporation_id='".$corporation_id."'ORDER BY corporation_name ASC");
+$d=db_fetch_object($h);
+ 
+ return $d->corporation_name;
+
+}
+
+function getCorporationId($corporation_id)
+{
+$h=db_query("select corporation_id from tbl_corporations where corporation_name='".$corporation_id."'ORDER BY corporation_name ASC");
+$d=db_fetch_object($h);
+ 
+ return $d->corporation_id;
+
+}
+
+function getSchemeName($schemeName_id)
+{
+$h=db_query("select schemeName_name from tbl_schemenames where schemeName_id='".$schemeName_id."'ORDER BY schemeName_name ASC");
+$d=db_fetch_object($h);
+ 
+ return $d->schemeName_name;
+
+}
+
+function getHeadName($vid)
+{
+$h=db_query("select name1 from tbl_headmaster where vid='".$vid."'");
+$d=db_fetch_object($h);
+ 
+ return $d->name1;
+
+}
+
+function getHeadCode($vid)
+{
+$h=db_query("select code from tbl_headmaster where vid='".$vid."'");
+$d=db_fetch_object($h);
+ 
+ return $d->code;
+
+}
+
+function HeadValue()
+{
+$sql=db_query("select vid, name1,code from tbl_headmaster ORDER BY name1 ASC");
+$cat = array(''=>'--Select--'); 
+  while($rs = db_fetch_object($sql)){
+  
+    $cat[$rs->vid] = ucwords($rs->name1).'('.$rs->code.')';
+  }
+  return $cat;
+}
+
+
+function HeadCode()
+{
+$sql=db_query("select vid, code from tbl_headmaster ORDER BY name1 ASC");
+$cat = array(''=>'--Select--'); 
+  while($rs = db_fetch_object($sql)){
+    $cat[$rs->vid] = ucwords($rs->code);
+  }
+  return $cat;
+}
+
+
+function SelectBankName()
+{
+$sql=db_query("select bank_id, bank_name from tbl_bank ORDER BY bank_name ASC");
+$cat = array(''=>'--Select--'); 
+  while($rs = db_fetch_object($sql)){
+    $cat[$rs->bank_id] = ucwords($rs->bank_name);
+  }
+  return $cat;
+}
+
+function selectEmployeeName()
+{
+$sql=db_query("select employee_id, employee_name from tbl_joinings ORDER BY employee_name ASC");
+$cat = array(''=>'--Select--'); 
+  while($rs = db_fetch_object($sql)){
+    $cat[$rs->employee_id] = ucwords($rs->employee_name);
+  }
+  return $cat;
+}
+
+function selectEmployee()
+{
+//$sql=db_query("select employee_id, employee_name from tbl_joinings ORDER BY employee_id ASC");
+$sql=db_query("select employee_id, employee_name from tbl_joinings  INNER JOIN users on (tbl_joinings.program_uid = users.uid) where users.status=1 ORDER BY employee_id ASC");
+$cat = array(''=>'--Select--'); 
+  while($rs = db_fetch_object($sql)){
+    $cat[$rs->employee_id] = $rs->employee_id.'-'.$rs->employee_name;
+  }
+  return $cat;
+}
+
+function staff_category($utilityid){
+  //drupal_set_message($utilityid);
+  $sql = "select utilitystaff_id,utilitystaff_type from tbl_utilitystaff  where utility_id='".$utilityid."' and status=1 ORDER BY utilitystaff_type ASC";
+  $res = db_query($sql);
+  $cat = array(''=>'--Select--'); 
+  while($rs = db_fetch_object($res)){
+    $cat[$rs->utilitystaff_id] = $rs->utilitystaff_type;
+  }
+  return $cat;
+}
+
+function getStaffNoedit($utilitystaff_id,$participant_id){
+   $sql = "select count(utilitystaff_id) as count from tbl_participant_master where utilitystaff_id='".$utilitystaff_id."' and participant_id !='".$participant_id."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->count;
+}
+function getStaffNo($utilitystaff_id){
+  $sql = "select count(utilitystaff_id) as count from tbl_participant_master where utilitystaff_id='".$utilitystaff_id."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->count;
+}
+
+function getStaffNoUtility($utilityid,$staff_category){
+  //drupal_set_message($utilityid);
+  $sql = "select utilitystaff_no as count from tbl_utilitystaff  where utility_id='".$utilityid."' and status=1 and utilitystaff_id='".$staff_category."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->count;
+}
+function getCatNameU($utilitystaff_id){
+  $sql = "select utilitystaff_id,utilitystaff_type from tbl_utilitystaff  where utilitystaff_id='".$utilitystaff_id."' and status=1";
+  $res = db_query($sql);
+  $cat = array(''=>'--Select--'); 
+  $rs = db_fetch_object($res);
+   return  $rs->utilitystaff_type;
+  }
+
+/*
+  function selectCaste(){
+    $sql = "select cast_category_id,cast_category_name from tbl_cast_categories where status=1 ORDER BY cast_category_name ASC";
+	$res = db_query($sql);
+	$caste = array('' => '--Select--');
+	while($rs = db_fetch_object($res)){
+	  $caste[$rs->cast_category_id] = $rs->cast_category_name;
+	}
+	return $caste;
+  }
+*/
+  function getCaste($caste_id){
+    $sql = "select cast_category_name from tbl_cast_categories where cast_category_id='".$caste_id."'";
+	$res = db_query($sql);
+	if($rs = db_fetch_object($res)){
+	 return $rs->cast_category_name;
+	}
+	
+  }
+  
+  
+  function getCastemain($caste_id){
+    $sql = "select cast_name from tbl_cast where cast_id='".$caste_id."'";
+	$res = db_query($sql);
+	if($rs = db_fetch_object($res)){
+	 return $rs->cast_name;
+	}
+	
+  }
+
+
+ function selectbank(){
+  $sqlbank = "select * from tbl_bank where status=1 ORDER BY bank_name ASC";
+	$resbank =db_query($sqlbank);
+	if($resbank){
+      $bankarray[''] = '--Select--'; 
+	  while($rsbank = db_fetch_object($resbank)){
+	    $bankarray[$rsbank->bank_id] = ucwords($rsbank->bank_name);
+	  }
+	}
+	return $bankarray;
+}
+ function inboundAssign(){
+ 
+ 
+$headwa=getLookupName(69);
+ $head=$headwa->lookup_name;
+ 
+ $sqlassign = "SELECT username,employee_id FROM tbl_joinings INNER JOIN tbl_corporations ON tbl_corporations.corporation_id = tbl_joinings.current_officeid AND tbl_corporations.corporation_type = 69 ORDER BY username ASC";
+  //$sqlassign = "select * from users where users.status=1";
+	$resassign =db_query($sqlassign);
+	if($resassign){
+      $assignarray[''] = '--Select--'; 
+	  while($rsassign = db_fetch_object($resassign)){
+	    $assignarray[$rsassign->employee_id] = ucwords($rsassign->username);
+	  }
+	}
+	return $assignarray;
+}
+
+
+ function SelectLoanAccount(){
+  $sqlbank = "select l.loanee_id,l.reg_number from tbl_loanee_detail l,tbl_loan_detail ld where l.reg_number = ld.reg_number AND l.reg_number !='' AND ld.bank_acc_no AND ld.loan_status !=0 AND ld.loan_status !=9 AND ld.loan_status !=15 AND ld.loan_status !=17  ORDER BY l.reg_number ASC";
+	$resbank =db_query($sqlbank);
+	if($resbank){
+      $bankarray[''] = '--Select--'; 
+	  while($rsbank = db_fetch_object($resbank)){
+	    $bankarray[$rsbank->loanee_id] = ucwords($rsbank->reg_number);
+	  }
+	}
+	return $bankarray;
+}
+
+ function SelectLoanAccountcollected(){
+  $sqlbank = "select tbl_fdrcheque.account_no,tbl_loanee_detail.reg_number from tbl_loanee_detail,tbl_fdrcheque,tbl_loan_detail  where
+  tbl_loanee_detail.loanee_id=tbl_fdrcheque.account_no and tbl_fdrcheque.fdr_status=225 and tbl_loan_detail.bank !=0 
+ and tbl_loan_detail.loan_status !=0 and tbl_loan_detail.loan_status !=9 and tbl_loan_detail.loan_status !=15 and tbl_loan_detail.loan_status !=17  ORDER BY tbl_fdrcheque.account_no ASC";
+	$resbank =db_query($sqlbank);
+	if($resbank){
+      $bankarray[''] = '--Select--'; 
+	  while($rsbank = db_fetch_object($resbank)){
+	    $bankarray[$rsbank->account_no] = ucwords($rsbank->reg_number);
+	  }
+	}
+	return $bankarray;
+}
+
+ function getAccountNo($account_no){
+  $sqlbank = "select account_id from tbl_loanee_detail where loanee_id='".$account_no."'";
+  $resbank = db_query($sqlbank);
+  $rsbank = db_fetch_object($resbank);
+  return $rsbank->account_id;
+}
+
+
+function getBankName($bank_id){
+  $sqlbank = "select bank_name from tbl_bank where bank_id='".$bank_id."'ORDER BY bank_name ASC";
+  $resbank = db_query($sqlbank);
+  $rsbank = db_fetch_object($resbank);
+  return $rsbank->bank_name;
+}
+
+function getBankIFSCcode($bankbranch_id){
+  $sqlbank = "select ifsc from tbl_bankbranch where bankbranch_id='".$bankbranch_id."'";
+  $resbank = db_query($sqlbank);
+  $rsbank = db_fetch_object($resbank);
+  return $rsbank->ifsc;
+}
+
+
+function City($city_id){
+  $sqlcity = "select city_name from tbl_cities where city_id='".$city_id."'";
+  $rescity = db_query($sqlcity);
+  $rscity = db_fetch_object($rescity);
+  return $rscity->city_name;
+}
+
+function trainingParticipant($training_detail_id){
+$sqlTraining = "SELECT start_date, end_date FROM tbl_training_details WHERE training_detail_id='".$training_detail_id."' ";
+$restTraining = db_query($sqlTraining);
+$trainingObj = db_fetch_object($restTraining);
+$start_date = $trainingObj->start_date;
+$end_date = $trainingObj->end_date;
+$maxDays = dateDiffByDays("$start_date 0:0:0", "$end_date 23:59:59");
+
+ # count totla participant and their attendance
+ $sqlAttendance = "SELECT * FROM tbl_participant_attendance where program_id='".$training_detail_id."' AND ( day1='on' OR day2='on' OR day3='on' OR day4='on' OR day5='on' OR	day6='on' OR day7='on' OR day8='on' OR day9='on' OR day10='on' OR day11='on' OR day12='on')";
+ $restAttendance = db_query($sqlAttendance);
+ $countParticipant = 0;
+ $countAttendance = 0;
+ $countrparticipant =0;
+ $nop_or_kit =0;
+
+	 while($attendanceObj = db_fetch_object($restAttendance)){
+		if($attendanceObj->participant_id){
+			$countrparticipant++;
+			$countParticipant = $countParticipant+1;
+			
+			if($attendanceObj->day1=='on'){
+				$countAttendance = $countAttendance+1;
+				$nop_or_kit =$nop_or_kit+1;
+			}
+			if($attendanceObj->day2=='on'){
+				$countAttendance = $countAttendance+1;
+			}
+			if($attendanceObj->day3=='on'){
+				$countAttendance = $countAttendance+1;
+			}
+			if($attendanceObj->day4=='on'){
+				$countAttendance = $countAttendance+1;
+			}
+			if($attendanceObj->day5=='on'){
+				$countAttendance = $countAttendance+1;
+			}
+			if($attendanceObj->day6=='on'){
+				$countAttendance = $countAttendance+1;
+			}
+			if($attendanceObj->day7=='on'){
+				$countAttendance = $countAttendance+1;
+			}
+			if($attendanceObj->day8=='on'){
+				$countAttendance = $countAttendance+1;
+			}
+			if($attendanceObj->day9=='on'){
+				$countAttendance = $countAttendance+1;
+			}
+			if($attendanceObj->day10=='on'){
+				$countAttendance = $countAttendance+1;
+			}
+			if($attendanceObj->day11=='on'){
+				$countAttendance = $countAttendance+1;
+			}
+			if($attendanceObj->day12=='on'){
+				$countAttendance = $countAttendance+1;
+			}
+		}
+	 }
+	 
+	 if($countrparticipant > 25 ){
+	 	$countAttendance = $maxDays*25;
+	 }
+	 
+	 return $nop_or_kit.'/'.$countAttendance.'/'.$countrparticipant;
+ }
+ 
+ function TrainingVenue($training_detail_id){
+   	$sqlv = "select tbl_venues.venue_name from tbl_venues INNER JOIN tbl_training_details ON (tbl_training_details.venue_id=tbl_venues.venue_id) where tbl_training_details.training_detail_id='".$training_detail_id."'";
+	$resv = db_query($sqlv);
+	$rsv = db_fetch_object($resv);
+	return $rsv->venue_name;
+ }
+ 
+ function getInvoiceType($invoice_type_id){
+ 	$sqlInvoiceType = "SELECT invoice_type_name FROM tbl_invoice_types WHERE invoice_type_id='$invoice_type_id' ";
+	$restInvoiceType = db_query($sqlInvoiceType);
+	$obj = db_fetch_object($restInvoiceType);
+	$invoice_type_name = $obj->invoice_type_name;
+	return $invoice_type_name;
+}
+
+function getEffectiveCharge($start_date,$end_date){
+  $sql = "SELECT tkitcharge_training_charge,tkitcharge_kit_charge FROM `tbl_tkitcharge` where UNIX_TIMESTAMP(`tkitcharge_effective_date`) between '".strtotime($start_date)."' and '".strtotime($end_date)."'";
+  $res = db_query($sql);
+  if($rs = db_fetch_object($res)){
+     return $rs;
+  }else{
+      $sql = "SELECT tkitcharge_training_charge,tkitcharge_kit_charge FROM `tbl_tkitcharge` where UNIX_TIMESTAMP(`tkitcharge_effective_date`) < '".strtotime($start_date)."'";
+      $res = db_query($sql);
+	  $rs = db_fetch_object($res);
+	  return $rs;
+  }
+  return 0;
+}
+
+
+#number to word conversion
+function convert_number($number) { 
+    if (($number < 0) || ($number > 99999999999)) { 
+    throw new Exception("Number is out of range");
+    } 
+
+    $Tn = floor($number / 100000000);  /* Millions (giga) */ 
+    $number -= $Tn * 100000000; 
+	
+	$Bn = floor($number / 10000000);  /* Millions (giga) */ 
+    $number -= $Bn * 10000000; 
+	
+	$Gn = floor($number / 1000000);  /* Millions (giga) */ 
+    $number -= $Gn * 1000000; 
+    $kn = floor($number / 1000);     /* Thousands (kilo) */ 
+    $number -= $kn * 1000; 
+    $Hn = floor($number / 100);      /* Hundreds (hecto) */ 
+    $number -= $Hn * 100; 
+    $Dn = floor($number / 10);       /* Tens (deca) */ 
+    $n = $number % 10;               /* Ones */ 
+
+    $res = ""; 
+
+   
+	if ($Tn){ 
+        $res .= convert_number($Tn) . " Trillion "; 
+    } 
+	
+	  if ($Bn){ 
+        $res .= convert_number($Bn) . " Billion "; 
+    } 
+	
+	if ($Gn){ 
+        $res .= convert_number($Gn) . " Million "; 
+    } 
+
+    if ($kn) { 
+        $res .= (empty($res) ? "" : " ") . 
+        convert_number($kn) . " Thousand "; 
+    } 
+
+    if ($Hn) { 
+        $res .= (empty($res) ? "" : " ") . 
+        convert_number($Hn) . " Hundred "; 
+    } 
+
+    $ones = array("", "One", "Two", "Three", "Four", "Five", "Six", 
+        "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", 
+        "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eightteen", 
+        "Nineteen"); 
+    $tens = array("", "", "Twenty", "Thirty", "Fourty", "Fifty", "Sixty", 
+        "Seventy", "Eigthy", "Ninety"); 
+
+    if ($Dn || $n){ 
+        if (!empty($res)) { 
+            $res .= " and "; 
+        } 
+
+        if ($Dn < 2){ 
+            $res .= $ones[$Dn * 10 + $n]; 
+        } 
+        else { 
+            $res .= $tens[$Dn]; 
+
+            if ($n) { 
+                $res .= "-" . $ones[$n]; 
+            } 
+        } 
+    } 
+
+    if (empty($res)) { 
+        $res = "zero"; 
+    } 
+    return $res; 
+} 
+
+function findagenda(){
+  $sql = "select tptitle_id,tptitle_name from tbl_training_program_titles where tptitle_status='1' ORDER BY tptitle_name";
+  $res = db_query($sql);
+  $array = array(''=>'--Select--');
+  while($rs = db_fetch_object($res)){
+    $array[$rs->tptitle_id]=$rs->tptitle_name;
+  }
+  return $array;
+}
+
+function AllUtilitise(){
+  $sql = "SELECT utilitycat_id,utilitycat_name from tbl_utilities_details where status='1' ORDER BY utilitycat_name";
+  $res = db_query($sql);
+  $utility = '<option value="">--Select</option>';
+  while($rs  =db_fetch_object($res)){
+  	$utility .= '<option value="'.$rs->utilitycat_id.'">'.substr($rs->utilitycat_name,0,20).'</option>';
+  }
+  return $utility;
+}
+
+function year($yearval){
+
+    $date = date('Y');
+	$year ='<option value="">--Select--</option>';
+	for($i='2010';$i<=$date;$i++){
+		if($i == $yearval){
+		  $year .='<option value="'.$i.'" selected>'.$i.'</option>';
+		}
+		else{
+	      $year .='<option value="'.$i.'">'.$i.'</option>';
+		}
+	}
+	return $year;
+}
+
+
+function AllUtilitiseid($id){
+  $sql = "SELECT utilitycat_id,utilitycat_name from tbl_utilities_details where status='1' ORDER BY utilitycat_name";
+  $res = db_query($sql);
+  $utility = '<option value="">--Select</option>';
+  while($rs  =db_fetch_object($res)){
+    if($id == $rs->utilitycat_id){
+  	  $utility .= '<option value="'.$rs->utilitycat_id.'" selected>'.substr($rs->utilitycat_name,0,20).'</option>';
+    }else{
+	  $utility .= '<option value="'.$rs->utilitycat_id.'">'.substr($rs->utilitycat_name,0,20).'</option>';
+	}
+  }
+  return $utility;
+}
+
+
+function mobilelength($mobile_number,$field_name){
+  if($mobile_number != ''){
+     if(strlen($mobile_number) >15 || strlen($mobile_number) <10){
+	    form_set_error($field_name, t('Mobile No should be 10 to 15 digits.'));
+	 }
+  }
+}
+
+function phonelength($mobile_number,$field_name){
+  if($mobile_number != ''){
+     if(strlen($mobile_number) >15 || strlen($mobile_number) <10){
+	 if ($field_name=='nomineedetails'){
+	 form_set_error($field_name, t('Nominee Phone No. should be between 10 to 15 digits.'));
+	 }else{
+	    form_set_error($field_name, t('Phone No. should be between 10 to 15 digits.'));
+	 }
+	 }
+  }
+}
+
+
+function loanaccountlength($loanaccount,$field_name){
+  if($loanaccount != ''){
+     if(strlen($loanaccount) >15 || strlen($loanaccount) <10){
+	    form_set_error($field_name, t('Loan Account No. should be between 10 to 15 digits.'));
+	 }
+  }
+}
+
+
+
+function selectepmstatus(){
+
+ 	$sqlemp = "select emp_status_id,emp_status_name from tbl_emp_status where status=1 ORDER BY emp_status_name ASC";
+	$resemp = db_query($sqlemp);
+	$emparray = array(''=>'--Select--');
+	if($resemp){
+		
+		while($rsemp = db_fetch_object($resemp)){
+		$emparray[$rsemp->emp_status_id] = $rsemp->emp_status_name; 
+		}
+	}
+	return $emparray;
+}
+
+
+//custom sms sending
+function customsendsms($mob,$sms="Thank you for launching the SMS services to State employees for entitlements. SMS from AG(A&E) HP !"){
+
+//SET VARIABLE VALUE TO THE MOBILE NUMBER TO WHICH YOU WANT TO SEND SMS.
+
+
+$mobile = '91'.$mob;
+
+if (substr($mobile,4)=='9193')
+{
+$phonetype="CDMA";
+}
+$replysms = $sms;
+$request = ""; //initialize the request variable
+$param["username"] = getMessage("smsconfig","username",NULL); //this is the username of your account signup at http://sms.sms2india.info
+
+$param["password"] = getMessage("smsconfig","password",NULL); //this is the password of your account
+
+$param["content"] = $replysms; //this is the message that we want to send
+
+$param["mobileno"] = $mobile; //these are the recipients of the message ALONG WITH 91
+
+$param["senderid"] = getMessage("smsconfig","senderid",NULL);//this is your sender which is approved,
+ 
+$param["smsservicetype"] = getMessage("smsconfig","smsservicetype",NULL); 
+
+if ($phonetype=="CDMA"){
+$param["sender"] = "919860609000";//this is your FIXED sender which is approved
+}
+
+foreach($param as $key=>$val) //traverse through each member of the param array
+{
+	$request.= $key."=".urlencode($val); //we have to urlencode the values
+	$request.= "&"; //append the ampersand (&) sign after each paramter/value pair
+}
+$request = substr($request, 0, strlen($request)-1); //remove the final ampersand sign from the request
+
+//First prepare the info that relates to the connection
+$host = getMessage("smsconfig","host",NULL);
+$script = getMessage("smsconfig","script",NULL);
+$request_length = strlen($request);
+$method = "POST"; // must be POST if sending multiple messages
+if ($method == "GET")
+{
+	$script .= "?$request";
+}
+//Now comes the header which we are going to post.
+$header = "$method $script HTTP/1.1\r\n";
+$header .= "Host: $host\r\n";
+$header .= "Content-Type: application/x-www-form-urlencoded\r\n";
+$header .= "Content-Length: $request_length\r\n";
+$header .= "Connection: close\r\n\r\n";
+$header .= "$request\r\n";
+//Now we open up the connection
+$socket = fsockopen($host, 80, $errno, $errstr);
+if ($socket) //if its open, then...
+{
+fputs($socket, $header); // send the details over
+while(!feof($socket))
+{
+$output[] = fgets($socket); //get the results
+}
+fclose($socket);
+}
+
+//print "<pre>";
+//print_r($output);
+// THE ABOVE CODE WILL PRINT THE RESPONSE FROM SNOWEBS, INCASE YOU WANT TO PRINT REMOVE THE COMMENT STATEMENT
+//print "Sent";
+//print "</pre>";
+
+//END SENDING SMS TO THE USER.
+
+
+}
+
+function get_username($uid,$rid){
+  if($rid == 3){//Program Officer
+  
+  }
+  if($rid == 4 || $rid ==8){ //Nodal Officer  //Course Director
+  }
+  
+  if($rid == 7){//Superadmin
+  
+  }
+  if($rid ==13){//guest
+  
+  }
+  if($rid == 5){ //Faculty
+  
+  }
+
+ //Training Coordinator //Finance User //Senior Program officer //REC Management
+  if($rid ==12 || $rid ==9 || $rid ==14 || $rid ==15){
+  }
+}
+
+function getLanguage($language_id){
+  $sql = "select language_name from tbl_languages where language_id='$language_id'";
+  $rest = db_query($sql);
+  $obj = db_fetch_object($rest);
+  $language_name = $obj->language_name; 
+  return $language_name;
+}
+
+function getTrainingProgramTitle($tptitle_id){
+  $sql = "select tptitle_name from tbl_training_program_titles where tptitle_id='$tptitle_id'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $tptitle_name = $rs->tptitle_name;
+  return $tptitle_name;
+}
+
+function getCourse($course_id){
+  $sql = "select course_name from tbl_courses where course_id='$course_id'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $course_name = ucwords($rs->course_name);
+  return $course_name;
+}
+
+function workingZone(){
+	$sql = "select zone_id,zone_name from tbl_zones where status=1 ORDER BY zone_name ASC";
+	$rest =db_query($sql);
+	$array[''] = '--Select--';
+	$flag =0;
+	while($obj = db_fetch_object($rest)){
+	$flag =1;
+	$array[$obj->zone_id] = ucwords($obj->zone_name);
+	}
+	if($flag == 0){
+		$array[''] = 'No Zone.';
+		return $array;
+	}else{
+		return $array;
+	}	
+} 
+
+function utilityworkingZone($po_working_zone_id){
+	if($po_working_zone_id){
+	$array[''] = array(''=>'--Select--');
+	$sql = "SELECT zone_id,zone_name FROM tbl_zones WHERE zone_id='$po_working_zone_id' AND status=1 ORDER BY zone_name ASC";
+	}else{
+	$array[''] = array(''=>'--Select--');
+	$sql = "SELECT zone_id,zone_name FROM tbl_zones WHERE 1=1 AND status=1 ORDER BY zone_name ASC";
+	}
+	
+	$rest =db_query($sql);
+	$flag =0;
+	while($obj = db_fetch_object($rest)){
+	$flag =1;
+	$array[$obj->zone_id] = ucwords($obj->zone_name);
+	}
+	
+	if($flag == 0){
+		$array[''] = 'No Zone.';
+		return $array;
+	}else{
+		return $array;
+	}	
+} 
+
+function getWorkingZone($working_zone_id){
+  $sql = "select zone_name from tbl_zones where zone_id='$working_zone_id'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $zone_name = ucwords($rs->zone_name);
+  return $zone_name;
+}
+
+function getPoZone($uid){
+	$sql = "select pm.po_working_zone_id, zone.zone_name from tbl_zones AS zone INNER JOIN tbl_program_master AS pm ON pm.po_working_zone_id=zone.zone_id where pm.program_uid='$uid'";
+	
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	return $rs;
+}
+
+function cndParicipantCode($training_detail_id){
+$sql = "SELECT Z.zone_uid, S.state_uid, UD.utilitycat_uid, TRD.trainingdetail_uid
+FROM  tbl_zones Z left outer join tbl_states S on Z.zone_id = S.zone_id
+left outer join tbl_utilities_details UD on S.state_id = UD.state_id
+left outer join tbl_venues V on UD.utilitycat_id = V.utility_id 
+left outer join tbl_training_details TRD on V.venue_id = TRD.venue_id
+where TRD.training_detail_id = '$training_detail_id' ";
+	
+	$res = db_query($sql);
+	$obj = db_fetch_object($res);
+	$zone_uid = $obj->zone_uid;
+	if(strlen($zone_uid)==1){
+		$zone_uid = "0$zone_uid";
+	}else if(strlen($zone_uid)==2){
+		$zone_uid = "$zone_uid";
+	}else{
+		$zone_uid = "00";
+	}
+	
+	$state_uid = $obj->state_uid;
+	if(strlen($state_uid)==1){
+		$state_uid = "0$state_uid";
+	}else if(strlen($state_uid)==2){
+		$state_uid = "$state_uid";
+	}else{
+		$state_uid = "00";
+	}
+	
+	$utility_uid = $obj->utilitycat_uid;
+	if(strlen($utility_uid)==1){
+		$utility_uid = "0$utility_uid";
+	}else if(strlen($utility_uid)==2){
+		$utility_uid = "$utility_uid";
+	}else{
+		$utility_uid = "00";
+	}
+	
+	$training_uid = $obj->trainingdetail_uid;
+	if(strlen($training_uid)==1){
+		$training_uid = "000$training_uid";
+	}else if(strlen($training_uid)==2){
+		$training_uid = "00$training_uid";
+	}
+	else if(strlen($training_uid)==3){
+		$training_uid = "0$training_uid";
+	}
+	else{
+		$training_uid = "0000";
+	}
+	
+	$uid = "C".date("y").$zone_uid.$state_uid.$utility_uid.$training_uid;
+	return $uid;
+}
+
+
+function selectcurrency(){
+$sqlcurrency = "select * from tbl_currencies where status=1 ORDER BY currency_name ASC";
+$rescurrency =db_query($sqlcurrency);
+$currencyarray[''] = '--Select--';
+if($rescurrency){
+
+while($rscurrency = db_fetch_object($rescurrency)){
+
+$currencyarray[$rscurrency->currency_id] = ucwords($rscurrency->currency_name);
+
+}
+
+}
+return $currencyarray;
+} 
+function selectnodalcurrency($utility_id){
+  $sqlcurrency = "select currency_id, currency_name FROM tbl_nodal_currency where utility_id='$utility_id' AND status=1 ORDER BY currency_name ASC";
+
+
+  $rescurrency =db_query($sqlcurrency);
+  $currencyarray[''] = '--Select--';
+  if($rescurrency){
+     while($rscurrency = db_fetch_object($rescurrency)){
+	   $currencyarray[$rscurrency->currency_id] = $rscurrency->currency_name;
+	 }
+  }
+  return $currencyarray;
+} 
+
+ function getcurrency($currencyid){
+    $sqlcurrency = "select * from tbl_currencies where currency_id =$currencyid";
+	$rescurrency = db_query($sqlcurrency);
+	$rscurrency = db_fetch_object($rescurrency);
+	return $rscurrency->currency_name;
+  }
+  function getcurrency2($currencyid){
+    $sqlcurrency = "select * from tbl_nodal_currency where currency_id =$currencyid";
+	$rescurrency = db_query($sqlcurrency);
+	$rscurrency = db_fetch_object($rescurrency);
+	return $rscurrency->currency_name;
+  }
+  
+ function datemore($field_name,$value){
+  if($datenum != ''){
+     if(strtotime($field_name) < strtotime($field_name)){
+	    form_set_error($field_name, t('date more than date from'));
+	 }
+  }
+} 
+  
+function indianRuppee($field_name,$value,$field)
+{
+    $regex = '/^[+\-]?(?:\d+(?:\.\d*)?|\.\d+)$/';
+    if(!$value || !preg_match($regex, "$value"))
+	{
+		form_set_error($field_name,$field.' should be in decimal format ( like 10000.50 ).');
+        return 1;
+	} 
+
+/*	$data=split('[.]',$value);
+
+    if ( count($data) != 2 ){
+		form_set_error($field_name,$field.' should be in decimal format ( like 10000.50 ).');
+        return 1;
+	}
+
+    if ( ctype_digit($data[0]) && ctype_digit($data[1]) && $data[0][0] != '0'){
+		return 0;
+    }else{
+		form_set_error($field_name,$field.' should be in decimal format ( like 10000.50 ).');
+		return 1;
+	}
+*/
+}
+
+function getemail1($moduleName, $errCode){
+global $xpathObj;
+$moduleName = trim($moduleName);
+$errCode = trim($errCode);
+$param = $param;
+$result = $xpathObj->xpath("/message/$moduleName/NodeId[@id='".$errCode."']");
+$errCodeValue =  $result[0]['value'];
+	
+	
+	
+return t("$errCodeValue"); 
+}
+
+//**************** INSERT IN MAIL TABLE *************************
+function createMail($module = '',$to = '',$cc = '',$parameter = '',$attachment = '',$from = '')
+{  
+	global $emailObj,$base_url;
+	$bcc = '';
+	$from_name = '';
+	$to_name = '';
+	if(!$from){
+		$from = variable_get('site_mail',$default);
+	}
+	$fieldstr = "subject, body, emailfrom, emailto, cc, bcc, attachment, from_name, to_name, priority";
+	foreach($emailObj->children() as $node => $child)
+	{
+		
+		if($child[0]['name'] == $module)
+		{
+			foreach($child->children() as $nchild)
+			{
+			  	
+				if($nchild[0]['id'] == 'Body')
+				{
+					$body = $nchild;
+				}
+				if($nchild[0]['id'] == 'Subject')
+				{
+					$subject = $nchild;
+				}
+				if($nchild[0]['id'] == 'Prority')
+				{
+					$priority = $nchild;
+				}
+			}
+			
+			if($parameter)
+			{
+				$parameterarr = json_decode($parameter,true);
+				for($i = 0; $i < count($parameterarr); $i++){
+					$body = str_replace("{".$i."}", $parameterarr[$i], $body);
+				}	
+			}
+
+
+	$body .='<br />Thanks ,<br /> Himachal Pradesh Minority Finance & Development Corporation, Shimla<br />'.l($base_url,$base_url);
+		  
+
+			 $valuestr = "'".db_escape_string($subject)."','".addslashes($body)."','".$from."','".$to."','".$cc."','".$bcc."','".$attachment."','".$from_name."','".$to_name."','".$priority."'";
+			  $sql = "INSERT INTO tbl_email ($fieldstr) VALUES ($valuestr)";
+			if(!db_query($sql)){
+				return 0;
+			}else{
+				return 1;
+            }
+		}
+	}
+}
+//*********************** INSERT IN MAIL TABLE END *****************************
+
+function databaseDateFormat($d,$format,$separator)
+{
+	$darr = explode($separator,$d);
+	if($format == 'indian')
+		return $darr[2].'-'.$darr[1].'-'.$darr[0];
+}
+//*********************** GET EMI FOR AN AMOUNT *****************************
+function getEMI($tenure = '',$roi = '',$amount = '',$subsidy = 0)
+{
+	if($tenure && $roi && $amount)
+	{
+	
+		$n = $tenure;
+		$t = $n/12;
+		$N = $n+1;
+		$N1 = $n*2;
+		$rt = $roi*$t;
+		$round = round($N/$N1,2);
+		$rounda = round($rt/100,2);
+		$int = round($amount*$round*$rounda,2);
+		$year_int = $amount+$int;
+		$year_int_val = $year_int/$n;
+		$emi = round($year_int_val,2);
+	 	return $emi;
+	 }else{
+	 	return 0;
+	 }
+}
+//*********************** GET EMI FOR AN AMOUNT END *****************************
+
+
+function emi_calculator($tenure,$amount,$interest,$subsidy = 0,$loan_id = ''){
+
+
+if($tenure){
+
+
+  $k=0;
+if($k == 0){
+  global $base_url;
+  $p = $amount;
+  $p_orgi = $amount;
+  //$sub = 10000;
+  
+  if($subsidy){
+    $sub =$subsidy;
+  }else{
+    $sub =0;
+  } 
+  
+	$psub_val = ($p-$sub);
+	$r = $interest;
+	$rpayapay = $r/1200;
+  
+  $eminew = ($psub_val*$rpayapay)*pow((1+$rpayapay), $tenure)/(pow((1+$rpayapay),$tenure)-1);
+  
+ 
+
+  $n = $tenure;
+  $t = $n/12;
+  
+  $int=round((($eminew * $n)- $psub_val ),2);
+  $interestfinal = $int;
+  $totalp = ($p_orgi-$sub)+$int;
+  $year_int = ($p-$sub)+$int;
+  $year_int_val = $year_int/$n;
+  
+
+  	
+  $emi_calcal = round($eminew,4);
+ 
+  $emi_cal =  round($eminew,2);
+	if($loan_id)
+	{
+		$ldetail = "SELECT loan_disburse_date FROM tbl_loan_detail WHERE loan_id = '".$loan_id."'";
+		$lres = db_query($ldetail);
+		$ld = db_fetch_object($lres);
+		$datearr = explode('-',$ld->loan_disburse_date);
+		$cyear = intval($datearr[0]);
+		$cmonth = intval($datearr[1]);
+	}
+  for($k=1;$k<=$n;$k++){
+     
+   
+	     $p_rate = round($psub_val*$r,4);
+		 //$p_rate = $psub_val*$r;
+	    // $psub_div = 12*100;
+		 $psub_div = 12*100;
+	   $p_orval = round(($p_rate/$psub_div),4);
+	   $p_orvald = round(($p_rate/$psub_div),2);
+		// $p_orval = $p_rate/$psub_div;
+	 
+	
+	   $bachat_khata = round($emi_calcal-$p_orval,4);
+	   $bachat_khatad = round($emi_calcal-$p_orval,2);
+	 //$bachat_khata = $emi_cal-$p_orval;
+	 $p_new  = round($psub_val-$bachat_khata,4);
+	 // $p_new  = $psub_val-$bachat_khata;
+	  $p = $p_new;
+	 $psub_val = round($p_new,4);
+	 $psub_vald = round($p_new,2);
+	  //$psub_val = $p_new;
+	  if($k == $n){
+	    $psub_vald = 0.00;
+	 }
+	if($loan_id)
+	{
+		if($cmonth == 12)
+		{
+			$cmonth = 1;
+			$cyear = $cyear + 1;
+		}else{
+			$cmonth++;
+		}
+		$sql = "INSERT INTO tbl_loan_emi_schedule(loan_id,month,year,principal,interest,ending_balance) VALUES($loan_id,'".$cmonth."','".$cyear."','".$bachat_khatad."','".$p_orvald."','".$psub_vald."')";
+		//echo $cyear."==".$cmonth."=====".$sql;exit;
+		if(!db_query($sql))
+			$er = 1;
+	}else{
+		$valout .='<tr><td>'.$k.'</td><td>'.$emi_cal.'</td><td>'.$p_orvald .'</td><td>'.$bachat_khatad .'</td><td>'.$psub_vald.'</td></tr>';
+	}
+  }
+  
+}
+if($loan_id)
+{
+	if(isset($er))
+		return 1;
+	else
+		return 0;
+}
+  
+//}
+}
+$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Calculate EMI', 'emi_cal');
+	drupal_set_breadcrumb($breadcrumb);
+ global $base_url;
+
+
+$s6selectd = "";
+$s12selectd ="";
+$s18selectd ="";
+$s24selectd ="";
+$s30selectd ="";
+$s36selectd ="";
+$s42selectd ="";
+$s48selectd ="";
+$s54selectd ="";
+$s60selectd ="";
+
+
+$s66selectd = "";
+$s72selectd ="";
+$s78selectd ="";
+$s84selectd ="";
+$s90selectd ="";
+$s96selectd ="";
+$s102selectd ="";
+$s108selectd ="";
+$s114selectd ="";
+$s120selectd ="";
+
+
+if($tenure == '6'){
+  $s6selectd = "selected";
+}
+if($tenure == '12'){
+  $s12selectd = "selected";
+}
+if($tenure == '18'){
+  $s18selectd = "selected";
+}
+if($tenure == '24'){
+  $s24selectd = "selected";
+}
+if($tenure == '30'){
+  $s30selectd = "selected";
+}
+if($tenure == '36'){
+  $s36selectd = "selected";
+}
+
+if($tenure == '42'){
+  $s42selectd = "selected";
+}
+if($tenure == '48'){
+  $s40selectd = "selected";
+}
+if($tenure == '54'){
+  $s54selectd = "selected";
+}
+if($tenure == '60'){
+  $s60selectd = "selected";
+}
+
+
+if($tenure == '66'){
+  $s66selectd = "selected";
+}
+if($tenure == '72'){
+  $s72selectd = "selected";
+}
+if($tenure == '78'){
+  $s78selectd = "selected";
+}
+if($tenure == '84'){
+  $s84selectd = "selected";
+}
+if($tenure == '90'){
+  $s90selectd = "selected";
+}
+if($tenure == '96'){
+  $s96selectd = "selected";
+}
+
+if($tenure == '102'){
+  $s102selectd = "selected";
+}
+if($tenure == '108'){
+  $s108selectd = "selected";
+}
+if($tenure == '114'){
+  $s114selectd = "selected";
+}
+if($tenure == '120'){
+  $s120selectd = "selected";
+}
+
+
+//echo $s60selectd;exit;
+
+$output .='
+<!-- generate table -->
+<div id="emi-generatetable">
+
+';
+
+//&interest=$_REQUEST['interest']&tenuare=$_REQUEST['tenuare']&subsidy=$_REQUEST['subsidy']
+$interest =$interest;
+$tenuare = $tenure;
+$subsidy = $subsidy; 
+if($subsidy){
+ }else{
+   $subsidy=0;
+ }
+$pdfurl = $base_url."/emicalpdf.php?op=emical&loan_amount=$p_orgi&interest=$interest&tenuare=$tenuare&subsidy=$subsidy";
+$pdfimage = $base_url.'/'.drupal_get_path('theme','scst')."/images/pdf_icon.gif";
+
+if($interest != ''){
+$output .='<table width="100%" border="0" cellspacing="2" cellpadding="1" style="clear:both;">
+  <tr>
+ <td align="left"><h1>Amortization - Table Monthly View</h1></td>
+ <td align="right">
+	<a target="_blank" href="'.$pdfurl.'"><img style="float:right;" src="'.$pdfimage.'" alt="Export to PDF" title="Export to PDF" /></a></td></tr>	
+	</table>';
+
+
+
+$output .='<table width="100%" border="0" cellspacing="2" cellpadding="1">  
+  <tr>
+    <th>Month</th>
+    <th>EMI</th>
+    <th>Interest</th>
+    <th>Principal</th>
+    <th>Ending Balance</th>
+  </tr>';
+ $output .= $valout;
+$output .='</table>';
+
+}
+$output .='</div>
+<!-- generate table end-->
+<br/>
+
+</div>';
+
+
+
+return $output;
+
+ 
+
+ //submition here
+
+ 
+  
+
+
+
+
+ 
+ 
+  
+}
+//GET CORPORATION BRANCH FROM USER ID
+function getCorporationBranch($uid)
+{
+	 $sql = "SELECT j.current_officeid,c.corporation_type FROM tbl_joinings j, users u,tbl_corporations c WHERE u.uid = j.program_uid AND j.current_officeid = c.corporation_id AND u.uid = '".$uid."'";
+	$res = db_query($sql);
+	$branchrow = db_fetch_object($res);
+
+	//if($branchrow->current_officeid && ($branchrow->corporation_type == 69))
+		//return 12;
+	if($branchrow->current_officeid)
+		return $branchrow->current_officeid;
+	else
+		return 0;
+}
+function addInterest($accountnum = '')
+{
+	if(!$accountnum)
+		return 0;
+	db_query('START TRANSACTION');
+	db_query('BEGIN');
+	$sql = "SELECT ld.loan_id,ld.loan_requirement,sm.tenure,ld.ROI,l.account_id,l.fname, l.lname,ld.o_principal,ld.last_interest_calculated FROM tbl_loan_detail ld,tbl_loanee_detail l, tbl_scheme_master sm WHERE ld.reg_number = l.reg_number AND ld.scheme_name = sm.loan_scheme_id AND l.account_id = '".$accountnum."'";
+	$res = db_query($sql);
+	$l = db_fetch_object($res);
+	$ROI = $l->ROI;
+	$o_balance = $l->o_principal;
+	$days = dateDiffByDays($l->last_interest_calculated,date("Y-m-d"));
+	$interest = round(($o_balance * $ROI * $days)/36500,2);
+	$sql = "INSERT INTO tbl_loan_interestld (account_id,type,amount,calculation_date) VALUES ('".$_POST['account']."','interest','".$interest."',now())";
+	if(!db_query($sql))
+		$inserterror = 1;
+	$sql = "UPDATE tbl_loan_detail SET o_interest = o_interest + ".$interest.", last_interest_calculated = now() WHERE loan_id = ".$l->loan_id;
+	if(!db_query($sql))
+		$inserterror = 1;
+	if($inserterror)
+	{
+		db_query('ROLLBACK');
+		return "error";
+	}else{
+		db_query('COMMIT');
+		$query = "SELECT ld.* FROM tbl_loanee_detail l,tbl_loan_detail ld WHERE ld.reg_number = l.reg_number AND l.account_id = '".$accountnum."'"; 
+		$res = db_query($query);
+		$loan = db_fetch_object($res);
+		$totalpay = $loan->o_principal + $loan->o_other_charges + $loan->o_LD + $loan->o_interest;
+		return "Calculated Interest : $interest, Total Outstanding Interest : $loan->o_interest, Total Outstanding LD : $loan->o_LD, Total Outstanding Other Charges : $loan->o_other_charges, Total Outstanding Pricipal : $loan->o_principal, Total Amount to Pay : $totalpay";
+	}
+	
+}
+function voucherentry($trid = '',$accountid = '',$entrytype = '',$amount = '',$GLcode = '',$bank = '',$vtype = '')
+{
+	global $user;
+	$insert_statement = "INSERT INTO tbl_pendingvouchers (account_id,amount,bank,vtype,entrytype,transactionid,GLaccount_code,createdby,createdon) VALUES ('".db_escape_string($accountid)."','".$amount."','".$bank."','".$vtype."','".$entrytype."','".$trid."','".$GLcode."','".$user->uid."','".time()."')";
+	if(!db_query($insert_statement))
+		return 0;
+	else
+		return 1;
+}
+function getLoanSanctionedAmount($loanid = '')
+{
+	if(!$loanid)
+		return 0;
+    $sql = "SELECT loan_requirement FROM tbl_loan_detail WHERE loan_id = '".$loanid."'";
+    $res = db_query($sql);
+    $loan = db_fetch_object($res);
+	return $loan->loan_requirement;
+}
+function getLoanDetail($loanid = '',$notable = '',$docket = '')
+{
+	if(!$loanid && !$docket)
+    	return 0;
+	$cond = " AND ld.loan_id = '".$loanid."'";
+	if($docket)
+		$cond = " AND ld.loan_docket = '".$docket."'";
+        
+    $sql = "SELECT ld.*,ld.ROI as lroi,sm.scheme_name as scheme,sm.loan_type,l.*,l.reg_number as registration_number FROM tbl_loan_detail ld, tbl_scheme_master sm,tbl_loanee_detail l WHERE ld.scheme_name = sm.loan_scheme_id AND l.reg_number = ld.reg_number $cond";
+    $res = db_query($sql);
+    $loan = db_fetch_object($res);
+	$place = ($loan->work_place)?ucwords($loan->work_place):'N/A';
+	if($notable)
+	{
+		$name = $loan->fname.' '.$loan->lname;
+		$address = $loan->addressline1.' '.$loan->addressline2;
+		$scheme = ucwords($loan->scheme);
+		$amount = $loan->loan_requirement;
+		$mobile = $loan->mobile;
+		$roi = $loan->lroi;
+		$reg_number = $loan->registration_number;
+		$loan_type = $loan->loan_type;
+		$bank = $loan->bank;
+		$bank_branch = $loan->bank_branch;
+		$email = $loan->email;
+		return serialize(array("$address","$scheme","$amount","$roi","$name","$mobile","$reg_number","$loan_type","$bank","$bank_branch","$email"));
+	}else{
+		$output = '
+		
+		<table width="100%" cellpadding="2" cellspacing="1" border="0" id="wrapper2">
+		<tr class="oddrow">
+		
+			<td align="center" colspan=4><h2>Loan Detail</h2></td>   
+		
+		</tr>
+		<tr class="evenrow">
+			<td width="25%">Scheme: </td><td class="normal" width="25%">
+				'.ucwords($loan->scheme).'
+				<div id="allshareid">
+			</td>
+			<td>Loan Amount: </td><td class="normal">
+			'.round($loan->loan_requirement).'</td>
+		</tr>
+		<tr class="oddrow">
+			<td width="25%">Applicant Name:</td><td class="normal" width="25%" >
+				'.ucwords($loan->fname.' '.$loan->lname).'
+			</td>
+			<td width="25%">Place of Work:</td><td class="normal" width="25%">
+				'.ucwords($place).'</td>
+		</tr>
+		</table>
+		
+		';
+
+return $output;
+	}
+}
+function getRegNumber($loanid)
+{
+	$query = "SELECT ld.reg_number FROM tbl_loan_detail ld WHERE ld.loan_id = '".$loanid."'"; 
+	$res = db_query($query);
+	$loanid = db_fetch_object($res);
+	return $loanid->reg_number;
+}
+function getRegNumberByLonee($loaneeid)
+{
+	$query = "SELECT l.reg_number FROM tbl_loanee_detail l WHERE l.loanee_id = '".$loaneeid."'"; 
+	$res = db_query($query);
+	$loanid = db_fetch_object($res);
+	return $loanid->reg_number;
+}
+function getLoanId($accountid)
+{
+	$query = "SELECT ld.loan_id,ld.loan_docket FROM tbl_loanee_detail l,tbl_loan_detail ld WHERE ld.reg_number = l.reg_number AND l.account_id = '".$accountid."'"; 
+	$res = db_query($query);
+	$loanid = db_fetch_object($res);
+
+	return $loanid->loan_id;
+}
+function getLoanIdDocket($docket)
+{
+	$query = "SELECT ld.loan_id,l.account_id FROM tbl_loanee_detail l,tbl_loan_detail ld WHERE ld.reg_number = l.reg_number AND ld.loan_docket = '".$docket."'"; 
+	$res = db_query($query);
+	$loanid = db_fetch_object($res);
+	return $loanid->loan_id;
+}
+function isEmpty($field_name,$value,$field)
+{
+	if(empty($value))
+	{
+	  form_set_error($field_name,$field.' field is required.');
+	  return 1;
+	}
+	return 0;
+}
+
+
+function leavelist(){
+
+ //$sqlcurrency = "select leave_id, leave_name FROM tbl_leavetype where tbl_leavetype.status=1 AND leave_id IN(select leavetype_name from tbl_leaveallocation where status=1)  ORDER BY leave_name ASC";
+$sqlcurrency="select leave_id, leave_name FROM tbl_leavetype where status=1 ORDER BY leave_name ASC";
+
+  $rescurrency =db_query($sqlcurrency);
+  $currencyarray[''] = '--Select--';
+  if($rescurrency){
+     while($rscurrency = db_fetch_object($rescurrency)){
+	   $currencyarray[$rscurrency->leave_id] = ucwords($rscurrency->leave_name);
+	 }
+  }
+  return $currencyarray;
+
+}
+
+function isLoanSanctioned($loan_id)
+{
+	$sql = "SELECT sanction_date FROM tbl_loan_detail WHERE loan_id = '".$loan_id."' LIMIT 1";
+	$res = db_query($sql);
+	$l = db_fetch_object($res);
+	if($l->sanction_date != '0000-00-00')
+		return 1;
+	else
+		return 0;
+}
+function getSanctionedDate($loan_id)
+{
+	$sql = "SELECT sanction_date FROM tbl_loan_detail WHERE loan_id = '".$loan_id."' LIMIT 1";
+	$res = db_query($sql);
+	$l = db_fetch_object($res);
+	if($l->sanction_date != '0000-00-00')
+		return $l->sanction_date;
+	else
+		return 0;
+}
+function getDisbursedDate($loan_id)
+{
+	$sql = "SELECT loan_disburse_date FROM tbl_loan_detail WHERE loan_id = '".$loan_id."' LIMIT 1";
+	$res = db_query($sql);
+	$l = db_fetch_object($res);
+	if($l->loan_disburse_date != '0000-00-00')
+		return $l->loan_disburse_date;
+	else
+		return 0;
+}
+function isLoanDisbursed($loanee_id)
+{
+	$sql = "SELECT amount FROM tbl_loan_disbursement WHERE loanee_id = '".$loanee_id."' LIMIT 1";
+	$res = db_query($sql);
+	$d = db_fetch_object($res);
+	if($d->amount)
+		return 1;
+	else
+		return 0;
+}
+//
+function getMonthDropdown($selectedmonth = '')
+{
+	$current_month = ($selectedmonth)?$selectedmonth:strftime("%m");
+	
+	$output =  "<select name='month'>";
+	for ($i = 1; $i < 13 && $m = strftime('%B', mktime(0,0,0,$i)); $i++) {
+		if ($i == $current_month) {
+			$output .=  "<option selected='selected' value='".$i."'>$m</option>\n";
+		} else {
+			$output .=  "<option value='".$i."'>$m</option>\n";
+		}
+	}	
+	$output .=  "</select>";
+	return $output;
+}
+function getYearDropdown($year = 0,$selectedyear = 0)
+{
+	$current_year = ($selectedyear)?$selectedyear:date("Y");
+	$output = "<select name='year'>";
+	for ($i = $year - 50; $i <= $year; $i++) {
+		if ($i == $current_year) {
+			$output .=  "<option selected='selected' value='".$i."'>$i</option>\n";
+		} else {
+			$output .=  "<option value='".$i."'>$i</option>\n";
+		}
+	}	
+	$output .=  "</select>";
+	return $output;
+}
+
+
+function getDistrictDropdown($d = '')
+{
+	$output = '';
+	$sql = "SELECT district_id,district_name FROM tbl_district WHERE status = 1 ORDER BY district_name";
+	$res = db_query($sql);
+	while($row = db_fetch_object($res))
+	{
+		if($d == $row->district_id)
+			$output .= '<option value="'.$row->district_id.'" selected="selected">'.ucwords($row->district_name).'</option>';
+		else
+			$output .= '<option value="'.$row->district_id.'">'.ucwords($row->district_name).'</option>';
+	}
+	return $output;
+}
+
+function getuidtoempID($uid){
+$sql ="select employee_id from tbl_joinings where program_uid = '".$uid."'";
+$res =db_query($sql);
+$rs = db_fetch_object($res);
+return $rs->employee_id;
+
+}
+function empname($empid){
+$sql = "select * from tbl_joinings where employee_id = '".$empid."'";
+$res = db_query($sql);
+
+$rs = db_fetch_object($res);
+	return $rs->employee_name;
+	}
+function getUidtoEmployeeName($uid){
+	$sql = "select employee_name from tbl_joinings where program_uid = '".$uid."'";
+	$res = db_query($sql);
+
+	$rs = db_fetch_object($res);
+		return $rs->employee_name;
+}
+function getUidtoMobile($uid){
+	$sql = "select mobile from tbl_joinings where program_uid = '".$uid."'";
+	$res = db_query($sql);
+
+	$rs = db_fetch_object($res);
+		return $rs->mobile;
+}
+
+function getempidtouid($empid){
+	$sql = "select program_uid from tbl_joinings where employee_id = '".$empid."'";
+	$res = db_query($sql);
+
+	$rs = db_fetch_object($res);
+		return $rs->program_uid;
+}
+function employeeHOD($uid){
+
+ $sql = "select tbl_joinings.current_Departmentid as current_Departmentid,  tbl_joinings.employee_id,current_officeid from tbl_joinings where tbl_joinings.program_uid='".$uid."'";
+$res = db_query($sql);
+$rs= db_fetch_object($res);
+ $offic = $rs->current_Departmentid;
+
+   $hsql = "SELECT DISTINCT program_uid as program_uid
+FROM tbl_joinings
+WHERE current_Departmentid ='".$offic."' AND current_officeid = '".$rs->current_officeid."'";
+	$hres = db_query($hsql);
+	while($hrs = db_fetch_object($hres)){
+     //if(getRole($hrs->program_uid) == 13 ||getRole($hrs->program_uid) == 18 || getRole($hrs->program_uid) == 5){
+		if(getRole($hrs->program_uid) == 13){
+		 $uidlist = $hrs->program_uid;
+		}
+	
+	}
+return $uidlist;
+
+
+}
+//function createTask($level = '',$doc_id = '',$comment = '',$uid = '',$assignedbyuid = '',$Is_escalation = '',$writ_level = '')
+function createTask($level = '',$doc_id = '',$comment = '',$uid = '',$assignedbyuid = '',$Is_escalation = '',$writ_level = '')
+{
+	$tasksql = "INSERT INTO tbl_workflow_task (level, doc_id, comment, uid, assignedbyuid, Is_escalation, writ_level) VALUES ($level,$doc_id, '".$comment."','".$uid."','".$assignedbyuid."','".$Is_escalation."','".$writ_level."')";
+	if(!db_query($tasksql))
+		return 1;
+	else
+		return 0;
+}
+function updateTask($taskid = '')
+{
+	$taskupdatesql = "UPDATE tbl_workflow_task SET status = 1 WHERE task_id = '".$taskid."'";
+	if(!db_query($taskupdatesql))
+		return 1;
+	else
+		return 0;
+}
+
+function validTask($level,$docket='',$taskid='')
+{
+	$task = 0;
+	if(!$taskid)
+	{
+		$sql = "SELECT task_id FROM tbl_workflow_task WHERE doc_id = $docket AND status = 0 AND level = $level";
+		$res = db_query($sql);
+		$st = db_fetch_object($res);
+	}
+	if($taskid)
+	{
+		$sql = "SELECT * FROM tbl_workflow_task WHERE task_id = $taskid LIMIT 1";
+		$res = db_query($sql);
+		$t = db_fetch_object($res);
+		$task = $t->status;
+	}
+	if($taskid && $task)
+		return 0;
+	if(!$taskid && $st->task_id)
+		return 0;
+	return 1;
+
+}
+
+function emi_calculation($total_term_loan,$roi,$tenure_period){
+    $no_of_quaters = ($tenure_period/12)*4;
+    //echo 'Total Number of Quarters in '.$tenure_period.' months = '.$no_of_quaters.'<br>';
+    
+    $principal_value = round($total_term_loan/$no_of_quaters);
+    
+    $interest_paid_value = round(($principal_value)*(($no_of_quaters + 1)/(2*$no_of_quaters))*($roi/$no_of_quaters));
+    //echo 'Interest to Paid = '.$interest_paid_value.'<br>';
+    
+    $quaterly_paid = round($principal_value + $interest_paid_value);
+    //echo 'Total Quaterly Paid amount = '.$quaterly_paid.'<br>';
+    
+    $emi_value = round($quaterly_paid/3);
+    //echo 'Total Emi Value = '.$emi_value.'<br>';
+    
+    return $emi_value;
+    
+}
+//9045539720
+
+function generate_accountno($short_code,$dist_uid){
+    //initializing counter varialbles of all districts.
+    /* @var $counter type */
+   
+    switch($short_code){
+        case 'BIL': 
+                    $accountno = 'B-'.$dist_uid;
+                    return $accountno;
+                    break;
+        
+        case 'CHA': 
+                    $accountno = 'C-'.$dist_uid;
+                    return $accountno;
+                    break;
+        
+        case 'HAM': 
+                    $accountno = 'H-'.$dist_uid;
+                    return $accountno;
+                    break;
+                
+        case 'KAN': 
+                    $accountno = 'K-'.$dist_uid;
+                    return $accountno;
+                    break;
+                
+        case 'KUL':
+                    $accountno = 'L-'.$dist_uid;
+                    return $accountno;
+                    break;
+         
+        case 'MAN': 
+                    $accountno = 'M-'.$dist_uid;
+                    return $accountno;
+                    break;
+        
+        case 'SHI': 
+                    $accountno = 'S-'.$dist_uid;
+                    return $accountno;
+                    break;
+                
+        case 'SIR': 
+                    $accountno = 'N-'.$dist_uid;
+                    return $accountno;
+                    break;
+                
+        case 'SOL': 
+                    $accountno = 'O-'.$dist_uid;
+                    return $accountno;
+                    break;
+        
+        case 'UNA': 
+                    $accountno = 'U-'.$dist_uid;
+                    return $accountno;
+                    break;
+        }
+    
+}

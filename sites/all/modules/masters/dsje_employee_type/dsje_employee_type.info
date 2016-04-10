@@ -1,0 +1,6 @@
+;$id 
+name = "dsje_employee_type"
+description ="Employee Type Master"
+core = 6.x
+version =6.x-1
+package="Dsje Masters"

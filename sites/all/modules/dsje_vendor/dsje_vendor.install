@@ -1,0 +1,189 @@
+<?php
+function dsje_vendor_schema() {
+
+  //nodal table
+   $schema['tbl_vendor'] = array(
+							 'fields' => array(
+											   
+                                               
+                                          'vendor_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											 
+										     'employee_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											
+											   'gender' => array(
+															  'type' => 'varchar',
+															  'length' => '20',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                               'dob' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                           
+															   'add_type' => array(
+															  'type' => 'varchar',
+															  'length' => '20',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+                                            'add_line1' => array(
+															  'type' => 'varchar',
+															  'length' => '25',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															   'add_line2' => array(
+															  'type' => 'varchar',
+															  'length' => '25',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                            
+
+                                          'state_id' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										 'district_id' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 'tehsil_id' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															   'block' => array(
+															  'type' => 'varchar',
+															  'length' => '20',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															   'panchayat' => array(
+															  'type' => 'varchar',
+															  'length' => '20',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                           
+                                            'pincode' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                          
+                                             'mobile' => array(
+															  'type' => 'varchar',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'phone' => array(
+															  'type' => 'varchar',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+		                                      'email' => array(
+															  'type' => 'varchar',
+															  'length' => '40',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                              
+											
+																										  
+											   'password' => array(
+															  'type' => 'varchar',
+															  'length' => '60',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'statusnodal' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												'status2' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+                                                'username' => array(
+															  'type' => 'varchar',
+															  'length' => '60',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+                                                   'program_uid' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' =>0,
+															  ),
+											   ),
+									
+							 'indexes' => array(
+												'vendor_id' => array('vendor_id'),
+												),
+							 'primary key' => array('vendor_id'),
+							 
+							 );
+	return $schema;
+}
+function dsje_vendor_install() {
+	drupal_install_schema('dsje_vendor');
+}
+
+function dsje_vendor_uninstall() {
+	drupal_uninstall_schema('dsje_vendor');
+}

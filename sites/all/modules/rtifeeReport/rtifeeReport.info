@@ -1,0 +1,6 @@
+;$id 16/11/2011 Md Hafizor Rahman
+name = "RTI Fee Reports"
+description ="RTI Fee Reports"
+core = 6.x
+version =6.x-1
+package="RTI Fee Reports"

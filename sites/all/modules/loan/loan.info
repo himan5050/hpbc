@@ -1,0 +1,8 @@
+;$id 
+name = "dsje_loan"
+description = "Allows site admins to manage the loan section."
+package = Administration
+
+; Information added by drupal.org packaging script on 2007-01-20
+
+core = 6.x

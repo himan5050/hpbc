@@ -1,0 +1,124 @@
+<?php
+
+
+function searchcontent_init() {
+	drupal_add_js(drupal_get_path('module', 'searchcontent') .'/searchcontent.js');
+	drupal_add_css(drupal_get_path('module', 'searchcontent') .'/searchcontent.css');
+
+	
+}
+
+
+function searchcontent_block($op = 'list', $delta = 0) {
+  $block = array();
+  switch ($op) {
+    case 'list':
+      $block[0]['info'] = t('Content Search Block');
+      return $block;
+    case 'view':
+      switch ($delta) {
+        case 0: 
+          $block['subject'] = t('Search Block');
+          $block['content'] = drupal_get_form('csearch_form');
+          break;
+              }
+      return $block;
+  }
+} 
+
+function searchcontent_menu(){
+
+$items['search-content-list/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'searchlistcontent',
+	'page arguments' => array(1),
+	'access arguments' => array('administer searchcontent'),
+);
+
+
+return $items;
+
+}
+
+function csearch_form(){
+
+$form['search_box']=array(
+'#type' => 'textfield',
+'#title' => '',
+'#required' => TRUE,
+'#size' => 20,
+
+);
+
+$form['search'] = array(
+'#type' => 'submit',
+	'#value' =>t('search'),
+	
+);
+return $form;
+}
+
+function csearch_form_submit($form, &$form_state){
+
+
+$keydata = $form_state['values']['search_box'];
+drupal_goto('search-content-list/'.$keydata);
+
+}
+
+
+function searchlistcontent($keydata){
+
+
+$output ='<div id="lestednews">'; 
+$output .= drupal_get_form('csearch_form');
+
+
+
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);	 
+
+
+ $sql = "select tbl_upload_document.title as dtitle,tbl_upload_document.discription as ddesciption,tbl_upload_document.keywords as keywords,tbl_upload_document.dateofupload as dupload,
+node.nid AS nid, node.title AS node_title, node.created AS node_created,node_revisions.body AS body ,node_revisions.nid as rnid from node LEFT JOIN tbl_upload_document ON(node.nid=tbl_upload_document.nid)
+LEFT JOIN node_revisions ON ( node.nid = node_revisions.nid) 
+WHERE node.type in ('documentUpload', 'application_forms', 'cast', 'latestnews', 'list_scst', 'page', 'scheduled', 'scheme_name', 'story', 'welcome') AND
+(node.title LIKE '".$val."' OR node_revisions.body LIKE '".$val."' OR tbl_upload_document.title LIKE '".$val."' OR tbl_upload_document.keywords LIKE '".$val."' ) ORDER BY node_created DESC";
+
+//$res = db_query($sql);
+$count_query = "SELECT COUNT(*) FROM (" . $sql . ") AS count_query";
+
+$result = pager_query($sql, 10, 0, $count_query);
+$output .='<div id="contdiv">'; 
+	  while($rs = db_fetch_object($result)){
+
+		   
+		  $nodden = node_load($rs->nid);
+		  if($nodden->type == 'documentUpload'){
+			  $output .='<div class="newses">';
+			  $output .='<h2>'.l($rs->dtitle,'view-upload-document/'.$rs->nid).'</h2>';
+			  $output .= '<span>Posted Date: '.date("d-m-Y",$rs->dupload).'</span>';
+			  $output .= '<p>'.substr(strip_tags($rs->ddesciption),0,300).'....</p>';
+			  $output .='</div>';
+		  }
+		  else{
+			  $output .='<div class="newses">';
+			  $output .='<h2>'.l($rs->node_title,'node/'.$rs->nid).'</h2>';
+			  $output .= '<span>Posted Date: '.date("d-m-Y",$rs->node_created).'</span>';
+			  $output .= '<p>'.substr(strip_tags($rs->body),0,300).'....</p>';
+			  $output .='</div>';
+		  }
+
+		//echo '<pre>';
+		//print_r($nodden);
+		//exit;
+	  }
+
+
+	$output .=theme('pager', NULL, 20,0 );
+$output .='</div>'; 
+  $output .='</div>'; 
+ 
+	return $output;
+  }
+

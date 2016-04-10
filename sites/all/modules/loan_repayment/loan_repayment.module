@@ -1,0 +1,393 @@
+<?php
+
+function loan_repayment_init() {
+	//drupal_add_css(drupal_get_path('module', 'loan_repayment') .'/loan_repayment.css');
+	drupal_add_js(drupal_get_path('module', 'loan_repayment') .'/loan_repayment.js');
+}
+
+
+function loan_repayment_perm() {
+	return array('edit loan_repayment','administer loan_repayment', 'create loan_repayment', 'view loan_repayment');
+}
+
+function loan_repayment_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit loan_repayment', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create loan_repayment', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view loan_repayment', $account);
+	}
+	
+}
+
+function loan_repayment_menu() {
+
+ 
+	  
+	  
+$items['create_loanrepayment'] = array(
+	'title' => 'LokMitra - Loan Re Payment Collection form',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'create_loanrepayment',
+	'access arguments' => array('administer loan_repayment'),
+	
+    
+);					  
+	  
+$items['viewloanrepayment/%'] = array(
+								'title' => t('view Lokmitra'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_loanrepayment',
+								'page arguments' => array(1),
+								'access arguments' => array('administer dsje_lokmitra'),
+		                        
+						);
+
+									  
+									  
+	
+
+	return $items;
+}
+ 
+
+
+
+
+function create_loanrepayment(){
+  return drupal_get_form('loanrepayment_form');
+}
+
+function loanrepayment_form(){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('LokMitra - Loan Re Payment Collection form', 'create_loanrepayment');
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	$sqlcorporation1 = "select * from tbl_loanee_detail inner join tbl_loan_detail on(tbl_loan_detail.reg_number=tbl_loanee_detail.reg_number) where tbl_loan_detail.loan_status!= 0 order by tbl_loanee_detail.account_id desc";
+   $rescorporation1 = db_query($sqlcorporation1);
+   if($rescorporation1){
+ //$corporation1['']=array(''=>t('--Select--'));
+ //$corporation1 = array();
+   $corporation1 = array(''=>'Select');
+ 
+    while($rscorporation1 = db_fetch_object($rescorporation1)){
+     
+	 if($rscorporation1->account_id){
+	 $corporation1[$rscorporation1->account_id] = $rscorporation1->account_id;
+	 }
+	 
+   }
+   }
+ //  print_r($corporation1);exit;
+  
+   $form['loan_account'] = array(
+						   '#type' => 'select',
+						   '#title' => t('Loan Account No.'),
+						   '#required' => TRUE,
+						   //'#default_value' => $node->account_id,
+						   '#options'  => $corporation1,
+						   '#attributes' => array('onchange'=> 'return showloaneename(this.value,"'.$base_url.'")'),
+						   );
+	
+	$form['loanee_name'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('Loanee Name'),
+						   '#required' => TRUE,
+						    '#default_value' => '',
+						   '#options'  => $corporation,
+						    '#attributes' => array('readonly'=> 'readonly'),
+						   
+						   );							 
+							 
+		$form['loanee_address'] = array(
+						   '#type' => 'textarea',
+						   '#title' => t('Address'),
+						   '#required' => TRUE,
+						    '#default_value' => '',
+						   '#attributes' => array('readonly'=> 'readonly'),
+						   );		
+			
+			$form['mode_paymentt'] = array(
+		 
+								 '#type' => 'select',
+								 '#title' => t('Mode of Payment'),
+								 '#default_value' => $node->mode_payment,
+								 '#required' => TRUE,
+								 '#options' =>array('' => '--Select--', 'cash'=>'Cash','cheque'=>'Cheque'),
+								 '#attributes' => array('onchange' => 'return changeMenulonee(this)'),
+								 
+								 
+								 );	
+			
+		$form['cash_amount'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('Cash Amount'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>11,
+						   '#default_value' => '',
+						   '#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"edit-cash-amount",11)'),
+					 
+						   
+						   );	
+				 
+								 
+		$form['cheque_no'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('Cheque No'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>6,
+						   '#default_value' => '',
+						   '#id' => 'chequeno',
+						   '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+					 
+						   
+						   );	
+						   					 
+		$form['cheque_date'] = array(
+						   '#type' =>'date_popup',
+	                       '#date_format' => 'd-m-Y',
+						   '#title' => t('Date'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>10,
+						   '#default_value' => '',
+						  
+						   
+						   );
+		$form['infavour'] = array(
+		
+						   '#type' => 'textfield',
+						   '#title' => t('Infavour Of'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>100,
+						   '#default_value' => '',
+						   '#attributes' => array('onkeypress' => 'return alphabet(event)'),
+						 
+
+						   );	
+						   
+		$form['bank_name'] = array(
+						   '#type' =>'textfield',
+	                       '#date_format' => 'd-m-Y',
+						   '#title' => t('Bank Name'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>45,
+						   '#default_value' => '',
+						   '#id' => 'bank_name',
+						   '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+						   
+						   );
+		$form['cheque_amount'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('Amount'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>11,
+						   '#default_value' => '',
+						   '#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"edit-cheque-amount",11)'),
+						  
+						 
+
+						   );						   
+						   				   
+		
+						   
+						   
+						   
+	   	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);				   
+						   							 									 				 
+								 				 
+		
+
+		
+//'<pre>';
+//print_r($form['mode_payment']);	exit;
+ 
+   return $form;
+}
+
+
+function loanrepayment_form_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+
+	//echo '<pre>';
+	//  print_r($values);
+   // echo '<pre>';exit;
+    $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('LokMitra - Loan Re Payment Collection form', 'create_loanrepayment');
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	$loan_account = $values['loan_account'];
+	$loanee_name = $values['loanee_name'];
+	$loanee_address = $values['loanee_address'];
+	$mode_payment = $values['mode_paymentt'];
+	$cash_amount = $values['cash_amount'];
+	$cheque_no = $values['cheque_no'];
+	$cheque_date = $values['cheque_date'];
+	$infavour = $values['infavour'];
+	$bank_name = $values['bank_name'];
+	$cheque_amount = $values['cheque_amount'];
+	
+	checknolength($cheque_no,'cheque_no');
+	alphanumeric('cheque_no',$cheque_no,'Cheque No');
+	
+	
+	
+	
+	
+	alphabet('infavour',$infavour,'In favour');
+	
+	
+	alphanumeric('bank_name',$bank_name,'Bank Name');
+	
+	/*echo '<pre>';
+	
+	print_r($form);exit;*/
+	
+	
+	
+	
+	
+	
+	if($mode_payment == 'cash')
+	{
+	
+		if($cash_amount=='')
+		{
+		form_set_error('cash_amount',t("Please Enter Amount"));	
+				
+		}
+		
+		paypay('cash_amount',$cash_amount,'Amount');
+		
+		
+		
+		
+		 
+		
+	}
+	
+	else if($mode_payment == 'cheque'){
+		
+		if($cheque_no=='')
+		{
+		form_set_error('cheque_no',t("Please Enter Cheque NO"));	
+			
+		}
+		
+		if($cheque_date=='')
+		{
+		form_set_error('cheque_date',t("Please Enter Cheque Date"));	
+			
+		}
+		if($infavour=='')
+		{
+		form_set_error('infavour',t("Please Enter Infavour"));	
+			
+		}
+		if($bank_name=='')
+		{
+		form_set_error('bank_name',t("Please Enter Bank Name"));	
+			
+		}
+		
+		
+		if($cheque_amount=='')
+		{
+		form_set_error('cheque_amount',t("Please Enter Cheque Amount"));
+		
+			
+		}
+		
+		paypay('cheque_amount',$cheque_amount,'Amount');	
+	}
+	
+	
+	
+	
+  
+	
+	
+	
+}
+
+
+function loanrepayment_form_submit($form,&$form_state){
+   global $user;
+   $values = $form_state['values'];
+ // echo '<pre>';
+    //print_r($values);
+//echo '<pre>';exit;
+
+    $uid=$user->uid;
+   
+	$loan_account = $values['loan_account'];
+	$loanee_name = $values['loanee_name'];
+	$loanee_address = $values['loanee_address'];
+	$mode_payment = $values['mode_paymentt'];
+	$cash_amount = $values['cash_amount'];
+	$cheque_no = $values['cheque_no'];
+	$cheque_date = $values['cheque_date'];
+	$infavour = $values['infavour'];
+	$bank_name = $values['bank_name'];
+	$cheque_amount = $values['cheque_amount'];
+	$created = date("Y-m-d");
+	
+	db_query("INSERT INTO tbl_loaneerepayment (loan_account,loanee_name,loanee_address,mode_payment,cash_amount,cheque_no,cheque_date,infavour,bank_name,cheque_amount,createdby,createdon) VALUES 
+	('".$loan_account."','".$loanee_name."','".$loanee_address."','".$mode_payment."','".$cash_amount."','".$cheque_no."','".$cheque_date."','".$infavour."','".$bank_name."','".$cheque_amount."','".$uid."','".$created."')");
+
+	
+	
+
+	$created = time();
+	
+    $message = getMessage('loanrepayment', 'code05', array("0"=>$loanee_name));
+
+  
+    drupal_set_message($message);
+	drupal_goto('create_loanrepayment');
+
+ 
+ }
+
+
+
+function loan_repayment_theme() {
+	
+	return array(
+				 
+		'loanrepayment_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'loan_repayment_form',
+                                 ),
+								 
+								 );
+       
+	   
+	   
+}
+
+

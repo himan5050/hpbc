@@ -1,0 +1,534 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/helpdeskApplication.inc');
+
+function helpdeskApplication_node_info() {
+	return array (
+					'helpdeskApplication' => array (
+										'name' => t('List of Helpdesk Applications'),
+										'module' => 'helpdeskApplication',
+										'description' => "Creates Helpdesk Applications",
+										'has_title' => TRUE,
+										'title_label' => t('Helpdesk Applications'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function helpdeskApplication_perm() {
+	return array('edit helpdeskApplication','administer helpdeskApplication', 'create helpdeskApplication', 'view helpdeskApplication');
+}
+
+function helpdeskApplication_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit helpdeskApplication', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create helpdeskApplication', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view helpdeskApplication', $account);
+	}
+}
+ 
+ function helpdeskApplication_menu(){
+	 $items['list/helpdeskApplicationList'] = array(
+		   'title' => 'List of Helpdesk Applications',
+		   'page callback' => 'helpdeskApplication_list',
+		   'access arguments' => array('administer helpdeskApplication'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewhelpdeskApplication/%'] = array(
+								'title' => t('view Helpdesk Applications'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_helpdeskApplication',
+								'page arguments' => array(1),
+								'access arguments' => array('administer helpdeskApplication'),
+		                        
+						);
+  
+  $items['admin/dsje/del/helpdeskApplication/%'] =  array(
+	               						 'title' => t('Delete Helpdesk Applications'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'helpdeskApplication_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer helpdeskApplication'),
+													 
+	);
+ $items['admin/dsje/enable/helpdeskApplication/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'helpdeskApplication_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer helpdeskApplication'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function helpdeskApplication_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjehelpdeskApplication', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Application Name'), 'field' => 'tbl_helpdeskapplication.application_name', 'sort' => 'asc'),
+	
+	array('data' => t('Action'), 'class' => 'addeditview',),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Helpdesk Applications', 'list/helpdeskApplicationList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid, tbl_helpdeskapplication.application_name FROM {node}
+	 INNER JOIN tbl_helpdeskapplication ON (node.nid=tbl_helpdeskapplication.nid)
+	 WHERE ( tbl_helpdeskapplication.application_name LIKE '".$val."' ) ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_helpdeskapplication ON (node.nid=tbl_helpdeskapplication.nid)
+	 
+	 WHERE ( tbl_helpdeskapplication.application_name LIKE '".$val."' ) ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid,tbl_helpdeskapplication.application_name FROM {node}
+	 INNER JOIN tbl_helpdeskapplication ON (node.nid=tbl_helpdeskapplication.nid)
+	".tablesort_sql($header);
+	}
+
+	 $output = '<form method="post" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjehelpdeskApplication', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/helpdeskApplicationList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight" align="center"></td></tr>';
+	
+	$addurl = l(getMessage('dsjehelpdeskApplication', 'code01', NULL),"node/add/helpdeskApplication");
+   	$lising = getMessage('dsjehelpdeskApplication', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	if(!empty($val)){
+	$_REQUEST['page']=0;
+	}
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewhelpdeskApplication/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/helpdeskApplication/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/helpdeskApplication/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => $rs->application_name),
+			
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+     if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, 20,0 );
+	return $output;
+  }
+
+function helpdeskApplication_delete($nid){
+   $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("Delete FROM {tbl_helpdeskapplication} WHERE courtcase_id ='".$courtcase_id."'");
+  db_query("DELETE FROM {tbl_helpdeskapplication} WHERE nid ='".$node->nid."'");
+  drupal_set_message(' Helpdesk Applications has been deleted successfully.');
+  drupal_goto("list/helpdeskApplicationList");
+ }
+
+function helpdeskApplication_enable($nid){
+  
+  $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+  //db_query("UPDATE {tbl_helpdeskapplication} SET statusnodal =1 WHERE nid ='".$node->nid."'");
+  db_query("DELETE FROM {tbl_helpdeskapplication} WHERE nid ='".$node->nid."'");
+  drupal_set_message('Helpdesk Applications has been deleted successfully.');
+  drupal_goto("list/helpdeskApplicationList");
+ }
+
+
+function helpdeskApplication_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Helpdesk Applications', 'list/helpdeskApplicationList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Helpdesk Applications', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Helpdesk Applications', 'node/add/helpdeskApplication'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  
+	
+		
+	////////////////////////////////////
+	
+	$selectreg1= db_query("select reg_no from {tbl_vehicles}  where status =1 ORDER BY reg_no ASC");
+	
+	$selectregarray = array(''=>'--Select--');
+	while($selectreg = db_fetch_object($selectreg1)){
+	$selectregarray[$selectreg->reg_no] = $selectreg->reg_no;
+	}
+	
+	if(is_numeric(arg(1))){
+	$sql = "SELECT * FROM {node} INNER JOIN tbl_helpdeskapplication ON (node.nid=tbl_helpdeskapplication.nid) WHERE node.nid=".arg(1);
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+	}
+	
+	$form['prev_application_name'] = array(
+	'#type' =>'hidden',
+	
+	'#default_value' =>$rs->application_name,
+	 
+	);
+	
+	
+	
+	$form['application_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Application Name'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->application_name,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	 '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	$form['technical'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Technical Features of the used application'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->technical,
+	 '#maxlength'=>200,
+	'#size' =>200,
+	 '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	
+	);
+	
+		$form['version'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Version (if any)'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->version,
+	 '#maxlength'=>25,
+	'#size' =>25,
+	'#attributes' => array('onkeypress' => 'return alphanumericdot(event)'),
+	);
+	
+	
+	
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/helpdeskApplicationList'),
+);
+return $form;
+} 
+
+function helpdeskApplication_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	/*$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Helpdesk Applications', 'list/helpdeskApplicationList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Helpdesk Applications', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add Helpdesk Applications', 'node/add/helpdeskApplication');
+	}*/
+	
+	
+	
+        $breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Helpdesk Applications', 'list/helpdeskApplicationList');
+        if(arg(1) !='add'){
+		  $breadcrumb[] = l('Edit Helpdesk Applications ', 'node/'.arg(1).'/edit');	
+		}else{
+         $breadcrumb[] = l('Add Helpdesk Applications', 'node/add/helpdeskApplication');
+      
+		}
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+	alphanumeric('application_name',$form->application_name,'Application Name');
+	
+	textonlywithdotne('technical',$form->technical,'Technical Features');
+	//textonlyn('version',$form->version,'Version');
+	//echo $form->application_name;exit;
+	
+	//-----------repeat
+	$prev_application=$form->prev_application_name;
+	$application=$form->application_name;
+	
+	if(!empty($prev_application)){
+	if($prev_application==$application){}else{
+	$helpapp=db_query("select count(application_name) as application_name FROM {tbl_helpdeskapplication} where application_name='".$form->application_name."'");
+	$helpap=db_fetch_object($helpapp);
+	//echo $helpap->application_name;exit;
+	if(($helpap->application_name) > 0){
+		form_set_error(application_name,'Application Name '.$form->application_name.' already exist');
+	}}
+	}else{
+	
+	$helpapp=db_query("select count(application_name) as application_name FROM {tbl_helpdeskapplication} where application_name='".$form->application_name."'");
+	$helpap=db_fetch_object($helpapp);
+	//echo $helpap->application_name;exit;
+	if(($helpap->application_name) > 0){
+		form_set_error(application_name,'Application Name '.$form->application_name.'  already exist');
+	}
+	}
+	
+	//-----
+	
+		
+}
+
+/**
+ *hook_form_alter
+ */
+function helpdeskApplication_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='helpdeskApplication_node_form'){
+	
+	  $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+         $form['author_information']['#type'] = hidden;
+         $form['attachments']['#type'] = hidden;
+          $form['path']['#type'] = hidden;
+		  
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function helpdeskApplication_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+  
+  
+  $application_name= $node->application_name;
+  $technical= $node->technical;
+   $version= $node->version;
+ 
+
+    
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   if($version=='')
+   {
+   //$version='N/A';
+   }
+
+db_query ("INSERT INTO {tbl_helpdeskapplication} (`vid`, `nid`,`application_name`,`technical`, `version`, `statusnodal`) VALUES ('".$vid."','".$nid."','".$application_name."','".$technical."','".$version."','".$statusnodal."')");
+
+
+	
+    drupal_set_message('Helpdesk Applications Entry has been saved successfully.');
+	drupal_goto("list/helpdeskApplicationList");
+
+ 
+ 
+ }
+
+function helpdeskApplication_update($node){
+	
+	
+	////////////////
+	
+	$application_name= $node->application_name;
+  $technical= $node->technical;
+   $version= $node->version;
+	
+	///////////////
+	 
+  
+  
+ 
+    
+	$statusnodal = 1;
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$uid=$node->uid;
+	
+	
+	
+	db_query("UPDATE {tbl_helpdeskapplication} SET `application_name`='".$application_name."',`version`='".$version."',`technical`='".$technical."',`statusnodal`='".$statusnodal."' WHERE nid='".$nid."'");
+	
+	
+	drupal_set_message('Helpdesk Applications Entry have been updated successfully.');
+	drupal_goto("list/helpdeskApplicationList");
+	
+	
+}
+
+
+function helpdeskApplication_theme() {
+	
+	return array(
+				 
+		'helpdeskApplication_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'helpdeskApplication_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ 
+
+
+
+ 
+function helpdeskApplication_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_helpdeskapplication ON (node.nid=tbl_helpdeskapplication.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+ */ 
+function view_helpdeskApplication($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Helpdesk Applications', 'list/helpdeskApplicationList');
+   if($array[0] == 'viewhelpdeskApplication'){
+     $breadcrumb[] = l('View Helpdesk Applications', 'viewhelpdeskApplication/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * FROM {tbl_helpdeskapplication} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from users where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+$version=$rs->version;
+if($version==''){$version='N/A';}
+
+$output .='<table cellpadding="3" cellspacing="2" border="0" id="form-container">';
+$output .='<tr class="oddrow"><td colspan="2"><h2>Helpdesk Applications</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Application Name:</td><td class="normal"> '.ucwords($rs->application_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Technical Features of the used application:</td><td class="normal"> '.ucwords($rs->technical).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Version(if any):</td><td class="normal"> '.ucwords($version).'</td></tr>';
+$output .='<tr class="oddrow"><td colspan="2" class="back" align="center">'.l(t('Back'), 'list/helpdeskApplicationList').'</td></tr>';
+ $output .='</table>';
+
+return $output ;
+}

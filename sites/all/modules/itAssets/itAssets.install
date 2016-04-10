@@ -1,0 +1,159 @@
+<?php
+function itAssets_schema() {
+
+  //nodal table
+   $schema['tbl_itAssets'] = array(
+							 'fields' => array(
+											   
+                                               'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                         
+										   'section' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										 
+										  'asset_type' => array(
+															  'type' => 'varchar',
+															  'length' => '25',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										   'quantity' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'amount' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ), 
+										 'proc_cost' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											'asset_details' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+											
+												 'company_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'sum_insured' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															    
+															  
+										
+											 'date_renewal' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											 'claim_details' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+												  'vendor_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 
+											 'date_amc' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+					
+											 	'amount_amc' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ), 
+
+													'contract_details' => array(
+															  'type' => 'varchar',
+															  'length' => '20',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												
+															  
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+                                             
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('vid'),
+							 );
+	return $schema;
+}
+function itAssets_install() {
+	drupal_install_schema('itAssets');
+}
+
+function itAssets_uninstall() {
+	drupal_uninstall_schema('itAssets');
+}

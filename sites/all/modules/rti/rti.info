@@ -1,0 +1,4 @@
+;$id$
+name="rti management"
+description="Handles the rti management system"
+core=6.x

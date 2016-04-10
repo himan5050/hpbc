@@ -1,0 +1,11 @@
+;$id 
+name = "dsje_loan_edit"
+description = "Allows site admins to edit the loanee details."
+package = Administration
+
+; Information added by drupal.org packaging script on 2007-01-20
+
+core = 6.x
+version = VERSION
+
+

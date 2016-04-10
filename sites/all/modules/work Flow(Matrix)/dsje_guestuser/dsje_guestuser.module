@@ -1,0 +1,718 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/dsje_joinings.inc');
+drupal_add_css(drupal_get_path('module', 'dsje_guestuser') .'/dsje_guestuser.css');
+
+function dsje_guestuser_perm() {
+	return array('edit dsje_guestuser','administer dsje_guestuser', 'create dsje_guestuser', 'view dsje_guestuser');
+}
+
+function ddsje_guestuser_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_guestuser', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_guestuser', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_guestuser', $account);
+	}
+}
+ 
+ function dsje_guestuser_menu(){
+	 $items['list/guestuser'] = array(
+		   'title' => 'List of Guest User',
+		   'page callback' => 'guestuser',
+		   'access arguments' => array('administer dsje_guestuser'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewguestuser/%'] = array(
+								'title' => t('view Guest User'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_guestuser',
+								'page arguments' => array(1),
+								'access arguments' => array('administer dsje_guestuser'),
+		                        
+						);
+  
+  $items['admin/dsje/del/guestuser/%/%'] =  array(
+	               						 'title' => t('Delete Guest User'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'guestuser_delete',
+		           			             'page arguments' => array(4,5),
+		               			         'access arguments' => array('administer dsje_guestuser'),
+													 
+	);
+ $items['admin/dsje/enable/guestuser/%/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'guestuser_enable',
+		            			            'page arguments' => array(4,5),
+		                  				    'access arguments' => array('administer dsje_guestuser'),
+														 
+	);	
+
+$items['create_guest_user'] = array(
+	'title' => 'Guest User Registration Form',
+	'type' => MENU_CALLBACK,
+	'page callback' => 'create_guest_user',
+	'access arguments' => array('access content'),
+    'access callback' => TRUE,
+);						
+   return $items;
+ }
+  
+  
+  
+
+  
+function guestuser(){
+	global $user, $base_url;
+	$limit =(int)getMessage('recGuestuser', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Guest User Name'), 'field' => 'tbl_guestuser.employee_name', 'sort' => 'asc'),
+	array('data' => t('Email ID'), 'field' => 'tbl_guestuser.email', 'sort' => 'asc'),
+	array('data' => t('State'),'field'=> 'tbl_guestuser.state_id','sort'=>'asc'),
+	array('data' => t('Status'),'field'=> 'tbl_guestuser.status2','sort'=>'asc'),
+	array('data' => t('Action'), 'class' => 'addeditview'),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Users', 'list/guestuser'.$array[1].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+		
+		/////////////state
+	
+   $sql ="select   tbl_guestuser.employee_name,tbl_guestuser.email,tbl_guestuser.status2,tbl_guestuser.state_id,tbl_guestuser.statusnodal from tbl_guestuser INNER JOIN tbl_dsjestate ON (tbl_guestuser.state_id=tbl_dsjestate.state_id) 
+   where (tbl_guestuser.employee_name LIKE '".$val."' OR tbl_guestuser.state_id LIKE '".$val."' OR tbl_guestuser.email LIKE '".$val."' OR tbl_dsjestate.state_name LIKE '".$val."'  )".tablesort_sql($header);
+   
+   
+   $sqlcount1 = "SELECT COUNT(*) AS count FROM tbl_guestuser
+	INNER JOIN tbl_dsjestate  ON (tbl_guestuser.state_id=tbl_dsjestate.state_id)
+	WHERE (tbl_guestuser.employee_name LIKE '".$val."' OR tbl_guestuser.state_id LIKE '".$val."' OR tbl_guestuser.email LIKE '".$val."' OR tbl_dsjestate.state_name LIKE '".$val."')";
+   
+		
+		
+		///////////////state
+		
+		
+	 /*$sql ="select employee_name,email,status2,state_id,statusnodal from tbl_guestuser where (employee_name LIKE '".$val."' OR state_id LIKE '".$val."' OR email LIKE '".$val."'  )".tablesort_sql($header);
+	 */
+	  
+	
+   $sqlcount = "SELECT COUNT(*) asncount FROM (" . $sql . ") AS count_query";
+    $dbcount = db_query($sqlcount);
+   $rscount = db_fetch_object($dbcount);
+$tcount =  $rscount->asncount;
+   
+   /*$sqlcount1 = "SELECT COUNT(*) AS count_query  from tbl_guestuser where (employee_name LIKE '".$val."' OR state_id LIKE '".$val."' OR email LIKE '".$val."')";*/
+  
+   $result = pager_query($sql,$limit,0, $sqlcount);
+	 
+	}else{
+	
+	   $sql ="select employee_name,email,status2,state_id,statusnodal from tbl_guestuser".tablesort_sql($header);
+	   $sqlcount = "SELECT COUNT(*) FROM (" . $sql . ") AS count_query";
+	   $result = pager_query($sql,$limit,0, $sqlcount);
+	}
+
+	 $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	
+	$output .= t(getMessage('recGuestuser', 'code01', array("0"=>$tcount)))." | ".l('View All','list/guestuser');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+
+   $lising =getMessage('recGuestuser', 'code03', NULL); 
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>	
+	</tr>
+	</table></form>';
+
+	
+	
+	if($_REQUEST['page']){
+
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		
+		$viewurl = l("View","viewguestuser/".$rs->email,array('attributes'=>array('id'=>'edit-state')));
+		//$po_working_zone_id = $rs ->po_working_zone_id;
+		/*if($po_working_zone_id){
+			$zone_name = getWorkingZone($po_working_zone_id);
+		}else{
+			$zone_name = 'N/A';
+		}*/
+		  
+		if($rs->statusnodal == 1){
+		       $st='Enable';
+		       $deleteurl = l("Disable","admin/dsje/del/guestuser/".$rs->email.'/'.$rs->employee_name);
+		}else{
+			   $st ='Disable';
+			   $deleteurl = l("Enable","admin/dsje/enable/guestuser/".$rs->email.'/'.$rs->employee_name);
+		}
+
+      
+		 // $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($rs->employee_name)),
+			//array('data' => ucwords($rs->employee_type)),
+            array('data' => $rs->email),
+            array('data' => getState($rs->state_id)),
+			//array('data' => ucwords($rs->designation_name)),
+			//array('data' => ucwords($zone_name)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+
+ if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, $limit,0 );
+	
+		return $output ;
+  }
+
+function guestuser_delete($emailid,$name){
+  
+  db_query("UPDATE {users} SET status=0 WHERE mail ='".$emailid."'");
+  db_query("UPDATE {tbl_guestuser } SET statusnodal=0 ,status2='Inactive User' WHERE email ='".$emailid."'");
+  drupal_set_message('User '.$name.' has been disabled successfully.');
+  drupal_goto("list/guestuser");
+ }
+
+function guestuser_enable($emailid,$name){
+  
+  db_query("UPDATE {users} SET status=1 WHERE mail ='".$emailid."'");
+  db_query("UPDATE {tbl_guestuser } SET statusnodal=1 ,status2='Active User' WHERE email ='".$emailid."'");
+  drupal_set_message('User '.$name.' has been enabled successfully.');
+  drupal_goto("list/guestuser");
+ }
+
+
+function create_guest_user(){
+  return drupal_get_form('guestuser_form');
+}
+
+function guestuser_form(){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Guest User Registration Form', 'create_guest_user');
+	
+	drupal_set_breadcrumb($breadcrumb);
+   
+  
+	
+    $form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Name'),
+	'#required' => TRUE,
+    '#maxlength'=>45,
+	'#size' =>45,
+	'#default_value' => $node->employee_name,
+	'#id' => 'edit-employee-name',
+	 '#attributes' => array('onkeypress' => 'return alphabet(event)'),
+	);
+	
+	$form['dob'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Birth',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $node->dob,
+	);
+	
+
+		
+	$form['gender'] = array(
+	'#type' => 'select',
+	'#title' => t('Gender'),
+	'#required' => TRUE,
+	'#default_value' => $node->gender,
+	'#options' => selectGender(),
+	);
+	
+	
+	
+
+ $form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	 '#required' =>TRUE,
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $node->email,
+	 '#id' =>'email_vali',
+	 '#attributes' => array('onkeypress' =>'return emailvali(event)'),
+  );
+  
+$form['mobile'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Mobile No'),
+	 '#required' =>TRUE,
+	 '#size' =>40,
+	 '#maxlength'=>10,
+	 '#id' => 'mobileidguest',
+	 '#default_value' => $node->mobile,
+	 '#attributes' => array('onkeypress' =>'return fononlyn(event)'),
+  );
+  
+  
+$form['phone'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Phone No.'),
+	 '#required' =>TRUE,
+	 '#size' =>40,
+	 '#minlength'=>10,
+	 '#maxlength'=>15,
+	 '#id' => 'phoneidguest',
+	 '#default_value' => $node->phone,
+	 '#attributes' => array('onkeypress' =>'return fononlyn(event)'),
+  );  
+
+
+$form['add_type'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Address Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $node->add_type,
+		 '#options' => AddressType(),
+
+);
+
+  $form['add_line1'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 1'),
+	'#required' => TRUE,
+	'#default_value' =>$node->add_line1,
+	'#size' =>25,
+	 '#maxlength'=>100,
+	  '#id' =>'add_line1',
+	  '#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"add_line1",100)'),
+	);
+	
+  $form['add_line2'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 2'),
+	'#required' => TRUE,
+	'#default_value' =>$node->add_line2,
+	'#size' =>25,
+	 '#maxlength'=>100,
+	  '#id' =>'add_line2',
+	 '#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"add_line2",25)'),
+	);
+	
+$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>$node->state_id,
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	
+	
+
+	 	
+
+	 $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $node->district_id,
+		'#options' =>array(''=>'--Select--'),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $node->tehsil_id,
+			'#options' =>array(''=>'--Select--'),
+		   
+		);
+	
+		
+	
+	
+  $form['block'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Block'),
+	'#required' => TRUE,
+	'#default_value' =>$node->block,
+	 '#maxlength'=>20,
+	'#size' =>20,
+ '#id' =>'t-block',
+	'#attributes' => array('onkeypress' =>'return textnospe(event,"t-block",20)'),
+	);
+	
+		
+  	
+ $form['pincode'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('PIN Code'),
+	 '#required' =>FALSE,
+	 '#size' =>15, 
+	 '#maxlength'=>6,
+	 '#default_value' => $node->pincode,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+
+	
+		$form['logindetails'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('<b>Login Info</b>'),
+		'#tree' => TRUE,
+		);
+		$form['logindetails']['username'] = array(
+		'#type' =>'textfield',
+		'#title' => t('User Name'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		 '#maxlength'=>60,
+		'#default_value' => '',
+		'#attributes' => array('onkeypress' =>'return addressvalidation(event)'),
+		);
+		
+		$form['logindetails']['password'] = array(
+		'#type' =>'password',
+		'#title' => t('Password'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		 '#maxlength'=>60,
+		'#id' => 'da_password', 
+		'#attributes' => array('onkeyup' => 'checkPassword()'), 
+	    '#description' =>'<div id="test"></div>',	
+		);
+		
+		$form['logindetails']['cpassword'] = array(
+		'#type' =>'password',
+		'#title' => t('Confirm Password'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		 '#maxlength'=>60,
+			 '#description' =>'The Password contains, Must be at least 8 characters,
+     Must contain at least one lower case letter, one upper case letter, one digit and one special character,
+    Valid special characters are -   @#$%^&+=',	
+		); 
+
+	   //$form['logindetails']['my_captcha'] = array(
+       //'#type' => 'captcha',
+       //'#captcha_type' => 'captcha/Math',
+   // );
+		
+
+$form['submit'] = array(
+	'#type' => "submit",
+	'#value' => t('Register'),
+);
+return $form;
+} 
+
+function guestuser_form_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+
+	//echo '<pre>';
+	//  print_r($values);
+   // echo '<pre>';exit;
+    $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Guest User Registration Form', 'create_guest_user');
+	drupal_set_breadcrumb($breadcrumb);
+	
+	$name = $values['employee_name'];
+	$dob = $values['dob'];
+	$gender = $values['gender'];
+	$mailid = $values['email'];
+	$mobile = $values['mobile'];
+	$phone = $values['phone'];
+	$addtype = $values['add_type'];
+	
+	$stateid= $values['state_id'];
+	$districtid = $values['district_id'];
+	$tehsilid = $values['tehsil_id'];
+	$block = $values['block'];
+	$pincode = $values['pincode'];
+	$userdetails =  $values['logindetails'];
+	$username = $userdetails['username'];
+	$userpassword = $userdetails['password'];
+	$usercpassword = $userdetails['cpassword'];
+	
+	
+	pincodelength($pincode,'pincode');
+	
+	mobilelength($mobile,'mobile');
+	phonelength($phone,'phone');
+	
+  alphanumeric('block',$block,'Block');
+  alphabet('employee_name',$employee_name,'Guest Name');
+  alphanumeric ('add_line1',$add_line1,'Address Line 1');
+  alphanumeric ('add_line2',$add_line2,'Address Line 2');
+  fononlyn('mobile',$mobile,'Mobile No');
+	fononlyn('phone',$phone,'Phone No');
+	
+  $date2 =  substr($dob,0,10);
+  date('Y-m-d');
+  $year = dateDiff($date2,date('Y-m-d'), $precision = 6);
+  if($year[0] < 18){
+	  form_set_error('dob','DOB Can not be less than 18 Years.');
+  }
+ fononlyn('pincode',$pincode,'Pin Code');
+ if($usercpassword != 1){
+   custom_user_validate_name($username,'username');
+   if($userpassword){
+   custom_Password_validate_name( $userpassword,'password');
+   }
+      $password = $userpassword;
+   $cpassword = $usercpassword;
+	  
+			  if($password != $cpassword){
+				form_set_error('', t('Password Missmatch.'));
+			  }
+	 
+  }
+  $email = $mailid;
+  if($email !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (eregi($pattern, $email)){
+          return true;
+       }
+       else {
+          form_set_error('email', t('You must enter valid Email Id.'));
+       }    
+	}
+  if($form->program_uid){
+  }else{
+		$statusemail = getEmail($email); 
+		if($statusemail){
+		form_set_error('email',$email.t(' Email address already exist.'));
+		}
+		
+		if($username){
+				$statususername = getUsername($username);
+				if($statususername){
+				form_set_error('username',$username.t(' already exist.'));
+				}
+		}
+		//else{
+			//form_set_error('username',t(' Please enter User Name.'));
+		//}
+  }
+
+ 
+}
+
+
+function guestuser_form_submit($form,&$form_state){
+   global $user;
+   $values = $form_state['values'];
+ // echo '<pre>';
+    //print_r($values);
+//echo '<pre>';exit;
+   
+	$name = $values['employee_name'];
+	$dob = $values['dob'];
+	$gender = $values['gender'];
+	$mailid = $values['email'];
+	$mobile = $values['mobile'];
+	$phone = $values['phone'];
+	$addtype = $values['add_type'];
+	$addressline1 = $values['add_line1'];
+	$addressline2 = $values['add_line2'];
+	$stateid= $values['state_id'];
+	$districtid = $values['district_id'];
+	$tehsilid = $values['tehsil_id'];
+	$block = $values['block'];
+	$pincode = $values['pincode'];
+	$userdetails =  $values['logindetails'];
+	$username = $userdetails['username'];
+	$userpassword = $userdetails['password'];
+	$usercpassword = $userdetails['cpassword'];
+
+	$statusnodal =  1;  
+	db_query("INSERT INTO tbl_guestuser (employee_name,gender,dob,add_type,add_line1,add_line2,district_id,tehsil_id,state_id,block,pincode,email,mobile,phone,username,password,statusnodal,status2) VALUES ('".$name."','".$gender."','".$dob."','".$addtype."','".$addressline1."','".$addressline2."','".$districtid."','".$tehsilid."','".$stateid."','".$block."','".$pincode."','".$mailid."','".$mobile."','".$phone."','".$username."','".md5($userpassword)."','".$statusnodal."','Active User')");
+
+	//user table
+	db_query("INSERT INTO users (name,pass,mail,status,force_password_change) VALUES('".$username."','".md5($userpassword)."','".$mailid."','".$statusnodal."','1')");
+	
+	
+	
+	
+		
+	$sms='91'.$mobile;
+	
+	$message='Your account has been created. Below are your login details : Username - '.$username.' Password - '.$userpassword;
+	customsendsms($sms,$message);
+	
+	$parameter = '';
+//$to = $u->mail;
+
+$parameter = json_encode(array(0=>$name,1=>$userpassword,2=>$userpassword));
+
+
+createMail('dsje_guest', $mailid,'',$parameter,'');
+	
+	//mailing system
+	
+	//custom_mail($user->uid,$username,$password,$email,$employee_name);
+
+	$sql ="SELECT MAX(uid) as uid FROM users";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	$uid = $rs->uid;
+
+	db_query("insert into users_roles (uid,rid) values ('".$uid."','12')");
+
+	$created = time();
+	db_query("INSERT INTO force_password_change_users SET uid='".$uid."',last_force='".$created."'");
+    drupal_set_message('Thanks for Registration');
+	drupal_goto('thanks-registration');
+
+ 
+ }
+
+
+
+function dsje_guestuser_theme() {
+	
+	return array(
+				 
+		'guestuser_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'guestuser_form',
+                                 ),
+       
+
+				 );
+}
+
+
+  
+function view_guestuser($emailid){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Users', 'list/guestuser');
+       $breadcrumb[] = l('View Users', 'viewemployee/'.$array[1].'');
+  
+  drupal_set_breadcrumb($breadcrumb);
+  
+
+ $sql = "select * from tbl_guestuser where email = '".$emailid."'";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+ if($rs->gender ==2){
+  $gender ='Female';
+}else{
+  $gender ='Male';
+}
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+
+
+if($rs->pincode ==''){
+  $pincode = 'NA';
+}else{
+  $pincode = $rs->pincode;
+}
+
+$addsql = "select lookup_name from tbl_lookups where lookup_id = '".$rs->add_type."' AND lookupType_id = 27";
+$addres = db_query($addsql);
+$addrs = db_fetch_object($addres);
+
+$output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="form_container">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>User Details</h2></td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">UID:</td><td class="normal">'.$unique.'</td></tr>';
+//$rid = getRole($rs->program_uid);
+$output .='<tr class="evenrow"><td width="50%">User Name:</td><td class="normal">'.ucwords($rs->employee_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date of Birth:</td><td class="normal">'.date('d-m-Y',strtotime(substr($rs->dob,0,10))).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.ucwords($rs->status2).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Gender:</td><td class="normal">'.ucwords($gender).'</td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">Address:</td><td>';
+$output .='<tr class="evenrow"><td width="50%">Address Type:</td><td class="normal">'.ucwords($addrs->lookup_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Addresss Line 1:</td><td class="normal">'.ucwords($rs->add_line1).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Addresss Line 2:</td><td class="normal">'.ucwords($rs->add_line2).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">State:</td><td class="normal">'.ucwords(getState($rs->state_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">District:</td><td class="normal">'.ucwords(getdistrict($rs->district_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Tehsil:</td><td class="normal">'.ucwords(gettehsil($rs->tehsil_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Block:</td><td class="normal">'.$rs->block.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Pin Code:</td><td class="normal">'.$pincode.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Email Id:</td><td class="normal">'.$rs->email.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Mobile No:</td><td class="normal">'.$rs->mobile.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Phone No:</td><td class="normal">'.$rs->phone.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$statusnodal.'</td></tr>';
+$output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'welcome-deshboard').'</td></tr>';
+ $output .='</table>';
+return $output ;
+}

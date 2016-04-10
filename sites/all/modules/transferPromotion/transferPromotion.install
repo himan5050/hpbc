@@ -1,0 +1,187 @@
+<?php
+function transferPromotion_schema() {
+
+  //nodal table
+   $schema['tbl_transferPromotions'] = array(
+							 'fields' => array(
+											   
+                                               'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                         
+											   'employee_id' => array(
+															   'type' => 'varchar',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => '',
+															  ),
+															  
+												'employee_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												 'orderno' => array(
+															   'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => '',
+															  ),	
+															  
+															  		  
+											   'order_date' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+											'releiving_date' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+												 'joining_date' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),			  
+												'prev_officeid' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+															  				  
+                                              'prev_designationid' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												
+											  
+											'prev_Departmentid' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											
+											 			  
+												 'mobile' => array(
+															  'type' => 'varchar',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+												'phone' => array(
+															  'type' => 'varchar',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+												
+		                                      'email' => array(
+															  'type' => 'varchar',
+															  'length' => '40',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+														
+															  
+											   'current_officeid' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'current_designationid' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+										'current_Departmentid' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),		
+															  
+												 			  
+											
+											
+												'action' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+								
+												'statusnodal' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+												'row' => array(
+															  'type' => 'varchar',
+															  'length' => '20',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                               
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('vid'),
+							 );
+	return $schema;
+}
+function transferPromotion_install() {
+	drupal_install_schema('transferPromotion');
+}
+
+function transferPromotion_uninstall() {
+	drupal_uninstall_schema('transferPromotion');
+}

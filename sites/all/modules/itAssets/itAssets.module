@@ -1,0 +1,842 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/itAssets.inc');
+
+function itAssets_node_info() {
+	return array (
+					'itAssets' => array (
+										'name' => t('List of IT Asset Details'),
+										'module' => 'itAssets',
+										'description' => "Creates IT Asset Details",
+										'has_title' => TRUE,
+										'title_label' => t('IT Asset Details'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function itAssets_perm() {
+	return array('edit itAssets','administer itAssets', 'create itAssets', 'view itAssets');
+}
+
+function itAssets_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit itAssets', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create itAssets', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view itAssets', $account);
+	}
+}
+ 
+ function itAssets_menu(){
+	 $items['list/itAssetsList'] = array(
+		   'title' => 'List of IT Asset Details',
+		   'page callback' => 'itAssets_list',
+		   'access arguments' => array('administer itAssets'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewitAssets/%'] = array(
+								'title' => t('view IT Asset Details'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_itAssets',
+								'page arguments' => array(1),
+								'access arguments' => array('administer itAssets'),
+		                        
+						);
+  
+  $items['admin/dsje/del/itAssets/%'] =  array(
+	               						 'title' => t('Delete IT Asset Details'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'itAssets_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer itAssets'),
+													 
+	);
+ $items['admin/dsje/enable/itAssets/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'itAssets_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer itAssets'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function itAssets_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjeitAssets', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	//array('data' => t('Due Date'), 'field' => 'tbl_itassets.date_due', 'sort' => 'asc'),
+		
+		array('data' => t('Asset Id'), 'field' => 'node.vid', 'sort' => 'asc'),
+
+	array('data' => t('Section'), 'field' => 'section', 'sort' => 'asc'),
+	array('data' => t('Asset Type'), 'field' => 'asset_type', 'sort' => 'asc'),
+	array('data' => t('Quantity'), 'field' => 'quantity', 'sort' => 'asc'),
+	//array('data' => t('Status')),
+	array('data' => t('Action'),'class'=>'addeditview'),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of IT Asset Details', 'list/itAssetsList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val2=strtoupper($_REQUEST['searchtext']);
+	$val3=strtoupper($_REQUEST['searchtext']);
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+
+	  
+	 
+$cor=getcorpid($val3);
+$asst=getLookupName($val2);
+
+
+
+  $sql = "SELECT   node.nid,node.vid,node.uid,section,asset_type,quantity FROM {node}
+	 INNER JOIN tbl_itassets ON (node.nid=tbl_itassets.nid)
+	 INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_itassets.asset_type || tbl_lookups.lookup_id=tbl_itassets.section)
+
+	  WHERE ( node.vid LIKE '".$val."' OR tbl_lookups.lookup_name LIKE '".$val."' OR 
+	  tbl_lookups.lookup_name LIKE '".$val."' OR quantity LIKE '".$val."') group by tbl_itassets.nid ".tablesort_sql($header);
+
+  
+   $sqlcount = "SELECT  COUNT(*) AS count FROM {node}
+	 INNER JOIN tbl_itassets ON (node.nid=tbl_itassets.nid)
+	 INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_itassets.asset_type || tbl_lookups.lookup_id=tbl_itassets.section)
+
+	   WHERE ( node.vid LIKE '".$val."' OR tbl_lookups.lookup_name LIKE '".$val."' OR 
+	  tbl_lookups.lookup_name LIKE '".$val."' OR quantity LIKE '".$val."') group by tbl_lookups.lookup_id ".tablesort_sql($header);
+	
+	   
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	 //  echo $rscounter->count;exit;
+	    $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.vid,node.uid, section,asset_type, quantity FROM {node}
+	 INNER JOIN tbl_itassets ON (node.nid=tbl_itassets.nid)
+	
+	 ".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/itAssetsList';
+	 $output = '<form method="POST" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$countss=$rscounter->count; if($countss==''){$countss=0;}
+	$output .= t(getMessage('dsjeitAssets', 'code03', array("0"=>$countss)))." | ".l('View All','list/itAssetsList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage('dsjeitAssets', 'code01', NULL),"node/add/itAssets");
+   	$lising = getMessage('dsjeitAssets', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit",array('attributes'=>array('id'=>'edit-state')));
+		$viewurl = l("View","viewitAssets/".$rs->nid,array('attributes'=>array('id'=>'edit-state')));
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/itAssets/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/itAssets/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			//array('data' => date('d-m-Y',strtotime($rs->date_due)),
+			array('data' =>$cnode->vid),
+
+
+			array('data' => ucwords(getLookupName($rs->section))),
+			array('data' => ucwords(getLookupName($rs->asset_type))),
+            array('data' => $rs->quantity),
+         // 	array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	return $output .=theme('pager', NULL, 20,0 );
+  }
+
+function itAssets_delete($nid){
+   $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("Delete FROM {tbl_itassets} WHERE courtcase_id ='".$courtcase_id."'");
+  db_query("DELETE FROM {tbl_itassets} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  $message=getMessage('dsjeitAssets','code07',array("0"=>getLookupName($node->asset_type)));
+  drupal_set_message($message);
+  
+  drupal_goto("list/itAssetsList");
+ }
+
+function itAssets_enable($nid){
+  
+  $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("UPDATE {tbl_itassets} SET 	statusnodal =1 WHERE nid ='".$node->nid."'");
+  //drupal_set_message('Vehicle Insurance has been enabled successfully.');
+  //drupal_goto("list/itAssetsList");
+ 
+ db_query("DELETE FROM {tbl_itassets} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  
+  $message=getMessage('dsjeitAssets','code07',array("0"=>getLookupName($node->asset_type)));
+  drupal_set_message($message);
+  
+  drupal_goto("list/itAssetsList");
+ }
+
+
+function itAssets_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of IT Asset Details', 'list/itAssetsList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit IT Asset ', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add IT Asset ', 'node/add/itAssets'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  
+	
+	if(is_numeric(arg(1))){
+	$sql = "SELECT * FROM {node} INNER JOIN tbl_itassets ON (node.nid=tbl_itassets.nid) WHERE node.nid=".arg(1);
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	
+	}	
+
+	////////////////////////////////////
+	
+	
+	
+	$form['section'] = array(
+	'#type' => 'select',
+	'#title' => t('Section'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->section,
+	'#options' => SelectDepartment(), 
+	);
+	
+	$form['asset_type'] = array(
+	'#type' => 'select',
+	'#title' => t('Asset Type'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->asset_type,
+	'#options' => SelectAssetType(), 
+	);
+	
+	 $form['quantity'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Quantity'),
+	 '#required' =>TRUE,
+	 '#size' =>10,
+	 '#maxlength'=>10,
+	 '#default_value' => $rs->quantity,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+
+ $form['amount'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Amount'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>11,
+	 '#default_value' => $rs->amount,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+
+ $form['proc_cost'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Procurement Cost'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>11,
+	 '#default_value' => $rs->proc_cost,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+
+ $form['asset_details'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Asset Details'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->asset_details,
+	'#size' =>200,
+	 '#maxlength'=>200,	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	 
+	 
+	);
+
+$form['company_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Insurance Company Name'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->company_name,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+
+
+ $form['sum_insured'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Sum Insured'),
+	 '#required' =>FALSE,
+	 '#size' =>15,
+	 '#maxlength'=>11,
+	 '#default_value' => $rs->sum_insured,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+
+$form['date_renewal'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Renewal',
+	'#required' => FALSE,
+	'#size' => '10',
+	'#default_value' => $rs->date_renewal,
+	);
+
+ $form['claim_details'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Claim Details'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->claim_details,
+	'#size' =>200,
+	 '#maxlength'=>200,	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	 
+	 
+	);
+
+$form['vendor_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Vendor Name'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->vendor_name,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+
+$form['date_amc'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of AMC',
+	'#required' => FALSE,
+	'#size' => '10',
+	'#default_value' => $rs->date_amc,
+	);
+
+
+ $form['amount_amc'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('AMC Amount'),
+	 '#required' =>FALSE,
+	 '#size' =>15,
+	 '#maxlength'=>11,
+	 '#default_value' => $rs->amount_amc,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+
+
+ $form['contract_details'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Contract details of the vendor'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->contract_details,
+	'#size' =>200,
+	 '#maxlength'=>200,	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	 
+	 
+	);
+
+
+
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/itAssetsList'),	
+);
+
+
+return $form;
+} 
+
+function itAssets_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of IT Asset Details', 'list/itAssetsList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit IT Asset ', 'node/'.$array[1].'/edit');
+	}
+	else{
+	$breadcrumb[] = l('Add IT Asset ', 'node/add/itAssets');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+	
+	fononlyn('quantity',$form->quantity,'Quantity');
+	paypay('amount',$form->amount,'Amount');
+	if($form->amount_amc!=''){
+	paypay('amount_amc',$form->amount_amc,'AMC Amount');
+	}
+	if($form->sum_insured !=''){
+	paypay('sum_insured',$form->sum_insured,'Sum Insured');
+	}
+paypay('proc_cost',$form->proc_cost,'Procurement Cost');
+
+alphabet('company_name',$company_name,'Company Name');
+alphabet('vendor_name',$company_name,'Vendor Name');
+
+ $date_renewal=$form->date_renewal;
+ $curr_date=date('Y-m-d');
+
+/* if($date_renewal < $curr_date){
+ 
+ 
+ form_set_error('date_renewal','Date of renewal cannot be less than the current date');
+ 
+ }
+*/	
+	
+
+
+	
+	 
+}
+
+/**
+ *hook_form_alter
+ */
+function itAssets_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='itAssets_node_form'){
+	 
+	 $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	 
+	 
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function itAssets_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+  $section= $node->section;
+  $asset_type = $node->asset_type;
+	$quantity = $node->quantity;
+
+    $sum_insured=$node->sum_insured;
+    $amount = $node->amount;
+    $proc_cost = $node->proc_cost;
+    $asset_details = $node->asset_details;
+	$company_name= $node->company_name;
+	$vendor_name = $node->vendor_name;
+    $date_renewal = $node->date_renewal;
+  $claim_details =$node->claim_details;
+  $date_amc =$node->date_amc;
+  $amount_amc =$node->amount_amc;
+  $contract_details =$node->contract_details;
+ 
+    
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   
+
+db_query ("INSERT INTO {tbl_itassets} (`vid`, `nid`,`section`,`asset_type`, `quantity`,`sum_insured`,`amount`,`proc_cost`,`asset_details`,`company_name`,`vendor_name`,`date_renewal`,`claim_details`,`date_amc`,`amount_amc`,`contract_details`) VALUES ('".$vid."','".$nid."','".$section."','".$asset_type."','".$quantity."','".$sum_insured."','".$amount."','".$proc_cost."','".$asset_details."','".$company_name."','".$vendor_name."','".$date_renewal."','".$claim_details."','".$date_amc."','".$amount_amc."','".$contract_details."')");
+
+
+	
+  //  drupal_set_message('Vehicle Insurance Entry has been saved successfully.');
+	$message=getMessage('dsjeitAssets','code05',array("0"=>getLookupName($node->asset_type)));
+  drupal_set_message($message);
+	drupal_goto("list/itAssetsList");
+
+ 
+ 
+ }
+
+function itAssets_update($node){
+	
+	
+	  $section= $node->section;
+  $asset_type = $node->asset_type;
+	$quantity = $node->quantity;
+
+ $sum_insured=$node->sum_insured;
+    $amount = $node->amount;
+    $proc_cost = $node->proc_cost;
+   $asset_details = $node->asset_details;
+	$company_name= $node->company_name;
+	$vendor_name = $node->vendor_name;
+    $date_renewal = $node->date_renewal;
+  $claim_details =$node->claim_details;
+  $date_amc =$node->date_amc;
+  $amount_amc =$node->amount_amc;
+  $contract_details =$node->contract_details;
+ 
+    
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   
+	
+	
+	db_query("UPDATE {tbl_itassets} SET `section`='".$section."',`asset_type`='".$asset_type."',`quantity`='".$quantity."',`sum_insured`='".$sum_insured."',`amount`='".$amount."',`proc_cost`='".$proc_cost."',`asset_details`='".$asset_details."',`company_name`='".$company_name."',`vendor_name`='".$vendor_name."',`date_renewal`='".$date_renewal."',`claim_details`='".$claim_details."',`date_amc`='".$date_amc."',`amount_amc`='".$amount_amc."',`contract_details`='".$contract_details."' WHERE nid='".$nid."'");
+	
+	
+	//drupal_set_message('IT Asset Details have been updated successfully.');
+	
+	$message=getMessage('dsjeitAssets','code06',array("0"=>getLookupName($node->asset_type)));
+  drupal_set_message($message);
+	drupal_goto("list/itAssetsList");
+	
+	
+}
+
+
+function itAssets_theme() {
+	
+	return array(
+				 
+		'itAssets_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'itAssets_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+
+
+/*function itAssets_cron(){
+
+//$curr_date=date();
+$start=date('Y-m-d');
+
+$selDate=db_query("select * FROM {tbl_itassets} ");
+
+while($rs=db_fetch_object($selDate)){
+
+$date_diff=dateDiffByDays($start,$rs->date_to);
+
+if($date_diff==15 && $rs->remind_mail==0 && $rs->notification==84){
+
+
+$reg=db_query("select reg_no from tbl_vehicles where vehicle_id='".$rs->reg_no."'");
+//$to = $u->mail;
+	$finduid=db_query("select * from {users_roles} where rid=13");
+$reg_no=db_fetch_object($reg);
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+if(createMail('itAssets', $ms->mail,'',$parameter,''))
+{
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_itassets} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+
+}
+}
+}
+
+else if($date_diff==3 && $rs->remind_mail==1 && $rs->notification==84){
+
+
+
+
+//$to = $u->mail;
+	
+	$reg=db_query("select reg_no from tbl_vehicles where vehicle_id='".$rs->reg_no."'");
+	$reg_no=db_fetch_object($reg);
+	$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('itAssets', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_itassets} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+}}
+
+}
+
+
+else if($date_diff==0 && $rs->remind_mail <= 3 && $rs->notification==84){
+
+
+
+
+
+
+//$to = $u->mail;
+$reg=db_query("select reg_no from tbl_vehicles where vehicle_id='".$rs->reg_no."'");
+$reg_no=db_fetch_object($reg);
+$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('itAssets_today', $ms->mail,'',$parameter,'')){
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_itassets} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+} 
+
+}
+}}
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+function itAssets_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_itassets ON (node.nid=tbl_itassets.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+ */ 
+function view_itAssets($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of IT Asset Details', 'list/itAssetsList');
+   if($array[0] == 'viewitAssets'){
+     $breadcrumb[] = l('View IT Asset Details', 'viewitAssets/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * FROM {tbl_itassets} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from {users} where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+//$add_type=getLookupName($rs->add_type);
+//$regnowa=db_query("select * from tbl_vehicles where vehicle_id='".$rs->reg_no."'");
+//$regno= db_fetch_object($regnowa);
+//$notification=getLookupName($rs->notification);
+
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-conatiner">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>IT Asset Details</h2></td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Asset Id:</td><td class="normal"> '.$rs->vid.'</td></tr>';
+
+$output .='<tr class="evenrow"><td width="50%">Section:</td><td class="normal"> '.ucwords(getLookupName($rs->section)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Asset Type:</td><td class="normal">'.ucwords(getLookupName($rs->asset_type)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Quantity:</td><td class="normal"> '.$rs->quantity.'</td></tr>';
+//$output .='<tr class="oddrow" colspan="2"><td>PERIOD</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Amount:</td><td class="normal"> '.round($rs->amount).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Procurement Cost:</td><td class="normal">'.round($rs->proc_cost).'</td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">Due Date:</td><td class="normal">'.$rs->date_due.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Asset Details:</td><td class="normal">'.ucwords($rs->asset_details).'</td></tr>';
+$output .='<tr class="evenrow" ><td colspan="2">INSURANCE DETAILS</td></tr>';
+
+$compname=$rs->company_name;
+if($compname){}else{$compname='N/A';}
+
+$claimdet=$rs->claim_details;
+if($claimdet){}else{$claimdet='N/A';}
+
+
+$vendname=$rs->vendor_name;
+if($vendname){}else{$vendname='N/A';}
+
+$contactdet=$rs->contract_details;
+if($contactdet){}else{$contactdet='N/A';}
+
+$daterenew=date('d-m-Y',strtotime($rs->date_renewal));
+if($daterenew !='01-01-1970' ){}else{$daterenew='N/A';}
+
+
+$dateamc=date('d-m-Y',strtotime($rs->date_amc));
+if($dateamc !='01-01-1970' ){}else{$dateamc='N/A';}
+
+$amtinsured=round($rs->sum_insured,2);
+if($amtinsured==0){$amtinsured='N/A';}
+
+$amtamc=round($rs->amount_amc,2);
+if($amtamc==0){$amtamc='N/A';}
+
+
+$output .='<tr class="oddrow"><td width="50%">Insurance Company Name:</td><td class="normal">'.ucwords($compname).'</td></tr>';
+
+$output .='<tr class="evenrow"><td width="50%">Sum Insured:</td><td class="normal">'.round($amtinsured).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date of renewal:</td><td class="normal">'.$daterenew.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Claim Details:</td><td class="normal">'.ucwords($claimdet).'</td></tr>';
+$output .='<tr class="oddrow" ><td colspan="2">AMC DETAILS</td></tr>';
+
+$output .='<tr class="evenrow"><td width="50%">AMC Vendor Name:</td><td class="normal">'.ucwords($vendname).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date of AMC:</td><td class="normal">'.$dateamc.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">AMC Amount:</td><td class="normal">'.round($amtamc).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Contract Details of the Vendor:</td><td class="normal">'.ucwords($contactdet).'</td></tr>';
+$output .='<tr class="evenrow"><td align="center" class="back" colspan="2">'.l(t('Back'), 'list/itAssetsList').'</td></tr>'; 
+ $output .='</table>';
+return $output ;
+}

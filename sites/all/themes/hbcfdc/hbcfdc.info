@@ -1,0 +1,39 @@
+name = hbcfdc
+description = Tableless, recolorable, multi-column, fluid width theme (default).
+version = VERSION
+core = 6.x
+engine = phptemplate
+
+
+stylesheets[all][] = style.css
+stylesheets[print][] = print.css
+regions[footermenu] = Footer Menu
+
+
+; Information added by drupal.org packaging script on 2011-05-25
+version = "6.22"
+project = "drupal"
+datestamp = "1306357015"
+
+
+regions[login] =  login
+regions[establishment] =  establishment
+regions[newsevent] =  newsevent
+regions[successstory] =  successstory
+regions[navigation] =  navigation
+regions[aboutus] =  aboutus
+
+regions[applicationforms] =  applicationforms
+regions[newschemes] =  newschemes
+regions[casts] =  casts
+regions[listofscst] =  listofscst
+regions[login] =  login
+regions[search] =  search
+regions[welcome] =  welcome
+regions[scheduled] =  scheduled
+regions[latestnews] =  latestnews
+regions[left] =  left
+regions[lbox] =  Language Box
+regions[footer] =  footer
+regions[searchblock] =  Search Block
+

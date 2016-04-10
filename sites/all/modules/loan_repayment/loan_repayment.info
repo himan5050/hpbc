@@ -1,0 +1,4 @@
+; $Id$
+name = Loan Repaymentt
+description = "Loan Repayment"
+core = 6.x

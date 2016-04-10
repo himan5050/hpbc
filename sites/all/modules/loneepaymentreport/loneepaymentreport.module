@@ -1,0 +1,128 @@
+<?php
+//global $base_url;
+
+/**
+ *hook_perm
+ 
+ 
+ */
+ 
+ function loneepaymentreport_init() {
+	//drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+ 
+function loneepaymentreport_perm() {
+	return array('edit loneepaymentreport','administer loneepaymentreport', 'create loneepaymentreport', 'view loneepaymentreport');
+}
+
+function loneepaymentreport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit loneepaymentreport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create loneepaymentreport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view loneepaymentreport', $account);
+	}
+	
+}
+
+
+function loneepaymentreport_menu(){
+
+  $items['report_loaneerepayment'] = array(
+										'title' => t('LokMitra - Loan Re_payment Collection Report'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'loneereportfee',
+										'access arguments' => array('administer loneepaymentreport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function loneereportfee(){
+  return drupal_get_form('loneepaymentreport_form');
+}
+
+function loneepaymentreport_form(){
+	
+global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('LokMitra - Loan Re payment Collection Report', 'report_loaneerepayment');
+  drupal_set_breadcrumb($breadcrumb);
+
+
+$form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+						   
+		);				   
+ 	
+$form['mode_paymentt'] = array(
+		 
+								 '#type' => 'select',
+								 '#title' => t(''),
+								 '#default_value' => $node->mode_payment,
+								 '#options' =>array('1' => 'All', 'cash'=>'Cash','cheque'=>'Cheque'),
+								
+								 
+								 
+								 );	
+
+ 
+ 
+
+ 
+ 
+						   
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function loneepaymentreport_theme() {
+	
+	return array(
+		
+		'loneepaymentreport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'loneepaymentreport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

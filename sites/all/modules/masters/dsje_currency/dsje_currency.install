@@ -1,0 +1,79 @@
+<?php
+function dsje_currency_schema() {
+
+  //currency table
+   $schema['tbl_currencies'] = array(
+							 'fields' => array(
+											   'currency_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'currency_name' => array(
+															  'type' => 'char',
+															  'length' => '20',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												'currabrev' => array(
+															  'type' => 'char',
+															  'length' => '3',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												/*'country' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),			  
+														*/	  			  
+											  
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'currency_id' => array('currency_id'),
+												),
+							 'primary key' => array('currency_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_currency_install() {
+	drupal_install_schema('dsje_currency');
+}
+
+function dsje_currency_uninstall() {
+	drupal_uninstall_schema('dsje_currency');
+}

@@ -1,0 +1,509 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/helpdeskChangeComplaint.inc');
+
+function helpdeskChangeComplaint_node_info() {
+	return array (
+					'helpdeskChangeComplaint' => array (
+										'name' => t('List of Changes in Application(Helpdesk)'),
+										'module' => 'helpdeskChangeComplaint',
+										'description' => "Creates Changes in Application(Helpdesk)",
+										'has_title' => TRUE,
+										'title_label' => t('Changes in Application(Helpdesk)'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function helpdeskChangeComplaint_perm() {
+	return array('edit helpdeskChangeComplaint','administer helpdeskChangeComplaint', 'create helpdeskChangeComplaint', 'view helpdeskChangeComplaint');
+}
+
+function helpdeskChangeComplaint_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit helpdeskChangeComplaint', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create helpdeskChangeComplaint', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view helpdeskChangeComplaint', $account);
+	}
+}
+ 
+ function helpdeskChangeComplaint_menu(){
+	 $items['list/helpdeskChangeComplaintList'] = array(
+		   'title' => 'List of Changes in Application(Helpdesk)',
+		   'page callback' => 'helpdeskChangeComplaint_list',
+		   'access arguments' => array('administer helpdeskChangeComplaint'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewhelpdeskChangeComplaint/%'] = array(
+								'title' => t('view Changes in Application(Helpdesk)'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_helpdeskChangeComplaint',
+								'page arguments' => array(1),
+								'access arguments' => array('administer helpdeskChangeComplaint'),
+		                        
+						);
+  
+  $items['admin/dsje/del/helpdeskChangeComplaint/%'] =  array(
+	               						 'title' => t('Delete Changes in Application(Helpdesk)'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'helpdeskChangeComplaint_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer helpdeskChangeComplaint'),
+													 
+	);
+ $items['admin/dsje/enable/helpdeskChangeComplaint/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'helpdeskChangeComplaint_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer helpdeskChangeComplaint'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function helpdeskChangeComplaint_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjehelpdeskChangeComplaint', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Application Name'), 'field' => 'tbl_helpdeskchangecomplaint.application_name', 'sort' => 'asc'),
+	array('data' => t('Change Type'), 'field' => 'tbl_helpdeskchangecomplaint.change_type', 'sort' => 'asc'),
+	array('data' => t('Priority'), 'field' => 'tbl_helpdeskchangecomplaint.priority', 'sort' => 'asc'),
+	array('data' => t('Action'),'class' => 'addeditview',),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Changes in Application', 'list/helpdeskChangeComplaintList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid, tbl_helpdeskchangecomplaint.application_name,tbl_helpdeskchangecomplaint.change_type,tbl_helpdeskchangecomplaint.priority FROM node
+	 INNER JOIN tbl_helpdeskchangecomplaint ON (node.nid=tbl_helpdeskchangecomplaint.nid)
+	 WHERE node.uid='".$user->uid."' AND( tbl_helpdeskchangecomplaint.application_name LIKE '".$val."' OR tbl_helpdeskchangecomplaint.change_type LIKE '".$val."' OR tbl_helpdeskchangecomplaint.priority LIKE '".$val."' ) ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM node
+	INNER JOIN tbl_helpdeskchangecomplaint ON (node.nid=tbl_helpdeskchangecomplaint.nid)
+	 
+	 WHERE node.uid='".$user->uid."' AND( tbl_helpdeskchangecomplaint.application_name LIKE '".$val."' OR tbl_helpdeskchangecomplaint.change_type LIKE '".$val."' OR tbl_helpdeskchangecomplaint.priority LIKE '".$val."' ) ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid,tbl_helpdeskchangecomplaint.application_name,tbl_helpdeskchangecomplaint.change_type,tbl_helpdeskchangecomplaint.priority FROM node
+	 INNER JOIN tbl_helpdeskchangecomplaint ON (node.nid=tbl_helpdeskchangecomplaint.nid)
+	 WHERE node.uid='".$user->uid."'".tablesort_sql($header);
+	}
+
+	 $output = '<form method="post" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjehelpdeskChangeComplaint', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/helpdeskChangeComplaintList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight" align="center"></td></tr>';
+	
+	$addurl = l(getMessage('dsjehelpdeskChangeComplaint', 'code01', NULL),"node/add/helpdeskChangeComplaint");
+   	$lising = getMessage('dsjehelpdeskChangeComplaint', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewhelpdeskChangeComplaint/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/helpdeskChangeComplaint/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/helpdeskChangeComplaint/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => $rs->application_name),
+			array('data' => $rs->change_type),
+			array('data' => $rs->priority),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+     if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, 20,0 );
+	return $output;
+  }
+
+function helpdeskChangeComplaint_delete($nid){
+   $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("Delete From tbl_helpdeskchangecomplaint WHERE courtcase_id ='".$courtcase_id."'");
+  db_query("DELETE FROM tbl_helpdeskchangecomplaint WHERE nid ='".$node->nid."'");
+  drupal_set_message(' Changes in Application(Helpdesk) has been deleted successfully.');
+  drupal_goto("list/helpdeskChangeComplaintList");
+ }
+
+function helpdeskChangeComplaint_enable($nid){
+  
+  $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+  //db_query("UPDATE {tbl_helpdeskchangecomplaint} SET statusnodal =1 WHERE nid ='".$node->nid."'");
+  db_query("DELETE FROM tbl_helpdeskchangecomplaint WHERE nid ='".$node->nid."'");
+  drupal_set_message('Changes in Application(Helpdesk) has been deleted successfully.');
+  drupal_goto("list/helpdeskChangeComplaintList");
+ }
+
+
+function helpdeskChangeComplaint_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Changes in Application', 'list/helpdeskChangeComplaintList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Changes in Application', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Changes in Application', 'node/add/helpdeskChangeComplaint'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from users_roles INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  
+	if(is_numeric(arg(1))){
+	$sql = "SELECT * FROM node INNER JOIN tbl_helpdeskchangecomplaint ON (node.nid=tbl_helpdeskchangecomplaint.nid) WHERE node.nid=".arg(1);
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+	
+	}
+		
+	////////////////////////////////////
+	
+	$selectreg1= db_query("select application_name from tbl_helpdeskApplication  where statusnodal =1 ORDER BY application_name ASC");
+	
+	$selectregarray = array(''=>'--Select--');
+	while($selectreg = db_fetch_object($selectreg1)){
+	$selectregarray[$selectreg->application_name] = ucwords($selectreg->application_name);
+	}
+	
+	
+	
+	$form['application_name'] = array(
+	'#type' =>'select',
+	'#title' => t('Application Name'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->application_name,
+	 '#options'=> $selectregarray,
+	);
+	$form['change_type'] = array(
+	'#type' =>'select',
+	'#title' => t('Change Type'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->change_type,
+	 '#options'=> selectChangeType(),
+	
+	);
+	
+	
+
+	$form['details'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Details of change'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->details,
+	 '#maxlength'=>500,
+	'#size' =>500,
+	'#attributes' => array('onkeypress' => 'return  alphanumeric(event)')
+	
+	);
+		
+	$form['reason'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Reason for change'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->reason,
+	 '#maxlength'=>500,
+	'#size' =>500,
+	'#attributes' => array('onkeypress' => 'return  alphanumeric(event)')
+	);
+	
+	
+	$form['priority'] = array(
+	'#type' =>'select',
+	'#title' => t('Priority'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->priority,
+	 '#options'=> selectPriority(),
+	
+	);
+	
+	$form['assign_to'] = array(
+	'#type' =>'select',
+	'#title' => t('Assign To'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->assign_to,
+	  '#options'=> helpdeskAssign(),
+	
+	);
+	$kk=db_query("select * from tbl_helpdeskchangecomplaint where nid='".$rs->nid."'");
+	$rk=db_fetch_object($kk);
+	if($rk != ''){
+	$form['status'] = array(
+	'#type' =>'select',
+	'#title' => t('Status'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->status,
+	  '#options'=> helpdeskStatus(),
+	
+	);
+	}
+	
+	
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/helpdeskChangeComplaintList'),
+);
+return $form;
+} 
+
+function helpdeskChangeComplaint_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	/*$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Changes in Application', 'list/helpdeskChangeComplaintList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Changes in Application', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add Changes in Application', 'node/add/helpdeskChangeComplaint');
+	}
+	
+	*/
+	
+	 $breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Changes in Application', 'list/helpdeskChangeComplaintList');
+        if(arg(1) !='add'){
+		  $breadcrumb[] = l('Edit Changes in Application', 'node/'.arg(1).'/edit');	
+		}else{
+         $breadcrumb[] = l('Add Changes in Application', 'node/add/helpdeskChangeComplaint');
+      
+		}
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+	
+	
+	textonlywithdotne('details',$form->details,'Details of the change');
+	textonlywithdotne('reason',$form->reason,'Reason for Change');
+	
+		
+}
+
+/**
+ *hook_form_alter
+ */
+function helpdeskChangeComplaint_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='helpdeskChangeComplaint_node_form'){
+	
+	  $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+         $form['author_information']['#type'] = hidden;
+         $form['attachments']['#type'] = hidden;
+          $form['path']['#type'] = hidden;
+		  
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function helpdeskChangeComplaint_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+  
+  
+ 
+ $details= $node->details;
+$application_name= ucwords($node->application_name);
+$reason= $node->reason;
+$change_type=$node->change_type;
+ 
+    
+	$statusnodal = $node->statusnodal;
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$uid=$node->uid;
+	
+	
+	
+	db_query("UPDATE tbl_helpdeskchangecomplaint SET application_name='".$applicatoin_name."',reason='".$reason."',change_type='".$change_type."',details='".$details."',priority='".$priority."',assign_to='".$assign_to."',status='".$status."'    WHERE nid=$nid");
+	
+	
+	drupal_set_message('Changes in Application(Helpdesk) have been updated successfully.');
+	drupal_goto("list/helpdeskChangeComplaintList");
+	
+	
+}
+
+
+function helpdeskChangeComplaint_theme() {
+	
+	return array(
+				 
+		'helpdeskChangeComplaint_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'helpdeskChangeComplaint_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+
+
+
+
+ 
+function helpdeskChangeComplaint_load($node){
+$sql = "SELECT * FROM node INNER JOIN tbl_helpdeskchangecomplaint ON (node.nid=tbl_helpdeskchangecomplaint.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+} */
+  
+function view_helpdeskChangeComplaint($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Changes in Application', 'list/helpdeskChangeComplaintList');
+   if($array[0] == 'viewhelpdeskChangeComplaint'){
+     $breadcrumb[] = l('View Changes in Application', 'viewhelpdeskChangeComplaint/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from tbl_helpdeskchangecomplaint where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from users where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+
+
+
+$output .='<table cellpadding="3" cellspacing="2" border="0" id="form-container">';
+$output .='<tr class="oddrow"><td colspan="2"><h2>Changes in Application(Helpdesk)</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Application Name:</td><td class="normal"> '.ucwords($rs->application_name).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Change Type:</td><td class="normal"> '.ucwords($rs->change_type).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Details of the change:</td><td class="normal"> '.ucwords($rs->details).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Reason for change:</td><td class="normal"> '.ucwords($rs->reason).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Priority:</td><td class="normal"> '.ucwords($rs->priority).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Assigned To:</td><td class="normal"> '.ucwords($rs->assign_to).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal"> '.ucwords($rs->status).'</td></tr>';
+$output .='</table>';
+$output .=  l(t('Back'), 'list/helpdeskChangeComplaintList');
+
+
+return $output ;
+}

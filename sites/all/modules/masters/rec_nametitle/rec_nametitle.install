@@ -1,0 +1,36 @@
+<?php
+function rec_nametitle_schema() {
+
+  //utility table
+   $schema['tbl_nametitle'] = array(
+							 'fields' => array(
+											   'nametitle_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'nametitle_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   	                                           
+		                                     
+											   ),
+							 'indexes' => array(
+												'nametitle_id' => array('nametitle_id'),
+												),
+							 'primary key' => array('nametitle_id'),
+							 );
+	
+	return $schema;
+}
+
+function rec_nametitle_install() {
+	drupal_install_schema('rec_nametitle');
+}
+
+function rec_nametitle_uninstall() {
+	drupal_uninstall_schema('rec_nametitle');
+}

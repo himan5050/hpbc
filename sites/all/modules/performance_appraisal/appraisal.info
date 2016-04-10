@@ -1,0 +1,6 @@
+;$id 
+name="Performance Appraisal"
+description="Performance Appraisal Form"
+core =6.x
+version = 6.x-1
+package="Performance Appraisal"

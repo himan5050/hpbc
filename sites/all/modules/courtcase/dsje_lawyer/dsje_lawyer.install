@@ -1,0 +1,157 @@
+<?php
+function dsje_lawyer_schema() {
+
+  
+//Lawyer table
+ $schema['tbl_lawyer'] = array(
+							 'fields' => array(
+											   'lawyer_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+															  
+											 'lawyer_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),			  
+															  
+											  
+	                                        'practicing_since' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+														  
+															  
+											'court_name_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+															  
+											'specialization' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  				  
+											'fee_charge' => array(
+															  'type' => 'varchar',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											'category_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),				  
+															  				  				  
+															  
+	                                     'state_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										 'district_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 'tehsil_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												'address' => array(
+															  'type' => 'varchar',
+															  'length' => '100',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												'phone_no' => array(
+															  'type' => 'varchar',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												'email' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),			  			  
+															  
+															  			  
+												'lawyerother_detail' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),				  
+											
+                                    	   	 
+											   	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'lawyer_id' => array('lawyer_id'),
+												),
+							 'primary key' => array('lawyer_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_lawyer_install() {
+	drupal_install_schema('dsje_lawyer');
+}
+
+function dsje_lawyer_uninstall() {
+	drupal_uninstall_schema('dsje_lawyer');
+}

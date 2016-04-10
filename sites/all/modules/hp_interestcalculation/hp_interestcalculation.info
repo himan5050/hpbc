@@ -1,0 +1,6 @@
+;$id:
+name="hp_interestcalculation"
+core =6.x
+version = 6.x - 1
+description ="This module for Interest Calculation"
+package = " hp_interestcalculation"

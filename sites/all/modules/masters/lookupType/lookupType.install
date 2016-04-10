@@ -1,0 +1,69 @@
+<?php
+function lookupType_schema() {
+
+  //designation table
+   $schema['tbl_lookup Types'] = array(
+							 'fields' => array(
+											   'lookupType_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'lookupType_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   
+	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ), 
+											   
+							 'indexes' => array(
+												'lookupType_id' => array('lookupType_id'),
+												),
+							 'primary key' => array('lookupType_id'),
+							 );
+	
+	return $schema;
+}
+
+
+function lookupType_install() {
+	drupal_install_schema('lookupType');
+}
+
+function lookupType_uninstall() {
+	drupal_uninstall_schema('lookupType');
+}
+

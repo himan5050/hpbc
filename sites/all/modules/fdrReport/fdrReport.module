@@ -1,0 +1,141 @@
+<?php
+
+/**
+ *hook_perm
+ */
+ 
+ function fdrReport_init() {
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+function fdrReport_perm() {
+	return array('edit fdrReport','administer fdrReport', 'create fdrReport', 'view fdrReport');
+}
+
+function fdrReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit fdrReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create fdrReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view fdrReport', $account);
+	}
+	
+}
+
+
+function fdrReport_menu(){
+
+  $items['fdrReport_fdr'] = array(
+										'title' => t('FDR Details Report'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'fdrReport_fdr',
+										'access arguments' => array('administer fdrReport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function fdrReport_fdr(){
+  return drupal_get_form('fdrReport_fdr_form');
+}
+
+function fdrReport_fdr_form(){
+ global $base_url;
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('FDR Details Report', 'fdrReport_fdr');
+  drupal_set_breadcrumb($breadcrumb);
+ $form['fdr_no'] = array(
+                                '#type' => 'textfield',
+						
+								'#size' => '45',
+								 '#required'=>FALSE,
+ );
+ 
+  $form['amount'] = array(
+                                '#type' => 'textfield',
+								
+								'#size' => '45',
+								 '#required'=>FALSE,
+ );
+  $form['interest_rate'] = array(
+                                '#type' => 'textfield',
+							
+								'#size' => '45',
+								 '#required'=>FALSE,
+ );
+ 
+ 
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						 
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+function fdrReport_fdr_form_validate($form, &$form_state){
+	
+	$values = $form_state['values'];
+	
+	$from_date = $values['from_date'];
+	$to_date = $values['to_date'];
+	
+	if($from_date != '' && $to_date == ''){
+  form_set_error('to_date','Please enter To Date');
+}
+ if($to_date != '' && $from_date == ''){
+  form_set_error('from_date','Please enter From Date');
+}
+ if($to_date != '' && $from_date != '' &&($to_date < $from_date)){
+
+  form_set_error('to_date','To Date should be greater than the From Date');
+
+	
+}
+}
+/**
+ *@ hook_theme 
+*/
+
+ function fdrReport_theme() {
+	
+	return array(
+		
+		'fdrReport_fdr_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'fdrReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

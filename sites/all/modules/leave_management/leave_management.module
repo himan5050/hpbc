@@ -1,0 +1,893 @@
+<?php
+session_start();
+
+function leave_management_init() {
+	drupal_add_js(drupal_get_path('module', 'leave_management') .'/leave_management.js');
+	drupal_add_css(drupal_get_path('module', 'leave_management') .'/leave_management.css');
+	
+}
+function leave_management_perm() {
+	return array('edit Leave Management','administer Leave Management', 'create Leave Management', 'view Leave Management');
+}
+
+function leave_management_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit Leave Management', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create Leave Management', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view Leave Management', $account);
+	}
+}
+
+function leave_management_menu(){
+
+     $items['leave-entry-form'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'leave_management_page',
+	//'page arguments' => array(1),
+	'access arguments' => array('administer Leave Management'),
+      );
+	 $items['leave-entry-conform/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'leave_conform_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer Leave Management'),
+      );
+	
+     $items['leave-managementlist'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'leave_management_list_page',
+	//'page arguments' => array(1),
+	'access arguments' => array('administer Leave Management'),
+	
+      );
+$items['leave-search-list/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'leave_management_search_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer Leave Management'),
+	
+);
+$items['cleave/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'cleave_page',
+	'page arguments' => array(1,2),
+	'access arguments' => array('administer Leave Management'),
+	
+);
+$items['view-leave/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'view_leave_page',
+	'page arguments' => array(1,2),
+	'access arguments' => array('administer Leave Management'),
+	
+);
+$items['view-balance-leave/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'view_balance_leave_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer Leave Management'),
+	
+);
+
+$items['view-all-leave-detail/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'view_all_leave_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer Leave Management'),
+	
+);
+
+
+
+return $items;
+
+}
+
+
+
+ 
+
+function leave_management_form($form_state,$empid,$empname){
+global $user,$base_url;
+	if(getRole($user->uid) ==13 || getRole($user->uid) ==6 || getRole($user->uid) ==19){
+	 $form['emp_id'] = array(
+	'#type' => 'select',
+	'#title' => t('Employee ID'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#options' => selectSemployee(),
+	'#attributes' => array('onchange'=> 'return showempname(this.value,"'.$base_url.'")'),
+	); 
+	$form['emp_name']=array(
+	'#type' => 'textfield',
+	'#title' => t('Employee Name'),
+	'#required' => TRUE,
+	'#size' => 60,
+	'#default_value'=>'',
+	'#attributes'=>array('readonly'=>'readonly'),
+	);
+	}
+	else{
+$form['emp_id']=array(
+	'#type' => 'textfield',
+	'#title' => t('Employee ID'),
+	'#required' => TRUE,
+	'#size' => 60,
+	'#default_value'=>t($empid),
+	'#attributes'=>array('readonly'=>'readonly'),
+	);
+$form['emp_name']=array(
+	'#type' => 'textfield',
+	'#title' => t('Employee Name'),
+	'#required' => TRUE,
+	'#size' => 60,
+	'#default_value'=>t($empname),
+	'#attributes'=>array('readonly'=>'readonly'),
+	);
+	}
+	
+
+	$form['leave_type'] = array(
+	'#type'=>'select',
+	'#title'=>t('Leave Type'),
+	'#default_value'=>'',
+	'#required'=>TRUE,
+	'#options'=>leavelist1(),
+
+	);
+
+	$form['day_of_leave'] = array(
+	'#type'=>'radios',
+	'#title'=>t('Leave'),
+	'#required'=>TRUE,
+	'#default_value'=>'',
+	'#options' =>array('1'=>'Half Day Leave','2'=>'Full Day Leave'),
+	);
+
+	
+	$form['from_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('From Date'),
+	'#required' => FALSE,
+	'#size' => '10',
+	'#default_value' =>'',
+	'#attributes' => array('onchange'=> 'return datediff(this.value,"'.$base_url.'")'),
+	);
+	$form['to_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('To Date'),
+	'#required' => FALSE,
+	'#size' => '10',
+	'#default_value' =>'',
+	'#attributes' => array('onchange'=> 'return datediff(this.value,"'.$base_url.'")'),
+	);
+
+	$form['no_of_daye']=array(
+	'#type' => 'textfield',
+	'#title' => t('Total No. of Day(s)'),
+	'#required' => FALSE,
+	'#size' => '60',
+	'#default_value'=>'',
+	'#attributes'=>array('readonly'=>'readonly'),
+	'#field_suffix' => t('Day(s)'),
+	);
+	
+	$form['reason'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Reason'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#maxlength' =>200,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-reason",199)'),
+	);
+
+	
+	$form['submit'] = array(
+	'#type' => 'submit',
+		'#value' =>t('Save'),
+	);
+return $form;
+} 
+
+function leave_management_form_validate($form,&$form_state){
+	
+
+$emp_id= $form_state['values']['emp_id'];
+$day_of_leave= $form_state['values']['day_of_leave'];
+$sdate =$form_state['values']['from_date'];
+$tdate=$form_state['values']['to_date'];
+	 $from_date= substr($form_state['values']['from_date'],0,10);
+	 $to_date= substr($form_state['values']['to_date'],0,10);
+	 $ctime = date('Y-m-d',time());
+	 $leave_type=$form_state['values']['leave_type'];
+$numberofdays = $form_state['values']['no_of_daye'];
+
+ $la="select no_of_leave from tbl_leaveallocation where leavetype_name='".$leave_type."'";
+	
+	$laq=db_query($la);
+	$lar=db_fetch_array($laq);
+	$nla=$lar['no_of_leave'];
+if(($nla < $numberofdays) && $numberofdays!='')
+{
+	form_set_error('no_of_daye','No of Days Can not Be Greater Than Allowed Leave In This Type');
+}
+
+if($numberofdays <= 0){
+ form_set_error('no_of_daye','Please select another date.');
+}
+
+
+if($to_date =='' && $day_of_leave == 2){
+form_set_error('to_date','To date field is required.');
+}
+if($from_date =='' && $day_of_leave == 2){
+form_set_error('from_date','From date field is required.');
+}
+if($from_date =='' && $day_of_leave == 1){
+form_set_error('from_date','From date field is required.');
+}
+
+if($to_date<$from_date && $to_date !=''){
+form_set_error('to_date','To date should be greater than From date.');
+}
+
+if((strtotime(date('d-m-Y')))>strtotime($form_state['values']['from_date']) && ($form_state['values']['from_date']) !=''){
+form_set_error('from_date','From date should be greater then current date');
+}
+
+/*if($from_date<$ctime && $from_date !=''){
+form_set_error('from_date','From date should be greater than current date.');
+}
+*/
+if($sdate!='')
+{
+ $sql="select * from tbl_leave_management where (from_date='".$sdate."' OR  ('".$sdate."' BETWEEN from_date AND to_date) OR to_date ='".$sdate."') AND emp_id='".$emp_id."'";
+$res= db_query($sql);
+if($rs=db_fetch_object($res)){
+form_set_error('from_date','You had already Apply for this date.');
+}
+}
+  $day = date('D',strtotime($sdate));
+  $eday =date('D',strtotime($tdate));
+
+$wsql="select * from tbl_lookups where lookupType_id=95 AND status=1";
+$res= db_query($wsql);
+while($rs = db_fetch_object($res)){
+	
+	if(strtoupper($rs->lookup_name) == strtoupper($day)){
+		form_set_error('from_date','From date Should not be Sunday Or Saturday.');
+
+	}
+	if(strtoupper($rs->lookup_name) == strtoupper($eday)){
+	form_set_error('to_date','To date Should not be Sunday Or Saturday.');
+	}
+	//exit;
+}
+
+/*
+form_set_error('from_date','You are not able to Apply for this date.');
+}
+$endsql="select * from tbl_lookups where lookupType_id=95 AND UPPER(lookup_name)='".strtoupper($eday)."'";
+$endres= db_query($endsql);
+if($endrs = db_fetch_object($endres)){
+form_set_error('from_date','You  date.');
+}
+*/
+
+//echo $sdate;exit;
+$hsql="select * from tbl_holidays where (start_date='".$sdate."' OR start_date='".$tdate."') AND status=1";
+$hres= db_query($hsql);
+if($hrs = db_fetch_object($hres)){
+form_set_error('from_date','It is a Public Holiday, you cannot apply leave for this date.');
+}
+
+}
+
+
+
+function leave_management_form_submit($form,&$form_state){
+	global $user;
+	$emp_id= $form_state['values']['emp_id'];
+	$emp_name= $form_state['values']['emp_name'];
+	$leave_type= $form_state['values']['leave_type'];
+	$day_of_leave= $form_state['values']['day_of_leave'];
+	$from_date= $form_state['values']['from_date'];
+	$to_date= $form_state['values']['to_date'];
+	$no_of_daye= $form_state['values']['no_of_daye'];
+	$reson= $form_state['values']['reason'];
+	$resigndate = time();
+
+/*** Date difference***/
+
+$cdate = date('Ymd',time());
+ //$newDate = date('Ymd',strtotime('+14 days',time()));
+ $diff = dateDiffByDays($cdate,$from_date);
+/***end Date difference***/
+	if($leave_type == 4 && $diff <15){
+//$_SESSION['emp_id']=$emp_id;
+$_SESSION['emp_name']=$emp_name;
+$_SESSION['leave_type']=$leave_type;
+$_SESSION['day_of_leave']=$day_of_leave;
+$_SESSION['from_date']=$from_date;
+$_SESSION['to_date']=$to_date;
+$_SESSION['no_of_daye']=$no_of_daye;
+$_SESSION['reson']=$reson;
+$_SESSION['resigndate']=$resigndate;
+drupal_goto('leave-entry-conform/'.$emp_id);
+	}
+	else{
+	
+	db_query("insert into tbl_leave_management (emp_id,emp_name,leave_type,day_of_leave,from_date,to_date,no_of_daye,reason,status,form_submit_date) VALUES ('".$emp_id."','".$emp_name."','".$leave_type."','".$day_of_leave."','".$from_date."','".$to_date."','".$no_of_daye."','".$reson."',1,'".$resigndate."')");
+	$leave_id = db_last_insert_id('tbl_workflow_docket','doc_id');
+	$msg = getMessage('leavemanagement', 'code05', array('0'=>$emp_name));
+	drupal_set_message($msg);
+	drupal_goto("leave-managementlist");
+	}
+
+}
+
+
+function leave_management_page(){
+global $user;
+
+
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Leave', 'leave-managementlist');
+	$breadcrumb[] = l('Leave Entry Form', 'leave-entry-form');
+	drupal_set_breadcrumb($breadcrumb);
+
+  $sql ="select employee_id,employee_name from tbl_joinings where program_uid='".$user->uid."'";
+  $res = db_query($sql);
+  $rs= db_fetch_object($res);
+   $emp_id =  $rs->employee_id;
+$emp_name = $rs->employee_name;
+
+$output = drupal_get_form('leave_management_form',$emp_id,$emp_name);
+
+return $output;
+}
+
+function conform_form($form_state,$emp_id){
+
+/*$_SESSION['emp_id']=$emp_id;
+$_SESSION['emp_name']=$emp_name;
+$_SESSION['leave_type']=$leave_type;
+$_SESSION['day_of_leave']=$day_of_leave;
+$_SESSION['from_date']=$from_date;
+$_SESSION['to_date']=$to_date;
+$_SESSION['no_of_daye']=$no_of_daye;
+$_SESSION['reson']=$reson;
+$_SESSION['resigndate']=$resigndate;
+*/
+
+$form['emp_id']=array(
+'#type'=>'hidden',
+'#value'=>$emp_id,
+);
+
+$form['emp_name']=array(
+'#type'=>'hidden',
+'#value'=>$_SESSION['emp_name'],
+);
+$form['leave_type']=array(
+'#type'=>'hidden',
+'#value'=>$_SESSION['leave_type'],
+);
+$form['day_of_leave']=array(
+'#type'=>'hidden',
+'#value'=>$_SESSION['day_of_leave'],
+);
+$form['from_date']=array(
+'#type'=>'hidden',
+'#value'=>$_SESSION['from_date'],
+);
+$form['to_date']=array(
+'#type'=>'hidden',
+'#value'=>$_SESSION['to_date'],
+);
+$form['no_of_daye']=array(
+'#type'=>'hidden',
+'#value'=>$_SESSION['no_of_daye'],
+);
+$form['reason']=array(
+'#type'=>'hidden',
+'#value'=>$_SESSION['reson'],
+);
+
+$form['submit']=array(
+'#type'=>'submit',
+'#value'=>t('Confirm'),
+);
+
+return $form;
+}
+
+function conform_form_submit($form,&$form_state){
+global $user;
+	$emp_id= $form_state['values']['emp_id'];
+	$emp_name= $form_state['values']['emp_name'];
+	$leave_type= $form_state['values']['leave_type'];
+	$day_of_leave= $form_state['values']['day_of_leave'];
+	$from_date= $form_state['values']['from_date'];
+	$to_date= $form_state['values']['to_date'];
+	$no_of_daye= $form_state['values']['no_of_daye'];
+	$reson= $form_state['values']['reason'];
+	$resigndate = time();
+	
+	
+	
+	$sql = "SELECT emp_id FROM tbl_leave_management WHERE from_date = '".$from_date."' AND  to_date = '".$to_date."' AND emp_id = '".$emp_id."'";
+	$res = db_query($sql);
+	$lexist = db_fetch_object($res);
+	if($lexist->emp_id)
+	{
+		form_set_error('form','You have already applied leave for these dates.');
+	}
+	
+	else{
+		db_query("insert into tbl_leave_management (emp_id,emp_name,leave_type,day_of_leave,from_date,to_date,no_of_daye,reason,status,form_submit_date) VALUES ('".$emp_id."','".$emp_name."','".$leave_type."','".$day_of_leave."','".$from_date."','".$to_date."','".$no_of_daye."','".$reson."',1,'".$resigndate."')");
+		$leave_id = db_last_insert_id('tbl_workflow_docket','doc_id');
+		//session_destroy();
+		$msg = getMessage('leavemanagement', 'code05', array('0'=>$emp_name));
+		drupal_set_message($msg);
+	}
+	drupal_goto("leave-managementlist");
+
+}
+
+
+function leave_conform_page($emp_id){
+
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Leave', 'leave-managementlist');
+	$breadcrumb[] = l('Leave Entry Form', 'leave-entry-form');
+	$breadcrumb[] = l('Confirm Message', 'leave-entry-conform/'.$emp_id);
+	drupal_set_breadcrumb($breadcrumb);
+
+$output = drupal_get_form('conform_form',$emp_id);
+return $output;
+
+}
+
+function view_leave_page($empid,$date){
+
+	 $array = explode('/',$_GET['q']);
+	 //print_r($array);exit;
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Leave', 'leave-managementlist');
+	$breadcrumb[] = l('Leave Detail', 'view-leave/'.$array[1].'/'.$array[2]);
+	drupal_set_breadcrumb($breadcrumb);
+
+
+	$sql = "select * from tbl_leave_management where emp_id='".$empid."' AND form_submit_date='".$date."'";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	
+if($rs->day_of_leave == 2){
+$day = 'Full Day Leave';
+}
+else {
+$day = 'Half Day Leave';
+}
+//'1'=>'','2'=>''
+
+	$output = "<table cellspacing='2' cellpadding='1' border='0' id='form-container'>";
+	 $output .= "<tr class='evenrow'><td colspan=2 align='center'><h2>Leave Detail</h2></td></tr>";
+	 $output .= "<tr class='oddrow'><td width='50%'>Employee ID:</td><td>" . $empid. "</td></tr>";
+    $output .= "<tr class='evenrow'><td>Employee Name:</td><td>" . ucwords($rs->emp_name). "</td></tr>";
+	 $output .= "<tr class='oddrow'><td>Leave Type:</td><td>" .ucwords(getleavename($rs->leave_type)). "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Leave:</td><td>" .$day. "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Leave form Submit Date:</td><td>" .date("d-m-Y",$rs->form_submit_date). "</td></tr>";
+	$output .= "<tr class='evenrow'><td>From Date:</td><td>".date("d-m-Y",strtotime($rs->from_date)). "</td></tr>";
+	if($rs->day_of_leave == 2){
+	$output .= "<tr class='oddrow'><td>To Date:</td><td>" . date("d-m-Y",strtotime($rs->to_date)). "</td></tr>";
+	$output .= "<tr class='evenrow'><td>No. of day Leave:</td><td>" .$rs->no_of_daye. " Day(s)</td></tr>";
+	$output .= "<tr class='oddrow'><td>Reason:</td><td>" . ucwords($rs->reason). "</td></tr>";
+	 $output .= '<tr class="evenrow"><td colspan="2" class="back" align="center">'.l('Back','leave-managementlist').'</td></tr>';
+    }else{
+	$output .= "<tr class='oddrow'><td>No. of day Leave:</td><td>" .$rs->no_of_daye. " Day(s)</td></tr>";
+	$output .= "<tr class='evenrow'><td>Reason:</td><td>" . ucwords($rs->reason). "</td></tr>";
+	 $output .= '<tr class="oddrow"><td colspan="2" class="back" align="center">'.l('Back','leave-managementlist').'</td></tr>';
+	}
+	 $output .= "</table>";
+
+return $output;
+}
+
+
+
+
+function leave_management_theme() {
+	
+	return array(
+				 
+		'leave_management_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'leave_management',
+			),
+			'conform_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'conform_form',
+			),
+       
+				 );
+}
+
+///////******* searching form ********///////////////
+
+
+
+
+function leave_management_search_form(){
+
+
+
+$form['search_box']=array(
+	'#type' => 'textfield',
+	'#title' => '',
+	'#required' => false,
+	'#size' => 60,
+	'#default-value' => '',
+	'#prefix' => '<div class="listsearchie7_leave frightie7 searchie7">',
+);
+$form['search'] = array(
+	'#type' => 'submit',
+	'#value' =>t('Search'),
+	'#suffix' => '</div>',
+);
+return $form;
+}
+
+function leave_management_search_form_submit($form,&$form_state){
+	$keydata = $form_state['values']['search_box'];
+if($keydata == '')	{
+drupal_goto('leave-managementlist');
+}else{
+	drupal_goto('leave-search-list/'.$keydata);
+	
+}
+
+}
+
+function leave_management_list_page(){
+global $user;
+
+   // echo $user->uid;
+	 $emp_id = getuserempID($user->uid);
+	if(getRole($user->uid) ==13 || getRole($user->uid) ==6 || getRole($user->uid) ==19){
+	$sql = "select * from tbl_leave_management";
+	}
+	else{
+	$sql = "select * from tbl_leave_management where emp_id='".$emp_id."'";
+	}
+	$output = leave_management_values($sql) ;
+	
+return $output;
+}
+
+function leave_management_search_page($keydata){
+global $user;
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);
+
+ $emp_id = getuserempID($user->uid);
+//emp_id,emp_name,leave_type,day_of_leave,from_date,to_date,no_of_daye,reason,status,form_submit_date
+if(getRole($user->uid) ==13 || getRole($user->uid) ==6 || getRole($user->uid) ==19){
+	$sql = "select tbl_leave_management.emp_id as emp_id, tbl_leave_management.emp_name as emp_name,tbl_leave_management.leave_type as leave_type,tbl_leave_management.day_of_leave as day_of_leave,tbl_leave_management.from_date as from_date,tbl_leave_management.to_date as to_date, tbl_leave_management.no_of_daye as no_of_daye, tbl_leave_management.reason as reason, tbl_leave_management.status as status, tbl_leave_management.form_submit_date as form_submit_date,lt.leave_id as leave_id,lt.leave_name as leave_name from tbl_leave_management LEFT JOIN tbl_leavetype as lt ON(tbl_leave_management.leave_type=lt.leave_id) where ( tbl_leave_management.emp_name LIKE '".$val."' OR lt.leave_name LIKE '".$val."' OR tbl_leave_management.from_date LIKE '".date("Y-m-d",strtotime($keydata))."%' OR tbl_leave_management.to_date LIKE '".date("Y-m-d",strtotime($keydata))."%' OR  tbl_leave_management.reason LIKE '".$val."') ";
+	}
+	else{
+ $sql = "select tbl_leave_management.emp_id as emp_id, tbl_leave_management.emp_name as emp_name,tbl_leave_management.leave_type as leave_type,tbl_leave_management.day_of_leave as day_of_leave,tbl_leave_management.from_date as from_date,tbl_leave_management.to_date as to_date, tbl_leave_management.no_of_daye as no_of_daye, tbl_leave_management.reason as reason, tbl_leave_management.status as status, tbl_leave_management.form_submit_date as form_submit_date,lt.leave_id as leave_id,lt.leave_name as leave_name from tbl_leave_management LEFT JOIN tbl_leavetype as lt ON(tbl_leave_management.leave_type=lt.leave_id) where tbl_leave_management.emp_id='".$emp_id."' AND ( tbl_leave_management.emp_name LIKE '".$val."' OR lt.leave_name LIKE '".$val."' OR tbl_leave_management.from_date LIKE '".date("Y-m-d",strtotime($keydata))."%' OR tbl_leave_management.to_date LIKE '".date("Y-m-d",strtotime($keydata))."%' OR  tbl_leave_management.reason LIKE '".$val."') ";
+
+	}
+$output = leave_management_values($sql) ;
+	
+return $output;
+}
+
+function leave_management_values($sqlquery){
+global $user;
+
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Leave', 'leave-managementlist');
+	drupal_set_breadcrumb($breadcrumb);
+
+
+$limit =(int)getMessage('leavemanagement', 'code04', NULL);
+$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Employee Name'), 'field' => 'tbl_leave_management.emp_id', 'sort' => 'asc'),
+	array('data' => t('Leave Type'), 'field' => 'tbl_leave_management.leave_type', 'sort' => 'asc'),
+	array('data' => t('From Date'), 'field' => 'tbl_leave_management.from_date', 'sort' => 'asc'),
+	array('data' => t('To Date'), 'field' => 'tbl_leave_management.to_date', 'sort' => 'asc'),
+	array('data' => t('Reason'), 'field' => 'tbl_leave_management.reason', 'sort' => 'asc'),
+	array('data' => t('Action')),
+	
+	);
+	$sql = $sqlquery.tablesort_sql($header);
+	 $count_query = "SELECT COUNT(*) as mycount FROM (" . $sql . ") AS count_query";
+	$cres = db_query($count_query);
+	$crs = db_fetch_object($cres);
+	 $totalcount = $crs->mycount;
+	
+	$result = pager_query($sql,10,0,$count_query);
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		 $ctime = date("d-m-Y",time());
+		 $comdate= date("d-m-Y",strtotime(substr($rs->from_date,0,10)));
+		 $diff =dateDiffByDays($comdate,$ctime);
+		
+		$links = l('View','view-leave/'.$rs->emp_id.'/'.$rs->form_submit_date); 
+		if($diff<0){
+		$links .= ' | '.l('Cancel Leave','cleave/'.$rs->emp_id.'/'.$rs->form_submit_date);
+	  }
+		if(getRole($user->uid) ==13 || getRole($user->uid) ==6 || getRole($user->uid) ==19){
+		$links .= ' | '.l('View Balance Leave','view-balance-leave/'.$rs->emp_id);
+		$emplinks ='';
+		}
+		else{
+		$emplinks = l('View Balance Leave','view-balance-leave/'.$rs->emp_id);
+		}
+		$from_date = date("d-m-Y" ,strtotime($rs->from_date));
+		if($rs->to_date){
+		$to_date = date("d-m-Y" ,strtotime($rs->to_date));
+		}
+		else{
+			//$to_date ='Half Day Leave';
+			$to_date ='NA';
+		}
+      $empname =empname($rs->emp_id);
+	 
+		$rows[] = array(
+		array('data' => $counter),
+		array('data' => $empname),
+		array('data' => ucwords(getleavename($rs->leave_type))),
+		array('data' => $from_date),
+		array('data' => $to_date),
+		array('data' => ucwords($rs->reason)),
+		array('data' => $links),
+            
+          
+		);
+	
+	  }
+}
+if($rows== NULL)
+	$header=NULL;
+//$output .='<div class="uploadcss">';	
+    if(arg(0)=='leave-search-list'){
+	 $records = t(getMessage('leavemanagement', 'code03', array("0"=>$totalcount)));
+	 $output .='<table  id="wrapper" class="searchrecord"><tr><td>'.$records.' | '.l('View All','leave-managementlist').'</td></tr></table>';
+	}
+	$title = t(getMessage('leavemanagement', 'code02',NULL));
+	 $output .='<table id="wrapper">
+	 				<tr>
+	 					<td class="tblHeaderLeft" width="33%">'.$title.'<span class="addrecord">'.l('Apply Leave','leave-entry-form').'</span></td>
+						<td class="tblHeaderRight" width="28%"><span id="balanceleave" class="addrecord1">'.$emplinks.'</span></td>
+						<td align="right" width="38%">'.drupal_get_form('leave_management_search_form').'</td>
+				    </tr>
+				</table>';
+	 
+	
+	$output .=theme_table($header,$rows);
+	 $output .=theme('pager', NULL, 20,0 );
+// $output .='<div>';
+  
+	return $output;
+  }
+  
+
+
+function cleave_page($emp_id,$time){
+
+db_query("delete from tbl_leave_management where emp_id='".$emp_id."' AND form_submit_date='".$time."'");
+drupal_set_message('Leave has been Cancelled successfully.');
+drupal_goto('leave-managementlist');
+//l('Cancel Leave','cleave/'$emp_id.'/'.$time)
+}
+
+
+  function getuserempID($uid){
+  
+ $sql ="select employee_id from tbl_joinings where program_uid='".$uid."'";
+	 $res = db_query($sql);
+	 $rs= db_fetch_object($res);
+	// echo $rs->employee_id;;
+	return  $rs->employee_id;
+
+  
+  }
+ 
+
+function getleavename($id){
+
+$sql ="select leave_name from tbl_leavetype where leave_id='".$id."'";
+	 $res = db_query($sql);
+	 $rs= db_fetch_object($res);
+	// echo $rs->employee_id;;
+	return  $rs->leave_name;
+
+
+}
+
+/*
+function getdatedifference(){
+
+ $resigndate = date('Ymd',time());
+ $newDate = date('Ymd',strtotime('+14 days',time()));
+//echo $todate = date('Ymd',$to);
+//echo $fromdate = date('Ymd',$from);
+exit;
+ $diff = ($newDate-$resigndate);
+return $diff;
+}
+*/
+
+
+function view_balance_leave_page($empid){
+
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Leave', 'leave-managementlist');
+	$breadcrumb[] = l('List of Balance Leave', 'view-balance-leave/'.$empid);
+	drupal_set_breadcrumb($breadcrumb);
+
+$data .='<table id="wrapper"><tr><td align="left" class="tblHeaderLeft">List of Balance Leave<span class="addrecord">'.l('View leave Detail','view-all-leave-detail/'.$empid).'</span></td></tr></table>';
+$data .= '<table><thead><tr><th>S. No.</th><th>Leave Name</th><th>Allocated Leave</th><th>Your Leave</th><th>Balanced Leave</th></tr></thead><tbody>';
+$sql ="select * from tbl_leaveallocation";
+$res = db_query($sql);
+$counter = 1;
+while($rs = db_fetch_object($res)){
+
+$lsql ="select * from tbl_leave_management where emp_id='".$empid."' AND leave_type='".$rs->leavetype_name."'";
+$lres = db_query($lsql);
+while($lrs= db_fetch_object($lres))
+	{
+	if($lrs->day_of_leave == 2){
+	$leaveday += $lrs->no_of_daye;
+	}
+	else if($lrs->day_of_leave == 1){
+	$leaveday +=0.5;
+	}
+	
+	}
+
+$balanceleave = ($rs->no_of_leave)-($leaveday);	
+if($counter%2 == 0){$class='even';}
+else{$class='odd';}
+$data .='<tr class='.$class.'><td>'.$counter.'</td><td>'.ucwords(getleavename($rs->leavetype_name)).'</td><td>'.$rs->no_of_leave.'</td><td>'.$leaveday.'</td><td>'.$balanceleave.'</td></tr>';
+$leaveday='';
+$counter++;
+}
+
+$data .='<tr class="oddrow" ><td class="back" align="center" colspan="5">'.l("Back","leave-managementlist").'</td></tr>';
+$data .='</tbody> </table>';
+
+
+
+//$output = drupal_get_form('dueamount_form',$empid);
+return $data;
+
+
+
+}
+
+function view_all_leave_page($emp_id){
+
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Leave', 'leave-managementlist');
+	$breadcrumb[] = l('List of Balance Leave', 'view-balance-leave/'.$emp_id);
+	$breadcrumb[] = l('List of Leaves Detail', 'view-all-leave-detail/'.$emp_id);
+	drupal_set_breadcrumb($breadcrumb);
+
+$sql ="select * from tbl_leave_management where emp_id='".$emp_id."'";
+
+$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Leave Name'), 'field' => 'tbl_leave_management.leave_type', 'sort' => 'asc'),
+	array('data' => t('Day of leave'), 'field' => 'tbl_leave_management.day_of_leave', 'sort' => 'asc'),
+	array('data' => t('From Date'), 'field' => 'tbl_leave_management.from_date', 'sort' => 'asc'),
+	array('data' => t('To Date'), 'field' => 'tbl_leave_management.to_date', 'sort' => 'asc'),
+	array('data' => t('Reason'), 'field' => 'tbl_leave_management.reason', 'sort' => 'asc'),
+	array('data' => t('Submitted Date'), 'field' => 'tbl_leave_management.form_submit_date', 'sort' => 'asc'),
+	
+	);
+	 $count_query = "SELECT COUNT(*) FROM (" . $sql . ") AS count_query";
+	
+	$result = pager_query($sql,10,0,$count_query);
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		
+		$from_date = date("d-m-Y" ,strtotime($rs->from_date));
+		if($rs->to_date){
+			$day ='Full Day Leave';
+		$to_date = date("d-m-Y" ,strtotime($rs->to_date));
+		}
+		else{
+			$day ='Half Day Leave';
+			$to_date ='NA';
+		}
+		$submitdate = date("d-m-Y",$rs->form_submit_date);
+      //$empname =empname($rs->emp_id);
+	 
+		$rows[] = array(
+		array('data' => $counter),
+		array('data' => ucwords(getleavename($rs->leave_type))),
+		array('data' => $day),
+		array('data' => $from_date),
+		array('data' => $to_date),
+		array('data' => ucwords($rs->reason)),
+		array('data' => $submitdate),
+            
+          
+		);
+	
+	  }
+}
+if($rows== NULL)
+	$header=NULL;
+//$output .='<div class="uploadcss">';	
+    
+	$title = 'List of Leaves Detail';
+	 $output .='<table id="wrapper"><tr><td class="tblHeaderLeft">'.$title.'</td></tr></table>';
+	$output .=theme_table($header,$rows);
+	 $output .='<table cellspacing="2" cellpadding="1" border="0" id="form-container"><tr class="oddrow"><td class="back" align="center">'.l('Back','view-balance-leave/'.$emp_id).'</td></tr></table>';
+	 $output .=theme('pager', NULL, 20,0 );
+// $output .='<div>';
+  
+	return $output;
+
+}
+
+function leavelist1(){
+global $user;
+ $use="select tbl_leavetype.leave_name,tbl_leavetype.leave_id from tbl_leavetype,tbl_leaveallocation where tbl_leavetype.leave_id=tbl_leaveallocation.leavetype_name and tbl_leavetype.status=1 order by leave_name asc";
+$usq = db_query($use);
+$leave = array(''=>'--Select--');
+ while($usre = db_fetch_array($usq)){
+ $leave_id=$usre['leave_id'];
+   $leave[$leave_id] = ucwords($usre['leave_name']);
+  }
+ 
+  return $leave;
+}
+

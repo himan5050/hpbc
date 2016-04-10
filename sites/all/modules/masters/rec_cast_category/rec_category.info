@@ -1,0 +1,6 @@
+;$id 1/7/2011 Neshat khan
+name = "Caste Category"
+description ="Caste category master"
+core = 6.x
+version =6.x-1
+package="REC Masters"

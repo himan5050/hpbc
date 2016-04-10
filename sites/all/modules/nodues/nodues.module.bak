@@ -1,0 +1,79 @@
+<?php
+function nodues_perm() {
+	return array('edit nodues','administer nodues', 'create nodues', 'view nodues');
+}
+
+function nodues_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit nodues', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create nodues', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view nodues', $account);
+	}
+}
+
+function nodues_menu(){
+	$items['nodues'] = array(
+								'title' => 'No Dues',
+								'page callback' => 'nodues',
+								'access arguments' => array('administer nodues'),
+								'type' => MENU_CALLBACK,
+	);
+	
+		
+	return $items;
+
+}
+
+function nodues(){
+  return drupal_get_form('nodues_form');
+}
+
+function nodues_form($aid){
+	global $user;
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('No Dues', 'nodues');
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+	$form['account'] = array(
+	'#type' =>'textfield',
+	
+    '#maxlength'=>25,
+	'#required' => TRUE,
+	'#size' => '41',
+	'#default_value' =>arg(1),
+	//'#attributes' => array('onkeypress' => 'return paypay(event)'),
+	);
+	
+	
+	$form['submit'] = array(
+	'#type' => 'button',
+	'#default_value' => t('Generate')
+	);
+	return $form;
+	}
+	
+	
+	function nodues_theme() {
+	//drupal_set_message('hello');
+	
+	return array(
+				 
+					 
+		'nodues_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'nodues_form',
+                                 ),						 
+       			 );
+                         }

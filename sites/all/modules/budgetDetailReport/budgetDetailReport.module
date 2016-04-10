@@ -1,0 +1,420 @@
+<?php
+
+
+/**
+ *hook_perm
+ */
+ 
+ function budgetDetailReport_init() {
+	//drupal_add_css(drupal_get_path('module', 'budgetDetailReport') .'/report_style.css');
+	
+}
+
+function budgetDetailReport_perm() {
+	return array('edit budgetDetailReport','administer budgetDetailReport', 'create budgetDetailReport', 'view budgetDetailReport');
+}
+
+function budgetDetailReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit budgetDetailReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create budgetDetailReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view budgetDetailReport', $account);
+	}
+	
+}
+
+
+function budgetDetailReport_menu(){
+
+  $items['budgetDetailReport'] = array(
+										'title' => t('Budget Detail Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'budgetDetailReport',
+										'access arguments' => array('administer budgetDetailReport'),
+													 
+									  );
+
+	$items['dsje/valchange'] = array(
+										'page callback' => 'myvalchange',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+				
+);   
+
+   $items['dsje/valchange2'] = array(
+										'page callback' => 'myvalchange2',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);   
+   
+   return $items;
+}
+
+
+function myvalchange2(){
+
+    $headcode= $_POST['headcode'];
+	    
+		$headty=$headcode;
+
+$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('fdr_form', $form, $form_state);
+
+$form['headcode'] = array(
+	'#type' => 'select',
+	'#title' => t('Head Code'),
+	'#required' => FALSE,
+	'#value' =>$headcode,
+	'#options' => HeadCode(), 
+	'#id'=>'edit-headcode',
+	'#name'=>'headcode',
+   	'#ahah'=>array(
+		'path'=>'dsje/valchange2',
+		'method'=>'replace',
+			'effect'=>'slide',
+		'wrapper'=>'valchange',
+	),
+	);
+
+
+$headtype1=db_query("select type1 from {tbl_headmaster} where vid='".$headty."'");
+$headtype2=db_fetch_object($headtype1);
+$headtype_id=$headtype2->type1;
+$schemearray['']= '--Select--';
+if($headtype_id==248){
+
+
+$no=db_query("select schemeName_id,schemeName_name from {tbl_schemenames} ");
+
+while($noo=db_fetch_object($no)){
+
+
+$schemearray[$noo->schemeName_id]= ucwords($noo->schemeName_name);
+}
+
+}else{
+//expenditure
+$kk= "SELECT lookupType_id,lookupType_name  FROM {tbl_lookuptypes} WHERE lookupType_id=90";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM {tbl_lookups} WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$no= db_query($sqlsender);
+//$senderarray['']= '--Select--';
+
+while($noo=db_fetch_object($no)){
+
+
+$schemearray[$noo->lookup_id]= ucwords($noo->lookup_name);
+
+}
+
+}
+
+$hname=db_query("select name1 from {tbl_headmaster} where vid='".$headcode."'");
+$hvalue=db_fetch_object($hname);
+
+
+$form['headname'] = array(
+	'#type' => 'select',
+	'#title' => t('Head Name'),
+	'#required' => FALSE,
+	'#value' =>$headcode,
+	'#options' => HeadValue(), 
+	'#id'=>'edit-headname',
+	'#name'=>'headname',
+	'#attributes'=>array('readonly'=>'readonly'),
+	);
+
+
+
+	
+
+ $form['schemename'] = array(
+	'#type' => 'select',
+	'#title' => t('Scheme Name'),
+	'#required' => FALSE,
+	'#value' =>$schemename,
+	'#options'=>$schemearray,
+	'#id'=>'edit-schemename',
+	'#name'=>'schemename',
+	
+
+	
+	);
+
+$output .= '<tr id="valchange"><td id="valchange">'.drupal_render($form['headname']).'</td>';
+
+	$output .= '<td id="valchange">'.drupal_render($form['headcode']).'</td>';
+
+	$output .= '<td id="valchange">'.drupal_render($form['schemename']).'</td></tr>';
+
+
+	
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+
+
+function myvalchange(){
+
+   
+	    $headname= $_POST['headname'];
+		$headty=$headname;
+$schemename=$_POST['schemename'];
+$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('fdr_form', $form, $form_state);
+
+$headtype1=db_query("select type1 from {tbl_headmaster} where vid='".$headty."'");
+$headtype2=db_fetch_object($headtype1);
+$headtype_id=$headtype2->type1;
+$schemearray['']= '--Select--';
+if($headtype_id==248){
+
+
+$no=db_query("select schemeName_id,schemeName_name from {tbl_schemenames} ");
+
+while($noo=db_fetch_object($no)){
+
+
+$schemearray[$noo->schemeName_id]= ucwords($noo->schemeName_name);
+}
+
+}else if($headtype_id==249) {
+//expenditure
+$kk= "SELECT lookupType_id,lookupType_name  FROM {tbl_lookuptypes} WHERE lookupType_id=90";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM {tbl_lookups} WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$no= db_query($sqlsender);
+//$senderarray['']= '--Select--';
+
+while($noo=db_fetch_object($no)){
+
+
+$schemearray[$noo->lookup_id]= ucwords($noo->lookup_name);
+
+}
+}
+
+
+
+$form['headname'] = array(
+	'#type' => 'select',
+	'#title' => t('Head Name'),
+	'#required' => FALSE,
+	'#value' =>$headname,
+	'#options' => HeadValue(), 
+	'#id'=>'edit-headname',
+	'#name'=>'headname',
+	'#ahah'=>array(
+			'path'=>'dsje/valchange',
+			'method'=>'replace',
+				'effect'=>'slide',
+				'wrapper'=>'valchange',
+	),
+	);
+
+$cval=db_query("select code from {tbl_headmaster} where vid='".$headname."'");
+$cvalue=db_fetch_object($cval);
+
+
+$form['headcode'] = array(
+	'#type' => 'select',
+	'#title' => t('Head Code'),
+	'#required' => FALSE,
+	'#value' =>$headname,
+	'#options' => HeadCode(), 
+	'#id'=>'edit-headcode',
+	'#name'=>'headcode',
+	'#attributes'=>array('readonly'=>'readonly'),	
+	);
+
+
+
+
+
+
+ $form['schemename'] = array(
+	'#type' => 'select',
+	'#title' => t('Scheme Name'),
+	'#required' => FALSE,
+	'#value' =>$schemename,
+	'#options'=>$schemearray,
+	'#id'=>'edit-schemename',
+	'#name'=>'schemename',
+	
+
+	
+	);
+	
+	$output .= '<tr id="valchange"><td id="valchange">'.drupal_render($form['headname']).'</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>';
+
+	$output .= '<td id="valchange">'.drupal_render($form['headcode']).'</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>';
+
+	$output .= '<td id="valchange">'.drupal_render($form['schemename']).'</td></tr>';
+
+
+
+	
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+
+
+
+
+
+
+
+function budgetDetailReport(){
+  return drupal_get_form('budgetDetailReport_form');
+}
+
+function budgetDetailReport_form(){
+ global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Budget Detail Register', 'budgetDetailReport');
+  drupal_set_breadcrumb($breadcrumb);
+
+
+ 
+$form['headcode'] = array(
+	'#type' => 'select',
+	'#title' => t('Head Code'),
+	'#required' => FALSE,
+	'#default_value' =>$node->headcode,
+	'#options' => HeadCode(), 
+	//'#id'=>'edit-headcode',
+   	'#ahah'=>array(
+		'path'=>'dsje/valchange2',
+		'method'=>'replace',
+			'effect'=>'slide',
+		'wrapper'=>'valchange',
+	),
+	);
+
+$form['headname'] = array(
+	'#type' => 'select',
+	'#title' => t('Head Name'),
+	'#required' => FALSE,
+	'#default_value' =>$node->headname,
+	'#options' => HeadValue(), 
+	//'#id'=>'edit-headname',
+	'#ahah'=>array(
+			'path'=>'dsje/valchange',
+			'method'=>'replace',
+				'effect'=>'slide',
+				'wrapper'=>'valchange',
+	),
+	);
+if($node->headname==''){
+$headty=$node->headcode;} else if($node->headcode==''){$headty=$node->headname;} else {$headty=$node->headname;}
+$headtype1=db_query("select type1 from {tbl_headmaster} where vid='".$headty."'");
+$headtype2=db_fetch_object($headtype1);
+$headtype_id=$headtype2->type1;
+$schemearray['']= '--Select--';
+if($headtype_id==248){
+
+
+$no=db_query("select schemeName_id,schemeName_name from {tbl_schemenames} ");
+
+while($noo=db_fetch_object($no)){
+
+
+$schemearray[$noo->schemeName_id]= ucwords($noo->schemeName_name);
+}
+
+}else {
+//expenditure
+$kk= "SELECT lookupType_id,lookupType_name  FROM {tbl_lookuptypes} WHERE lookupType_id=90";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM {tbl_lookups} WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$no= db_query($sqlsender);
+//$senderarray['']= '--Select--';
+
+while($noo=db_fetch_object($no)){
+
+
+$schemearray[$noo->lookup_id]= ucwords($noo->lookup_name);
+
+}
+
+}
+
+	
+ $form['schemename'] = array(
+	'#type' => 'select',
+	'#title' => t('Scheme Name'),
+	'#required' => FALSE,
+	'#default_value' =>'--select--',
+	'#options'=>$schemearray,
+
+	
+	);
+	
+$form['sectionname'] = array(
+	'#type' => 'select',
+	'#title' => t('Branch'),
+	'#required' => FALSE,
+	'#default_value' =>$node->sectionname,
+	'#options' => SelectOffices(),  
+	);
+
+
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function budgetDetailReport_theme() {
+	
+	return array(
+		
+		'budgetDetailReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'budgetDetailReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}
+
+
+/*function budgetDetailReport_cron(){
+	
+	
+	
+	
+	
+}	*/

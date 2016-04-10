@@ -1,0 +1,33 @@
+.uploadcss p{ padding-bottom:0; display:inline-block;}
+#dsearch-form {display:block; float:right;}
+#dsearch-form #edit-search-box-wrapper{width: 215px;float:left; margin-top:0; margin-bottom:0;}
+#dsearch-form #edit-search {float:left;margin-left: 4px;}
+.dhead{border:none;}
+#edit-file-keywords-wrapper .description{text-align: center;margin-right: 35px;}
+.back a {
+border: 1px solid #9D9D9D;
+font-family: sans-serif;
+font-size: 14px;
+height: 25px;
+padding: 4px 25px 2px;
+vertical-align: middle;
+font-weight: normal;
+background-color: #ECE9D8;
+margin: 0 5px 0 0;
+}
+
+#csearch-form #edit-search{
+background-image: -webkit-gradient(linear,left top,left bottom,from(#4d90fe),to(#4787ed));
+background-image: -webkit-linear-gradient(top,#4d90fe,#4787ed);
+background-color: #4D90FE;
+background-image: linear-gradient(top,#4d90fe,#4787ed);
+border: 1px solid #3079ED;
+color:#fff;
+height:26px;
+padding: 3px 8px;
+}
+
+
+#edit-uploadfile-wrapper .description{float: right;
+margin-right: 265px;}
+#nodriv fieldset{ display:none;}

@@ -1,0 +1,855 @@
+<?php
+drupal_add_css(drupal_get_path('module','workflow_matrix').'/workflow.css');
+drupal_add_js(drupal_get_path('module','workflow_matrix').'/workflow.js');
+
+function workflow_matrix_perm() {
+	return array('edit workflow_matrix','administer workflow_matrix', 'create workflow_matrix', 'view workflow_matrix');
+}
+
+
+function workflow_matrix_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit workflow_matrix', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create workflow_matrix', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view workflow_matrix', $account);
+	}
+	
+}
+
+function workflow_matrix_menu(){
+ 	$items['workflowmatrixlist'] = array(
+										'title' => t(' List  Workflow(Matrix)'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'workflowmatrixlist',
+										'access arguments' => array('administer workflow_matrix'),
+													 
+									  );
+   	$items['next_workflowmatrix/%'] = array(
+										'title' => t('Add Level of  WorkFlow(Matrix)'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'nextworkflowmatrix',
+		                                'page arguments' => array(1),
+										'access arguments' => array('administer workflow_matrix'),
+													 
+									  );
+	$items['delete/%'] = array(
+										'title' => t(')'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'delete',
+		                                'page arguments' => array(1),
+										'access arguments' => array('administer workflow_matrix'),
+													 
+									  );
+									  
+									  
+	//tbl esclation 
+	
+	
+	$items['addesclation'] = array(
+										'title' => t('List  Esclations'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'addesclation',
+										'access arguments' => array('administer workflow_matrix'),
+													 
+									  );
+	$items['claim'] = array(
+	    'type' => MENU_NORMAL_ITEM,
+		'page callback' => 'claim',
+		'access arguments' => array('access content'),
+	
+	);		
+	
+
+	$items['userrolelist'] = array(
+	    'type' => MENU_NORMAL_ITEM,
+		'page callback' => 'userrolelist',
+		'access arguments' => array('access content'),
+	
+	);	
+									  
+									  
+  									  
+  return $items;
+}
+
+
+
+function userrolelist(){
+	 $array = explode('/',$_GET['q']);
+   $breadcrumb = array();
+   $breadcrumb[] = l('Home', '<front>');
+   $breadcrumb[] = l('List of Escalation', 'addesclation');
+   $breadcrumb[] = l('List of users with roles', 'userrolelist');
+   drupal_set_breadcrumb($breadcrumb);
+   $output ="";
+   $output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="form-container">
+<tr class="oddrow">
+
+	   <td align="center" colspan="2"><h2>Roles with users</h2></td>
+	 
+</tr>';
+$output .='<tr class="even"><th>Roles</th><th>Users</th></tr>';
+   $sqlr = "select rid,name from role where rid NOT IN (1,2)";
+   $resr = db_query($sqlr);
+   $i=0;
+   while($rsr = db_fetch_object($resr)){
+     $sqlu = "select uid from users_roles where rid='".$rsr->rid."'";
+	 $resu = db_query($sqlu);
+	$val ="";
+	 while($rsu = db_fetch_object($resu)){
+	    $cuser = user_load($rsu->uid);
+		$name = $cuser->name;
+		$uid = $cuser->uid;
+           
+		   if($uid && $name){
+		    $val .= $name .'( ' .$uid.' )<br /> ';
+           }
+	 }
+	 if($i%2==0){
+	          $class = "evenrow";
+	 }else{
+	     $class = "oddrow";
+	 }
+
+	 $output .='<tr class="'.$class.'">
+	<td nowrap="nowrap" width="35%">'.$rsr->name .'('.$rsr->rid.')</td><td nowrap="nowrap" width="80%">'.$val.'</td></tr>';
+   }
+   $output .='</table>';
+   return $output;
+}
+
+
+
+/**
+ @AHAH Calling
+ */
+ 
+ function claim(){
+    $workflow_id = $_POST['claim'];
+	$query = "select workflow_details_id from tbl_workflow_details where workflow_id=$workflow_id";
+	$result = db_query($query);
+	$workflowdtarray[''] = "--Select--";
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$workflowdtarray[$row->workflow_details_id] = $row->workflow_details_id;
+		$counter++;
+	}
+	if($counter==0) {
+		$workflowdtarray[''] = "--Select--";
+	}
+	$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('addesclation_form', $form, $form_state);
+    
+	
+	$form['workflow_details_id'] = array(
+       '#type' => 'select',
+	   '#title' => 'Workflow Details Id',
+	   '#options' => $workflowdtarray,
+	   '#required' => TRUE,
+	   '#prefix' => '<div id="claim">',
+	   '#suffix' =>'</div>',
+	   '#name' => 'workflow_details_id',
+	   '#id' =>'edi-workflow_details_id',
+	   '#attributes' => array('onchange' => 'addmorefield();'), 
+	   
+	 );
+	
+	
+	$output = drupal_render($form['workflow_details_id']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+ }
+
+
+
+/**
+ *@
+ */
+ 
+ function GetWorkflowName(){
+    session_start();
+	$workflow_id = $_SESSION['workflow_id'];
+	$sql = "select 	workflow_id,workflow_name from tbl_workflow ORDER BY workflow_name ASC";
+	$res = db_query($sql);
+	//$workflow = array(''=>'--Select--');
+	$option = '<option value="">--Select--</option>';
+	while($rs = db_fetch_object($res)){
+	    //$workflow[$rs->workflow_id] = ucwords($rs->workflow_name);
+		if($workflow_id == $rs->workflow_id){
+		   $selected ="selected";
+		 }else{
+		   $selected ="";
+		 }
+		$option .= '<option value="'.$rs->workflow_id.'" '.$selected.'>'.ucwords($rs->workflow_name).'</option>';
+	}
+	return $option;
+ }
+
+
+/**
+ *@ Escalation here
+ */
+ 
+ function addesclation(){
+ 
+    session_start();
+ 	 $array = explode('/',$_GET['q']);
+   $breadcrumb = array();
+   $breadcrumb[] = l('Home', '<front>');
+   $breadcrumb[] = l('List of Escalation', 'addesclation');
+   drupal_set_breadcrumb($breadcrumb);
+
+  $workflow_id = $_SESSION['workflow_id'];
+  $wf_details = $_SESSION['workflow_details'];
+  if( $workflow_id){
+$query = "select workflow_details_id,role from tbl_workflow_details where workflow_id=$workflow_id";
+$result = db_query($query);
+	$workflowdtarray[''] = "--Select--";
+	$counter = 0;
+	$data='<b>Workflow Detail Id:</b> <select name="drop2" onchange="showvalue(this.value);">';
+	$data .='<option value="" selected>--Select--</option>';
+	while($row=db_fetch_object($result)) {
+		//$workflowdtarray[$row->workflow_details_id] = $row->workflow_details_id;
+	  if($wf_details  == $row->workflow_details_id){
+		 $selected ="selected";
+	  }else{
+		$selected ="";
+	  }
+     $data .='<option value="'.$row->workflow_details_id.'"  '.$selected.'>'.$row->workflow_details_id.'( '.rolename($row->role).' )'.'</option>';
+   
+	}
+   $data .=' </select>';
+
+  }
+	if(isset($_POST['save']) && $_POST['sla'] !='' && $_POST['usersroles'])
+	{
+	    
+	 	
+	 
+	 $workflow_id = $_SESSION['workflow_id'];
+     $wf_details = $_SESSION['workflow_details'];
+	
+	
+	if($_POST['type'] == 'roles'){
+	 // $roles = $_POST['usersroles'];
+	  $roles = implode(",",$_POST['usersroles']);
+	  $users ="";
+	}else{
+	   $roles ="";
+	   //$users = $_POST['usersroles'];
+	   $users = implode(",",$_POST['usersroles']);
+	}
+	$sla = $_POST['sla'];
+	$sms = $_POST['sms'];
+	$email = $_POST['email'];
+	if($sms == 'sms'){
+	  $sms =1;
+	}else{
+	  $sms=0;
+	} 
+	
+	if($email == 'email'){
+	  $email =1;
+	}else{
+	  $email=0;
+	} 
+	$nu=$_SESSION['exp'];
+	
+	if($_SESSION['mlevel']){
+	  $level = $level+1;
+	}else{
+	  $sqlm ="SELECT max(LEVEL) as mlevel FROM `tbl_escalation` WHERE workflow_details_id ='".$_SESSION['workflow_details']."'";
+      $resm = db_query($sqlm);
+      $rsm = db_fetch_object($resm);
+      $level = $rsm->mlevel+1; 
+
+	}
+	$_POST['sla'] = '';
+	
+	//print_r($_REQUEST);exit;
+db_query("insert into tbl_escalation  (workflow_details_id,roles,users,SLA,SMS,Email,level) values('".$wf_details."','".$roles."','".$users."','".$sla."','".$sms."','".$email."','".$level."')");
+
+
+
+
+
+
+
+
+	$_SESSION['exp']++;
+	  
+	
+	  
+	  unset($_POST['usersroles']);
+	  unset($_POST['detail_cash_name']);
+	  unset($_POST['sla']);
+	  unset($_POST['type']);
+	  }
+	  if(isset($_POST['submit']))
+	  {
+			   $nu=$_SESSION['exp'];
+				for($i=0;$i<($nu-1);$i++)
+				 {  
+					//echo "Type  ".$_SESSION['type'][$i]."<br>";
+					//echo "usersroles  ".$_SESSION['usersroles'][$i]."<br>";
+					//echo "sla  ".$_SESSION['sla'][$i]."<br>";
+					
+				 }
+				 
+				 unset($_SESSION['exp']);
+	  }
+ 
+ global $base_url;
+
+
+
+ $output .='<table cellpadding="2" cellspacing="1" border="0" class="form-container">
+  <tr class="oddrow">
+    <td width="40%">
+	<b>Workflow Name:</b> <select name="drop1" onchange=changevalue("'.$base_url.'",this.value);>'.GetWorkflowName().'</select>
+		
+	</td>
+    <td id="drop2">'.$data.'</td>
+  </tr>
+  <tr class="oddrow">    
+    <td colspan="2"><span><a href="javascript:void(0)" onclick="showdiv();"> <b>ADD</b></a></span></td>
+  </tr>
+  ';
+  
+ 
+
+	 $nu=$_SESSION['exp'];
+	/* for($j=0;$j<=($nu-1);$j++)
+             {  
+				   
+	
+	if($j == ($nu-1)){
+	  $action = '<a href="javascript:void(0)" onclick="showdiv();"><b>+</b></a>';
+	}else{
+	  $action = '<a href="delete?i='.$j.'">Delete</a>';
+	}
+	
+
+	
+  //$output .='<tr class="odd"> <td >'.$_SESSION['type'][$j].'</td> <td >'.$_SESSION['usersroles'][$j].'</td><td>//'.$_SESSION['sla'][$j].'</td><td>'.$_SESSION['sms'][$j].'</td><td>'.$_SESSION['email'][$j].'</td><td>'. $action.'</td></tr>'; 
+      
+	  
+	  }*/
+      
+
+	
+	
+  $wf_details = $_SESSION['workflow_details'];
+	  
+$output .='</table>';
+
+$sqlw = "select * from tbl_escalation where workflow_details_id='".$wf_details."'";
+$resw =	  db_query($sqlw);
+if($resw){
+ $i=0;
+  while($rsw = db_fetch_object($resw)){
+      $action = '<a href="delete/'.$rsw->eid.'">Delete</a>';
+	  if($rsw->users){
+	    $type = 'Users';
+		$usersroles = $rsw->users;
+	  }else{
+	    $type = 'Roles'; 
+		$usersroles = $rsw->roles;
+	  }
+	   if($i%2 == 0){
+			   $cl = 'even';
+			  }else{
+				   $cl ='odd';
+				  }
+      $outputdata .='<tr class="'.$cl.'"> <td >'.$type.'</td> <td >'.$usersroles.'</td><td>'.$rsw->SLA.'</td><td>'.$rsw->SMS.'</td><td>'.$rsw->Email.'</td><td>'. $action.'</td></tr>';
+	  $i++;
+  }
+}
+
+   $sqlrd = "select rid,name from role where rid NOT IN (1,2)";
+   $resrd = db_query($sqlrd);
+   while($rsr = db_fetch_object($resrd)){
+     $rolesd .='<option value="'.$rsr->rid.'">'.$rsr->name.'</option>';  
+     $sqlu = "select uid from users_roles where rid='".$rsr->rid."'";
+	 $resu = db_query($sqlu);
+	$val ="";
+	 while($rsu = db_fetch_object($resu)){
+	    $cuser = user_load($rsu->uid);
+		$name = $cuser->name;
+		$uid = $cuser->uid;
+           
+		   if($uid && $name){
+		   $usersd .='<option value="'.$uid.'">'.$name .'Role ( ' .$rsr->name. ' )'.'</option>'; 
+           }
+	 }
+	 
+  }
+$output .='<div id="value"><table><tr><th >Type</th> <th >Users/Roles</th><th>SLA (hours)</th><th>SMS</th><th>Email</th><th>Action</th></tr>'.$outputdata.'</table></div>';
+
+$output .='<div id="field" style="display:none">
+   <form name="form" method="post" action="">
+<table>
+      <tr class="evenrow">
+	  <td width="40%">Type:<span style="color:#FF0000">*</span></td>
+       <td><select name="type" onchange="choseval();" id="usr"><option value="" selected="selected">--Select--</option>       
+           <option value="users">Users</option>          
+           <option value="roles">Roles</option>
+           </select><br /><a href="userrolelist" target="_blank">Users with Roles</a></td>
+      </tr>	   
+	<tr class="oddrow">   
+      <td>Users/Roles: <span style="color:#FF0000">*</span></td>
+	 <td> <select name="usersroles[]" multiple="multiple" id="user" style="display:none;">'.$usersd.'</select>
+    <select name="usersroles[]" multiple="multiple" id="roles" style="display:none;">'.$rolesd.'</select></td>		   		   
+    </tr>
+	
+	<tr class="evenrow">
+	   <td>Modes of Communication:</td><td><div class="left">SMS <input type="checkbox"  name="sms"  value="sms"/> Email <input type="checkbox"  name="email"  value="email"/></div></td></tr>
+	<tr class="oddrow">
+	  <td>SLA (in hours): <span style="color:#FF0000">*</span></td>
+	  <td><input type="text"  name="sla"  size="23"  maxlength="45" /></td>	  
+    </tr>
+	
+    <tr class="evenrow">
+	  <td align="center" colspan="2"><input type="submit" name="save" value="Add" /> </td>
+    </tr>
+    </table>
+	</form>
+    </div>';
+
+ return $output;
+   /*$output .='<div id="rec_participant"><table width="100%" cellpadding="0" cellspacing="0" border="0" id="wrapper"><tr><td align="left" class="tdform-width"><fieldset><legend>Add Esclation</legend><table align="left" class="frmtbl"><form method="POST" action="">
+    <tr><td><div class="maincol"><select name="claim">'.GetWorkflowName().'</select></div></td><td><div class="maincol">fsdsdgs</div></td><td><div class="maincol">dfgdfg</div></td></tr><tr><td><div class="maincol">dfgdf</div></td><td colspan="2" align="right"><div style="margin-right:60px;">dfgdfg</div></td></tr>    
+    </td></tr></form>
+	</table>
+	</fieldset>
+  </table>
+</div>';  
+
+return $output;*/
+
+//return drupal_get_form('addesclation_form');
+ }
+ 
+ function addesclation_form(){
+   
+   $form['claim'] = array(
+     '#type' =>'select',
+	 '#title' => t('WorkFlow Name'),
+	 '#options'=> GetWorkflowName(),
+	 '#required' => TRUE,
+	 '#ahah' => array(
+				  'path' => 'claim',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'claim',
+				  ),
+   );
+   
+   $form['workflow_details_id'] = array(
+     '#type' => 'select',
+	 '#title' => 'Workflow Details Id',
+	 '#options' => array('' =>'--Select--'),
+	 '#required' => TRUE,
+	 '#prefix' => '<div id="claim">',
+	 '#suffix' =>'</div>',
+	 
+   );
+   
+   /*$form['submit'] = array(
+     '#type' =>'submit',
+	 '#value' => 'Go',
+   
+   );*/
+   
+   return $form;
+   
+ }
+
+
+/*function addesclation_form($form,&$form_state){
+  
+}
+
+
+function next_escalation($workflow_id,$workflow_details_id){
+    $_SESSION['workflow_id'] = $workflow_id;
+	$_SESSION['workflow_details_id'] = $workflow_details_id;
+	$output .='<table>';
+	$output .
+	$output .='<tr><td><b>WorkFlow Name :</b> '.$workflow_id.'</td><td><b>WorkFlow Details Id: </b> '.$workflow_details_id.'</td></tr>';
+	
+	$output .='</table>';
+	
+	return drupal_goto('next_esclation_form',$workflow_id,$workflow_details_id);
+}
+
+
+function next_esclation_form($form,$workflow_id,$workflow_details_id){
+    $form['workflow_id'] = array(
+	  '#default_value' => $workflow_id,
+	  '#type' => 'hidden',
+	);
+	
+	$form['workflow_details_id'] = array(
+	  '#default_value' => $workflow_details_id,
+	  '#type' => 'hidden',
+	);
+}*/
+
+
+function workflowmatrixlist(){
+     global $user;
+	 global $base_url;
+	 $array = explode('/',$_GET['q']);
+     $breadcrumb = array();
+     $breadcrumb[] = l('Home', '<front>');
+     $breadcrumb[] = l('List Of Workflow(Matrix)', 'addesclation');
+     drupal_set_breadcrumb($breadcrumb);
+   
+	$output ='<table width="100%" cellspacing="1" cellpadding="1" border="0" id="wrapper"><tr><td align="left"  class="tblHeaderLeft">WorkFlow(Matrix)</td></tr></table>';
+
+	 $header = array(
+			array('data' => t('S. No.')),
+			array('data' => t('Workflow Name')),
+		    array('data' => t('Level Count')),
+		    array('data' => t('Role')),
+			array('data' => t('Level')),
+		    array('data' => t('No. of Hours')),
+			array('data' => t('Action')),
+		);
+		
+	 $sql = "select * from tbl_workflow";
+	 $res = db_query($sql);
+ 	$counter=0;
+	$ls=0;
+		while($row=db_fetch_object($res)) {
+			$counter++;
+			$editurl = l('Configure','next_workflowmatrix/'.$row->workflow_id);
+			$sqll = "select * from tbl_workflow_details where workflow_id = '".$row->workflow_id."'";
+			$resl = db_query($sqll);
+			$ls=0;
+			$role ="";
+			$hours = "";
+			$level ="";
+			while($rsl = db_fetch_object($resl)){
+			 $ls++;
+             $role .= getRoleName($rsl->role).'<br />';
+			 $hours .=$rsl->hours.'<br />';
+			 $level .= $rsl->level.'<br />';
+			}//$ls=0;
+				$rows[] = array(
+					
+					array('data' => $counter),
+					array('data' => ucwords($row->workflow_name)),
+                    array('data' => $ls), 
+					array('data' => $role),
+					array('data' => $level),
+					array('data' => $hours),
+					array('data' => $editurl),
+				);
+
+			
+		}
+		$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	
+		
+		return $output;
+}
+
+function getRoleName($rid){
+  $sql = "select name from role where rid='".$rid."'";
+  $res = db_query($sql);
+  $rs =  db_fetch_object($res);
+  return $rs->name;
+}
+
+/*
+  *@step 2
+*/
+
+function nextworkflowmatrix($wf_id){
+   $array = explode('/',$_GET['q']);
+   $breadcrumb = array();
+   $breadcrumb[] = l('Home', '<front>');
+   $breadcrumb[] = l('List of Workflow (Matrix)', 'workflowmatrixlist');
+   $breadcrumb[] = l('Add Level of  WorkFlow(Matrix)', 'next_workflowmatrix/'.$wf_id);
+   drupal_set_breadcrumb($breadcrumb);
+  $sql = "select workflow_name from tbl_workflow where workflow_id='".$wf_id."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+
+
+ //getting all roles from database
+
+  $sqlr = "select * from role where rid !=1";
+  $resr = db_query($sqlr);
+  $options ='<option value="">Select..</option>';
+  $i=0;
+  while($rsr = db_fetch_object($resr)){
+	    $i++;
+		$sqlcom = "select  * from tbl_workflow_details where role='".$rsr->rid."' and workflow_id='".$wf_id."'";
+		$rescom = db_query($sqlcom);
+		if($rscom = db_fetch_object($rescom)){
+		  
+		}else{
+				if(isset($_REQUEST['role']) && $_REQUEST['role'] == $rsr->rid){
+				  $options .='<option value="'.$rsr->rid.'" selected>'.ucfirst($rsr->name).'</option>';
+				}else{
+				  $options .='<option value="'.$rsr->rid.'">'.ucfirst($rsr->name).'</option>';
+				} 
+		}
+
+
+
+   }
+
+  
+//print_r($_REQUEST);exit;
+if(isset($_REQUEST['wsave'])){
+  $block =  "display:block;"; 
+}else{
+  $block =  "display:none;"; 
+}
+
+  if($_REQUEST['email']){
+    $email = "checked";
+  }
+
+  if($_REQUEST['sms']){
+    $sms = "checked";
+  }
+  $output ="";
+  $output .='<form name="workflow" action="" method="POST">';
+  $output .='<input type="hidden" name="wfid" value='.$wf_id.'>';
+  $output .='<table width="100%" cellspacing="1" cellpadding="1" border="0" id="wrapper">';
+  $output .='<tr><td class="tblHeaderLeft">Workflow Name : '.$rs->workflow_name.'</td><td class="right"><select name="role" id="role" onChange="showwork();" >'.$options.'</select> (Select Role for workflow)</td></tr>';
+  $output .='<tr id="workflowfiled" style="'.$block.'"><td class="hcss">SLA (in Hours) :<font color="red"> *</font> <input type="text" name="sla"  maxlength="3" onkeypress="return fononlyn(event);" style="width:30px;" value='.$_REQUEST['sla'].' id="sla"> (0 for unlimited)</td><td class="mcss">Mode Of Communication :<font color="red"> *</font>  SMS<input type="checkbox" id="smscss" name="sms" value="sms" '.$sms.'>  Email<input type="checkbox" name="email" value="email" '.$email.'> <input type="submit" name="wsave" value="save" id="mysearch"></td></tr>'; 
+  $output .='</table><form>';
+  $output .='<table>';
+  
+  $sqlw = "select * from tbl_workflow_details INNER JOIN role ON (role.rid=tbl_workflow_details.role)  where workflow_id='".$wf_id."'";
+  $resw = db_query($sqlw);
+  $output .='<tr><th>S. No.</th><th>Role</th><th>SLA (in Hours)</th><th>Level</th><th>Mode of Communication</th><th>Action</th></tr>';
+  $counter=1;
+  while($rsw = db_fetch_object($resw)){
+	
+	  if($rsw->sms && $rsw->email){
+	    $modec = $rsw->sms.' And '.$rsw->email;
+	  }else if($rsw->email){
+	    $modec = $rsw->email;
+	  }
+	  else {
+	    $modec = $rsw->sms;
+	  }
+	  if($counter %2 == 0){
+	    $class = "even";
+	  }else{
+	    $class = "odd";
+	  }
+    $output .='<tr class='.$class.'><td>'.$counter.'</td><td>'.$rsw->name.'</td><td>'.$rsw->hours.'</td><td>'.$rsw->level.'</td><td>'.$modec.'</td><td>'.l('Delete','delete/'.$rsw->workflow_details_id.'/'.$wf_id).'</td></tr>';
+	$counter++;
+  }
+  $output .='<tr><td>'.l('Back','workflowmatrixlist').'</td></tr>';
+ return $output .='</table>';
+
+}
+
+function delete($eid){
+  
+   db_query("delete from tbl_escalation where eid='".$eid."'");
+   drupal_goto("addesclation");
+  
+  
+  /* 
+   $sqls = "select * from tbl_workflow_details where workflow_id='".$wf_id."' and workflow_details_id > '".$workflow_details_id."'";
+   $res = db_query($sqls);
+   $i=0;
+   while($rs = db_fetch_object($res)){
+      $array[$rs->workflow_details_id] = $rs->level;
+     $i++;
+   }
+   if($i > 0){
+	    foreach($array as $key=>$val){
+	  
+		 $valt = $val-1;
+		 db_query("update tbl_workflow_details set level='".$valt."' where workflow_details_id='".$key."'");
+	   }
+   }
+   db_query("delete from tbl_workflow_details where workflow_details_id='".$workflow_details_id."'");
+   drupal_goto('next_workflowmatrix/'.$wf_id);
+   */
+   
+   session_start();
+    unset($_SESSION['usersroles'][$j]);
+	unset($_SESSION['email'][$j]);
+	unset($_SESSION['sms'][$j]);
+	unset($_SESSION['sla'][$j]);
+	unset($_SESSION['type'][$j]);
+	//unset($_SESSION['exp'][$j]);
+   
+}
+
+if(isset($_REQUEST['wsave'])){
+  if($_REQUEST['sla'] == ""){
+    $output = '<style>#sla{display: inline;color: #CC3333;	border: 1px solid #CC3333;}</style>';
+    form_set_error('sla','Please enter SLA.');
+  }else if($_REQUEST['email'] == "" && $_REQUEST['sms'] == ""){
+    form_set_error('sla','Please select atleast one mode of communication.');
+  }else{
+    $sla = $_REQUEST['sla']; 
+    $sms = $_REQUEST['sms'];
+	$email = $_REQUEST['email'];
+	$role = $_REQUEST['role'];
+	$wfid = $_REQUEST['wfid'];
+	$sqlr = "select count(*) as count from tbl_workflow_details where workflow_id='".$wfid."'";
+	$resr = db_query($sqlr);
+	$rsr = db_fetch_object($resr);
+	$level = $rsr->count+1;
+
+	$sqlcheck = "select * from tbl_workflow_details where workflow_id='".$wfid."' and role='".$role."'";
+	$rescheck = db_query($sqlcheck);
+	if($rscheck = db_fetch_object($rescheck)){
+	 
+	}else{
+	   db_query("insert into {tbl_workflow_details} (workflow_id,level,role,hours,email,sms) values('".$wfid."','".$level."','".$role."','".$sla."','".$email."','".$sms."')");
+	}
+  }
+}
+/**
+ *@ hook_theme 
+*/
+
+ function workflow_matrix_theme() {
+	
+	return array(
+		
+		'workflow_list_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'workflow_list_form',
+                                 ),
+		'addesclation_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'addesclation_form',
+                                 ),						 
+			
+	//addesclation_form		
+								 
+ );
+        
+}
+
+
+/*function workflow_matrix_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks[0] = array('info' => t('DashBorad'));
+	   
+		return $blocks;
+  }
+  else if ($op == 'view') {
+    switch ($delta) {
+      case 0:
+          $block = array(
+          'subject' => t('DashBorad'), 
+          'content' => dashboard(),
+        );
+        break;
+    
+    }
+    return $block;
+  }
+}
+
+function dashboard(){
+  $output ="";
+  $output .='<tr><td colspan="3"><div class="dashboard2"><div id="top"><img width="12" vspace="0" hspace="0" height="26" border="0" align="right" src="/SC&amp;ST/sites/all/themes/scst/images/tp-cor-right-yellow.gif"><img width="12" vspace="0" hspace="0" height="26" border="0" align="left" src="/SC&amp;ST/sites/all/themes/scst/images/tp-cor-left-yellow.gif"><div class="dashboardtitle"><b>Extra</b></div></div><div id="border"><ul><li><a href="http://localhost/sc&amp;st/node/199">EMI Calculator</a></li></ul></div></div></td></tr>';
+  
+  return "DashBoard";
+}*/
+
+
+function workflow_matrix_form_alter(&$form, &$form_state, $form_id){
+ // drupal_set_message($form_id);
+
+  if($form_id == 'event_node_form'){
+		$form['author']['#type'] = 'value';
+			$form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+		'author']['name']['#default_value']);
+			$form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+		'author']['date']['#default_value']);
+			
+			
+			 $form['revision_information']['#type'] = hidden;
+			 $form['options']['#type'] = hidden;
+			 $form['buttons']['preview']['#type'] = hidden;
+			$form['buttons']['delete']['#type'] = hidden;
+			 $form['menu']['#type'] = hidden;
+			 $form['comment_settings']['#type'] = hidden;
+			 $form['title']['#required'] = FALSE;
+			 //$form['title']['#type'] = hidden;
+			 $form['author_information']['#type'] = hidden;
+			$form['path']['#type'] = hidden;
+			 $form['attachments']['#type'] = hidden;
+
+  
+
+  }
+
+ /* if($form_id == "page_node_form"){
+
+   $form['author']['#type'] = 'value';
+			$form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+		'author']['name']['#default_value']);
+			$form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+		'author']['date']['#default_value']);
+			
+			
+			 $form['revision_information']['#type'] = hidden;
+			 $form['options']['#type'] = hidden;
+			 $form['buttons']['preview']['#type'] = hidden;
+			$form['buttons']['delete']['#type'] = hidden;
+			 $form['menu']['#type'] = hidden;
+			 $form['comment_settings']['#type'] = hidden;
+			 $form['title']['#required'] = FALSE;
+			 //$form['title']['#type'] = hidden;
+			 $form['author_information']['#type'] = hidden;
+			$form['path']['#type'] = hidden;
+			 $form['attachments']['#type'] = hidden;
+			 //$form['translation']['#type'] = hidden;
+
+			 
+  }
+
+
+ if($form_id == "page_node_form"){
+
+   $form['author']['#type'] = 'value';
+			$form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+		'author']['name']['#default_value']);
+			$form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+		'author']['date']['#default_value']);
+			
+			
+			 $form['revision_information']['#type'] = hidden;
+			 $form['options']['#type'] = hidden;
+			 $form['buttons']['preview']['#type'] = hidden;
+			$form['buttons']['delete']['#type'] = hidden;
+			 $form['menu']['#type'] = hidden;
+			 $form['comment_settings']['#type'] = hidden;
+			 $form['title']['#required'] = FALSE;
+			// $form['title']['#type'] = hidden;
+			 $form['author_information']['#type'] = hidden;
+			$form['path']['#type'] = hidden;
+			 $form['attachments']['#type'] = hidden;
+			 //$form['translation']['#type'] = hidden;
+
+			 
+  }*/
+
+}

@@ -1,0 +1,65 @@
+<?php
+function dsje_holidays_schema() {
+
+  //designation table
+   $schema['tbl_holidays'] = array(
+							 'fields' => array(
+											   'holidays_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'holidays_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'start_date' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'end_date' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'holidays_id' => array('holidays_id'),
+												),
+							 'primary key' => array('holidays_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_holidays_install() {
+	drupal_install_schema('dsje_holidays');
+}
+
+function dsje_holidays_uninstall() {
+	drupal_uninstall_schema('dsje_holidays');
+}

@@ -1,0 +1,747 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/dispatchform.inc');
+drupal_add_css(drupal_get_path('module', 'dsje_joinings') .'/dsje_forms.css');
+
+function dispatchform_node_info() {
+	return array (
+					'dispatchform' => array (
+										'name' => t('List of Dispatch'),
+										'module' => 'dispatchform',
+										'description' => "Creates New Dispatch",
+										'has_title' => TRUE,
+										'title_label' => t('Dispatch'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function dispatchform_perm() {
+	return array('edit dispatchform','administer dispatchform', 'create dispatchform', 'view dispatchform');
+}
+
+function dispatchform_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dispatchform', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dispatchform', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dispatchform', $account);
+	}
+}
+ 
+ function dispatchform_menu(){
+	 $items['list/dispatchList'] = array(
+		   'title' => 'List of Dispatch',
+		   'page callback' => 'dispatch_list',
+		   'access arguments' => array('administer dispatchform'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewdispatch/%'] = array(
+								'title' => t('view Dispatch'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_dispatch',
+								'page arguments' => array(1),
+								'access arguments' => array('administer dispatchform'),
+		                        
+						);
+  
+  $items['admin/dsje/del/dispatch/%'] =  array(
+	               						 'title' => t('Delete Dispatch'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'dispatch_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer dispatchform'),
+													 
+	);
+ $items['admin/dsje/enable/dispatch/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'dispatch_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer dispatchform'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function dispatch_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjeDispatch', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Date'), 'field' => 'tbl_dispatchforms.date1', 'sort' => 'asc'),
+	array('data' => t('Dispatch No.'), 'field' => 'tbl_dispatchforms.dispatch_no', 'sort' => 'asc'),
+		array('data' => t('File No.'), 'field' => 'tbl_dispatchforms.file_no', 'sort' => 'asc'),
+	array('data' => t('Subject'), 'field' => 'tbl_dispatchforms.subject', 'sort' => 'asc'),
+	//array('data' => t('Status')),
+	array('data' => t('Action'), 'class' => 'addeditview',),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Dispatch', 'list/dispatchList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$datewa=date('Y-m-d',strtotime($_REQUEST['searchtext']));
+	//echo $datewa;exit;
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid, tbl_dispatchforms.date1, tbl_dispatchforms.dispatch_no, tbl_dispatchforms.file_no,tbl_dispatchforms.subject,tbl_dispatchforms.statusnodal FROM {node}
+	 INNER JOIN tbl_dispatchforms ON (node.nid=tbl_dispatchforms.nid)
+	 WHERE ( tbl_dispatchforms.date1 = '".$datewa."' OR tbl_dispatchforms.dispatch_no LIKE '".$val."' OR tbl_dispatchforms.file_no LIKE '".$val."' OR tbl_dispatchforms.subject LIKE '".$val."' OR tbl_dispatchforms.statusnodal LIKE '".$val."') ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_dispatchforms ON (node.nid=tbl_dispatchforms.nid)
+	 
+	 WHERE ( tbl_dispatchforms.date1 LIKE '".$datewa."' OR tbl_dispatchforms.dispatch_no LIKE '".$val."'  OR tbl_dispatchforms.file_no LIKE '".$val."' OR tbl_dispatchforms.subject LIKE '".$val."' OR tbl_dispatchforms.statusnodal LIKE '".$val."') ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	   $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid, tbl_dispatchforms.date1, tbl_dispatchforms.dispatch_no,tbl_dispatchforms.file_no,tbl_dispatchforms.subject,tbl_dispatchforms.statusnodal FROM {node}
+	 INNER JOIN tbl_dispatchforms ON (node.nid=tbl_dispatchforms.nid)".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/dispatchList';
+
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjeDispatch', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/dispatchList');
+	}	
+	$output .='</td></tr>';	
+	$addurl = l(getMessage('dsjeDispatch', 'code01', NULL),"node/add/dispatchform");
+   	$lising = getMessage('dsjeDispatch', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>	
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewdispatch/".$rs->nid);
+//		$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/dispatch/".$rs->nid."/");
+		}
+		else{
+			   $st ='Disabled';
+			 $deleteurl = l("Enable","admin/dsje/enable/dispatch/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' =>date('d-m-Y',strtotime( $rs->date1))),
+			array('data' => $rs->dispatch_no),
+			array('data' => $rs->file_no),
+            array('data' => ucwords($rs->subject)),
+          	//array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	
+	 
+	
+	  
+	}
+}
+
+     if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, 20,0 );
+	return $output;
+  }
+function getdispatchNo($dispatch_no){
+  $sql = "select * from {tbl_dispatchforms} where dispatch_no='".$dispatch_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->dispatch_no=='' )
+  return 0;
+  else 
+  return $rs;
+   
+}
+
+function getdispatchNo_edit($dispatch_no,$prev_dispatch_no){
+  $sql = "select * from {tbl_dispatchforms} where dispatch_no='".$dispatch_no."' AND dispatch_no != '".$prev_dispatch_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->dispatch_no=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+
+
+function dispatch_delete($nid){
+  
+  $node = node_load($nid);
+  // db_query("UPDATE {tbl_dispatchforms} SET 	statusnodal =0 WHERE nid ='".$node->nid."'");
+ 
+ // $kko= db_query("select max(nid) as nid from {tbl_dispatchforms} where nid < ( select max(nid) from {tbl_dispatchforms})");
+  // $gg=db_fetch_object($kko);
+// $rr= $gg->nid;
+// db_query("update {tbl_dispatchforms} set row=1 where nid= '".$rr."'");
+ $amto=$node->amount;
+ $balo=$node->balance;
+ $addo=$balo+$amto;
+ $ttt=db_query("select dispatch_no from {tbl_dispatchforms} where nid='".$nid."'");
+ $tttt=db_fetch_object($ttt);
+ 
+ //echo $tttt->dispatch_no;exit;
+ db_query("UPDATE {tbl_dispatchforms} SET 	balance ='".$addo."'");
+  db_query("UPDATE {tbl_dispatchAccounts} SET 	total ='".$addo."'");
+  db_query("DELETE from {tbl_dispatchforms} WHERE nid ='".$node->nid."'");
+  $message = getMessage('dsjeDispatch', 'code05', array("0"=>$tttt->dispatch_no));
+	drupal_set_message($message);
+  //drupal_set_message(' Dispatch has been Deleted successfully.');
+  drupal_goto("list/dispatchList");
+ }
+
+function dispatch_enable($nid){
+  
+  $node = node_load($nid);
+ 
+  db_query("UPDATE {tbl_dispatchforms} SET 	statusnodal =1 WHERE nid ='".$node->nid."'");
+  drupal_set_message('Dispatch has been enabled successfully.');
+  drupal_goto("list/dispatchList");
+ }
+
+function dispatchform_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Dispatch', 'list/dispatchList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Dispatch', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Dispatch', 'node/add/dispatchform'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+   if(is_numeric(arg(1)))
+	 {
+   $sql = "SELECT * FROM {node} INNER JOIN tbl_dispatchforms ON (node.nid=tbl_dispatchforms.nid) WHERE node.nid='".arg(1)."'";
+   $res = db_query($sql);
+   $rs = db_fetch_object($res);
+   }
+   
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  
+	$sql = "SELECT * FROM {node} INNER JOIN tbl_dispatchforms ON (node.nid=tbl_dispatchforms.nid) WHERE node.nid='".arg(1)."'";
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+
+		
+		$form['prev_dispatch_no']= array(
+		'#type' =>'hidden',
+			 '#default_value' =>$rs->dispatch_no,
+			 );
+		
+		
+  $form['dispatch_no'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Dispatch No.'),
+	 '#required' =>TRUE,
+	 '#size' =>10,
+	 '#maxlength'=>10,
+	 '#default_value' => $rs->dispatch_no,
+	 '#attributes' => array('onkeypress' => 'return  fononlyn(event)'),	
+  );
+	
+    
+	 $form['person_details'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Details of person to whom it is dispatched'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->person_details,
+	'#size' =>100,
+	'#maxlength' =>100,
+	'#rows'=>5,
+	'#columns'>5, '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	);
+	
+	
+	 $form['sender_details'] = array(
+	'#type' =>'select',
+	'#title' => t('Section'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->sender_details,
+	'#options'=> SenderDetails(),  '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	);
+	
+	  $form['person_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Person Name'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->person_name,
+	'#size' =>45,
+	'#maxlength'=>45, '#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+	
+	  $form['subject'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Subject'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->subject,
+	'#size' =>45,
+	'#maxlength'=>45, '#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	
+  $form['file_no'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('File No.'),
+	 '#required' =>TRUE,
+	 '#size' =>10,
+	 '#maxlength'=>10,
+	 '#default_value' => $rs->file_no,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+  if($rs->nid){
+   $dated = date('d-m-Y',$rs->date1);
+  }else{
+    $dated="";
+  }
+  
+	$form['date1'] = array(
+	  '#type' =>'date_popup',
+	 '#date_format' => 'd-m-Y',
+	  '#title' =>t('Date'),
+	  '#required' => TRUE,
+	  '#size' => '10',
+	 '#default_value' => $rs->date1,	
+	);
+	
+
+	
+	
+	$form['mod'] = array(
+	'#type' => 'select',
+	'#title' => t('Mode of Dispatch'),
+	'#required' => TRUE,
+	'#default_value' => $rs->mod,
+	'#options' => DispatchMode(),
+	);
+	 
+
+	 $form['prev_amount'] = array(
+     '#type' =>'hidden',
+		  '#default_value' => $rs->amount,
+		 );
+  
+    $form['amount'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Amount'),
+	 '#required' =>FALSE,
+	 '#size' =>10,
+	 '#maxlength'=>10,
+	 '#default_value' => $rs->amount,
+	 '#attributes' => array('onkeypress' => 'return paypay(event)'),	
+  );
+	$form['dispatch_type'] = array(
+ 		'#type' => 'select',
+		'#title' => t('Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rs->dispatch_type,
+		 '#options' => DispatchType(),
+);	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/dispatchList'),
+);
+return $form;
+} 
+
+
+
+
+function dispatchform_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	
+	$array = explode('/',$_GET['q']);
+	/*$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Dispatch', 'list/dispatchList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Dispatch', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add Dispatch', 'node/add/dispatchform');
+	}*/
+	
+	$breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Dispatch', 'list/dispatchList');
+        if(arg(1) !='add'){
+		  $breadcrumb[] = l('Edit Dispatch', 'node/'.arg(1).'/edit');	
+		}else{
+         $breadcrumb[] = l('Add Dispatch', 'node/add/dispatchform');
+      
+		}
+	
+	
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+	global $user;
+	$uid=$user->uid;
+	
+//	echo '<pre>';
+	//print_r($uid);
+	
+	
+	
+	
+	fononlyn('dispatch_no',$form->dispatch_no,'Dispatch No.');
+	alphanumericwithdot('person_details',$form->person_details,'Person Details');
+	textonlyn('subject',$form->subject,'Subject');
+	fononlyn('file_no',$form->file_no,'File No.');
+	if($form->amount !=''){
+	paypay('amount',$form->amount,'Amount');
+	}
+	alphabet('person_name',$form->person_name,'Person Name');
+
+$amount=$form->amount;
+$prev_amount=$form->prev_amount;
+	  $balance=amt($uid,$amount);
+	  if($prev_amount == $amount){}else{
+	if ($balance<0){
+	form_set_error('amount',t('  Dispatch has not been saved. You do not have enough amount to make the purchase.'));
+	//form_set_error('amount',$amount.t('Dispatch has not been saved. You don't have enough amount to make the purchase.'));
+	}}
+
+$dispatch_no=$form->dispatch_no;
+
+if($form->prev_dispatch_no == ''){
+	 $statusid = getdispatchNo($dispatch_no); 
+		if($statusid){
+		form_set_error('dispatch_no',$dispatch_no.t(' Dispatch Number already exist.'));
+		
+		}
+		}
+		else {
+	 $statusid = getdispatchNo_edit($dispatch_no,$form->prev_dispatch_no); 
+		if($statusid){
+		form_set_error('dispatch_no',$dispatch_no.t(' Dispatch Number already exist.'));
+		
+		}
+		
+		}
+	
+
+}
+
+/**
+ *hook_form_alter
+ */
+function dispatchform_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='dispatchform_node_form'){
+	 $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	 /*
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	*/}
+	
+ }
+
+
+function dispatchform_insert($node){
+   global $user;
+   
+  //all values
+  $dispatch_no = $node->dispatch_no;
+  $person_details= $node-> person_details;
+  $sender_details= $node-> sender_details;
+  $file_no= $node-> file_no;
+  $subject= $node-> subject;
+  $date =$node->date1;
+ $uid= $node->uid;
+  $mod = $node->mod;
+  $person_name= $node->person_name;
+  $amount = $node->amount;
+  $type = $node->dispatch_type;
+  
+
+    
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+    $balance=amt($uid,$amount);
+
+
+	if ($balance>=0)
+	{
+	
+	db_query("UPDATE {tbl_dispatchaccounts} set `total` = '".$balance."' ");
+	
+//db_query("update {tbl_dispatchforms} set row=0");
+db_query ("INSERT INTO {tbl_dispatchforms} (`vid`, `nid`,`dispatch_uid`, `dispatch_no`, `person_details`, `sender_details`,`person_name`, `subject`, `file_no`, `date1`, `mod`, `amount`, `dispatch_type`, `statusnodal`,`balance`) VALUES ('".$vid."','".$nid."','".$uid."','".$dispatch_no."','".$person_details."','".$sender_details."','".$person_name."','".$subject."','".$file_no."','".$date."','".$mod."','".$amount."','".$type."','".$statusnodal."','".$balance."')");
+
+    db_query("UPDATE {tbl_dispatchforms} set `balance` = '".$balance."' ");
+	
+	$message = getMessage('dsjeDispatch', 'code07', array("0"=>$node->dispatch_no));
+	drupal_set_message($message);
+	
+    //drupal_set_message('Dispatch has been saved successfully.');
+	drupal_goto("list/dispatchList");
+ }
+ 
+ else
+ {
+  drupal_set_message("Dispatch has not been saved. You don't have enough amount to make the purchase.");
+  drupal_goto("list/dispatchList");
+ 
+ }
+ 
+ 
+ }
+
+function dispatchform_update($node){
+	
+	
+	
+  $dispatch_no = $node->dispatch_no;
+  $person_details= $node-> person_details;
+  $sender_details= $node-> sender_details;
+  $file_no= $node-> file_no;
+  $subject= $node-> subject;
+ $date =$node->date1;
+  $mod = $node->mod;
+  $amount = $node->amount;
+  $type = $node->dispatch_type;
+  $person_name= $node->person_name;
+	$statusnodal = $node->statusnodal;
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$uid=$node->uid;
+	///////////////////////
+	$bal1=db_query("select balance from {tbl_dispatchforms} where nid='".$nid."'");
+		
+	$bal2= db_fetch_object($bal1);
+	$bal=$bal2->balance;
+	$old1=db_query("select * from {tbl_dispatchforms} where nid='".$nid."'");
+	$old2=db_fetch_object($old1);
+	$old=$old2->amount;
+	$sub=$amount-$old;
+	$bal=$bal-$sub;
+	
+	//echo $bal;exit;
+	////////////////////////
+	
+	//  $balance=amt($uid,$amount);
+	if ($bal>=0)
+	{
+
+	
+db_query("UPDATE {tbl_dispatchaccounts} set `total` = '".$bal."' ");
+
+	db_query("update {tbl_dispatchforms} SET `dispatch_no`='".$dispatch_no."',`person_details`='".$person_details."',`sender_details`='".$sender_details."',`person_name`='".$person_name."',`file_no`='".$file_no."',`subject`='".$subject."',`date1`='".$date."',`mod`='".$mod."',`amount`='".$amount."',`dispatch_type`='".$type."' WHERE nid='".$nid."'");
+	
+	db_query("UPDATE {tbl_dispatchforms} set `balance` = '".$bal."' ");
+	
+	$message = getMessage('dsjeDispatch', 'code06', array("0"=>$node->dispatch_no));
+	drupal_set_message($message);
+
+
+	//drupal_set_message('Dispatch has been updated successfully.');
+	drupal_goto("list/dispatchList");
+	
+	
+	}
+ 
+ else
+ {
+  drupal_set_message("Dispatch has not been saved. You don't have enough amount to make the purchase.");
+	drupal_goto("list/dispatchList");
+ 
+ }
+	
+	
+	
+	
+}
+
+
+function dispatchform_theme() {
+	
+	return array(
+				 
+		'dispatchform_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dispatchform_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ 
+
+
+
+ 
+/*function dispatchform_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_dispatchforms ON (node.nid=tbl_dispatchforms.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}*/
+ 
+function view_dispatch($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Dispatch', 'list/dispatchList');
+   if($array[0] == 'viewdispatch'){
+     $breadcrumb[] = l('View Dispatch', 'viewdispatch/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from {tbl_dispatchforms} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+ if($rs->gender =='f'){
+  $gender ='Female';
+}else{
+  $gender ='Male';
+}
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+
+$section=getLookupName($rs->sender_details);
+$mod=getLookupName($rs->mod);
+$dispatch_type=getLookupName($rs->dispatch_type);
+
+$output .='<div id="form-container"><table cellpadding="2" cellspacing="1" border="0" id="wrapper2">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Dispatch Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Dispatch No.:</td><td class="normal"> '.$rs->dispatch_no.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Details of person to whom it is dispatched:</td><td class="normal"> '.$rs->person_details.'</td></tr>';
+$output .='<tr class="evenrow"><td colspan="2">SENDER DETAILS</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Section:</td><td class="normal"> '.$section.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Person Name:</td><td class="normal"> '.$rs->person_name.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">File No.:</td><td class="normal"> '.$rs->file_no.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Subject:</td><td class="normal">'.$rs->subject.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date1)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Mode of Dispatch:</td><td class="normal">'.$mod.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Amount:</td><td class="normal">'.round($rs->amount).'</td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">Balance:</td><td class="normal">'.round($rs->balance).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Type:</td><td class="normal">'.$dispatch_type.'</td></tr>';
+$output .='<tr class="oddrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'list/dispatchList').'</td></tr>';
+$output .='</table></div>';
+return $output ;
+}

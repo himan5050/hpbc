@@ -1,0 +1,755 @@
+<?php
+function dsje_schemeName_init() {
+	//drupal_add_css(drupal_get_path('module', 'rec_language') .'/rec_language.css');
+	
+}
+
+
+function dsje_schemeName_perm() {
+	return array('edit dsje_schemeName','administer dsje_schemeName', 'create dsje_schemeName', 'view dsje_schemeName');
+}
+
+function dsje_schemeName_access($op, $form, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $form->uid)
+		if (user_access('edit dsje_schemeName', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_schemeName', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_schemeName', $account);
+	}
+	
+}
+
+function dsje_schemeName_menu() {
+	
+	
+	$items['admin/dsje/listschemeName'] = array(
+										'title' => t('List of schemeName'),
+										'description' => 'Allow user to View schemeName',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewschemeName',
+										'access arguments' => array('administer dsje_schemeName'),
+													 
+									  );
+	
+	$items['admin/dsje/listschemeName/addschemeName'] = array(
+										'title' => t('Create schemeName'),
+										'description' => 'Allow user to add schemeName',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_schemeName',
+										'access arguments' => array('administer dsje_schemeName'),
+													 
+									  );
+   	$items['admin/dsje/listschemeName/edit/schemeName/%'] = array(
+								
+										'title' => t('Edit schemeName'),
+										'description' => 'Allow user to add schemeName',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addschemeNameedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_schemeName'),
+													 
+									  );
+   $items['admin/dsje/listschemeName/view/schemeName/%'] = array(
+								
+										'title' => t('View schemeName'),
+										'description' => 'Allow user to add schemeName',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addschemeNameview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_schemeName'),
+													 
+									  );
+     $items['admin/dsje/del/schemeName/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'schemeName_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_schemeName'),
+													 
+									  );
+    $items['admin/dsje/enable/schemeName/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'schemeName_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_schemeName'),
+													 
+									  );
+
+$items['dsje/headType'] = array(
+										'page callback' => 'myhead',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+
+	return $items;
+}
+
+
+/**
+ listing schemeName
+ */
+
+function viewschemeName(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjeschemeName', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Scheme Name'), 'field' => 'schemeName_name', 'sort' => 'asc'),
+		array('data' => t('Status'),'field' => 'status', 'sort' => 'asc'),
+		array('data' => t('Action'), 'class' => 'addeditview',),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Scheme', 'admin/dsje/listschemeName/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    	 
+	
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+		$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	
+		
+		 $status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = " UPPER(schemeName_name) LIKE '".$val."'";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = " status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(schemeName_name) LIKE '".$val."' AND status='".$status."')";
+	 }
+	
+	
+	
+	
+	
+	
+	 $query = "SELECT schemeName_id, schemeName_name, status FROM {tbl_schemenames} where ". $searchquery ." ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM {tbl_schemenames} where ". $searchquery ."  ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT schemeName_id, schemeName_name, status FROM {tbl_schemenames} ".tablesort_sql($header);
+ }
+ 
+ 
+ 
+ global $base_url;
+//$action = $base_url.'/admin/dsje/listlookupType';
+
+$t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+
+ $output = '<form method="post" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	
+	
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'dsjedistrict', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listschemeName');
+	
+	}
+	
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjeschemeName', 'code01', NULL),"admin/dsje/listschemeName/addschemeName");
+   	$lising = getMessage( 'dsjeschemeName', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">
+	Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listschemeName/edit/schemeName/".$row->schemeName_id);
+		$viewurl = l("View","admin/dsje/listschemeName/view/schemeName/".$row->schemeName_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/schemeName/$row->schemeName_id/$row->schemeName_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/schemeName/$row->schemeName_id/$row->schemeName_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->schemeName_name)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_schemeName(){
+ return drupal_get_form('dsje_schemeName_form');
+}
+
+
+
+
+
+
+function myhead() {
+    $fund = $_POST['fund'];
+	
+	$query = "SELECT vid,name1 from {tbl_headmaster} WHERE fund='".$fund."' and type1=248  ORDER BY name1";
+	$result = db_query($query);
+	$castarray = array();
+	$castarray[''] = "--Select--";
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$castarray[$row->vid] = ucwords($row->name1);
+		$counter++;
+	}
+	if($counter==0) {
+		$castarray[''] = "--Select--";
+	}
+	$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('dsje_schemeName_form', $form, $form_state);
+
+
+	
+	 $form['head55'] = array(
+	'#type' => 'select',
+	'#title' => t('Head'),
+	'#required' => TRUE,
+	'#options' => $castarray, 
+	'#id' => 'edit-head-id',
+	'#name' => 'head55',
+	);
+
+	$output = drupal_render($form['head55']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+
+
+
+function dsje_schemeName_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+ /* $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Scheme', 'admin/dsje/listschemeName');
+  if($array[3] == 'addschemeName'){
+     $breadcrumb[] = l('Add Scheme', 'admin/dsje/listschemeName/addschemeName');
+  }*/
+ $breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Scheme Name', 'admin/dsje/listschemeName');
+     
+		  $breadcrumb[] = l('Add Scheme Name', 'admin/dsje/listschemeName/addschemename');	
+		
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['schemeName_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Scheme Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+
+$form['fund'] = array(
+	'#type' => 'select',
+	'#title' => t('Source of Fund'),
+	'#required' => TRUE,
+	'#default_value' =>$form->fund,
+	'#options' => SourceOfFund(), 
+	
+'#ahah' => array(
+				  'path' => 'dsje/headType',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'headType',
+				  ),
+);
+
+$query = "SELECT vid,name1 from {tbl_headmaster} WHERE fund='".$form->fund."' and type1=248  ORDER BY name1";
+	$result = db_query($query);
+	$castarray = array();
+	$castarray[''] = "--Select--";
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$castarray[$row->vid] = $row->name1;
+		$counter++;
+	}
+	if($counter==0) {
+		$castarray[''] = "--Select--";
+	}
+
+
+$hh=db_query("select fund FROM {tbl_schemenames} where schemeName_id='".$form->schemeName_id."'");
+	$hhh=db_fetch_object($hh);
+	if(!empty($hhh)){
+	 $form['head55'] = array(
+	'#type' => 'select',
+	'#title' => t('Head'),
+	'#required' => TRUE,
+	'#default_value' =>$form->head55,
+	'#options' => $castarray, 
+	);
+	}
+	
+	else{
+	$castarray['']="--Select--";
+	 $form['head55'] = array(
+	'#type' => 'select',
+	'#title' => t('Head'),
+	'#required' => TRUE,
+	'#default_value' =>$form->head55,
+	'#options' => $castarray, 
+	);
+	
+	
+	}
+
+
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listschemeName'),
+);    
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dsje_schemeName_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $schemeName_name = trim($values['schemeName_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+		 $fund = $values['fund'];  $head = $values['head55'];
+
+	$s = textonlyn('schemeName_name',$schemeName_name,'schemeName');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO {tbl_schemenames} (`schemeName_name`,`fund`,`head`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$schemeName_name."','".$fund."','".$head."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjeschemeName', 'code05', array("0"=>$schemeName_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listschemeName');
+	}
+}
+
+function dsje_schemeName_form_validate($form, &$form_state) {
+	
+		$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+ /* $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Scheme', 'admin/dsje/listschemeName');
+  if($array[3] == 'addschemeName'){
+     $breadcrumb[] = l('Add Scheme', 'admin/dsje/listschemeName/addschemeName');
+  }*/
+ $breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Scheme Name', 'admin/dsje/listschemeName');
+     
+		  $breadcrumb[] = l('Add Scheme Name', 'admin/dsje/listschemeName/addschemename');	
+		
+
+  drupal_set_breadcrumb($breadcrumb);
+	
+	
+	$values = $form_state['values'];
+	$schemeName_name = trim($values['schemeName_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('schemeName_name',$schemeName_name,'schemeName');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_schemenames} where UCASE(schemeName_name)= '".strtoupper($schemeName_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjeschemeName', 'code06', array("0"=>$schemeName_name));
+			form_set_error('schemeName_name', $message);
+		}
+	}	
+}
+
+function rec_addschemeNameedit($schemeName_id){
+	
+ return drupal_get_form('dsje_schemeName_form_edit',$schemeName_id);
+}
+
+function dsje_schemeName_form_edit(&$form_states,$schemeName_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Scheme', 'admin/dsje/listschemeName');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Scheme Name', 'admin/dsje/listschemeName/edit/schemeName/'.$array[5].'');
+  }
+  
+ drupal_set_breadcrumb($breadcrumb);
+	$sqlschemeName = "select * FROM {tbl_schemenames} where schemeName_id=$schemeName_id";
+	$resschemeName = db_query($sqlschemeName);
+	$rsschemeName = db_fetch_object($resschemeName);
+	
+	$form['schemeName_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsschemeName->schemeName_id,
+	);
+
+	$form['prev_schemeName_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsschemeName->schemeName_name,
+	);
+	
+	$form['schemeName_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Scheme Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsschemeName->schemeName_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['fund'] = array(
+	'#type' => 'select',
+	'#title' => t('Source of Fund'),
+	'#required' => TRUE,
+	'#default_value' =>$rsschemeName->fund,
+	'#options' => SourceOfFund(), 
+	
+'#ahah' => array(
+				  'path' => 'dsje/headType',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'headType',
+				  ),
+);
+
+$query = "SELECT vid,name1 from {tbl_headmaster} WHERE fund='".$rsschemeName->fund."' and type1=248  ORDER BY name1";
+	$result = db_query($query);
+	$castarray = array();
+	$castarray[''] = "--Select--";
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+	$castarray[$row->vid] = $row->name1;
+		$counter++;
+	}
+	if($counter==0) {
+		$castarray[''] = "--Select--";
+	}
+
+$hh=db_query("select fund FROM {tbl_schemenames} where schemeName_id='".$form->schemeName_id."'");
+	$hhh=db_fetch_object($hh);
+	if(!empty($hhh)){
+	$no=db_query("select name1 from {tbl_headmaster} where nid='".$rsschemeName->head."'");
+	$noo=db_fetch_object($no);
+	 $form['head55'] = array(
+	'#type' => 'select',
+	'#title' => t('Head'),
+	'#required' => TRUE,
+	'#default_value' =>$rsschemeName->head,
+	'#options' => $castarray, 
+	);
+	}
+	
+	else{
+	
+	$no=db_query("select name1 from {tbl_headmaster} where nid='".$rsschemeName->head."'");
+	$noo=db_fetch_object($no);
+	$castarray['']="--Select--";
+	 $form['head55'] = array(
+	'#type' => 'select',
+	'#title' => t('Head'),
+	'#required' => TRUE,
+	//'#id'= 'edit-head55',
+	'#default_value' =>$rsschemeName->head,
+	'#options' => $castarray, 
+	);
+	
+	
+	}
+
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsschemeName->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listschemeName'),
+);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	
+	return $form;
+}
+
+
+function dsje_schemeName_form_edit_validate($form, &$form_state) {
+	
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Scheme', 'admin/dsje/listschemeName');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Scheme Name', 'admin/dsje/listschemeName/edit/schemeName/'.$array[5].'');
+  }
+  
+ drupal_set_breadcrumb($breadcrumb);
+	
+	$values = $form_state['values'];
+	$schemeName_name = trim($values['schemeName_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('schemeName_name',$schemeName_name,'schemeName');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	
+}
+
+function dsje_schemeName_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$schemeName_id = $values['schemeName_id'];
+	$schemeName_name = ParseData($values['schemeName_name']);
+	$prev_schemeName_name = ParseData($values['prev_schemeName_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	 $fund = $values['fund'];  $head = $values['head55'];
+	$s = textonlyn('schemeName_name',$schemeName_name,'schemeName');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_schemenames} where LOWER(schemeName_name)= '".strtolower($schemeName_name)."' GROUP BY schemeName_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_schemeName_name), strtolower($schemeName_name))==0){
+			db_query("UPDATE {tbl_schemenames} set `schemeName_name` = '".$schemeName_name."' ,`fund`='".$fund."',`head`='".$head."',`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where schemeName_id='".$schemeName_id."'");
+			
+			$message = getMessage('dsjeschemeName', 'code10', array("0"=>$schemeName_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listschemeName");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE {tbl_schemenames} set `schemeName_name` = '".$schemeName_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where schemeName_id='".$schemeName_id."'");
+				
+				$message = getMessage('dsjeschemeName', 'code10', array("0"=>$schemeName_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listschemeName");	
+			
+			}else{
+				db_query("UPDATE {tbl_schemenames} set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where schemeName_id='".$schemeName_id."'");
+				
+				$message = getMessage('dsjeschemeName', 'code06', array("0"=>$schemeName_name));
+				form_set_error('schemeName_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_schemeName_theme() {
+	
+	return array(
+				 
+		'dsje_schemeName_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_schemeName_form',
+                                 ),
+        'dsje_schemeName_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_schemeName_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_schemeName_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_schemeName_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_schemeName_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function schemeName_delete($sid, $sno){
+  $schemeName_id =  $sid;
+  db_query("UPDATE {tbl_schemenames} SET status=0 WHERE schemeName_id ='".$schemeName_id."'");
+  $message = getMessage('dsjeschemeName', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listschemeName");
+ }
+
+
+  function schemeName_enable($sid, $sno){
+    $schemeName_id =  $sid;
+    db_query("UPDATE {tbl_schemenames} SET status=1 WHERE schemeName_id ='".$schemeName_id."'");
+  
+    $message = getMessage('dsjeschemeName', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listschemeName");
+  }
+
+  function rec_addschemeNameview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Scheme', 'admin/dsje/listschemeName');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Scheme', 'admin/dsje/listschemeName/view/schemeName/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * FROM {tbl_schemenames} where schemeName_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$no=db_query("select name1 from {tbl_headmaster} where vid='".$rs->head."'");
+	$noo=db_fetch_object($no);
+
+
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="form-container">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>Scheme Name Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td width="50%">Scheme Name:</td><td class="normal">'.ucwords($rs->schemeName_name).'</td></tr>';
+
+  $output .='<tr class="oddrow"><td width="50%">Source of Fund:</td><td class="normal">'.ucwords(getLookupName($rs->fund)).'</td></tr>';
+  $output .='<tr class="evenrow"><td width="50%">Head:</td><td class="normal">'.ucwords($noo->name1).'</td></tr>';
+
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+ $output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'admin/dsje/listschemeName').'</td></tr>';
+ $output .='</table>';
+ return $output;
+ }
+	
+	

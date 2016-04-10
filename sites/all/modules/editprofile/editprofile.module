@@ -1,0 +1,532 @@
+<?php
+
+function editprofile_init() {
+	//drupal_add_css(drupal_get_path('module', 'editprofile') .'/editprofile.css');
+	//drupal_add_js(drupal_get_path('module', 'editprofile') .'/editprofile.js');
+	drupal_add_js(drupal_get_path('module', 'rti_management') .'/rti_management.js');
+}
+
+
+function editprofile_perm() {
+	return array('edit editprofile','administer editprofile', 'create editprofile', 'view editprofile');
+}
+
+function editprofile_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit editprofile', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create editprofile', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view editprofile', $account);
+	}
+	
+}
+
+function editprofile_menu() {
+
+ 
+	  
+	  
+$items['editprofile'] = array(
+	'title' => 'Edit Profile',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'editprofile',
+	'access arguments' => array('administer editprofile'),
+	
+    
+);					  
+	  
+
+									  
+									  
+	
+
+	return $items;
+}
+ 
+
+
+
+
+function editprofile(){
+  return drupal_get_form('editprofile_form');
+}
+
+function editprofile_form(){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$name = $user->name;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Edit Profile', 'editprofile');
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+ 
+ 
+  if($rid == '12'){
+	  
+	  $sql = "select add_line1,add_line2,employee_name,dob as dobgues,state_id,district_id,tehsil_id,mobile,phone,email from tbl_guestuser where username='".$user->name."'";
+	  $res = db_query($sql);
+	  $rs = db_fetch_object($res);
+	  $addline1 = $rs->add_line1;
+	  $addline2 = $rs->add_line2;
+	  $name = $rs->employee_name;
+      $dob = date('Y-m-d',strtotime($rs->dobgues));
+	  $state = $rs->state_id;
+	  $district_id = $rs->district_id;
+	  $tehsil_id = $rs->tehsil_id;
+	  $mobile  =$rs->mobile;
+	  $phone = $rs->phone;
+	  $email_id =$rs->email;
+  }else{
+	  $sql = "select * from tbl_joinings where program_uid='".$user->uid."'";
+	  $res = db_query($sql);
+	  $rs = db_fetch_object($res);
+	  $addline1 = $rs->add_line1;
+	  $addline2 = $rs->	add_line2;
+	  $name = $rs->employee_name;
+	  $dob = $rs->dob;
+	  $state = $rs->state_id;
+	  $district_id = $rs->district_id;
+	  $tehsil_id = $rs->tehsil_id;
+	  $mobile  =$rs->mobile;
+	  $phone = $rs->phone;
+	  $email_id =$rs->email;
+  }
+ //  print_r($corporation1);exit;
+ 
+ //echo "select tbl_joinings.employee_name as joinemp,tbl_joinings.doj,tbl_guestuser.employee_name,tbl_guestuser.dob as dobguest,users.mail as emailid,tbl_joinings.mobile,tbl_joinings.phone,tbl_joinings.add_line1,tbl_joinings.add_line2 ,tbl_joinings.state_id,tbl_joinings.district_id,tbl_joinings.tehsil_id,tbl_guestuser.add_line1 as a1,tbl_guestuser.add_line1 as a2,tbl_guestuser.state_id as s1,tbl_guestuser.district_id as d1,tbl_guestuser.tehsil_id as t1 from users left join tbl_joinings on (tbl_joinings.program_uid = users.uid) left join tbl_guestuser on (tbl_guestuser.username = users.name) where users.uid = '".$uid."'";exit;
+ 
+
+//drupal_set_message($user->mail);
+	
+	$form['name'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('Name'),
+						   '#required' => TRUE,
+						   '#default_value' => $name,
+						   '#maxlength' => 45,
+						  '#attributes' => array('onkeypress' => 'return alphabet(event)'),
+						   
+						   );	
+						   
+		
+		
+			
+			
+			
+			
+	
+							 
+		$form['dateofbirth'] = array(
+						   '#type' =>'date_popup',
+	                       '#date_format' => 'd-m-Y',
+						   '#title' => t('Date Of Birth'),
+						   '#required' => true,
+						   '#size' => '30',
+						   '#maxlength'=>10,
+						   '#default_value' => $dob,
+						   
+						   
+						   );	
+						   
+						   	
+	//print_r($form['dateofbirth']);exit;	
+		$form['emailid'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('Email Address'),
+						   '#required' => TRUE,
+						   '#default_value' => $email_id,
+						    '#maxlength'=>40,
+						   '#attributes' => array('onkeypress' => 'return  emailvali(event)'),	
+						   
+						   );
+						   
+	$form['mobile'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Mobile No.
+	 '),
+	 '#required' =>false,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#id' => 'mobileidprofile',
+	 '#default_value' => $mobile,
+	 '#attributes' => array('onkeypress' => 'return  fononlyn12(event)'),	
+  );
+
+  $form['phone'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Phone No. '),
+	 '#required' =>false,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $phone,
+	  '#id' => 'phoneidprofile',
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+ 
+
+
+
+
+
+
+
+  $form['add_line1'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 1'),
+	'#required' => TRUE,
+	'#default_value' => $addline1 ,
+	'#size' =>100,
+	'#maxlength'=>100, '#attributes' => array('onkeypress' => 'return textonlywithdotne(event)'),
+	);
+	
+  $form['add_line2'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 2'),
+	'#required' => TRUE,
+	'#default_value' =>$addline2,
+	'#size' =>100,
+	 '#maxlength'=>100, '#attributes' => array('onkeypress' => 'return textonlywithdotne(event)'),
+	);				   
+						   		
+			
+	$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>$state ,
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	  $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $district_id,
+		'#options' =>GetDistrictStateWise($rs->state_id),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $tehsil_id,
+			'#options' =>GetTehsilDistrictWise($rs->dsitrict_id,$rs->state_id),
+		   
+		);		   
+						   				   
+	 $sqle = "select users.mail as emailp from users where mail ='".$email_id."'";
+  $rese = db_query($sqle);
+  $rse = db_fetch_object($rese);		   
+		
+		$form['email'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rse->emailp,
+	);
+			
+			   	
+			
+			
+	
+						   
+						   
+						   
+	   	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);				   
+						   							 									 				 
+								 				 
+		
+
+		
+//'<pre>';
+//print_r($form['mode_payment']);	exit;
+ 
+   return $form;
+}
+
+
+function editprofile_form_validate($form, &$form_state) {
+     global $user;
+ 	$values = $form_state['values'];
+	$uid=$user->uid;
+
+	//echo '<pre>';
+	//  print_r($values);
+   // echo '<pre>';exit;
+    $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Edit Profile', 'editprofile');
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	$name = $values['name'];
+	$dateofbirth = $values['dateofbirth'];
+    $emailid = $values['emailid'];
+	$mobile = $values['mobile'];
+	$phone = $values['phone'];
+	$add_line1 = $values['add_line1'];
+	$add_line2 = $values['add_line2'];
+	$state_id = $values['state_id'];
+	$district_id = $values['district_id'];
+	$tehsil_id = $values['tehsil_id'];
+	$email = $values['email'];
+	
+	$rid = getRole($uid);
+	
+	 $statusemail = getEmailprofile($emailid);
+	
+	if($district_id == '0')
+	{
+		
+		form_set_error('district_id','District field is required.');
+		
+	}
+	
+	if($tehsil_id == '0')
+	{
+		
+		form_set_error('tehsil_id','Tehsil field is required.');
+		
+	}
+	/*if($rid == '12')
+		{
+	
+
+	
+	
+	$sqlu = "SELECT * FROM {tbl_guestuser} where email='$emailid' ";
+	$resu = db_query($sqlu);
+	if($rsu = db_fetch_object($resu)){
+		$message = 'This email id is already exit.';	
+		form_set_error('short_code', $message);
+	}
+		}
+		else{
+			
+		
+	$sqlu = "SELECT * FROM {tbl_joinings} where email ='$emailid' ";
+	$resu = db_query($sqlu);
+	if($rsu = db_fetch_object($resu)){
+		$message = 'This email id is already exit.';	
+		form_set_error('short_code', $message);
+	}	
+			
+		}
+	*/
+	alphanumeric('cheque_no',$cheque_no,'Cheque No');
+	
+	
+	
+	alphabet('name',$name,'Name');
+	mobilelength($mobile,'mobile');
+	phonelength($phone,'phone');
+	fononlyn('mobile',$mobile,'Mobile No');
+	fononlyn('phone',$phone,'Phone No');
+	
+ if($email == $emailid){
+  }
+  else{
+	  
+	  $sqlu = "SELECT * FROM {users} where mail='$emailid' ";
+	$resu = db_query($sqlu);
+	if($rsu = db_fetch_object($resu)){
+		$message = 'Email address already exist.';	
+		form_set_error('emailid', $message);
+	}
+	  
+		
+  }
+	$date2 =  substr($form->dateofbirth,0,10);
+	//date('d-m-Y');
+	$year = dateDiff($date2,date('d-m-Y'), $precision = 6);
+	if($year[0] < 18){
+	  form_set_error('dateofbirth','DOB Can not be less than 18 Years.');
+	}
+	
+	if($emailid !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (eregi($pattern, $emailid)){
+
+          return true;
+       }
+       else {
+          form_set_error('emailid', t('You must enter valid Email Id.'));
+       }    
+	}
+
+	/*echo '<pre>';
+	
+	print_r($form);exit;*/
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+  
+	
+	
+	
+}
+
+
+function editprofile_form_submit($form,&$form_state){
+   global $user;
+   $values = $form_state['values'];
+ // echo '<pre>';
+    //print_r($values);
+//echo '<pre>';exit;
+$uid=$user->uid;
+ $rid = getRole($uid);
+
+    
+	 $uname=$user->name;
+   
+	$name = $values['name'];
+	$dateofbirth = $values['dateofbirth'];
+	$emailid = $values['emailid'];
+	$mobile = $values['mobile'];
+	$phone = $values['phone'];
+	$add_line1 = $values['add_line1'];
+	$add_line2 = $values['add_line2'];
+	$state_id = $values['state_id'];
+	$district_id = $values['district_id'];
+	$tehsil_id = $values['tehsil_id'];
+	
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+ if($rid == '12')
+		{	
+		
+		$guestsql = "select email from tbl_guestuser where username ='".$user->name."'";
+	$guestres= db_query($guestsql);
+	$guestrs = db_fetch_object($guestres);
+	 $guestid=$guestrs->email;
+			//echo "UPDATE `tbl_guestuser` set `employee_name` ='".$name."',`dob`='".$dateofbirth."' ,`email`='".$emailid."' ,`add_line1`='".$add_line1."' ,`add_line2`='".$add_line2."',`state_id`='".$state_id."' ,`district_id` ='".$district_id."',`tehsil_id`='".$tehsil_id."'  where 	username='".$uname."'"; exit;
+			
+		$sqll = "UPDATE `tbl_guestuser` set `employee_name` ='".$name."',`dob`='".$dateofbirth."' ,`email`='".$emailid."' ,`mobile`='".$mobile."' ,`phone`='".$phone."' ,`add_line1`='".$add_line1."' ,`add_line2`='".$add_line2."',`state_id`='".$state_id."' ,`district_id` ='".$district_id."',`tehsil_id`='".$tehsil_id."'  where username='".$uname."'"; 	
+    db_query($sqll);	
+	$sql = "UPDATE `users` set `mail` ='".$emailid."' where name='".$uname."'"; 	
+    db_query($sql);
+	  $message = getMessage('editprofile', 'code01', array("0"=>$name));
+
+  
+    drupal_set_message($message);
+	drupal_goto('viewguestuser/'.$guestid);
+	
+		}
+		
+		
+		else{
+			
+			$jonsql = "select employee_id from tbl_joinings where program_uid ='".$user->uid."'";
+	$jonres= db_query($jonsql);
+	$jonrs = db_fetch_object($jonres);
+	$empid=$jonrs->employee_id;
+
+	
+	
+		
+		
+	 $sql2 = "UPDATE `tbl_joinings` set `employee_name` ='".$name."',`dob`='".$dateofbirth."',`email`='".$emailid."',`mobile`='".$mobile."' ,`phone`='".$phone."' ,`add_line1`='".$add_line1."' ,`add_line2`='".$add_line2."',`state_id`='".$state_id."' ,`district_id` ='".$district_id."',`tehsil_id`='".$tehsil_id."' ,`updatedby` ='".$updatedby."',`updatedon`='".$updatedon."' where program_uid='".$uid."'"; 
+    db_query($sql2);
+	$sql = "UPDATE `users` set `mail` ='".$emailid."' where uid='".$uid."'"; 	
+    db_query($sql);	
+	  $message = getMessage('editprofile', 'code01', array("0"=>$name));
+
+  
+    drupal_set_message($message);
+	drupal_goto('viewprofile/'.$empid);
+		
+		}
+ 
+
+	//$created = time();
+	
+$message = getMessage('editprofile', 'code01', array("0"=>$name));
+
+$sqlem=db_query("select * from users where uid ='$uid'");
+$rowr=db_fetch_object($sqlem);
+
+$loginid=$rowr->name;
+$pass=md5($rowr->pass);
+
+
+$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>"$name",1=>"$loginid",2=>"$pass")); 
+//$parameter .= json_encode(array(1=>$grievance_status));
+	 
+createMail('editprofile', $emailid,'',$parameter);
+
+  
+    drupal_set_message($message);
+	drupal_goto('editprofile');
+
+ 
+ }
+
+
+
+function editprofile_theme() {
+	
+	return array(
+				 
+		'editprofile_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'editprofile_form',
+                                 ),
+								 
+								 );
+       
+	   
+	   
+}
+
+function getEmailprofile($emailid){
+$sql = "select mail as emailp from users where emailp ='".$emailid."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  if ($rs->emailp=='')
+  return 0;
+  else
+  return $rs;
+   
+}
+
+

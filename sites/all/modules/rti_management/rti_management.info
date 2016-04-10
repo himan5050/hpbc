@@ -1,0 +1,4 @@
+; $Id$
+name = Rtiii Management
+description = "Rti Management"
+core = 6.x

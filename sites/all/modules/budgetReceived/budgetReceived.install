@@ -1,0 +1,97 @@
+<?php
+function budgetReceived_schema() {
+
+  //nodal table
+   $schema['tbl_budgetReceived'] = array(
+							 'fields' => array(
+											   
+                                               'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                         
+										   'head2' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										  'date1' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+											    'amount' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+													 'fin_year' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											
+												
+													 'headtype' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											
+												
+															  
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+                                             
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('vid'),
+							 );
+	return $schema;
+}
+function budgetReceived_install() {
+	drupal_install_schema('budgetReceived');
+}
+
+function budgetReceived_uninstall() {
+	drupal_uninstall_schema('budgetReceived');
+}

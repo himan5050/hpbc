@@ -1,0 +1,170 @@
+<?php
+
+function workflow_matrix_install() {
+  // Create tables.
+  drupal_install_schema('workflow_matrix');
+}
+
+/**
+ * Implement hook_uninstall().
+ */
+function workflow_matrix_uninstall() {
+  // Remove tables.
+  drupal_uninstall_schema('workflow_matrix');
+}
+
+/**
+ * Implement hook_schema().
+ */
+function workflow_matrix_schema() {
+$schema['tbl_workflow'] = array(
+					'fields' => array(
+					'workflow_id' => array(
+							'type' => 'serial',
+							'unsigned' => TRUE,
+							'not null' => TRUE,
+						),	
+						
+				      'workflow_name' => array(
+						  'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+                     	'home_url' => array(
+						  'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+						
+			),
+			'indexes' => array(
+						'nid' => array('workflow_id'),
+						),
+			'primary key' => array('workflow_id'),
+			);
+
+
+  $schema['tbl_workflow_details'] = array(
+					'fields' => array(
+					'workflow_details_id' => array(
+							'type' => 'serial',
+							'unsigned' => TRUE,
+							'not null' => TRUE,
+						),	
+					'workflow_id' => array(
+							'type' => 'int',
+							'unsigned' => TRUE,
+							'not null' => TRUE,
+						),
+	                'level' => array(
+						  'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+	                  'role' => array(
+						  'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+	                
+	               'hours' => array(
+						  'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+				'email' => array(
+							'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+	            'sms' => array(
+							'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+	           
+						
+			),
+			'indexes' => array(
+						'workflow_details_id' => array('workflow_details_id'),
+						),
+			'primary key' => array('workflow_details_id'),
+			);
+
+
+$schema['tbl_workflow_task'] = array(
+					'fields' => array(
+					'task_id' => array(
+							'type' => 'serial',
+							'unsigned' => TRUE,
+							'not null' => TRUE,
+						),	
+					'message_time' => array(
+							'type' => 'int',
+							'unsigned' => TRUE,
+							'not null' => TRUE,
+						),
+	                'level' => array(
+						  'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+	                  'status' => array(
+						  'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+	                
+	               'comment' => array(
+						  'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+				'doc_id' => array(
+							'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+				),	           
+						
+			),
+			'indexes' => array(
+						'task_id' => array('task_id'),
+						),
+			'primary key' => array('task_id'),
+			);
+
+
+$schema['tbl_workflow_docket'] = array(
+					'fields' => array(
+					'doc_id' => array(
+							'type' => 'serial',
+							'unsigned' => TRUE,
+							'not null' => TRUE,
+						),	
+					'workflow_details_id' => array(
+							'type' => 'int',
+							'unsigned' => TRUE,
+							'not null' => TRUE,
+						),
+	                'time' => array(
+						  'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+	                  'status' => array(
+						  'type' => 'varchar',
+						  'length' => 255,
+						  'not null' => TRUE,
+						),
+	                ),
+	              
+			'indexes' => array(
+						'task_id' => array('doc_id'),
+						),
+			'primary key' => array('doc_id'),
+			);
+
+return $schema;
+}
+
+

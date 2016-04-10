@@ -1,0 +1,6 @@
+;$id 
+name = "Loanee Report	"
+description ="Loanee Report"
+core = 6.x
+version =6.x-1
+package="Loan Report"

@@ -1,0 +1,467 @@
+<?php
+function dsje_courtstatus_init() {
+	//drupal_add_css(drupal_get_path('module', 'rec_language') .'/rec_language.css');
+	
+}
+
+
+function dsje_courtstatus_perm() {
+	return array('edit dsje_courtstatus','administer dsje_courtstatus', 'create dsje_courtstatus', 'view dsje_courtstatus');
+}
+
+function dsje_courtstatus_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_courtstatus', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_courtstatus', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_courtstatus', $account);
+	}
+	
+}
+
+function dsje_courtstatus_menu() {
+	
+	
+	$items['admin/dsje/listcourtstatus'] = array(
+										'title' => t('List of courtstatus'),
+										'description' => 'Allow user to View courtstatus',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewcourtstatus',
+										'access arguments' => array('administer dsje_courtstatus'),
+													 
+									  );
+	
+	$items['admin/dsje/listcourtstatus/addcourtstatus'] = array(
+										'title' => t('Create courtstatus'),
+										'description' => 'Allow user to add courtstatus',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_courtstatus',
+										'access arguments' => array('administer dsje_courtstatus'),
+													 
+									  );
+   	$items['admin/dsje/listcourtstatus/edit/courtstatus/%'] = array(
+								
+										'title' => t('Edit courtstatus'),
+										'description' => 'Allow user to add courtstatus',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addcourtstatusedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_courtstatus'),
+										
+													 
+									  );
+   $items['admin/dsje/listcourtstatus/view/courtstatus/%'] = array(
+								
+										'title' => t('View courtstatus'),
+										'description' => 'Allow user to add courtstatus',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addcourtstatusview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_courtstatus'),
+													 
+									  );
+     $items['admin/dsje/del/courtstatus/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'courtstatus_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_courtstatus'),
+													 
+									  );
+    $items['admin/dsje/enable/courtstatus/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'courtstatus_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_courtstatus'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing courtstatus
+ */
+
+function viewcourtstatus(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjecourtstatus', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('courtstatus'), 'field' => 'courtstatus_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List courtstatus', 'admin/dsje/listcourtstatus/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT courtstatus_id, courtstatus_name, status FROM tbl_courtstatus where UPPER(courtstatus_name) LIKE '".$val."' ORDER BY courtstatus_name ASC ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_courtstatus where UPPER(courtstatus_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT courtstatus_id, courtstatus_name, status FROM tbl_courtstatus ".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjecourtstatus', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listcourtstatus');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjecourtstatus', 'code01', NULL),"admin/dsje/listcourtstatus/addcourtstatus");
+   	$lising = getMessage( 'dsjecourtstatus', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listcourtstatus/edit/courtstatus/".$row->courtstatus_id,array('attributes'=>array('id'=>'edit-courtstatus-id')));
+		$viewurl = l("View","admin/dsje/listcourtstatus/view/courtstatus/".$row->courtstatus_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/courtstatus/$row->courtstatus_id/$row->courtstatus_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/courtstatus/$row->courtstatus_id/$row->courtstatus_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->courtstatus_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_courtstatus(){
+ return drupal_get_form('dsje_courtstatus_form');
+}
+
+function dsje_courtstatus_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of courtstatus', 'admin/dsje/listcourtstatus');
+  if($array[3] == 'addcourtstatus'){
+     $breadcrumb[] = l('Add courtstatus', 'admin/dsje/listcourtstatus/addcourtstatus');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['courtstatus_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('courtstatus Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+		
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listcourtstatus'),
+);
+	return $form;
+}
+
+function dsje_courtstatus_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $courtstatus_name = trim($values['courtstatus_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('courtstatus_name',$courtstatus_name,'courtstatus');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_courtstatus` (`courtstatus_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$courtstatus_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjecourtstatus', 'code05', array("0"=>$courtstatus_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listcourtstatus');
+	}
+}
+
+function dsje_courtstatus_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$courtstatus_name = trim($values['courtstatus_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('courtstatus_name',$courtstatus_name,'courtstatus');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_courtstatus} where UCASE(courtstatus_name)= '".strtoupper($courtstatus_name)."' ORDER BY courtstatus_name ASC ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjecourtstatus', 'code06', array("0"=>$courtstatus_name));
+			form_set_error('courtstatus_name', $message);
+		}
+	}	
+}
+
+function rec_addcourtstatusedit($courtstatus_id){
+ return drupal_get_form('dsje_courtstatus_form_edit',$courtstatus_id);
+}
+
+function dsje_courtstatus_form_edit(&$form_states,$courtstatus_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List courtstatus', 'admin/dsje/listcourtstatus');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit courtstatus', 'admin/dsje/listcourtstatus/edit/courtstatus/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlcourtstatus = "select * from tbl_courtstatus where courtstatus_id=$courtstatus_id";
+	$rescourtstatus = db_query($sqlcourtstatus);
+	$rscourtstatus = db_fetch_object($rescourtstatus);
+	
+	$form['courtstatus_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscourtstatus->courtstatus_id,
+	);
+	
+	$form['courtstatus_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('courtstatus Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rscourtstatus->courtstatus_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['prev_courtstatus_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscourtstatus->courtstatus_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rscourtstatus->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listcourtstatus'),
+);
+	return $form;
+}
+
+function dsje_courtstatus_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$courtstatus_id = $values['courtstatus_id'];
+	$courtstatus_name = ParseData($values['courtstatus_name']);
+	$prev_courtstatus_name = ParseData($values['prev_courtstatus_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('courtstatus_name',$courtstatus_name,'courtstatus');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_courtstatus} where LOWER(courtstatus_name)= '".strtolower($courtstatus_name)."' GROUP BY courtstatus_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_courtstatus_name), strtolower($courtstatus_name))==0){
+			db_query("UPDATE `tbl_courtstatus` set `courtstatus_name` = '".$courtstatus_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where courtstatus_id='".$courtstatus_id."'");
+			
+			$message = getMessage('dsjecourtstatus', 'code05', array("0"=>$courtstatus_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listcourtstatus");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_courtstatus` set `courtstatus_name` = '".$courtstatus_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where courtstatus_id='".$courtstatus_id."'");
+				
+				$message = getMessage('dsjecourtstatus', 'code05', array("0"=>$courtstatus_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listcourtstatus");	
+			
+			}else{
+				db_query("UPDATE `tbl_courtstatus` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where courtstatus_id='".$courtstatus_id."'");
+				
+				$message = getMessage('dsjecourtstatus', 'code06', array("0"=>$courtstatus_name));
+				form_set_error('courtstatus_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_courtstatus_theme() {
+	
+	return array(
+				 
+		'dsje_courtstatus_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_courtstatus_form',
+                                 ),
+        'dsje_courtstatus_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_courtstatus_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_courtstatus_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_courtstatus_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_courtstatus_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function courtstatus_delete($sid, $sno){
+  $courtstatus_id =  $sid;
+  db_query("UPDATE {tbl_courtstatus} SET status=0 WHERE courtstatus_id ='".$courtstatus_id."'");
+  $message = getMessage('dsjecourtstatus', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listcourtstatus");
+ }
+
+
+  function courtstatus_enable($sid, $sno){
+    $courtstatus_id =  $sid;
+    db_query("UPDATE {tbl_courtstatus} SET status=1 WHERE courtstatus_id ='".$courtstatus_id."'");
+  
+    $message = getMessage('dsjecourtstatus', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listcourtstatus");
+  }
+
+  function rec_addcourtstatusview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List courtstatus', 'admin/dsje/listcourtstatus');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View courtstatus', 'admin/dsje/listcourtstatus/view/courtstatus/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from tbl_courtstatus where courtstatus_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>courtstatus Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td>courtstatus:</td><td>'.ucwords($rs->courtstatus_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='</table></div>';
+$output .=  l(t('Back'), 'admin/dsje/listcourtstatus');
+ return $output;
+  }
+	
+	

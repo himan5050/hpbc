@@ -1,0 +1,6 @@
+;$id 
+name="Dispatch Form"
+description="Dispatch Form"
+core =6.x
+version = 6.x-1
+package="Dsje"

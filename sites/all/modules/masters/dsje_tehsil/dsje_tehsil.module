@@ -1,0 +1,898 @@
+<?php
+function dsje_tehsil_init() {
+}
+
+function dsje_tehsil_perm() {
+	return array('edit dsje_tehsil','administer dsje_tehsil', 'create dsje_tehsil', 'view dsje_tehsil');
+}
+
+function dsje_tehsil_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_tehsil', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_tehsil', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_tehsil', $account);
+	}
+}
+
+function dsje_tehsil_menu() {
+
+
+$items['rec/tehsil'] = array(
+										'page callback' => 'mytehsil',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+
+$items['rec/district'] = array(
+										'page callback' => 'mydistrict',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+									
+										
+
+
+
+	$items['dsje/district'] = array(
+										'page callback' => 'selectdistrict',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+										
+								
+								
+	
+	$items['dsje/listtehsil'] = array(
+										'title' => t('List of Tehsil'),
+										'description' => 'Allow user to View Tehsil',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewtehsil',
+										'access arguments' => array('administer dsje_tehsil'),
+													 
+									  );
+	
+	$items['dsje/listtehsil/addtehsil'] = array(
+										'title' => t('Add Tehsil'),
+										'description' => 'Allow user to add Tehsil',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addtehsil',
+										'access arguments' => array('administer dsje_tehsil'),
+													 
+									  );
+   	$items['dsje/listtehsil/edit/tehsil/%'] = array(
+								
+	                                    'title' => t('Edit Tehsil'),
+										'description' => 'Allow user to add Tehsil',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addtehsiledit',
+                                        'page arguments' => array(4),  
+		                                'access arguments' => array('administer dsje_tehsil'),
+													 
+									  );
+     	$items['dsje/listtehsil/view/tehsil/%'] = array(
+								
+	                                    'title' => t('View Tehsil'),
+										'description' => 'Allow user to add Tehsil',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addtehsilview',
+                                        'page arguments' => array(4), 
+		                                'access arguments' => array('administer dsje_tehsil'),
+													 
+									  );
+
+      $items['dsje/del/tehsil/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'tehsil_delete',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer rec_master'),
+													 
+									  );
+      $items['dsje/enable/tehsil/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'tehsil_enable',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer dsje_tehsil'),
+													 
+									  );
+	return $items;
+}
+
+
+/** listing Tehsil */
+function viewtehsil(){
+global $user;
+global $base_url;
+global $xpathObj;
+$limit = (int)getMessage( 'dsjetehsil', 'code04', NULL);
+$lising = 'List of Tehsil';
+$addurl = l("Add Tehsil","dsje/listtehsil");
+
+$output = '<table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+<tr>
+<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+</tr>
+</table>';
+ 
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Tehsil'), 'field' => 'tbl_tehsil.tehsil_name', 'sort' => 'asc'),
+        array('data' => t('District'), 'field' => 'tbl_district.district_name', 'sort' => 'asc'),
+	    array('data' => t('State'), 'field' => 'tbl_dsjestate.state_name', 'sort' => 'asc'),
+		//array('data' => t('Remarks')),
+	    array('data' => t('Status'), 'field' => 'tbl_tehsil.status', 'sort' => 'asc'),
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Tehsil', 'dsje/listtehsil/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	 $searchtext = trim($_REQUEST['searchtext']);
+	$val = '%'.strtoupper($searchtext).'%'; $val=addslashes($val);
+	
+	
+	$status = trim($_REQUEST['searchtextstatus']);
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "UPPER(tbl_dsjestate.state_name) LIKE '".$val."' OR UPPER(tbl_tehsil.tehsil_name) LIKE '".$val."' OR UPPER(tbl_district.district_name) LIKE '".$val."'";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "tbl_tehsil.status='".db_escape_string($status)."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(tbl_dsjestate.state_name) LIKE '".$val."' OR UPPER(tbl_tehsil.tehsil_name) LIKE '".$val."' OR UPPER(tbl_district.district_name) LIKE '".$val."') AND tbl_tehsil.status='".$status."'";
+	 }
+	 	
+	
+	/*$df="select status FROM {tbl_tehsil} where status = '$val'";
+	$sdf=db_query($df);
+	$sdc=db_fetch_object($sdf);
+	
+	if($sdc->status=='1'){
+		       $val='Enabled';
+		    }else{
+			   $val ='Disabled';
+			}*/
+	
+	 
+	$query = "SELECT tbl_tehsil.tehsil_id,tbl_tehsil.tehsil_name, tbl_dsjestate.state_id, tbl_dsjestate.state_name,tbl_district.district_id,tbl_district.district_name, tbl_tehsil.remarks, tbl_tehsil.status FROM {tbl_tehsil} INNER JOIN tbl_district ON (tbl_district.district_id=tbl_tehsil.district_id) INNER JOIN tbl_dsjestate ON (tbl_dsjestate.state_id=tbl_tehsil.state_id) where ".$searchquery."".tablesort_sql($header);
+     $sqlcount = "SELECT COUNT(*) AS count FROM {tbl_tehsil} INNER JOIN tbl_district ON (tbl_district.district_id=tbl_tehsil.district_id) INNER JOIN tbl_dsjestate ON (tbl_dsjestate.state_id=tbl_tehsil.state_id) where ".$searchquery."".tablesort_sql($header);
+	 $rscount = db_query($sqlcount);
+	 $rscounter = db_fetch_object($rscount);
+	 //$_REQUEST['page']=0;
+	}else{
+	  $query = "SELECT tbl_tehsil.tehsil_id,tbl_tehsil.tehsil_name , tbl_dsjestate.state_id,tbl_dsjestate.state_name,tbl_district.district_id,tbl_district.district_name, tbl_tehsil.tehsil_name, tbl_tehsil.remarks, tbl_tehsil.status FROM {tbl_tehsil} INNER JOIN tbl_district ON (tbl_district.district_id=tbl_tehsil.district_id) INNER JOIN tbl_dsjestate ON (tbl_dsjestate.state_id=tbl_tehsil.state_id)  ".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/dsje/listtehsil';
+
+$t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+	$output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'dsjetehsil', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','dsje/listtehsil');
+	}
+	
+	$output .='</td><td colspan="3"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjetehsil', 'code01', NULL),"dsje/listtehsil/addtehsil");
+   	$lising = getMessage( 'dsjetehsil', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query,$limit);
+
+	
+	if($_REQUEST['page']){
+		 $counter = $_REQUEST['page']*$limit;
+		}else{
+		 $counter = 0;
+	}
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","dsje/listtehsil/edit/tehsil/".$row->tehsil_id);
+		$viewurl = l("View","dsje/listtehsil/view/tehsil/".$row->tehsil_id);
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","dsje/del/tehsil/$row->tehsil_id/$row->tehsil_name");
+		}else{
+		  $deleteurl = l("Enable","dsje/enable/tehsil/$row->tehsil_id/$row->tehsil_name");
+		}
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		//$state_union_territory = $row->state_union_territory;
+		
+		
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->tehsil_name)),
+            array('data' => ucwords($row->district_name)),
+            array('data' => ucwords($row->state_name)),
+			//array('data' => $row->remarks),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+	}
+	
+	if($rows== NULL)
+	$header=NULL;
+	
+	
+	$output .= ''.theme_table($header,$rows, $attributes = array(), $caption = NULL).'';
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+ 
+ 
+ 
+function dsje_addtehsil(){
+ return drupal_get_form('dsje_tehsil_form');
+}
+
+/**
+ *form creation
+ */
+
+function dsje_tehsil_form() {
+	$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Tehsil', 'dsje/listtehsil');
+  if($array[2] == 'addtehsil'){
+     $breadcrumb[] = l('Add Tehsil', 'dsje/listtehsil/addtehsil');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+
+	
+	$sqlcountry = "select * from {tbl_dsjestate} WHERE status='1' ORDER BY state_name ";
+	$rescountry =db_query($sqlcountry);
+	$countryarray[''] = array();
+	$countryarray[''] = '--Select--'; 
+	if($rescountry){
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->state_id] = ucwords($rscountry->state_name);
+	  }
+	}
+	$countryarray1[''] = '--Select--'; 
+	$form['state_id'] = array(
+		'#type' => 'select',
+		'#title' => t('State'),
+		'#required' => TRUE,
+		'#default_value' => $form->state_id,
+		'#options' => $countryarray,
+		'#ahah' => array(
+						  'path' => 'dsje/district',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'city',
+						  ),
+	);
+	
+	$zonearray[''] = '--Select--'; 
+
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $form->district_id,
+		'#options' => $zonearray,
+	);
+    
+	
+	
+	
+	$form['tehsil_name'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('Tehsil'),
+		'#required' => TRUE,
+		'#default_value' => $form->tehsil_id,
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	
+	
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>'',
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/listtehsil'),
+);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+/**
+ *submit handler
+ */
+
+function dsje_tehsil_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $state_id =$values['state_id'];
+    $district_id = $values['district_id'];
+    $tehsil_name = trim($values['tehsil_name']);
+	//$state_uid = trim($values['state_uid']);
+	//$state_union_territory = parseData(trim($values['state_union_territory']));
+    $remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+	$updatedby = $user->uid;
+	$updatedon = $createdon;
+     
+	 if($district_id == '')
+	 { form_set_error($district_id,t('District field is requried'));}
+	 else{
+   db_query("INSERT INTO {tbl_tehsil} (`tehsil_name`, `remarks` ,`state_id` ,`district_id` , `status` ,`createdby` ,`createdon` ,`updatedby` ,`updatedon`) VALUES('".$tehsil_name."', '".$remarks."','".$state_id."','".$district_id."','".$status."','".$createdby."','".$createdon."','".$updatedby."','".$updatedon."') ");
+	$message = getMessage('dsjetehsil', 'code05', array("0"=>$tehsil_name));
+	drupal_set_message($message);
+	drupal_goto('dsje/listtehsil');
+}}
+
+function dsje_tehsil_form_validate($form, &$form_state) {
+	
+	$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Tehsil', 'dsje/listtehsil');
+  if($array[2] == 'addtehsil'){
+     $breadcrumb[] = l('Add Tehsil', 'dsje/listtehsil/addtehsil');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+
+	$values = $form_state['values'];
+	$state_id = $values['state_id'];
+	$district_id = $values['district_id'];
+	$tehsil_name = parseData(trim($values['tehsil_name']));
+	//$state_uid = trim($values['state_uid']);
+	$remarks = trim($values['remarks']);
+		if($state_id=''){
+			form_set_error('state_id', t('State field is required.'));
+		}
+		$s2=0;
+		if($district_id=''){
+			form_set_error('district_id', t('District field is required.'));
+		$s2=1;
+		}
+		
+	$s = textonlyn('tehsil_name',$tehsil_name,'Tehsil Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_tehsil} where LOWER(tehsil_name)= '".strtolower($tehsil_name)."'";
+		$res = db_query($sql);
+	  
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjetehsil', 'code06', array("0"=>$tehsil_name));	
+			form_set_error('tehsil_name', $message);
+		}
+	}
+}
+
+function selectdistrict() {
+    $state_id = $_POST['state_id'];
+	$query = "SELECT district_id, district_name FROM {tbl_district} WHERE state_id = '".$state_id."' AND status='1' ORDER BY district_name" ;
+	$result = db_query($query);
+
+	$zonearray = array();
+	$zonearray[''] = "--Select--";
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$zonearray[$row->district_id] = ucfirst($row->district_name);
+		$counter++;
+		//$output.="<option value='$row->state_id'>$row->state_name</option>";
+	}
+	if($counter==0) {
+		$zonearray[] = "--Select--";
+	}
+	$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('dsje_tehsil_form', $form, $form_state);
+	$form['district_id'] = array (
+							 '#type' => 'select',
+							'#title' => t('District'),
+							'#required' => TRUE,
+							'#default_value' => $node->district_id,
+							'#options' => $zonearray,
+							'#id' => 'edit-district_id',
+							'#name' => 'district_id',
+						 );
+	$output = drupal_render($form['district_id']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+
+
+
+function dsje_addtehsiledit($id){
+ return drupal_get_form('dsje_tehsil_form_edit',$id);
+}
+
+function dsje_tehsil_form_edit($form_state,$id) {
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Tehsil', 'dsje/listtehsil');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Tehsil', 'dsje/listtehsil/edit/tehsil/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+	$sqlstate = "select * FROM {tbl_tehsil} where tehsil_id='$id' ";
+	$resstate = db_query($sqlstate);
+	$rsstate = db_fetch_object($resstate);
+	
+	$sqlcountry = "select * from {tbl_dsjestate} WHERE status='1' ORDER BY state_name";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->state_id] = ucfirst($rscountry->state_name);
+	  }
+	}
+	$form['state_id'] = array(
+		'#type' => 'select',
+		'#title' => t('State'),
+		'#required' => TRUE,
+		'#default_value' => $rsstate->state_id,
+		'#options' => $countryarray,
+		'#ahah' => array(
+					  'path' => 'dsje/district',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'city',
+					  ),
+	);
+	
+	$sqlzone = "select * FROM {tbl_district} WHERE status='1' and state_id = '".$rsstate->state_id."' ORDER BY district_name ";
+	$reszone =db_query($sqlzone);
+	if($reszone){
+	  while($rszone = db_fetch_object($reszone)){
+	    $zonearray[$rszone->district_id] = ucfirst($rszone->district_name);
+	  }
+	}
+
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $rsstate->district_id,
+		'#options' => $zonearray,
+	);
+	
+	
+	
+	$form['prev_state_uid'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $rsstate->tehsil_name,
+		
+	);
+	
+	$form['tehsil_id'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $id,
+		
+	);
+	
+	$form['tehsilname'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $rsstate->tehsil_name,
+		
+	);
+	
+	$form['prev_state_name'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $rsstate->tehsil_name,
+		
+	);
+    
+	$form['tehsil_name'] = array(
+		'#type' => 'textfield',
+		'#size' => '20',
+		'#title' => t('Tehsil'),
+		'#required' => TRUE,
+		'#default_value' =>$rsstate->tehsil_name,
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+
+	
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>$rsstate->remarks,
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rsstate->status,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/listtehsil'),
+);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	
+	return $form;
+}
+function dsje_tehsil_form_edit_validate($form, &$form_state) { 
+
+$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Tehsil', 'dsje/listtehsil');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Tehsil', 'dsje/listtehsil/edit/tehsil/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+   global $user;
+	$values = $form_state['values'];
+   $tehsil = $values['tehsilname'];
+	 $tehsil_id = $values['tehsil_id'];
+	$state_id =$values['state_id'];
+    $district_id = $values['district_id'];
+	 $tehsil_name = parseData(trim($values['tehsil_name']));
+    $district_name = trim($values['district_name']);
+	$prev_state_name = $values['prev_state_name'];	
+    $remarks = parseData(trim($values['remarks']));
+    //$status = $values['status'];
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	
+	if($state_id=''){
+			form_set_error('state_id', t('State field is required.'));
+		}
+		$s2=0;
+		if($district_id='' || $district_id=='0'){
+			form_set_error('district_id', t('District field is required.'));
+		$s2=1;
+		}
+		
+	$s = textonlyn('tehsil_name',$tehsil_name,'Tehsil Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	//drupal_set_message($tehsil);
+	if($tehsil_name != $tehsil ){
+	
+		$sql = "SELECT * FROM {tbl_tehsil} where LOWER(tehsil_name)= '".strtolower($tehsil_name)."'";
+		$res = db_query($sql);
+	  
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjetehsil', 'code06', array("0"=>$tehsil_name));	
+			form_set_error('tehsil_name', $message);
+		}
+	}
+	
+	 
+	
+   /* $countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_tehsil} where LOWER(tehsil_name)= '".strtolower($tehsil_name)."' GROUP BY tehsil_id"));
+		    $count = $countObj->count;
+			
+			if( strcmp(strtolower($prev_state_name), strtolower($tehsil_name))==0){
+							
+			}else{
+				if($count==0){
+				
+				}else{
+				
+					//db_query("UPDATE {tbl_states} set `state_name` ='".$state_name."'  , `remarks`='".$remarks."' ,`country_id`= '".$country_id."',`zone_id`= '".$zone_id."',updatedby='".$updatedby."'  ,updatedon='".$updatedon."' where state_id='$state_id'");
+					//$message = getMessage('recState', 'code06', array("0"=>$state_name));
+					//form_set_error('state_name', $message);
+					form_set_error('state_name', 'The State Name '.$state_name.' alreday exist.');
+					//drupal_goto("rec/liststate");	
+				}
+			}*/
+	 
+} 
+
+function dsje_tehsil_form_edit_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+     $tehsil = $values['tehsilname'];
+	 $tehsil_id = $values['tehsil_id'];
+	 	$state_id =$values['state_id'];
+    $district_id = $values['district_id'];
+	//$state_uid = $values['state_uid'];
+	$prev_state_uid = $values['prev_state_uid'];
+    $tehsil_name = parseData(trim($values['tehsil_name']));
+	//$state_union_territory = parseData(trim($values['state_union_territory']));
+	$prev_state_name = $values['prev_state_name'];	
+    $remarks = parseData(trim($values['remarks']));
+	
+	$field = "";
+	
+
+	
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('tehsil_name',$tehsil_name,'Tehsil Name');
+    $s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	//echo "UPDATE {tbl_tehsil} set $field `tehsil_name` ='".$tehsil_name."',`remarks`='".$remarks."' ,`state_id`= '".$state_id."',`district_id`= '".$district_id."',updatedby='".$updatedby."'  ,updatedon='".$updatedon."' where tehsil_id='$tehsil_id'";exit;
+    
+			
+				db_query("UPDATE {tbl_tehsil} set $field `tehsil_name` ='".$tehsil_name."',`remarks`='".$remarks."' ,`state_id`= '".$state_id."',`district_id`= '".$district_id."',updatedby='".$updatedby."'  ,updatedon='".$updatedon."' where tehsil_id='$tehsil_id'");
+				$message = getMessage('dsjetehsil', 'code11', array("0"=>$tehsil_name));
+				drupal_set_message($message);
+				drupal_goto("dsje/listtehsil");				
+			
+				
+					//form_set_error('tehsil_name', 'The Tehsil Name '.$tehsil_name.' alreday exist.');
+				
+			
+       
+	
+}
+
+/**
+ *hook_theme
+ */
+function dsje_tehsil_theme() {
+	
+	return array(
+				 
+		'dsje_tehsil_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_tehsil_form',
+                                 ),
+        'dsje_tehsil_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_tehsil_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+ function dsje_tehsil_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_tehsil_form_edit'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	}
+ }
+
+
+ function tehsil_delete($id,$sno){
+	$tehsil_id =  $id;
+	//$sql = "select district_id,status FROM {tbl_tehsil} WHERE district_id ='".$id."' and status=1";
+    //$res = db_query($sql);
+    //if($rs = db_fetch_object($res)){
+     //form_set_error('form','The District '.$sno.' cannot be disabled as it has other entities mapped to it.');
+	 //$st=1;
+	 //The Country India cannot be disabled as it has other entities mapped to it.
+   //}
+   //if($st !=1){
+		//db_query("UPDATE {tbl_district} SET status=0 WHERE district_id ='".$state_id."'");
+		db_query("UPDATE {tbl_tehsil} SET status=0 WHERE tehsil_id ='".$tehsil_id."'");
+		
+		$message = getMessage('dsjetehsil', 'code07', array("0"=>$sno));
+		drupal_set_message($message);
+   //}
+	drupal_goto("dsje/listtehsil");
+ }
+
+  function tehsil_enable($id,$sno){
+	$tehsil_id =  $id;
+	//db_query("UPDATE {tbl_states} SET status=1 WHERE state_id ='".$state_id."'");
+	db_query("UPDATE {tbl_tehsil} SET status=1 WHERE tehsil_id ='".$tehsil_id."'");
+	
+	$message = getMessage('dsjetehsil', 'code10', array("0"=>$sno));
+	drupal_set_message($message);
+	drupal_goto("dsje/listtehsil");
+ }
+
+
+function dsje_addtehsilview($id){
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Tehsil', 'dsje/listtehsil');
+  if($array[2] == 'view'){
+     $breadcrumb[] = l('View Tehsil', 'dsje/listtehsil/view/tehsil/'.$array[4].'');
+  }
+  
+  
+    drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * FROM {tbl_tehsil} where tehsil_id = $id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+	$status ='Enabled';
+	}else{
+	$status ='Disabled';
+	}
+	
+	$remarks = ucfirst($rs->remarks);
+	if($remarks==''){$remarks='N/A';}
+	
+	$state_uid = ucfirst($rs->state_uid);
+	if($state_uid==''){$state_uid='N/A';}
+	
+	$statename = getState($rs->state_id);
+	$districtname = getdistrict($rs->district_id);
+	$output .='<div id="form-container"><table cellpadding="2" cellspacing="1" border="0" id="wrapper">';
+	$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Tehsil Details</h2></td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">Tehsil:</td><td class="normal">'.$rs->tehsil_name.'</td></tr>';
+	$output .='<tr class="oddrow"><td width="50%">District:</td><td class="normal">'.ucwords($districtname).'</td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">State:</td><td class="normal">'.ucwords($statename).'</td></tr>';
+	$output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+	$output .='<tr class="evenrow"><td class="back" align="center" colspan="2">'.l(t('Back'), 'dsje/listtehsil').'</td></tr>';
+	$output .='</table></div>';
+	return $output;
+}
+
+
+function mydistrict() {
+    $state_id = $_POST['state_id'];
+    settype($state_id, 'integer');
+	$query = sprintf("SELECT district_id, district_name FROM {tbl_district} WHERE state_id = %d  AND status='1' ORDER BY district_name",db_escape_string($state_id));
+	//$query = "SELECT district_id, district_name FROM {tbl_district} WHERE state_id = '$state_id' AND status='1' ORDER BY district_name";
+	$result = db_query($query);
+	$zonearray = array();
+	$zonearray[''] = "--Select--";
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$zonearray[$row->district_id] = ucwords($row->district_name);
+		$counter++;
+	}
+	if($counter==0) {
+		$zonearray[''] = "--Select--";
+	}
+	$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+    settype($form_build_id, 'integer');
+	$form = form_builder('dsje_tehsil_form', $form, $form_state);
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' => $zonearray,
+		'#id' => 'edit-district-id',
+		'#name' => 'district_id',
+		'#attributes' => array('name' => 'district_id'),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	
+	);
+	$output = drupal_render($form['district_id']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+
+
+
+
+  
+function mytehsil() {
+    $district_id = $_POST['district_id'];
+    settype($district_id, 'integer');
+	$query = sprintf("SELECT tehsil_id, tehsil_name FROM {tbl_tehsil} WHERE district_id = %d AND status='1' ORDER BY tehsil_name",db_escape_string($district_id));
+	$result = db_query($query);
+	
+	$statearray = array();
+	$statearray[''] = "--Select--";
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$statearray[$row->tehsil_id] = ucwords($row->tehsil_name);
+		$counter++;
+	}
+	
+	if($counter==0) {
+		//$statearray[''] = "--Select--";
+	}
+	
+  $form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+    settype($form_build_id, 'integer');
+	$form = form_builder('dsje_tehsil_form', $form, $form_state);
+	$form['tehsil_id'] = array(
+		'#type' => 'select',
+		'#title' => t('Tehsil'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' => $statearray,
+		'#id' => 'edit-tehsil-id',
+		'#name' => 'tehsil_id',
+		'#attributes' => array('name' => 'tehsil_id'),
+		'#ahah' => array(
+						  'path' => 'dsje/block',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'block',
+						  ), 
+	
+	);
+	$output = drupal_render($form['tehsil_id']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+	
+	
+}	  
+  
+  
+	
+	

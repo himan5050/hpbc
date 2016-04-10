@@ -1,0 +1,1759 @@
+<?php
+
+function rti_management_init() {
+	//drupal_add_css(drupal_get_path('module', 'rti_management') .'/rti_management.css');
+	drupal_add_js(drupal_get_path('module', 'rti_management') .'/rti_management.js');
+}
+
+function rti_management_node_info() {
+	return array (
+					'rti_management' => array (
+										'name' => t('rti_management'),
+										'module' => 'rti_management',
+										'description' => "Creates a New rti_management",
+										'has_title' => TRUE,
+										'title_label' => t('rti_management Name'),
+										'has_body' => FALSE,
+										),
+				);
+}
+
+function rti_management_perm() {
+	return array('edit rti_management','administer rti_management', 'create rti_management', 'view rti_management');
+}
+
+function rti_management_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit rti_management', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create rti_management', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view rti_management', $account);
+	}
+	
+}
+
+function rti_management_menu() {
+
+ $items['dsje/listrti_management'] = 	array(
+	    'title' => t('List of rti_management'),
+		'description' => 'Allow user to rti_management',
+		'type' => MENU_NORMAL_ITEM,
+		'page callback' => 'rti_management_list',
+		'access arguments' => array('administer rti_management'), 
+	   
+	   
+	  );
+	  
+	  
+$items['dsje/listrti_management/view'] = 	array(
+	    'title' => t('List of rti_management'),
+		'description' => 'Allow user to rti_management',
+		'type' => MENU_NORMAL_ITEM,
+		'page callback' => 'rti_management_listview',
+		'access arguments' => array('administer rti_management'), 
+	   
+	   
+	  );	  
+	  
+$items['dsje/del/rti_management/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rti_management_close',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer rti_management'),
+													 
+									  );
+ $items['dsje/enable/rti_management/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rti_management_enable',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer rti_management'),
+													 
+									  );  
+									  
+									  
+									  
+ 	$items['dsje/close/rti_management/%'] = array(
+										'title' => t('Add Comment'),
+										'description' => 'Allow user to add rti_management',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addrticlose',
+										 'page arguments' => array(3),
+										'access arguments' => array('administer rti_management'),
+													 
+									  );  
+	  
+     
+   
+	$items['dsje/close/rti_management/%'] = array(
+										'title' => t('Add Comment'),
+										'description' => 'Allow user to add rti_management',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addrticlose',
+										 'page arguments' => array(3),
+										'access arguments' => array('administer rti_management'),
+													 
+									  );  
+									  
+									  
+	
+
+	return $items;
+}
+ 
+
+function rti_management_listview(){
+
+     global $user;
+	global $base_url;
+	global $xpathObj;
+	
+$uid=$user->uid;	
+	
+	$limit = (int)getMessage( 'dsjerti_management', 'code04', NULL);
+  $cuser = user_load($user->uid);
+  $roles = implode(',',array_flip($cuser->roles));
+  
+  /* $sqlrole = "select rid from users_roles where uid='".$uid."'";
+$res = db_query($sqlrole);
+$rs = db_fetch_object($res);
+$as = $rs->rid;*/
+
+
+$sqlrole = "select * from users_roles where uid='".$uid."'";
+$res = db_query($sqlrole);
+$rs = db_fetch_object($res);
+$as = $rs->rid;	
+	
+	$dq="select * from tbl_workflow_details where role='$as'";
+	$sql=db_query($dq);
+	$sx=db_fetch_object($sql);
+	$sdf=$sx->role;
+	
+	//if($sdf == 38  || $sdf == 5 || $sdf == 19 || $sdf == 6)
+	
+	if($sdf == 38)
+	{
+	
+	$header = array(
+		array('data' => t('S. No.')),
+		array('data' => t('Application No.'), 'field' => 'ld.vid', 'sort' => 'asc'),
+	     //array('data' => t('Office'), 'field' => 'tbl_corporations.corporation_name', 'sort' => 'asc'),
+		  array('data' => t('Applicant Name'), 'field' => 'ld.application_name', 'sort' => 'asc'),
+		 /* array('data' => t('Remarks/Action Taken'),'field' => 'ld.remarks', 'sort' => 'asc'),*/
+		  array('data' => t('Status')),
+      
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	
+	
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('Pending RTI', 'dsje/listrti_management/view'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	
+$query="SELECT * FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_rti_management ld, tbl_workflow_details wdetail WHERE wt.doc_id = wd.doc_id AND ld.doc_id = wd.doc_id AND wd.workflow_id = w.workflow_id AND w.workflow_id = wdetail.workflow_id AND w.workflow_id = '7' AND wdetail.level = wt.level AND wt.status = 0 AND (ld.application_name Like '$val' OR appno like '".$val."' OR ld.rti_management_status Like '$val' OR ld.remarks Like '$val')".tablesort_sql($header); 
+
+	
+	$sqlcount="SELECT COUNT(*) as count  FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_rti_management ld, tbl_workflow_details wdetail WHERE wt.doc_id = wd.doc_id AND ld.doc_id = wd.doc_id AND wd.workflow_id = w.workflow_id AND w.workflow_id = wdetail.workflow_id AND w.workflow_id = '7' AND wdetail.level = wt.level AND wt.status = 0 AND (ld.application_name Like '$val' OR appno like '".$val."' OR ld.rti_management_status Like '$val' OR ld.remarks Like '$val')".tablesort_sql($header); 
+
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ 
+ }else{
+   $query="SELECT *  FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_rti_management ld, tbl_workflow_details wdetail WHERE wt.doc_id = wd.doc_id AND ld.doc_id = wd.doc_id AND wd.workflow_id = w.workflow_id AND w.workflow_id = wdetail.workflow_id AND w.workflow_id = '7' AND wdetail.level = wt.level AND wt.status = 0".tablesort_sql($header);
+ }
+global $base_url;
+$action = $base_url.'/dsje/listrti_management/view';
+ 
+ $output = '<form method="POST" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjerti_management', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','dsje/listrti_management/view');
+	}
+	$addurl = l(getMessage( 'dsjerti_management', 'code01', NULL),"node/add/rti-management");
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	 
+   	$lising = getMessage( 'dsjerti_management', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>
+	</tr>
+	</table></form>';
+ 
+	$result =pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($rs=db_fetch_object($result)) {
+	$counter++;
+	
+	if($rs->rti_management_status  != 'Close'){
+	
+		
+		$editurl = l("Edit","node/$rs->nid/edit",array('attributes'=>array('id'=>'edit-state')));
+		$viewurl = l("View","node/$rs->nid",array('attributes'=>array('id'=>'edit-state')));
+		$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		$close=l("Close","dsje/close/rti_management/$rs->nid",array('attributes'=>array('id'=>'edit-state')));
+		$action = $viewurl." | ".$close;
+		}
+		
+		else{
+		
+		$viewurl = l("View","node/$rs->nid",array('attributes'=>array('id'=>'edit-state')));
+		$action = $viewurl;
+		}
+		
+		
+		
+		/*if($row->rti_management_status=='Pending'){
+		  $close = l("Pending","dsje/close/rti_management/$rs->nid");
+		}else{
+		  $close = l("Close","dsje/close/rti_management/$rs->nid");
+		}*/
+		
+		if($rs->rti_management_status=='Pending'){
+		       $st='Pending';
+		    }else{
+			   $st ='Close';
+			}
+		
+		
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => $rs->appno),
+			array('data' => $rs->application_name),
+			
+			
+			
+			
+			array('data' => $st),
+			//array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+array('data' => $action),
+		);
+	}
+	 
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	
+	$output .= theme('pager', NULL, $limit,0 );
+	
+	return $output;
+	
+	}
+  else
+  {
+  
+   $cuser = user_load($user->uid);
+  $roles = implode(',',array_flip($cuser->roles));
+  
+ $header = array(
+		array('data' => t('S. No.')),
+		array('data' => t('Application No.'), 'field' => 'ld.appno', 'sort' => 'asc'),
+	     //array('data' => t('Office'), 'field' => 'tbl_corporations.corporation_name', 'sort' => 'asc'),
+		  array('data' => t('Applicant Name'), 'field' => 'ld.application_name', 'sort' => 'asc'),
+		  array('data' => t('Status')),
+      
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	
+	
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('Pending RTI', 'dsje/listrti_management/view'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	
+	
+	 
+	
+	 $query="SELECT *  FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_rti_management ld, tbl_workflow_details wdetail WHERE wt.doc_id = wd.doc_id AND ld.doc_id = wd.doc_id AND wd.workflow_id = w.workflow_id AND w.workflow_id = wdetail.workflow_id AND w.workflow_id = '7'  AND wdetail.level = wt.level AND wt.status = 0 and ld.createdby='".$uid."' AND  (ld.application_name Like '$val' OR ld.appno like '$val' OR ld.rti_management_status Like '$val' OR ld.remarks Like '$val' )".tablesort_sql($header); 
+	
+	 $sqlcount="SELECT COUNT(*) as count  FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_rti_management ld, tbl_workflow_details wdetail WHERE wt.doc_id = wd.doc_id AND ld.doc_id = wd.doc_id AND wd.workflow_id = w.workflow_id AND w.workflow_id = wdetail.workflow_id AND w.workflow_id = '7'  AND wdetail.level = wt.level AND wt.status = 0 and ld.createdby='".$uid."' AND  (ld.application_name Like '$val' OR ld.appno like '$val' OR ld.rti_management_status Like '$val' OR ld.remarks Like '$val' )".tablesort_sql($header); 
+
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ 
+ }else{
+      $query="SELECT *  FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_rti_management ld, tbl_workflow_details wdetail WHERE wt.doc_id = wd.doc_id AND ld.doc_id = wd.doc_id AND wd.workflow_id = w.workflow_id AND w.workflow_id = wdetail.workflow_id AND w.workflow_id = '7'  AND  wdetail.level = wt.level AND wt.status = 0 and ld.createdby='".$uid."'".tablesort_sql($header);
+
+ }
+global $base_url;
+$action = $base_url.'/dsje/listrti_management/view';
+ 
+ $output = '<form method="POST" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjerti_management', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','dsje/listrti_management/view');
+	}
+	$addurl = l(getMessage( 'dsjerti_management', 'code01', NULL),"node/add/rti-management");
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	 
+   	$lising = getMessage( 'dsjerti_management', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>
+	</tr>
+	</table></form>';
+ 
+	$result =pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($rs=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","node/$rs->nid/edit",array('attributes'=>array('id'=>'edit-state')));
+		$viewurl = l("View","node/$rs->nid",array('attributes'=>array('id'=>'edit-state')));
+		$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		//$close=l("Close","dsje/del/rti_management/$rs->nid/$rs->application_name",array('attributes'=>array('id'=>'edit-state')))
+		
+		if($row->rti_management_status=='Pending'){
+		  $close = l("Pending","dsje/del/rti_management/$rs->nid/$rs->application_name");
+		}else{
+		  $close = l("Close","dsje/del/rti_management/$rs->nid/$rs->application_name");
+		}
+		if($rs->rti_management_status=='Pending'){
+		       $st='Pending';
+		    }else{
+			   $st ='Close';
+			}
+		
+		
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => $rs->appno),
+			array('data' => $rs->application_name),
+			
+			
+			
+			array('data' => $st),
+			//array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+array('data' => $viewurl),
+		);
+	}
+	 
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	
+	$output .= theme('pager', NULL, $limit,0 );
+	
+	return $output;
+}
+}
+
+
+
+
+function rti_management_list(){
+
+     global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage('dsjerti_management', 'code04', NULL);
+  
+ $header = array(
+		array('data' => t('S. No.')),
+		 //array('data' => t('Applicatrion Type'), 'field' => 'case_no', 'sort' => 'asc'),
+	     array('data' => t('Office'), 'field' => 'tbl_corporations.corporation_name', 'sort' => 'asc'),
+		  array('data' => t('Applicant Name'), 'field' => 'tbl_rti_management.application_name', 'sort' => 'asc'),
+		  array('data' => t('Status'), 'field' => 'tbl_rti_management.rti_management_status', 'sort' => 'asc'),
+      
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of rti_management', 'dsje/listrti_management'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	
+	$query = "SELECT node.nid,tbl_rti_management.application_name,tbl_corporations.corporation_name, tbl_rti_management.office,tbl_rti_management.rti_management_status FROM node
+	 INNER JOIN tbl_rti_management ON (node.nid=tbl_rti_management.nid) INNER JOIN tbl_corporations ON (tbl_rti_management.office=tbl_corporations.corporation_id) where UPPER(tbl_rti_management.application_name) LIKE '".$val."' OR UPPER(tbl_corporations.corporation_name) LIKE '".$val."'".tablesort_sql($header);
+
+	$sqlcount = "SELECT COUNT(*) AS count FROM node
+	 INNER JOIN tbl_rti_management ON (node.nid=tbl_rti_management.nid) INNER JOIN tbl_corporations ON (tbl_rti_management.office=tbl_corporations.corporation_id) where UPPER(tbl_rti_management.application_name) LIKE '".$val."' OR UPPER(tbl_corporations.corporation_name) LIKE '".$val."'".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ 
+ }else{
+    $query = "SELECT node.nid,tbl_rti_management.application_name, tbl_corporations.corporation_name,tbl_rti_management.rti_management_status FROM node
+	 INNER JOIN tbl_rti_management ON (node.nid=tbl_rti_management.nid) INNER JOIN tbl_corporations ON (tbl_rti_management.office=tbl_corporations.corporation_id)  ".tablesort_sql($header);
+ }
+ 
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjerti_management', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','dsje/listrti_management');
+	}
+	$addurl = l(getMessage( 'dsjerti_management', 'code01', NULL),"node/add/rti_management");
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	 
+   	$lising = getMessage( 'dsjerti_management', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>
+	</tr>
+	</table></form>';
+ 
+	$result =pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($rs=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","node/$rs->nid/edit",array('attributes'=>array('id'=>'edit-state')));
+		$viewurl = l("View","node/$rs->nid",array('attributes'=>array('id'=>'edit-state')));
+		$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		//$close=l("Close","dsje/del/rti_management/$rs->nid/$rs->application_name",array('attributes'=>array('id'=>'edit-state')))
+		
+		if($row->rti_management_status=='Pending'){
+		  $close = l("Pending","dsje/del/rti_management/$rs->nid/$rs->application_name");
+		}else{
+		  $close = l("Close","dsje/del/rti_management/$rs->nid/$rs->application_name");
+		}
+		if($rs->rti_management_status=='Pending'){
+		       $st='Pending';
+		    }else{
+			   $st ='Close';
+			}
+		
+		
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => $rs->corporation_name),
+			array('data' => $rs->application_name),
+			
+			
+			array('data' => $st),
+			//array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+array('data' => $viewurl." | ".$editurl." | ".$close),
+		);
+	}
+	 
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	
+	$output .= theme('pager', NULL, $limit,0 );
+	
+	return $output;
+}
+
+
+function rti_management_form(&$node) {
+
+global $user;
+	$uid = $user->uid;
+	
+	//print_r($user);exit;
+	
+	
+	//$rid = getRole($uid);
+	//print_r($rid);exit;
+	
+	
+
+    $breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+	 $breadcrumb[] = l('Pending RTI', 'dsje/listrti_management/view');
+   
+    if($array[2] == '' ) {
+     $breadcrumb[] = l('Add RTI', 'node/add/rti-management'.$array[2].'');
+	 }  
+	 
+     drupal_set_breadcrumb($breadcrumb);
+	 
+	$type = node_get_types('type', $node);
+	
+$sqlrole = "select * from users_roles where uid='".$uid."'";
+$res = db_query($sqlrole);
+$rs = db_fetch_object($res);
+
+   //return $rs->rid;
+   
+   
+ //echo "select * from tbl_joinings where program_uid = '".$uid."'"exit;  	
+	
+//echo "select * from users left join tbl_joinings on (tbl_joinings.program_uid = users.uid) left join tbl_guestuser on (tbl_guestuser.username = users.name)    where users.uid = '".$uid."'";exit;
+
+$df=db_query("select tbl_joinings.employee_name as joinemp,tbl_guestuser.employee_name,tbl_joinings.email,tbl_guestuser.email as guestemail,tbl_joinings.officeid,tbl_joinings.current_Departmentid,tbl_joinings.mobile,tbl_joinings.phone,tbl_joinings.add_line1,tbl_joinings.add_line2 ,tbl_joinings.state_id,tbl_joinings.district_id,tbl_joinings.tehsil_id,tbl_guestuser.add_line1 as a1,tbl_guestuser.add_line1 as a2,tbl_guestuser.state_id as s1,tbl_guestuser.district_id as d1,tbl_guestuser.tehsil_id as t1 from users left join tbl_joinings on (tbl_joinings.program_uid = users.uid) left join tbl_guestuser on (tbl_guestuser.username = users.name) where users.uid = '".$uid."'");
+$Ty=db_fetch_object($df);
+
+
+$sqlDepartmentsquery= "SELECT lookupType_id FROM tbl_lookuptypes WHERE lookupType_id='19'";
+
+$sqlDepartments= db_query($sqlDepartmentsquery);
+$rsDepartments=db_fetch_object($sqlDepartments);
+$sqlDepartmentslookquery = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rsDepartments->lookupType_id."' ORDER BY lookup_name ASC";
+
+$resDepartmentslookquery= db_query($sqlDepartmentslookquery);
+$Departmentslookquery['']= '--Select--';
+if($resDepartmentslookquery){
+
+while($rssender1 = db_fetch_object($resDepartmentslookquery)){
+
+$Departmentslookquery[$rssender1->lookup_id] = ucwords($rssender1->lookup_name);
+
+}
+
+}
+
+$sqlApplicantsquery= "SELECT lookupType_id FROM tbl_lookuptypes WHERE lookupType_id='40'";
+
+$sqlsqlApplicantsquery= db_query($sqlApplicantsquery);
+$rsApplicantsquery=db_fetch_object($sqlsqlApplicantsquery);
+$sqlApplicantsquerylookquery = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rsApplicantsquery->lookupType_id."' ORDER BY lookup_name ASC";
+
+$resApplicantsquerylookquery= db_query($sqlApplicantsquerylookquery);
+$Applicantsquerylookquery['']= '--Select--';
+if($resDepartmentslookquery){
+
+while($rssender2 = db_fetch_object($resApplicantsquerylookquery)){
+
+$Applicantsquerylookquery[$rssender2->lookup_id] = ucwords($rssender2->lookup_name);
+
+}
+
+}
+
+
+
+   
+  if(is_numeric(arg(1))){
+$result = db_query("SELECT * from tbl_rti_management WHERE nid =".arg(1));
+	$row =  db_fetch_object($result);
+  }
+  
+
+ 
+	
+
+ $form['section'] = array (
+							 '#type' => 'select',
+							 '#title' => t('Section'),
+							 '#required' => TRUE,
+							 '#default_value' => '',
+							 '#options' =>$Departmentslookquery,
+							 
+							 );
+					
+	
+
+   $applicaint= "SELECT lookupType_id FROM tbl_lookuptypes WHERE lookupType_id='32'";
+
+$ttt= db_query($applicaint);
+$rstt=db_fetch_object($ttt);
+$sqlsenderr = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rstt->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressenderr= db_query($sqlsenderr);
+$senderarrayy['']= '--Select--';
+if($ressenderr){
+
+while($rssenderr = db_fetch_object($ressenderr)){
+
+$senderarrayy[$rssenderr->lookup_id] = ucwords($rssenderr->lookup_name);
+
+}
+
+}
+   	
+	
+							 
+  $form['application_type'] = array (
+							 '#type' => 'select',
+							 '#title' => t('Application Type'),
+							 '#required' => TRUE,
+							 '#default_value' => $row->application_type,
+							 '#options' =>$senderarrayy,
+							 
+							 );
+
+   /* $sqlcountry = "select * from tbl_dsjestate WHERE status='1' ORDER BY state_name";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--Select--'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->state_id] = ucfirst($rscountry->state_name);
+	  }
+	}
+	$form['state_id'] = array(
+		'#type' => 'select',
+		'#title' => t('State'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		'#ahah' => array(
+					  'path' => 'rec/district',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'zone',
+					  ),
+	);
+	
+	
+	
+    $zonearray[''] = '--Select--';
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' =>$zonearray,
+		'#ahah' => array(
+					  'path' => 'rec/tehsil',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'state',
+					  ), 
+	);
+    
+    $statearray[''] = '--Select--';
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => '',
+			'#options' => $statearray,
+		);*/
+		
+		
+   $sqlcorporation = "select * from tbl_corporations where status = 1 order by corporation_name asc";
+   $rescorporation = db_query($sqlcorporation);
+   $corporation = array('' => t('--Select--'));
+   while($rscorporation = db_fetch_object($rescorporation)){
+     $corporation[$rscorporation->corporation_id] = ucwords($rscorporation->corporation_name);
+   }
+						   
+	 $form['office'] = array(
+						   '#type' => 'select',
+						   '#title' => t('Office'),
+						   '#required' => TRUE,
+						    '#default_value' => '',
+						   '#options'  => $corporation,
+						   );
+						   
+		/*$form['datecurrent'] = array(
+	  '#type' =>'date_popup',
+	  '#date_format' => 'd-m-Y',
+	  '#title' =>'Date',
+	  '#required' => false,
+	  '#default_value' => $node->datecurrent,	
+	);*/
+						   				   
+	 /* $form['application_detail'] = array(
+						   '#type' => 'textarea',
+						   '#title' => t('Application details'),
+						   '#required' => False,
+						   '#size' => '30',
+						   '#default_value' => $node->application_detail,
+						   );*/
+						   
+		if($Ty->joinemp)
+		{				   
+					   
+       $form['application_name'] = array(
+								 '#type' => 'textfield',
+								 '#title' => t('Applicant Name'),
+								 '#required' => TRUE,
+								 '#size' => '30',
+								 '#default_value' => $Ty->joinemp,
+								 '#attributes' => array('readonly' => 'readonly'),
+								 );
+		
+		 }
+		 
+		 else{
+		 
+		  $form['application_name'] = array(
+								 '#type' => 'textfield',
+								 '#title' => t('Applicant Name'),
+								 '#required' => TRUE,
+								 '#size' => '30',
+								 '#default_value' => $Ty->employee_name,
+								 '#attributes' => array('readonly' => 'readonly'),
+								 );
+		 
+		 }
+		 
+		 $kk= "SELECT lookupType_id FROM tbl_lookuptypes WHERE lookupType_id='8'";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+		 
+     $form['application_category'] = array(
+								 '#type' => 'select',
+								 '#title' => t('Applicant Category'),
+								 '#required' => TRUE,
+								 '#options' => $senderarray,
+								 );
+		
+	if($Ty->joinemp)
+		{		
+								 
+								 
+      $form['permanent_address'] = array(
+						   '#type' => 'textarea',
+						   '#title' => t('Address'),
+						   '#required' => TRUE,
+						   '#size' => '30',
+						   '#maxlength'=>100,
+						   '#default_value' => t($Ty->add_line1.' '.$Ty->add_line2.' '.gettehsil($Ty->tehsil_id).' '.getdistrict($Ty->district_id).' '.getstate($Ty->state_id)),
+						   '#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-permanent-address",100)','readonly' => 'readonly'),
+						   ); 
+		}
+		
+		else{
+		
+		
+		$form['permanent_address'] = array(
+						   '#type' => 'textarea',
+						   '#title' => t('Address'),
+						   '#required' => TRUE,
+						   '#size' => '30',
+						   '#maxlength'=>100,
+						   '#default_value' => t($Ty->a1.' '.$Ty->a2.' '.gettehsil($Ty->t1).' '.getdistrict($Ty->d1).' '.getstate($Ty->s1)),
+						   '#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-permanent-address",100)','readonly' => 'readonly'),
+						   ); 
+		
+		
+		}				   
+						   
+	  $form['correspondence_address'] = array(
+						   '#type' => 'textarea',
+						   '#title' => t('Correspondence Address'),
+						   '#required' => False,
+						   '#size' => '30',
+						   '#maxlength'=>100,
+						   '#default_value' => '',
+						   '#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-correspondence-address",100)'),
+						   ); 
+       $form['telephone_number'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('Telephone No.'),
+						   '#required' => False,
+						   '#size' => '30',
+						   '#maxlength'=>15,
+	                       '#minlenght'=>10,	
+	                       '#attributes' => array('onkeypress' => 'return fononlyn12(event)'),
+						   '#default_value' => $Ty->phone,
+						   );
+	    $form['mobile_number'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('Mobile No.'),
+						   '#required' => TRUE,
+						   '#size' => '30',
+						   '#default_value' => $Ty->mobile,
+						   '#maxlength'=>15,
+	                       '#minlenght'=>10,	
+	                       '#attributes' => array('onkeypress' => 'return fononlyn12(event)'),
+						  
+						   );
+						   
+	if($Ty->joinemp)
+		{					   
+						 
+	   $form['email_address'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('E-mail Address'),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   '#maxlength'=>40,
+						   '#default_value' => $Ty->email,
+						   );
+						   
+		}else{
+			
+			$form['email_address'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('E-mail Address'),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   '#maxlength'=>40,
+						   '#default_value' => $Ty->guestemail,
+						   );
+			
+		}
+		
+		 $kkcompaint= "SELECT lookupType_id FROM tbl_lookuptypes WHERE lookupType_id='106'";
+
+$ttcompaint= db_query($kkcompaint);
+$rstcompaint=db_fetch_object($ttcompaint);
+$sqlcompaint = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rstcompaint->lookupType_id."' ORDER BY lookup_name ASC";
+
+$rescompaint= db_query($sqlcompaint);
+$compaintarray['']= '--Select--';
+if($rescompaint){
+
+while($rscompaint = db_fetch_object($rescompaint)){
+
+$compaintarray[$rscompaint->lookup_id] = ucwords($rscompaint->lookup_name);
+
+}
+
+}
+						   
+	   $form['type_complaint'] = array(
+								 '#type' => 'select',
+								 '#title' => t('Type of Complaint'),
+								 '#required' => true,
+								 '#default_value' => $row->type_complaint,
+								 '#options' =>$compaintarray,
+								 );
+								 
+		
+		/* $form['type_complaint'] = array(
+								 '#type' => 'select',
+								 '#title' => t('Type of Complaint'),
+								 '#required' => true,
+								 '#default_value' => $row->type_complaint,
+								 '#options' =>array('' => '--Select--', 'information'=>'Information','inspection'=>'Inspection'),
+								 );	*/					 
+								 
+								 
+		$form['applicaint_bpl'] = array(
+								 '#type' => 'select',
+								 '#title' => t('Is Applicant is BPL'),
+								 '#required' => True,
+								 '#default_value' => $row->applicaint_bpl,
+								 '#options' =>array('' => '--Select--', '0'=>'NO','1'=>'Yes'),
+								 '#attributes' => array('onchange' => 'return changeMenu12(this)'),
+								 
+								 
+								 
+								 );	
+								 
+		/*echo '<pre>';
+  print_r($form['applicaint_bpl']);
+  exit;		*/				 	
+								 
+								 
+					 
+								 
+		
+							 
+								 
+							 
+			
+			
+			$form['mode_payment'] = array(
+		 
+								 '#type' => 'select',
+								 '#title' => t('Mode of Payment'),
+								 '#default_value' => $row->mode_payment,
+								 '#options' =>array('' => '--Select--' ,'cash'=>'Cash','ipo'=>'IPO','mo'=>'MO','Online payment gateway'=>'Online payment gateway'),
+								 '#attributes' => array('onchange' => 'return changeMenu1(this)'),
+								 
+								 
+								 );	
+			
+				 
+								 
+		$form['ipono'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('IPO No'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>20,
+						   '#default_value' => '',
+						   '#attributes' => array('onkeypress' => 'return alphanumeric2(event)'),
+					 
+						   
+						   );	
+						   					 
+		$form['currdatefield'] = array(
+						   '#type' =>'date_popup',
+	                       '#date_format' => 'd-m-Y',
+						   '#title' => t('Date'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>10,
+						   '#default_value' => '',
+						  
+						   
+						   );
+		$form['cashipo'] = array(
+		
+						   '#type' => 'textfield',
+						   '#title' => t('Amount'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>11,
+						   '#default_value' => '',
+						   '#attributes' => array('onkeypress' => 'return paypay(event)'),
+						 
+
+						   );	
+						   
+		$form['currdatemo'] = array(
+						   '#type' =>'date_popup',
+	                       '#date_format' => 'd-m-Y',
+						   '#title' => t('Mo Date'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>10,
+						   '#default_value' => '',
+						  
+						   
+						   );
+		$form['cashmo'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('Amount'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>11,
+						   '#default_value' => '',
+						   '#attributes' => array('onkeypress' => 'return paypay(event)'),
+						  
+						 
+
+						   );						   
+						   				   
+		$form['currdatecash'] = array(
+						   '#type' =>'date_popup',
+	                       '#date_format' => 'd-m-Y',
+						   '#title' => t('Date'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>10,
+						   '#default_value' => '',
+						   
+						   
+						   );
+						   
+		$form['cashcash'] = array(
+						   '#type' => 'textfield',
+						   '#title' => t('Amount'),
+						   '#required' => false,
+						   '#size' => '30',
+						   '#maxlength'=>11,
+						   '#default_value' => '',
+						   '#attributes' => array('onkeypress' => 'return paypay(event)'),
+						   
+						 
+
+						   );	
+						   
+						   
+						   
+	   					   
+						   							 									 				 
+								 				 
+		$form['cancel'] = array(
+        '#type' => "markup",
+        '#value' => l(t('Back'), 'dsje/listrti_management/view'),
+);   
+		
+//'<pre>';
+//print_r($form['mode_payment']);	exit;
+ 
+   return $form;
+}
+
+
+function rti_management_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	
+	if($form_id == 'node_delete_confirm'){
+	//print_r($form);
+	
+	}
+	
+	if($form_id =='rti_management_node_form'){
+	
+	    $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 //$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	  $form['path']['#type'] = hidden;
+	 
+	
+	
+	}
+	
+ }
+
+
+
+
+function rti_management_validate($form, &$form_states) {
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+	 $breadcrumb[] = l('Pending RTI', 'dsje/listrti_management/view');
+   
+    if($array[2] == '' ) {
+     $breadcrumb[] = l('Add RTI', 'dsje/listrti_management/view'.$array[2].'');
+	 }  
+	 
+     drupal_set_breadcrumb($breadcrumb);
+
+/*echo '<pre>';
+  print_r($form->applicaint_bpl);
+  exit;*/
+  
+  if($form->applicaint_bpl=='1' || $form->applicaint_bpl=='')
+  {
+  }
+  else
+  {
+  
+  if($form->mode_payment=='')
+  {
+   form_set_error('mode_payment','Please Select Mode of Payment.');
+  }
+  else
+  
+  
+  
+  
+  {
+  
+  if($form->mode_payment=='ipo')
+  {
+  
+    if($form->ipono=='')
+	{
+	form_set_error('ipono','Please Select IPO NO.');
+	
+	}
+	
+	if($form->currdatefield=='')
+	{
+	form_set_error('currdatefield','Please Select Date.');
+	
+	}
+	
+	if($form->cashipo=='')
+	{
+	form_set_error('cashipo','Please select Amount.');
+	
+	}
+	else if($form->cashipo)
+	{
+	paypay('cashipo',$form->cashipo,'Amount');	
+		
+	}
+	
+  }
+  
+  if($form->mode_payment=='mo')
+  {
+  
+    if($form->currdatemo=='')
+	{
+	form_set_error('currdatemo','Please Select MO Date.');
+	
+	}
+	
+	if($form->cashmo=='')
+	{
+	form_set_error('cashmo','Please Mo Amount .');
+	
+	}
+	else if($form->cashmo)
+	{
+	paypay('cashmo',$form->cashmo,'Mo Amount');	
+		
+	}
+	
+	
+	
+  }
+  
+  if($form->mode_payment=='cash')
+  {
+  
+    if($form->currdatecash=='')
+	{
+	form_set_error('currdatecash','Please Select Cash Date.');
+	
+	}
+	
+	if($form->cashcash=='')
+	{
+	form_set_error('cashcash','Please Select Amount .');
+	
+	}
+	
+	else if($form->cashcash)
+	{
+	paypay('cashcash',$form->cashcash,'Amount');	
+		
+	}
+	
+	
+	
+  }
+	
+	
+  }
+  }
+  
+  
+$office=$form->office;
+//$application_detail=$form->application_detail;
+$application_name=$form->application_name;
+
+alphanumeric('office',$office,'office');
+alphanumeric('application_detail',$application_detail,'application_detail');
+alphanumeric('application_name',$application_name,'application_name');
+fononlyn('telephone_number',$form->telephone_number,'Telephone No.');
+phonelength($form->telephone_number,'telephone_number');
+//textonlywithdotne('permanent_address',$form->permanent_address,'Permanent Address.'); 
+//textonlywithdotne('correspondence_address',$form->correspondence_address,'Correspondence Address.'); 
+fononlyn('mobile_number',$form->mobile_number,'Mobile No.');
+mobilelength($form->mobile_number,'mobile_number');
+$email = $form->email_address;
+if($email !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (eregi($pattern, $email)){
+          return true;
+       }
+       else {
+          form_set_error('email', t('You must enter valid Email Id.'));
+       }    
+	}
+	
+	if($form->office==0)
+   { 
+   form_set_error('office','Please select office.');
+   
+   }
+   
+
+  
+  
+
+  
+}
+
+
+function rti_management_view($node, $teaser = FALSE, $page = FALSE) {
+
+
+  $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Pending RTI', 'dsje/listrti_management/view');
+
+     $breadcrumb[] = l('View Pending RTI', 'node/'.$array[1].'');
+ 
+  drupal_set_breadcrumb($breadcrumb);
+
+
+	$node = node_prepare($node, $teaser);
+	
+	
+	$viewdistrict="select district_name from tbl_district where district_id='$node->district_id'";
+	$sqlquery=db_query($viewdistrict);
+	$sqldbfetch=db_fetch_object($sqlquery);
+	
+	
+	$viewstate="select state_name from tbl_dsjestate where state_id='$node->state_id'";
+	$sqlquery=db_query($viewstate);
+	$sqldbfetchstate=db_fetch_object($sqlquery);
+	
+	$viewtehsil="select tehsil_name from tbl_tehsil where tehsil_id='$node->tehsil_id'";
+	$sqlquery=db_query($viewtehsil);
+	$sqldbfetchtehsil=db_fetch_object($sqlquery);
+	
+	$corporation="select corporation_name from tbl_corporations where corporation_id='$node->office'";
+	$sqlquery=db_query($corporation);
+	$sqldbfetchcorporation=db_fetch_object($sqlquery);
+	
+	
+	
+   $appno = $node->appno;
+   $section = getLookupName($node->section);
+   $application_type = getLookupName($node->application_type);
+   $office = $sqldbfetchcorporation->corporation_name;
+	
+	$datecurrent= date('d-m-Y',strtotime($node->datecurrent));
+    $application_name = ucwords($node->application_name);
+	$application_detail =$node->application_detail;
+    $application_category = getLookupName($node->application_category);
+    $permanent_address = ucwords($node->permanent_address);
+    $correspondence_address = ucwords($node->correspondence_address);
+	$state_id =$sqldbfetchstate->state_name;
+	$district_id =$sqldbfetch->district_name;
+	$tehsil_id =$sqldbfetchtehsil->tehsil_name;
+	$telephone_number = $node->telephone_number;
+    $mobile_number1 = $node->mobile_number;
+	if($mobile_number1)
+	{
+	$mobile_number=	$node->mobile_number;
+		
+	}else{
+		$mobile_number = "N/A";
+	}
+    $email_address = $node->email_address;
+	$type_complaint = getLookupName($node->type_complaint);
+	$rti_management_status = $node->rti_management_status;
+	$mode_payment = ucwords($node->mode_payment);
+	//print_r($mode_payment);exit;
+	$ipono = $node->ipono;
+
+	$currdatefield = date('d-m-Y',strtotime($node->currdatefield));
+	$cashipo = round($node->cashipo);
+	$currdatemo = date('d-m-Y',strtotime($node->currdatemo));
+	$cashmo = round($node->cashmo);
+	$currdatecash = date('d-m-Y',strtotime($node->currdatecash));
+	$cashcash = round($node->cashcash);
+  // print_r($node);exit;
+    
+		
+	$node->content['rti_management_info'] = array(
+											 '#value' => theme('rti_management_info',$appno,$section,$application_type,$office,$datecurrent,$application_name, $application_detail,$application_category, $permanent_address, $correspondence_address,$state_id,$district_id,$tehsil_id,$telephone_number, $mobile_number,$email_address,$type_complaint,$rti_management_status,$mode_payment,$ipono,$currdatefield,$cashipo,$currdatemo,$cashmo,$currdatecash,$cashcash,$node),
+											 '#weight' => 1,
+											 );
+	return $node;
+}
+
+
+function rti_management_theme() {
+	
+	return array(
+				 'rti_management_info' => array(
+										   'template' => 'rti_management_view',
+										   'arguments' => array(
+		                                                       	
+																'appno' => NULL,	
+																'section' => NULL,
+																'application_type' => NULL,
+																'office' => NULL,
+																'datecurrent' => NULL,
+																'application_name' => NULL,
+																'application_detail' => NULL,
+																'application_category' => NULL,
+																'permanent_address' => NULL,
+																'correspondence_address' => NULL,
+																'state_id' => NULL,
+																'district_id' => NULL,
+																'tehsil_id' => NULL,
+																'telephone_number' => NULL,
+																'mobile_number' => NULL,
+																'email_address' => NULL,
+																'type_complaint' => NULL,
+																'rti_management_status' => NULL,
+																'mode_payment' => NULL,
+																'ipono' => NULL,
+																'currdatefield' => NULL,
+																'cashipo' => NULL,
+																'currdatemo' => NULL,
+																'cashmo' => NULL,
+																'currdatecash' => NULL,
+																'cashcash' => NULL,
+																
+																'node' => NULL,
+																),
+										   ),
+				 'rti_management_node_form' => array(
+        'arguments' => array('form' => NULL),
+        'template' => 'rti_management_node_form',
+    ),
+	
+	
+	 'rti_management_misreport' => array(
+        'arguments' => array('form' => NULL),
+        'template' => 'rti_management_misreport',
+    ),
+				
+		'dsje_rti_managementclose_form' => array(
+        'arguments' => array('form' => NULL),
+        'template' => 'dsje_rti_managementclose_form',
+    ),
+				 );
+				 			 
+}
+
+
+  
+/**
+ *hook_insert
+ */
+
+ function rti_management_insert($node){
+    
+   global $user;
+	$uid = $user->uid;
+	$vid = $node->vid;
+	
+	
+	$df=db_query("select tbl_joinings.employee_name as joinemp,tbl_guestuser.employee_name,users.mail,tbl_joinings.officeid,tbl_joinings.current_Departmentid,tbl_joinings.mobile,tbl_joinings.phone,tbl_joinings.add_line1,tbl_joinings.add_line2 ,tbl_joinings.state_id,tbl_joinings.district_id,tbl_joinings.tehsil_id,tbl_guestuser.add_line1 as a1,tbl_guestuser.add_line1 as a2,tbl_guestuser.state_id as s1,tbl_guestuser.district_id as d1,tbl_guestuser.tehsil_id as t1 from users left join tbl_joinings on (tbl_joinings.program_uid = users.uid) left join tbl_guestuser on (tbl_guestuser.username = users.name) where users.uid = '".$uid."'");
+$Ty=db_fetch_object($df);
+if($Ty->joinemp)
+		{	
+		
+		$district_id =$Ty->district_id;
+		
+		}
+		else{
+		$district_id =$Ty->d1;	
+			
+		}
+	
+	$appno = RTI.$node->vid;
+	
+    $nid = $node->nid;
+	$section =ucwords($node->section);
+    $application_type = $node->application_type;
+	$office = $node->office;
+	$datecurrent= date(Y-m-d);
+    $application_detail = $node->application_detail;
+	$application_name = ucwords($node->application_name);
+	$application_category = $node->application_category;
+    $permanent_address = $node->permanent_address;
+    $correspondence_address =$node->correspondence_address;
+	$state_id =$node->state_id;
+	//$district_id =$node->district_id;
+	$tehsil_id =$node->tehsil_id;
+    $telephone_number = $node->telephone_number;
+    $mobile_number = $node->mobile_number;
+    $email_address = $node->email_address;
+	$rti_management_status = 'Pending';
+    $type_complaint = $node->type_complaint;
+    $applicaint_bpl = $node->applicaint_bpl;
+    $mode_payment = $node->mode_payment;
+	$ipono = $node->ipono;
+	$currdatefield = $node->currdatefield;
+	$cashipo = $node->cashipo;
+	$currdatemo = $node->currdatemo;
+	$cashmo = $node->cashmo;
+	$currdatecash = $node->currdatecash;
+	$cashcash = $node->cashcash;
+	$name1 = $user->name;
+	$time=time();
+	
+	$workflow_id=7;
+	
+	
+	db_query("insert into tbl_rti_management (vid,nid,appno,section,application_type,office,datecurrent,application_detail,application_name,application_category,permanent_address,correspondence_address,state_id,district_id,tehsil_id,telephone_number,mobile_number,email_address,rti_management_status,type_complaint,applicaint_bpl,mode_payment,ipono,currdatefield,cashipo,currdatemo,cashmo,currdatecash,cashcash,createdby) VALUES('".$vid."','".$nid."','".$appno."','".$section."','".$application_type."','".$office."',NOW(),'".$application_detail."','".$application_name."','".$application_category."','".$permanent_address."','".$correspondence_address."','".$state_id."','".$district_id."','".$tehsil_id."','".$telephone_number."','".$mobile_number."','".$email_address."','".$rti_management_status."','".$type_complaint."','".$applicaint_bpl."','".$mode_payment."','".$ipono."','".$currdatefield."','".$cashipo."','".$currdatemo."','".$cashmo."','".$currdatecash."','".$cashcash."','".$uid."')");
+	
+	//insert docket
+	
+	  $officeid=getCorporationBranch($uid);
+	
+	$sxd=db_query("insert into tbl_workflow_docket(workflow_id,time,status) values('".$workflow_id."','".$time."','".$rti_management_status."')"); 
+	
+	
+	 //$xcasddfsd=db_last_insert_id('tbl_rti_management','nid');
+	
+	$d=db_last_insert_id('tbl_workflow_docket','doc_id');
+	
+	//echo "update tbl_rti_management set doc_id = '".$d."' where nid ='".$nid."'";exit;
+	
+	$sd=db_query("update tbl_rti_management set doc_id = '".$d."' where nid = '".$nid."'");
+	 
+	 
+	
+	
+	
+	
+	
+	//echo "select * from users_roles where uid='".$uid."'";exit;
+	
+$sqlrole = "select * from users_roles where uid='".$uid."'";
+$res = db_query($sqlrole);
+$rs = db_fetch_object($res);
+$as = $rs->rid;	
+	
+	$dq="select * from tbl_workflow_details where role='$as'";
+	$sql=db_query($dq);
+	$sx=db_fetch_object($sql);
+	
+	 $level=$sx->level;
+	 
+	 $status=0;
+	 $doc_id=db_last_insert_id('tbl_workflow_docket','doc_id');
+	 
+	global $user;
+	$uid = $user->uid;
+	//$assignedbyuid = $user->uid;
+	
+	$task_date=date("Y-m-d");
+	
+	//createTask($level,$doc_id,'','',$uid,'','');
+	 
+	//db_query("insert into tbl_workflow_task(level,status,doc_id,uid,task_date) values('1','".$status."','".$doc_id."','".$uid."','".$task_date."')");
+	db_query("insert into tbl_workflow_task(level,status,doc_id,task_date) values('1','".$status."','".$doc_id."','".$task_date."')");
+
+
+
+$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$application_name,1=>$appno,2=>$currentdate)); 	
+
+createMail('rti_management', $email_address,'',$parameter);
+	
+
+$emaisql=db_query("select * from users inner join users_roles on(users.uid=users_roles.uid) where users_roles.rid='38'");
+while($emaisqlquery=db_fetch_object($emaisql))
+{
+$toemail=$emaisqlquery->mail;	
+	
+$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$application_name,1=>$appno,2=>$currentdate)); 	
+
+
+createMail('rtipio', $toemail,'',$parameter);
+}	
+$emaisql1=db_query("select * from users inner join users_roles on(users.uid=users_roles.uid) where users_roles.rid='5'");
+while($emaisqlquery1=db_fetch_object($emaisql1))
+{
+$toemail1=$emaisqlquery1->mail;	
+	
+$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$application_name,1=>$appno,2=>$currentdate)); 	
+
+
+createMail('rtihod', $toemail1,'',$parameter);
+}
+
+$emaisql2=db_query("select * from users inner join users_roles on(users.uid=users_roles.uid) where users_roles.rid='19'");
+while($emaisqlquery2=db_fetch_object($emaisql2))
+{
+$toemail2=$emaisqlquery2->mail;	
+	
+$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$application_name,1=>$appno,2=>$currentdate)); 
+
+
+createMail('rtigm', $toemail2,'',$parameter);
+}
+
+$emaisql3=db_query("select * from users inner join users_roles on(users.uid=users_roles.uid) where users_roles.rid='6'");
+while($emaisqlquery3=db_fetch_object($emaisql3))
+{
+$toemail3=$emaisqlquery3->mail;	
+	
+$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$application_name,1=>$appno,2=>$currentdate)); 	
+
+
+createMail('rtimd', $toemail3,'',$parameter);
+}
+
+
+ $message = getMessage('dsjerti_management', 'code10', array("0"=>$appno));
+			drupal_set_message($message);
+drupal_goto("dsje/listrti_management/view");		
+
+ }
+  
+
+
+ 
+ function rti_management_load($node) {
+	$result = db_query("SELECT * from tbl_rti_management WHERE vid = $node->vid");
+	return db_fetch_object($result);
+}
+
+
+/**
+ *hook_update
+ */
+
+ function rti_management_update($node){
+    
+    
+
+	$vid = $node->vid;
+    $nid = $node->nid;
+	$section =$node->section;
+    $application_type = $node->application_type;
+	$district_id = $node->district_id;
+    $office = $node->office;
+	$datecurrent= $node->datecurrent;
+    $application_detail = $node->application_detail;
+    $application_category = $node->application_category;
+    $permanent_address = $node->permanent_address;
+    $correspondence_address =$node->correspondence_address;
+    $telephone_number = $node->telephone_number;
+    $mobile_number = $node->mobile_number;
+    $email_address = $node->email_address;
+    
+	
+	
+	db_query("update tbl_rti_management set section='".$section."',application_type='".$application_type."',,application_type='".$application_type."',district_id ='".$district_id."',office ='".$office."',datecurrent ='".$datecurrent."',application_detail='".$application_detail."',application_category='".$application_category."',permanent_address='".$permanent_address."',correspondence_address='".$correspondence_address."',telephone_number='".$telephone_number."',mobile_number='".$mobile_number."',email_address='".$email_address."' where vid='".$vid."'");
+
+ }
+
+
+function rti_management_cron(){
+ 
+ 
+
+
+$sqlque=db_query("select * from tbl_rti_management inner join tbl_workflow_task on(tbl_workflow_task.doc_id=tbl_rti_management.doc_id) where tbl_rti_management.rti_management_status='Close'");
+$sx=db_fetch_object($sqlque);
+$sdf=$sx->nid;
+if($sdf)
+ {
+
+}
+else
+{
+
+
+
+/*$result = db_query("SELECT tbl_rti_management.doc_id,tbl_workflow_task.status,tbl_workflow_task.task_date from tbl_rti_management inner join tbl_workflow_task on (tbl_workflow_task.doc_id=tbl_rti_management.doc_id) inner join tbl_workflow_docket on(tbl_workflow_docket.doc_id=tbl_workflow_task.doc_id)   where tbl_workflow_task.status=0");
+*/
+
+/*$result=db_query("SELECT *  FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_rti_management ld, tbl_workflow_details wdetail WHERE wt.doc_id = wd.doc_id AND ld.doc_id = wd.doc_id AND wd.workflow_id = w.workflow_id AND w.workflow_id = wdetail.workflow_id AND w.workflow_name = 'rti_management' AND wdetail.level = wt.level AND wt.status = 0")*/
+
+$result=db_query("SELECT tbl_workflow_task.doc_id,
+FROM tbl_workflow_task
+INNER JOIN tbl_workflow_docket ON ( tbl_workflow_docket.doc_id = tbl_workflow_task.doc_id )
+INNER JOIN tbl_workflow_details ON ( tbl_workflow_details.workflow_id = tbl_workflow_docket.workflow_id )
+INNER JOIN tbl_rti_management ON ( tbl_rti_management.doc_id = tbl_workflow_task.doc_id )
+WHERE tbl_workflow_task.status =0");
+
+
+while($sqlquery=db_fetch_object($result))
+
+{
+$email_address =$sqlquery->email_address;
+$application_name =$sqlquery->application_name;
+
+$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$application_name,1=>$appno,2=>$currentdate)); 	
+
+createMail('grievance', $email_address,'',$parameter);
+
+
+}
+		
+  } 
+ }
+ 
+ 
+
+ 
+ 
+function rti_management_mail($key, &$message, $params) {
+  if ($key == 'notification') {
+    $message['subject'] = $params['subject'];
+    $message['body']    = $params['body'];
+    $message['headers']['Content-Transfer-Encoding'] = '8bit';
+    $message['headers']['Content-Type'] = "text/html; charset='utf-8';";
+  }
+} 
+
+
+
+
+
+
+function rti_management_close($id,$sno){
+	$rti_management_id =  $id;
+	
+		
+		db_query("UPDATE {tbl_rti_management} SET rti_management_status= 'Close' WHERE nid ='".$rti_management_id."'");
+		
+		$message = getMessage('dsjerti_management', 'code07', array("0"=>$sno));
+		drupal_set_message($message);
+  
+	drupal_goto("dsje/listrti_management/view");
+ }
+ 
+function dsje_addrticlose($id){
+
+ return drupal_get_form('dsje_rti_managementclose_form',$id);
+}
+ 
+
+
+ 
+function dsje_rti_managementclose_form($form1,$id)
+{
+
+//print_r($form);exit;
+
+ $breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+	 $breadcrumb[] = l('List of RTI', 'dsje/listrti_management/view');
+   
+    if($array[2] == '' ) {
+     $breadcrumb[] = l('Add Remarks', 'dsje/close/rti_management'.$array[2].'');
+	 }  
+	 
+     drupal_set_breadcrumb($breadcrumb);
+
+$select1=db_query("select * from tbl_rti_management where nid='$id'");
+	$fetch1=db_fetch_object($select1);
+
+$form['nid'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$id,
+	
+	);
+
+$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks/Action Taken'),
+		'#required' => True,
+		'#default_value' =>'',
+		'#cols' => 30,
+        '#rows' => 5,    
+		'#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	);
+	
+	$select=db_query("select * from tbl_rti_management where nid='$id'");
+	$fetch=db_fetch_object($select);
+	
+	
+/*$form['rti_management_status'] = array(
+
+     '#type' =>'select',
+	 '#title' => t(Status),
+	 '#required' => true,
+	 '#default_value' =>$fetch->rti_management_status,
+	 '#options' => array('' => 'select Staus','Pending' => 'Pending','Close' => '	Close'),
+	 
+	 );*/
+	 
+	 $form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Close'),
+	);
+	
+	$form['cancel'] = array(
+        '#type' => "markup",
+        '#value' => l(t('Back'), 'dsje/listrti_management/view'),
+);   
+	
+	return $form;
+
+
+}
+  
+ 
+function dsje_rti_managementclose_form_submit($form, &$form_state)
+{
+
+
+    global $user;
+	$values = $form_state['values'];
+	$remarks=$values['remarks'];
+	$rti_management_status= 'Close';
+    $createdby = $user->uid;
+	$createdon = time();
+	
+	 $sqlname="select * from tbl_rti_management where nid ='".$values['nid']."'";
+	 
+	 $assql=db_query($sqlname);
+	 $sqll=db_fetch_object($assql);
+	 $application_name=$sqll->application_name;
+	 $appno=$sqll->appno;
+	 $doc=$sqll->doc_id;
+	
+	//$doc_id=db_last_insert_id('tbl_workflow_docket','doc_id');
+	//$sql = "INSERT INTO `tbl_rti_management` (`remarks` ,`rti_management_status` ,`createdby` ,`createdon`) values('".$remarks."','".$rti_management_status."','".$createdby."','".$createdon."')";
+	//db_query($sql);
+	//print_r($values);exit;
+	
+	//echo "UPDATE {tbl_rti_management} SET rti_management_status= '".$rti_management_status."',remarks= '".$remarks."',createdby='".$createdby."',createdon='".$createdon."' WHERE nid ='".$values['nid']."'";exit;
+	
+	 $sql = db_query("UPDATE {tbl_rti_management} SET rti_management_status= '".$rti_management_status."',remarks= '".$remarks."',createdby='".$createdby."',createdon='".$createdon."' WHERE nid ='".$values['nid']."'");
+	
+	 $sql1 = db_query("UPDATE {tbl_workflow_task} SET status= '1' where doc_id='$doc'");
+	 $message = getMessage('dsjerti', 'code05', array("0"=>$appno));
+	 
+	 $sqlmail="select * from tbl_rti_management where nid ='".$values['nid']."'";
+	 
+	 $assql=db_query($sqlmail);
+	 $sqll=db_fetch_object($assql);
+	 $email_address=$sqll->email_address;
+	 $appno =$sqll->appno ;
+	 $date =$sqll->datecurrent;
+	 
+	 $application_name =$sqll->application_name;
+	 $rti_management_status =$sqll->rti_management_status;
+  
+   $mobile_numbersms = '91'.($sqll->mobile_number);
+    
+	$smsmessage = 'Your RTI has been successfully Closed.'; 
+	
+$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$application_name,1=>$appno,2=>$currentdate)); 	
+//$parameter .= json_encode(array(1=>$rti_management_status));
+	 
+	 createMail('rticlose', $email_address,'',$parameter);
+	  customsendsms($mobile_numbersms,$smsmessage);
+	drupal_set_message($message);
+drupal_goto('dsje/listrti_management/view');
+
+
+
+
+}

@@ -1,0 +1,785 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/vehiclePollution.inc');
+
+function vehiclePollution_node_info() {
+	return array (
+					'vehiclePollution' => array (
+										'name' => t('List of Vehicle Pollution Certificate'),
+										'module' => 'vehiclePollution',
+										'description' => "Creates Vehicle Pollution Certificate",
+										'has_title' => TRUE,
+										'title_label' => t('Vehicle Pollution Certificate'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function vehiclePollution_perm() {
+	return array('edit vehiclePollution','administer vehiclePollution', 'create vehiclePollution', 'view vehiclePollution');
+}
+
+function vehiclePollution_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit vehiclePollution', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create vehiclePollution', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view vehiclePollution', $account);
+	}
+}
+ 
+ function vehiclePollution_menu(){
+	 $items['list/vehiclePollutionList'] = array(
+		   'title' => 'List of Vehicle Pollution Certificate',
+		   'page callback' => 'vehiclePollution_list',
+		   'access arguments' => array('administer vehiclePollution'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewvehiclePollution/%'] = array(
+								'title' => t('view Vehicle Pollution Certificate'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_vehiclePollution',
+								'page arguments' => array(1),
+								'access arguments' => array('administer vehiclePollution'),
+		                        
+						);
+  
+  $items['admin/dsje/del/vehiclePollution/%'] =  array(
+	               						 'title' => t('Delete Vehicle Pollution Certificate'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'vehiclePollution_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer vehiclePollution'),
+													 
+	);
+ $items['admin/dsje/enable/vehiclePollution/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'vehiclePollution_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer vehiclePollution'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function vehiclePollution_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjevehiclePollution', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Valid Upto'), 'field' => 'tbl_vehiclepollution.date_valid', 'sort' => 'asc'),
+	array('data' => t('Reg No.'), 'field' => 'tbl_vehicles.reg_no', 'sort' => 'asc'),
+	array('data' => t('Certificate No.'), 'field' => 'tbl_vehiclepollution.certificate_no', 'sort' => 'asc'),
+	array('data' => t('Action'),'class' => 'addeditview',),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Vehicle Pollution Certificate', 'list/vehiclePollutionList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid, tbl_vehiclepollution.date_valid, tbl_vehicles.reg_no,tbl_vehiclepollution.certificate_no FROM {node}
+	 INNER JOIN tbl_vehiclepollution ON (node.nid=tbl_vehiclepollution.nid)
+	  INNER JOIN tbl_vehicles ON (tbl_vehicles.vehicle_id=tbl_vehiclepollution.reg_no)
+	 WHERE node.uid='".$user->uid."' AND( tbl_vehiclepollution.date_valid LIKE '".$val."' OR tbl_vehicles.reg_no LIKE '".$val."' OR tbl_vehiclepollution.certificate_no LIKE '".$val."') ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_vehiclepollution ON (node.nid=tbl_vehiclepollution.nid)
+	  INNER JOIN tbl_vehicles ON (tbl_vehicles.vehicle_id=tbl_vehiclepollution.reg_no)
+	 WHERE node.uid='".$user->uid."' AND( tbl_vehiclepollution.date_valid LIKE '".$val."' OR tbl_vehicles.reg_no LIKE '".$val."' OR tbl_vehiclepollution.certificate_no LIKE '".$val."') ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	   $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid,tbl_vehiclepollution.date_valid, tbl_vehicles.reg_no,tbl_vehiclepollution.certificate_no FROM {node}
+	 INNER JOIN tbl_vehiclepollution ON (node.nid=tbl_vehiclepollution.nid)
+	  INNER JOIN tbl_vehicles ON (tbl_vehicles.vehicle_id=tbl_vehiclepollution.reg_no)
+	 WHERE node.uid='".$user->uid."'".tablesort_sql($header);
+	}
+
+global $base_url;
+$action = $base_url.'/list/vehiclePollutionList';
+
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjevehiclePollution', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/vehiclePollutionList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage('dsjevehiclePollution', 'code01', NULL),"node/add/vehiclePollution");
+   	$lising = getMessage('dsjevehiclePollution', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewvehiclePollution/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/vehiclePollution/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/vehiclePollution/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => date('d-m-Y',strtotime($rs->date_valid))),
+			array('data' => $rs->reg_no),
+		array('data' => $rs->certificate_no),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	return $output .=theme('pager', NULL, 20,0 );
+  }
+
+function vehiclePollution_delete($nid){
+
+
+  $node = node_load($nid); 
+  $kilo=db_query("select reg_no FROM {tbl_vehiclepollution} where nid='".$nid."'");
+  $kilo2=db_fetch_object($kilo);echo $kilo2->reg_no;exit;
+    $regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$kilo2->reg_no."'");
+$regno= db_fetch_object($regnowa);
+echo $regno->reg_no;exit;
+  
+  db_query("DELETE FROM {tbl_vehiclepollution} WHERE nid ='".$node->nid."'");
+ // drupal_set_message(' Vehicle Pollution has been deleted successfully.');
+ 
+  $message=getMessage('dsjevehiclePollution','code07',array("0"=>$regno->reg_no));
+  drupal_set_message($message);
+  drupal_goto("list/vehiclePollutionList");
+ }
+
+function vehiclePollution_enable($nid){
+  
+  $node = node_load($nid);
+ 
+  $kilo=db_query("select reg_no FROM {tbl_vehiclepollution} where nid='".$nid."'");
+  $kilo2=db_fetch_object($kilo);
+  $regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$kilo2->reg_no."'");
+$regno= db_fetch_object($regnowa);
+   db_query("DELETE FROM {tbl_vehiclepollution} WHERE nid ='".$node->nid."'");
+ // drupal_set_message('Vehicle Pollution has been deleted successfully.');
+  
+  $message=getMessage('dsjevehiclePollution','code07',array("0"=>$regno->reg_no));
+  drupal_set_message($message);
+  drupal_goto("list/vehiclePollutionList");
+ }
+
+
+
+function vehiclePollution_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of  Vehicle Pollution Certificate', 'list/vehiclePollutionList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Vehicle Pollution', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Vehicle Pollution', 'node/add/vehiclePollution'.$array[3].'');
+	}
+
+	
+	
+	///////////////
+	////////////
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  if(is_numeric(arg(1))){
+	$sql = "SELECT * FROM {node} INNER JOIN tbl_vehiclepollution ON (node.nid=tbl_vehiclepollution.nid) WHERE node.nid=".arg(1);
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+  }
+	////////////////////////////////////
+	
+	$form['notification'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Do you want to block email notification'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rs->notification,
+		 '#options' => Notification(),
+
+);
+	
+	
+$selectreg1= db_query("select reg_no,vehicle_id from {tbl_vehicles}  where status =1 ORDER BY reg_no ASC");
+	
+	$selectregarray = array(''=>'--Select--');
+	while($selectreg = db_fetch_object($selectreg1)){
+	$selectregarray[$selectreg->vehicle_id] = $selectreg->reg_no;
+	}
+	
+
+
+
+	$form['prev_certificate_no']= array(
+	'#type' =>'hidden',
+	'#default_value' => $rs->certificate_no,
+	);
+	$form['edit_reg_no'] = array(
+	'#type' =>'hidden',
+	'#default_value'=> $rs->reg_no,
+	);
+	
+	$form['reg_no'] = array(
+	'#type' =>'select',
+	'#title' => t('Vehicle Reg No.'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->reg_no,
+	'#options'=> $selectregarray,
+	);
+	
+	$form['prev_from_date'] = array(
+	'#type'=>'hidden',
+	'#default_value'=> $rs->date_pollution,
+	);
+	
+	
+	$form['date_pollution'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Pollution Certificate',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->date_pollution,
+	
+	);
+	$form['date_valid'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Valid Upto',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->date_valid,
+	);
+	
+	
+	$form['certificate_no'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Certificate No.'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->certificate_no,
+	 '#maxlength'=>15,
+	'#size' =>25,
+	'#attributes' => array('onkeypress' => 'return alphanumeric2(event);'),
+	
+	);
+	
+	
+	
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/vehiclePollutionList'),
+);
+return $form;
+} 
+
+function getcertificateNo($certificate_no){
+  $sql = "select * FROM {tbl_vehiclepollution} where certificate_no='".$certificate_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->certificate_no=='' )
+  return 0;
+  else 
+  return $rs;
+   
+}
+
+function getcertificateNo_edit($certificate_no,$prev_certificate_no){
+  $sql = "select * FROM {tbl_vehiclepollution} where certificate_no='".$certificate_no."' AND certificate_no != '".$prev_certificate_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->certificate_no=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+function vehiclePollution_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	/*$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Vehicle Pollution Certificate', 'list/vehiclePollutionList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Vehicle Pollution', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add Vehicle Pollution', 'node/add/vehiclePollution');
+	}
+	*/
+	
+	
+	
+        $breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of  Vehicle Pollution Certificate', 'list/vehiclePollutionList');
+        if(arg(1) !='add'){
+		  $breadcrumb[] = l('Edit Vehicle Pollution', 'node/'.arg(1).'/edit');	
+		}else{
+         $breadcrumb[] = l('Add Vehicle Pollution', 'node/add/vehiclePollution');
+      
+		}
+	 
+	
+	drupal_set_breadcrumb($breadcrumb);
+
+	
+	
+	
+	alphanumeric('reg_no',$form->reg_no,'Reg. No.');
+	alphanumeric1('certificate_no',$form->certificate_no,'Certificate No.');
+
+	 $date_valid =$form->date_valid;
+  
+  $date_pollution =$form->date_pollution;
+ 
+
+$uul=db_query("select mfd from {tbl_vehicles} where vehicle_id='".$form->reg_no."'");
+$uk=db_fetch_object($uul);
+if($uk->mfd>$date_pollution){
+      form_set_error(date_pollution, t('Date of pollution should be greater than the manufacturing date of the vehicle'));
+
+
+}
+
+
+
+	
+	 if($date_pollution >= $date_valid  && (!empty($date_pollution))  && (!empty($date_valid)))
+   {
+      form_set_error(date_pollution, t('Date of Pollution Certificate should be less than the ending period'));
+   }
+  
+$certificate_no= $form->certificate_no;
+
+if($form->prev_certificate_no == ''){
+	 $statusid = getcertificateNo($certificate_no); 
+		if($statusid){
+		form_set_error('certificate_no',$certificate_no.t(' Certificate Number already exist.'));
+		
+		}
+		}
+		else {
+	 $statusid = getcertificateNo_edit($certificate_no,$form->prev_certificate_no); 
+		if($statusid){
+		form_set_error('certificate_no',$certificate_no.t(' Certificate Number already exist.'));
+		
+		}
+		
+		}
+	
+	$from_date=$form->date_pollution;
+$prev_from_date= $form->prev_from_date;
+   $reg_no=$form->reg_no;
+   
+   if($form->edit_reg_no == $reg_no ){
+   
+   $prev=db_query("select max(nid) as nid FROM {tbl_vehiclepollution} where reg_no='".$reg_no."' and nid < (select max(nid) as nid FROM {tbl_vehiclepollution} where reg_no='".$reg_no."')");
+     $pp=db_fetch_object($prev);
+   $ppo=db_query("select * FROM {tbl_vehiclepollution} where nid='".$pp->nid."'");
+   $prev_datewa=db_fetch_object($ppo);
+  
+       $sql = "select * FROM {tbl_vehiclepollution} where  date_valid >= '".$from_date ."'  and  reg_no='".$reg_no."' and '".$from_date."' >= '".$prev_from_date."'";
+	   $res = db_query($sql);
+	   //if($rs = db_fetch_object($res)){
+		   $from_date=date('Y-m-d',strtotime($from_date));
+		if($prev_from_date != $from_date){
+		 if($from_date <= $prev_from_date && (!empty($form->date_pollution)) ){
+		 form_set_error('date_pollution','Date of Pollution should be greater than the previous pollution certificate expiry date');
+		 }
+	   } //exit;
+   }else{
+      // if($from_date ==''){}else{
+	   $sql = "select * FROM {tbl_vehiclepollution} where  date_valid >= '".$from_date ."'  and  reg_no='".$reg_no."'";
+	   $res = db_query($sql);
+	   if($rs = db_fetch_object($res)){
+		 form_set_error('date_pollution','Date of Pollution should be greater than the previous pollution certificate expiry date');
+		// echo "test";
+	   //} //exit;
+ }
+  }
+  
+
+}
+
+/**
+ *hook_form_alter
+ */
+function vehiclePollution_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='vehiclePollution_node_form'){
+	
+	$form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	 /*
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;*/
+	}
+	
+ }
+
+
+function vehiclePollution_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+  
+  $date_valid =$node->date_valid;
+  
+  $date_pollution =$node->date_pollution;
+ 
+  $reg_no= $node->reg_no;
+  $certificate_no= $node->certificate_no;
+  ///////////
+ 
+ $notification= $node->notification;
+
+    
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   
+
+db_query ("INSERT INTO {tbl_vehiclepollution} (`vid`, `nid`,`notification`,`reg_no`, `date_pollution`,`date_valid`,`certificate_no`, `statusnodal`) VALUES ('".$vid."','".$nid."','".$notification."','".$reg_no."','".$date_pollution."','".$date_valid."','".$certificate_no."','".$statusnodal."')");
+
+
+	
+ //   drupal_set_message('Vehicle Pollution Entry has been saved successfully.');
+	$regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$node->reg_no."'");
+$regno= db_fetch_object($regnowa);
+  $message=getMessage('dsjevehiclePollution','code05',array("0"=>$regno->reg_no));
+  drupal_set_message($message);
+	drupal_goto("list/vehiclePollutionList");
+
+ 
+ 
+ }
+
+function vehiclePollution_update($node){
+	
+	 $date_valid =$node->date_valid;
+  
+  $date_pollution =$node->date_pollution;
+ 
+  $reg_no= $node->reg_no;
+  $certificate_no= $node->certificate_no;
+ 
+
+
+  
+	$statusnodal = $node->statusnodal;
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$uid=$node->uid;
+	 $notification= $node->notification;
+	
+	
+	db_query("UPDATE {tbl_vehiclepollution} SET `notification`='".$notification."',`reg_no`='".$reg_no."',`date_pollution`='".$date_pollution."',`date_valid`='".$date_valid."',`certificate_no`='".$certificate_no."',`statusnodal`='".$statusnodal."' WHERE nid=$nid");
+	
+	
+//	drupal_set_message('Vehicle Pollution Certificate have been updated successfully.');
+	$regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$node->reg_no."'");
+$regno= db_fetch_object($regnowa);
+  $message=getMessage('dsjevehiclePollution','code06',array("0"=>$regno->reg_no));
+  drupal_set_message($message);
+	drupal_goto("list/vehiclePollutionList");
+	
+	
+}
+
+
+function vehiclePollution_theme() {
+	
+	return array(
+				 
+		'vehiclePollution_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'vehiclePollution_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+ 
+ function vehiclePollution_cron(){
+
+$curr_date=date();
+$start=date('Y-m-d',strtotime($curr_date));
+
+$selDate=db_query("select * FROM {tbl_vehiclepollution} ");
+
+while($rs=db_fetch_object($selDate)){
+
+$date_diff=dateDiffByDays($start,$rs->date_valid);
+
+if($date_diff==15 && $rs->mail_remind==0){
+
+
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+//$to = $u->mail;
+	$finduid=db_query("select * from {users_roles} where rid=13");
+$reg_no=db_fetch_object($reg);
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_valid)); 
+
+if(createMail('vehiclePollution', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->mail_remind + 1;
+db_query("UPDATE {tbl_vehiclepollution} set mail_remind='".$reminder."' where nid='".$rs->nid."'");
+
+
+}
+
+}
+}
+}
+
+else if($date_diff==3 && $rs->mail_remind==1){
+
+
+
+//$to = $u->mail;
+	
+	$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+	$reg_no=db_fetch_object($reg);
+	$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_valid)); 
+
+	
+if(createMail('vehiclePollution', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->mail_remind + 1;
+db_query("UPDATE {tbl_vehiclepollution} set mail_remind='".$reminder."' where nid='".$rs->nid."'");
+
+
+}
+}}
+
+}
+
+
+else if($date_diff==0 && $rs->mail_remind <= 3){
+
+
+
+
+
+//$to = $u->mail;
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+$reg_no=db_fetch_object($reg);
+$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_valid)); 
+
+	
+if(createMail('vehiclePollution_today', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->mail_remind + 1;
+db_query("UPDATE {tbl_vehiclepollution} set mail_remind='".$reminder."' where nid='".$rs->nid."'");
+
+}
+
+
+} 
+
+}
+}}
+
+
+}
+
+
+
+ /*
+function vehiclePollution_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_vehiclepollution ON (node.nid=tbl_vehiclepollution.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+  */
+function view_vehiclePollution($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Vehicle Pollution Certificate', 'list/vehiclePollutionList');
+   if($array[0] == 'viewvehiclePollution'){
+     $breadcrumb[] = l('View Vehicle Pollution', 'viewvehiclePollution/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * FROM {tbl_vehiclepollution} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from {users} where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+$notification=getLookupName($rs->notification);
+$regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+$regno= db_fetch_object($regnowa);
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Vehicle Pollution Certificate</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Do you want to block email notification:</td><td class="normal"> '.$notification.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Reg No.:</td><td class="normal"> '.$regno->reg_no.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Date of Pollution:</td><td class="normal"> '.date('d-m-Y',strtotime(($rs->date_pollution))).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Valid Upto:</td><td class="normal"> '.date('d-m-Y',strtotime($rs->date_valid)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Certificate No.:</td><td class="normal">'.$rs->certificate_no.'</td></tr>';
+$output .='<tr class="oddrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'list/vehiclePollutionList').'</td></tr>';
+ $output .='</table>';
+return $output ;
+}

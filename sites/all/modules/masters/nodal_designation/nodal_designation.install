@@ -1,0 +1,50 @@
+<?php
+function nodal_designation_schema() {
+
+   $schema['tbl_nodal_designation'] = array(
+							 'fields' => array(
+											   'designation_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'designation_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                    	   	  									   	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 'utility_id' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											
+											   ),
+							 'indexes' => array(
+												'designation_id' => array('designation_id'),
+												),
+							 'primary key' => array('designation_id'),
+							 );
+//echo '<pre>';
+															  //print_r($schema);
+															  //echo '<pre>';exit;
+	
+	return $schema;
+}
+
+function nodal_designation_install() {
+	drupal_install_schema('nodal_designation');
+}
+
+function nodal_designation_uninstall() {
+	drupal_uninstall_schema('nodal_designation');
+}

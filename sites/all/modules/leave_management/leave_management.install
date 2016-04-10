@@ -1,0 +1,90 @@
+<?php
+function leave_management_install() {
+	drupal_install_schema('leave_management');
+}
+
+function leave_management_uninstall() {
+	drupal_uninstall_schema('leave_management');
+}
+
+function leave_management_schema() {
+	
+	$schema['tbl_leave_management'] = array(
+							 'fields' => array(
+											  
+											 'emp_id' => array(
+																   'type' => 'varchar',
+																   'length' => '45',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),			  
+															  
+		                                       'emp_name' => array(
+																   'type' => 'varchar',
+																   'length' => '100',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+                                               'leave_type' => array(
+																   'type' => 'varchar',
+																   'length' => '10',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+																   
+												'day_of_leave' => array(
+																   'type' => 'varchar',
+																   'length' => '10',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+																   				   
+                                               'from_date' => array(
+																   'type' => 'varchar',
+																   'length' => '25',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ), 
+																   
+											 'to_date' => array(
+																   'type' => 'varchar',
+																   'length' => '25',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ), 			   
+																   
+                                                 'no_of_daye' => array(
+																   'type' => 'varchar',
+																   'length' => '25',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+												 'reason' => array(
+																   'type' => 'varchar',
+																   'length' => '225',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),	
+											 'status' => array(
+																   'type' => 'varchar',
+																   'length' => '25',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+										    'form_submit_date' => array(
+																   'type' => 'varchar',
+																   'length' => '50',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+										  				   
+																   					   					   
+																   
+
+                                         ),      
+											 
+							
+							 );
+	return $schema;
+}
+

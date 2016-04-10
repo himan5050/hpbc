@@ -1,0 +1,6 @@
+;$id 2/2/2011 Neshat khan
+name = "custom function"
+description ="custom function"
+core = 6.x
+version =6.x-1
+package="custom function"

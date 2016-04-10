@@ -1,0 +1,465 @@
+<?php
+function dsje_statusDebtRepayment_init() {
+	//drupal_add_css(drupal_get_path('module', 'dsje_language') .'/dsje_language.css');
+	
+}
+
+
+function dsje_statusDebtRepayment_perm() {
+	return array('edit dsje_statusDebtRepayment','administer dsje_statusDebtRepayment', 'create dsje_statusDebtRepayment', 'view dsje_statusDebtRepayment');
+}
+
+function dsje_statusDebtRepayment_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_statusDebtRepayment', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_statusDebtRepayment', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_statusDebtRepayment', $account);
+	}
+	
+}
+
+function dsje_statusDebtRepayment_menu() {
+	
+	
+	$items['admin/dsje/liststatusDebtRepayment'] = array(
+										'title' => t('List of Debt Repayment status'),
+										'description' => 'Allow user to View Debt Repayment status',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewstatusDebtRepayment',
+										'access arguments' => array('administer dsje_statusDebtRepayment'),
+													 
+									  );
+	
+	$items['admin/dsje/liststatusDebtRepayment/addstatusDebtRepayment'] = array(
+										'title' => t('Create Debt Repayment status'),
+										'description' => 'Allow user to add Debt Repayment status',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_statusDebtRepayment',
+										'access arguments' => array('administer dsje_statusDebtRepayment'),
+													 
+									  );
+   	$items['admin/dsje/liststatusDebtRepayment/edit/statusDebtRepayment/%'] = array(
+								
+										'title' => t('Edit Debt Repayment status'),
+										'description' => 'Allow user to add Debt Repayment status',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addstatusDebtRepaymentedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_statusDebtRepayment'),
+													 
+									  );
+   $items['admin/dsje/liststatusDebtRepayment/view/statusDebtRepayment/%'] = array(
+								
+										'title' => t('View Debt Repayment status'),
+										'description' => 'Allow user to add Debt Repayment status',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addstatusDebtRepaymentview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_statusDebtRepayment'),
+													 
+									  );
+     $items['admin/dsje/del/statusDebtRepayment/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'statusDebtRepayment_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_statusDebtRepayment'),
+													 
+									  );
+    $items['admin/dsje/enable/statusDebtRepayment/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'statusDebtRepayment_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_statusDebtRepayment'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing statusDebtRepayment
+ */
+
+function viewstatusDebtRepayment(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjestatusDebtRepayment', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('statusDebtRepayment'), 'field' => 'statusDebtRepayment_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List statusDebtRepayment', 'admin/dsje/liststatusDebtRepayment/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT statusDebtRepayment_id, statusDebtRepayment_name, status FROM tbl_statusDebtRepayments where UPPER(statusDebtRepayment_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_statusDebtRepayments where UPPER(statusDebtRepayment_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT statusDebtRepayment_id, statusDebtRepayment_name, status FROM tbl_statusDebtRepayments ".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjestatusDebtRepayment', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/liststatusDebtRepayment');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjestatusDebtRepayment', 'code01', NULL),"admin/dsje/liststatusDebtRepayment/addstatusDebtRepayment");
+   	$lising = getMessage( 'dsjestatusDebtRepayment', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/liststatusDebtRepayment/edit/statusDebtRepayment/".$row->statusDebtRepayment_id,array('attributes'=>array('id'=>'edit-statusDebtRepayment-id')));
+		$viewurl = l("View","admin/dsje/liststatusDebtRepayment/view/statusDebtRepayment/".$row->statusDebtRepayment_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/statusDebtRepayment/$row->statusDebtRepayment_id/$row->statusDebtRepayment_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/statusDebtRepayment/$row->statusDebtRepayment_id/$row->statusDebtRepayment_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->statusDebtRepayment_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_statusDebtRepayment(){
+ return drupal_get_form('dsje_statusDebtRepayment_form');
+}
+
+function dsje_statusDebtRepayment_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of statusDebtRepayment', 'admin/dsje/liststatusDebtRepayment');
+  if($array[3] == 'addstatusDebtRepayment'){
+     $breadcrumb[] = l('Add statusDebtRepayment', 'admin/dsje/liststatusDebtRepayment/addstatusDebtRepayment');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['statusDebtRepayment_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('statusDebtRepayment Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/liststatusDebtRepayment'),
+);
+	return $form;
+}
+
+function dsje_statusDebtRepayment_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $statusDebtRepayment_name = trim($values['statusDebtRepayment_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('statusDebtRepayment_name',$statusDebtRepayment_name,'statusDebtRepayment');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_statusDebtRepayments` (`statusDebtRepayment_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$statusDebtRepayment_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjestatusDebtRepayment', 'code05', array("0"=>$statusDebtRepayment_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/liststatusDebtRepayment');
+	}
+}
+
+function dsje_statusDebtRepayment_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$statusDebtRepayment_name = trim($values['statusDebtRepayment_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('statusDebtRepayment_name',$statusDebtRepayment_name,'statusDebtRepayment');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_statusDebtRepayments} where UCASE(statusDebtRepayment_name)= '".strtoupper($statusDebtRepayment_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjestatusDebtRepayment', 'code06', array("0"=>$statusDebtRepayment_name));
+			form_set_error('statusDebtRepayment_name', $message);
+		}
+	}	
+}
+
+function dsje_addstatusDebtRepaymentedit($statusDebtRepayment_id){
+ return drupal_get_form('dsje_statusDebtRepayment_form_edit',$statusDebtRepayment_id);
+}
+
+function dsje_statusDebtRepayment_form_edit(&$form_states,$statusDebtRepayment_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List statusDebtRepayment', 'admin/dsje/liststatusDebtRepayment');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit statusDebtRepayment', 'admin/dsje/liststatusDebtRepayment/edit/statusDebtRepayment/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlstatusDebtRepayment = "select * from tbl_statusDebtRepayments where statusDebtRepayment_id=$statusDebtRepayment_id";
+	$resstatusDebtRepayment = db_query($sqlstatusDebtRepayment);
+	$rsstatusDebtRepayment = db_fetch_object($resstatusDebtRepayment);
+	
+	$form['statusDebtRepayment_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsstatusDebtRepayment->statusDebtRepayment_id,
+	);
+	
+	$form['statusDebtRepayment_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('statusDebtRepayment Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsstatusDebtRepayment->statusDebtRepayment_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['prev_statusDebtRepayment_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsstatusDebtRepayment->statusDebtRepayment_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsstatusDebtRepayment->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/liststatusDebtRepayment'),
+);
+	return $form;
+}
+
+function dsje_statusDebtRepayment_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$statusDebtRepayment_id = $values['statusDebtRepayment_id'];
+	$statusDebtRepayment_name = ParseData($values['statusDebtRepayment_name']);
+	$prev_statusDebtRepayment_name = ParseData($values['prev_statusDebtRepayment_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('statusDebtRepayment_name',$statusDebtRepayment_name,'statusDebtRepayment');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_statusDebtRepayments} where LOWER(statusDebtRepayment_name)= '".strtolower($statusDebtRepayment_name)."' GROUP BY statusDebtRepayment_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_statusDebtRepayment_name), strtolower($statusDebtRepayment_name))==0){
+			db_query("UPDATE `tbl_statusDebtRepayments` set `statusDebtRepayment_name` = '".$statusDebtRepayment_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where statusDebtRepayment_id='".$statusDebtRepayment_id."'");
+			
+			$message = getMessage('dsjestatusDebtRepayment', 'code05', array("0"=>$statusDebtRepayment_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/liststatusDebtRepayment");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_statusDebtRepayments` set `statusDebtRepayment_name` = '".$statusDebtRepayment_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where statusDebtRepayment_id='".$statusDebtRepayment_id."'");
+				
+				$message = getMessage('dsjestatusDebtRepayment', 'code05', array("0"=>$statusDebtRepayment_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/liststatusDebtRepayment");	
+			
+			}else{
+				db_query("UPDATE `tbl_statusDebtRepayments` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where statusDebtRepayment_id='".$statusDebtRepayment_id."'");
+				
+				$message = getMessage('dsjestatusDebtRepayment', 'code06', array("0"=>$statusDebtRepayment_name));
+				form_set_error('statusDebtRepayment_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_statusDebtRepayment_theme() {
+	
+	return array(
+				 
+		'dsje_statusDebtRepayment_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_statusDebtRepayment_form',
+                                 ),
+        'dsje_statusDebtRepayment_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_statusDebtRepayment_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_statusDebtRepayment_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_statusDebtRepayment_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_statusDebtRepayment_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function statusDebtRepayment_delete($sid, $sno){
+  $statusDebtRepayment_id =  $sid;
+  db_query("UPDATE {tbl_statusDebtRepayments} SET status=0 WHERE statusDebtRepayment_id ='".$statusDebtRepayment_id."'");
+  $message = getMessage('dsjestatusDebtRepayment', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/liststatusDebtRepayment");
+ }
+
+
+  function statusDebtRepayment_enable($sid, $sno){
+    $statusDebtRepayment_id =  $sid;
+    db_query("UPDATE {tbl_statusDebtRepayments} SET status=1 WHERE statusDebtRepayment_id ='".$statusDebtRepayment_id."'");
+  
+    $message = getMessage('dsjestatusDebtRepayment', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/liststatusDebtRepayment");
+  }
+
+  function dsje_addstatusDebtRepaymentview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List statusDebtRepayment', 'admin/dsje/liststatusDebtRepayment');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View statusDebtRepayment', 'admin/dsje/liststatusDebtRepayment/view/statusDebtRepayment/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from tbl_statusDebtRepayments where statusDebtRepayment_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>statusDebtRepayment Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td>statusDebtRepayment:</td><td>'.ucwords($rs->statusDebtRepayment_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='</table></div>';
+$output .=  l(t('Back'), 'admin/dsje/liststatusDebtRepayment');
+ return $output;
+  }
+	
+	

@@ -1,0 +1,662 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/vehicleAMC.inc');
+
+function vehicleAMC_node_info() {
+	return array (
+					'vehicleAMC' => array (
+										'name' => t('List of Vehicle AMC'),
+										'module' => 'vehicleAMC',
+										'description' => "Creates Vehicle AMC",
+										'has_title' => TRUE,
+										'title_label' => t('Vehicle AMC'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function vehicleAMC_perm() {
+	return array('edit vehicleAMC','administer vehicleAMC', 'create vehicleAMC', 'view vehicleAMC');
+}
+
+function vehicleAMC_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit vehicleAMC', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create vehicleAMC', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view vehicleAMC', $account);
+	}
+}
+ 
+ function vehicleAMC_menu(){
+	 $items['list/vehicleAMCList'] = array(
+		   'title' => 'List of Vehicle AMC',
+		   'page callback' => 'vehicleAMC_list',
+		   'access arguments' => array('administer vehicleAMC'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewvehicleAMC/%'] = array(
+								'title' => t('view Vehicle AMC'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_vehicleAMC',
+								'page arguments' => array(1),
+								'access arguments' => array('administer vehicleAMC'),
+		                        
+						);
+  
+  $items['admin/dsje/del/vehicleAMC/%'] =  array(
+	               						 'title' => t('Delete Vehicle AMC'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'vehicleAMC_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer vehicleAMC'),
+													 
+	);
+ $items['admin/dsje/enable/vehicleAMC/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'vehicleAMC_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer vehicleAMC'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function vehicleAMC_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjevehicleAMC', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Valid Upto'), 'field' => 'tbl_vehicleamc.date_valid', 'sort' => 'asc'),
+	array('data' => t('Reg No.'), 'field' => 'tbl_vehicles.reg_no', 'sort' => 'asc'),
+	array('data' => t('Name of Vendor'), 'field' => 'tbl_vehicleamc.name_vendor', 'sort' => 'asc'),
+	array('data' => t('Action'),'class' => 'addeditview',),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Vehicle AMC', 'list/vehicleAMCList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid, tbl_vehicleamc.date_valid, tbl_vehicles.reg_no,tbl_vehicleamc.name_vendor FROM {node}
+	 INNER JOIN tbl_vehicleamc ON (node.nid=tbl_vehicleamc.nid)
+	  INNER JOIN tbl_vehicles ON (tbl_vehicles.vehicle_id=tbl_vehicleamc.reg_no)
+	 WHERE node.uid='".$user->uid."' AND( tbl_vehicleamc.date_valid LIKE '".$val."' OR tbl_vehicles.reg_no LIKE '".$val."' OR tbl_vehicleamc.name_vendor LIKE '".$val."') ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_vehicleamc ON (node.nid=tbl_vehicleamc.nid)
+	   INNER JOIN tbl_vehicles ON (tbl_vehicles.vehicle_id=tbl_vehicleamc.reg_no)
+	 WHERE node.uid='".$user->uid."' AND( tbl_vehicleamc.date_valid LIKE '".$val."' OR tbl_vehicles.reg_no LIKE '".$val."' OR tbl_vehicleamc.name_vendor LIKE '".$val."') ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	    $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid,tbl_vehicleamc.date_valid, tbl_vehicles.reg_no,tbl_vehicleamc.name_vendor FROM {node}
+	 INNER JOIN tbl_vehicleamc ON (node.nid=tbl_vehicleamc.nid)
+	   INNER JOIN tbl_vehicles ON (tbl_vehicles.vehicle_id=tbl_vehicleamc.reg_no)
+	 WHERE node.uid='".$user->uid."'".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/vehicleAMCList';
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjevehicleAMC', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/vehicleAMCList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight" align="center">
+	</td></tr>';
+	
+	$addurl = l(getMessage('dsjevehicleAMC', 'code01', NULL),"node/add/vehicleAMC");
+   	$lising = getMessage('dsjevehicleAMC', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewvehicleAMC/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/vehicleAMC/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/vehicleAMC/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => date('d-m-Y',strtotime($rs->date_valid))),
+			array('data' => $rs->reg_no),
+		array('data' => ucwords($rs->name_vendor)),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+     if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, 20,0 );
+	return $output;
+  }
+
+function vehicleAMC_delete($nid){
+   $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("Delete from {tbl_vehicleamc} WHERE courtcase_id ='".$courtcase_id."'");
+ $kilo=db_query("select reg_no from {tbl_vehicleamc} where nid='".$nid."'");
+  $kilo2=db_fetch_object($kilo);
+   $regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$kilo2->reg_no."'");
+$regno= db_fetch_object($regnowa);
+  db_query("DELETE from {tbl_vehicleamc} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle AMC has been deleted successfully.');
+   $message=getMessage('dsjevehicleAMC','code07',array("0"=>$regno->reg_no));
+  drupal_set_message($message);
+  drupal_goto("list/vehicleAMCList");
+ }
+
+function vehicleAMC_enable($nid){
+  
+  $node = node_load($nid);
+   $kilo=db_query("select reg_no from {tbl_vehicleamc} where nid='".$nid."'");
+  $kilo2=db_fetch_object($kilo);
+   $regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$kilo2->reg_no."'");
+$regno= db_fetch_object($regnowa);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+  //db_query("UPDATE {tbl_vehicleamc} SET statusnodal =1 WHERE nid ='".$node->nid."'");
+  db_query("DELETE from {tbl_vehicleamc} WHERE nid ='".$node->nid."'");
+  //drupal_set_message('Vehicle AMC has been deleted successfully.');
+  
+   $message=getMessage('dsjevehicleAMC','code07',array("0"=>$regno->reg_no));
+  drupal_set_message($message);
+  drupal_goto("list/vehicleAMCList");
+ }
+
+
+function vehicleAMC_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Vehicle AMC', 'list/vehicleAMCList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	
+	 $form['edit_reg_no'] = array(
+	'#type' =>'hidden',
+	'#default_value' =>$node->reg_no,
+	
+	);
+	
+	 $breadcrumb[] = l('Edit Vehicle AMC', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Vehicle AMC', 'node/add/vehicleAMC'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  
+  if(is_numeric(arg(1))){
+  $sql = "SELECT * FROM {node} INNER JOIN tbl_vehicleamc ON (node.nid=tbl_vehicleamc.nid) WHERE node.nid=".arg(1);
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+  
+  }
+	
+		
+	////////////////////////////////////
+	
+	$selectreg1= db_query("select reg_no,vehicle_id from {tbl_vehicles}  where status =1 ORDER BY reg_no ASC");
+	
+	$selectregarray = array(''=>'--Select--');
+	while($selectreg = db_fetch_object($selectreg1)){
+	$selectregarray[$selectreg->vehicle_id] = $selectreg->reg_no;
+	}
+	
+	//if($node->reg_no=='')
+	//{
+
+$form['edit_reg_no'] = array(
+	'#type' =>'hidden',
+	'#default_value' =>$rs->reg_no,
+		
+	);
+
+	$form['reg_no'] = array(
+	'#type' =>'select',
+	'#title' => t('Reg No.'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->reg_no,
+	'#options'=> $selectregarray,
+		
+	);
+	/*}
+	else{
+	print_r($node);exit;
+	$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$node->reg_no."'");
+	$regno=db_fetch_object($reg);
+	//echo $regno->reg_no;exit;
+	$form['reg_no'] = array(
+	'#type' =>'select',
+	'#title' => t('Reg No.'),
+	'#required' => TRUE,
+	'#default_value'=> $regno->reg_no,
+	'#options'=> $selectregarray,
+	
+	);
+	}*/
+	$form['name_vendor'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Name of Vendor'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->name_vendor,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	 '#attributes' => array('onkeypress' => 'return textcoursename(event)')
+	);
+	
+	$form['amc_details'] = array(
+	'#type' =>'textarea',
+	'#title' => t('AMC Details'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->amc_details,
+	 '#maxlength'=>200,
+	'#size' =>200,
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)')
+	);
+	
+	$form['prev_from_date']= array(
+	'#type'=>hidden,
+	'#default_value'=>$rs->date_from,
+	);
+	
+	$form['date_from'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of AMC',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->date_from,
+	
+	);
+	$form['date_valid'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Valid Upto',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->date_valid,
+	);
+	
+		$form['terms'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Terms And Conditions'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->terms,
+	 '#maxlength'=>500,
+	'#size' =>500,
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)')
+	);
+	
+	
+	
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/vehicleAMCList'),
+);
+return $form;
+} 
+
+function vehicleAMC_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+	$array = explode('/',$_GET['q']);
+	/*$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Vehicle AMC', 'list/vehicleAMCList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Vehicle AMC', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add Vehicle AMC', 'node/add/vehicleAMC');
+	}
+	*/
+	
+	$breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Vehicle AMC', 'list/vehicleAMCList');
+        if(arg(1) !='add'){
+		  $breadcrumb[] = l('Edit Vehicle AMC', 'node/'.arg(1).'/edit');	
+		}else{
+         $breadcrumb[] = l('Add Vehicle AMC', 'node/add/vehicleAMC');
+      
+		}
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+	alphabet('name_vendor',$form->name_vendor,'Vendor Name');
+	alphanumeric('reg_no',$form->reg_no,'Reg. No.');
+	textonlywithdotne('amc_details',$form->amc_details,'AMC Details');
+	textonlywithdotne('terms',$form->terms,'Terms And Conditions');
+	
+
+
+
+
+
+		 if($form->date_from >= $form->date_valid && (!empty($form->date_from)) && (!empty($form->date_valid)))
+   {
+      form_set_error(date_from, t('Date of AMC should be less than the ending period'));
+   }
+   
+   //validation start here
+   $from_date = $form->date_from;
+   $to_date = $form->date_valid;
+   $reg_no = $form->reg_no;
+   $prev_from_date= $form->prev_from_date;
+   $edit_regno=$form->edit_reg_no;
+  $from_date1=date('Y-m-d',strtotime($form->date_from));
+   
+   $uul=db_query("select mfd from {tbl_vehicles} where vehicle_id='".$form->reg_no."'");
+$uk=db_fetch_object($uul);
+if($uk->mfd>$from_date){
+      form_set_error(date_from, t('Date of AMC should be greater than the manufacturing date of the vehicle'));
+
+
+}
+   
+   
+   
+   
+   if($edit_regno == $reg_no){
+	   
+   $prev=db_query("select max(nid) as nid from {tbl_vehicleamc} where reg_no='".$reg_no."' and nid < (select max(nid) as nid from {tbl_vehicleamc} where reg_no='".$reg_no."')");
+     $pp=db_fetch_object($prev);
+   $ppo=db_query("select * from {tbl_vehicleamc} where nid='".$pp->nid."'");
+   $prev_datewa=db_fetch_object($ppo);
+       $sql = "select * from {tbl_vehicleamc} where  date_valid >= '".$from_date ."'  and  reg_no='".$reg_no."' and '".$from_date."' >= '".$prev_datewa->date_valid."'";
+	   $res = db_query($sql);
+	  // if($rs = db_fetch_object($res)){
+
+		//  echo $from_date1;exit;
+		  if($prev_from_date != $from_date1){
+		if($from_date<=$prev_datewa->date_valid && ((!empty($from_date)) && (!empty($to_date)))   ){
+		 form_set_error('$from_date','Date of AMC should be greater than the previous vehicleAMC expiry date');
+		}} //exit;
+   }else{
+    
+	   $sql = "select * from {tbl_vehicleamc} where  date_valid >= '".$from_date ."'  and  reg_no='".$reg_no."'";
+	 
+	   $res = db_query($sql);
+	   	   
+
+	   if($rs = db_fetch_object($res)){
+		form_set_error('$from_date','Date of AMC should be greater than the previous vehicleAMC expiry date');
+		// echo "test";
+	   } //exit;
+  }
+}
+
+/**
+ *hook_form_alter
+ */
+function vehicleAMC_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='vehicleAMC_node_form'){
+	$form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	 
+	 
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function vehicleAMC_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+  
+  $date_valid =$node->date_valid;
+  
+  $date_from =$node->date_from;
+ 
+  $reg_no= $node->reg_no;
+  $amc_details= $node->amc_details;
+   $terms= $node->terms;
+ $name_vendor= $node->name_vendor;
+  ///////////
+ 
+ 
+
+    
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   
+
+db_query ("INSERT INTO {tbl_vehicleamc} (`vid`, `nid`,`reg_no`,`name_vendor`,`amc_details`, `date_from`,`date_valid`,`terms`, `statusnodal`) VALUES ('".$vid."','".$nid."','".$reg_no."','".$name_vendor."','".$amc_details."','".$date_from."','".$date_valid."','".$terms."','".$statusnodal."')");
+
+
+	
+    //drupal_set_message('Vehicle AMC Entry has been saved successfully.');
+		
+   $message=getMessage('dsjevehicleAMC','code05',array("0"=>$node->name_vendor));
+  drupal_set_message($message);
+	
+	drupal_goto("list/vehicleAMCList");
+
+ 
+ 
+ }
+
+function vehicleAMC_update($node){
+	
+	
+	////////////////
+	
+	 $date_valid =$node->date_valid;
+  
+  $date_from =$node->date_from;
+ 
+  $reg_no= $node->reg_no;
+  $amc_details= $node->amc_details;
+   $terms= $node->terms;
+ $name_vendor= $node->name_vendor;
+	
+	///////////////
+	 
+  
+  
+ 
+    
+	$statusnodal = $node->statusnodal;
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$uid=$node->uid;
+	
+	
+	
+	db_query("UPDATE {tbl_vehicleamc} SET `reg_no`='".$reg_no."',`date_from`='".$date_from."',`date_valid`='".$date_valid."',`amc_details`='".$amc_details."',`name_vendor`='".$name_vendor."',`terms`='".$terms."',`statusnodal`='".$statusnodal."' WHERE nid=$nid");
+	
+	
+	//drupal_set_message('Vehicle AMC have been updated successfully.');
+	
+	$message=getMessage('dsjevehicleAMC','code06',array("0"=>$node->name_vendor));
+  drupal_set_message($message);
+
+	drupal_goto("list/vehicleAMCList");
+	
+	
+}
+
+
+function vehicleAMC_theme() {
+	
+	return array(
+				 
+		'vehicleAMC_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'vehicleAMC_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+
+ 
+
+
+
+ 
+function vehicleAMC_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_vehicleamc ON (node.nid=tbl_vehicleamc.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+ */ 
+function view_vehicleAMC($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Vehicle AMC', 'list/vehicleAMCList');
+   if($array[0] == 'viewvehicleAMC'){
+     $breadcrumb[] = l('View Vehicle AMC', 'viewvehicleAMC/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from {tbl_vehicleamc} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from users where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+
+$regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+$regno= db_fetch_object($regnowa);
+
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Vehicle AMC</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Reg No.:</td><td class="normal"> '.$regno->reg_no.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Name of Vendor:</td><td class="normal"> '.ucwords($rs->name_vendor).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">AMC Details:</td><td class="normal"> '.ucwords($rs->amc_details).'</td></tr>';
+//$output .='<tr class="oddrow"><td width="50%">PERIOD</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date of AMC:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date_from)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Valid Upto:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date_valid)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Terms And Conditions:</td><td class="normal"> '.ucwords($rs->terms).'</td></tr>';
+$output .='<tr class="evenrow"><td colspan="2" class="back" align="center">'.l(t('Back'), 'list/vehicleAMCList').'</td></tr>';
+ $output .='</table>';
+return $output ;
+}

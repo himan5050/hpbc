@@ -1,0 +1,6 @@
+;$id 16/11/2011 Md Hafizor Rahman
+name = "Recovery Wise Cumulative Recovery Report"
+description ="Recovery Wise Cumulative Recovery Report"
+core = 6.x
+version =6.x-1
+package="Recovery Wise Cumulative Recovery Report"

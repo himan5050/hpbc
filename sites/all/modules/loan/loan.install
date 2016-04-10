@@ -1,0 +1,186 @@
+<?php
+function loan_schema() {
+
+  //language table
+   $schema['tbl_scheme_master'] = array(
+							 'fields' => array(
+											   'loan_scheme_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'scheme_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                    	   	   'main_scheme' => array(
+															  'type' => 'int',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   	                                           
+		                                      'sector' => array(
+															  'type' => 'int',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'loan_type' => array(
+															  'type' => 'int',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'loan_class' => array(
+															  'type' => 'int',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'tenure' => array(
+															  'type' => 'int',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'fund_source' => array(
+															  'type' => 'int',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'eligibility_criteria' => array(
+															  'type' => 'int',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'project_cost' => array(
+															  'type' => 'numeric',
+															  'size' => 'normal',
+															  'precision' => 10,
+															  'scale' => 2,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'apex_share' => array(
+															  'type' => 'numeric',
+															  'size' => 'normal',
+															  'precision' => 10,
+															  'scale' => 2,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'corp_share' => array(
+															  'type' => 'numeric',
+															  'size' => 'normal',
+															  'precision' => 10,
+															  'scale' => 2,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'promoter_share' => array(
+															  'type' => 'numeric',
+															  'size' => 'normal',
+															  'precision' => 10,
+															  'scale' => 2,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'capital_subsidy' => array(
+															  'type' => 'boolean',
+															  'length' => '1',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'MMD_FDR' => array(
+															  'type' => 'numeric',
+															  'size' => 'normal',
+															  'precision' => 10,
+															  'scale' => 2,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'interest_subsidy' => array(
+															  'type' => 'boolean',
+															  'length' => '1',
+															  'not null' => TRUE,
+															  'default' => 1
+															  ),
+		                                      'interest_type' => array(
+															  'type' => 'int',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'frequency' => array(
+															  'type' => 'int',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'rebate' => array(
+															  'type' => 'numeric',
+															  'size' => 'normal',
+															  'precision' => 10,
+															  'scale' => 2,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'status' => array(
+															  'type' => 'int',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                      'active' => array(
+															  'type' => 'varchar',
+															  'length' => '1',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'loan_scheme_id' => array('loan_scheme_id'),
+												'scheme_name' => array('scheme_name'),
+												),
+							 'primary key' => array('loan_scheme_id'),
+							 );
+	
+	return $schema;
+}
+
+function loan_install() {
+	drupal_install_schema('loan');
+}
+
+function loan_uninstall() {
+	drupal_uninstall_schema('loan');
+}

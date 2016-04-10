@@ -1,0 +1,458 @@
+<?php
+function budgetDistribution_schema() {
+
+  //nodal table
+   $schema['tbl_budgetDistribution'] = array(
+							 'fields' => array(
+											   
+                                               'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                         
+										   'headtype' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										  'branch' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+											    'budget' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+													 'fin_year' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											
+												   		'total_remaining' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  
+															  ),										
+															  
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+                                             
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('vid'),
+							 );
+	
+
+
+
+
+
+
+
+
+   $schema['tbl_budgetMonths'] = array(
+							 'fields' => array(
+
+												   'month_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															 
+															  ),
+											   
+                                               'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                         
+										
+										   
+										   'type_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+											'field_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+
+												'schemename' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+															  
+															  'branch5' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+
+										  'apr' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+											    'may' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+													 'jun' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											
+												
+												 'jul' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													
+													'aug' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+												
+												 'sept' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+												
+												 'oct' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+
+
+												'nov' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															   
+												'dec' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+												'jan' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+												'feb' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+												'mar' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+
+
+
+
+
+
+
+
+
+
+											 'consume_apr' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+											    'consume_may' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+													 'consume_jun' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											
+												
+												 'consume_jul' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													
+													'consume_aug' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+												
+												 'consume_sept' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+												
+												 'consume_oct' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+
+
+												'consume_nov' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															   
+												'consume_dec' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+												'consume_jan' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+												'consume_feb' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+												'consume_mar' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+
+												 'apr_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													  'may_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													  'jun_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													  'jul_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													  'aug_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													  'sept_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													  'oct_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													  'nov_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													  'dec_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													  'jan_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+										 'feb_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											  'mar_date' => array(
+													 		  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+                                             
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('month_id'),
+							 );
+	return $schema;
+}
+
+
+
+
+
+function budgetDistribution_install() {
+	drupal_install_schema('budgetDistribution');
+}
+
+function budgetDistribution_uninstall() {
+	drupal_uninstall_schema('budgetDistribution');
+}

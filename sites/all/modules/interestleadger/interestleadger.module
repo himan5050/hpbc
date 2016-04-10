@@ -1,0 +1,273 @@
+<?php
+global $base_url;
+
+function interestleadger_perm() {
+	return array('edit interestleadger','administer interestleadger', 'create interestleadger', 'view interestleadger');
+}
+
+function interestleadger_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit interestleadger', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create interestleadger', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view interestleadger', $account);
+	}
+	
+}
+
+function interestleadger_menu(){
+
+	$items['interestleadger'] = array(
+			'title' => t('Interest'),
+			'type' => MENU_CALLBACK,
+			'page callback' => 'interestleadger',
+			'access arguments' => array('administer interestleadger'),
+						 
+		  );
+		  
+		  $items['defaulter'] = array(
+			'title' => t('Defaulter'),
+			'type' => MENU_CALLBACK,
+			'page callback' => 'defaulterlist',
+			'access arguments' => array('administer interestleadger'),
+						 
+		  );
+		  
+		    $items['defaulter6'] = array(
+			'title' => t('Defaulter List Beyond Loan Period'),
+			'type' => MENU_CALLBACK,
+			'page callback' => 'defaulterlist6',
+			'access arguments' => array('administer interestleadger'),
+						 
+		  );
+		  
+		  
+		  
+		   return $items;
+}
+
+
+function selectscheme(){
+global $user;
+ $use="select * from tbl_scheme_master";
+$usq = db_query($use);
+$scheme = array('all'=>'All');
+ while($usre = db_fetch_array($usq)){
+ $scheme_id=$usre['loan_scheme_id'];
+   $scheme[$scheme_id] = $usre[scheme_name];
+  }
+ 
+  return $scheme;
+}
+
+function interestleadger(){
+  return drupal_get_form('interestleadger_form');
+}
+
+function interestleadger_form(){
+	global $user;
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Interest Ledger', 'interestleadger');
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+	$form['schemename'] = array(
+	'#type' =>'select',
+	'#title' => t('Scheme Name'),
+	'#required' =>TRUE,
+	'#default_value' =>'', 
+	'#options' => selectscheme(),
+	
+		
+	);
+	
+	$form['startdate'] = array(
+	'#type' =>'date_popup',
+	'#title' => t('Start Date'),
+	'#required' =>TRUE,
+	'#default_value' =>'', 
+	'#size' => 10,
+	'#date_format' => 'd-m-Y',
+		
+	);
+	$form['enddate'] = array(
+	'#type' =>'date_popup',
+	'#title' => t('End Date'),
+	'#required' =>TRUE,
+	'#default_value' =>'', 
+	'#size' =>10,
+	'#date_format' => 'd-m-Y',
+		
+	);
+	
+	$form['submit'] = array(
+	'#type' => 'button',
+	'#default_value' => t('Generate')
+	);
+	return $form;
+	}
+	
+	
+	function defaulterlist(){
+     return drupal_get_form('defaulterlist_form');
+   }
+
+function defaulterlist_form(){
+	global $user;
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Defaulter List', 'defaulter');
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	$form['type'] = array(
+	'#type' =>'select',
+	'#title' => 'Type',
+	'#required' =>TRUE,
+	'#default_value' =>'', 
+	'#options' => array('' => '--Select--','alr' => 'ALR', 'defaulter' => 'Defaulter'),
+	
+		
+	);
+	
+	$form['startdate'] = array(
+	'#type' =>'date_popup',
+	'#title' => 'Start Date',
+	'#required' =>TRUE,
+	'#default_value' =>'', 
+	'#size' => 10,
+	'#date_format' => 'd-m-Y',
+		
+	);
+	$form['enddate'] = array(
+	'#type' =>'date_popup',
+    '#title' => 'End Date',
+	'#required' =>TRUE,
+	'#default_value' =>'', 
+	'#size' =>10,
+	'#date_format' => 'd-m-Y',
+		
+	);
+	
+	$form['submit'] = array(
+	'#type' => 'button',
+	'#default_value' => t('Generate')
+	);
+	return $form;
+	}
+	
+	
+	function defaulterlist_form_validate($form,&$form_state){
+	
+
+ $startdate= $form_state['values']['startdate'];
+ $enddate= $form_state['values']['enddate'];
+$type =$form_state['values']['type'];
+
+ if((strtotime($startdate)) > (strtotime($enddate)))
+ { 
+	 form_set_error('form','Start Date Can Not Be Greater Than To Date'); 
+ }
+
+	}
+	
+	///Nishant Report//
+
+function defaulterlist6(){
+  return drupal_get_form('defaulterlist6_form');
+}
+
+function defaulterlist6_form(){
+	global $user;
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Defaulter List Beyond Loan Period', 'defaulter6');
+	
+	drupal_set_breadcrumb($breadcrumb);
+	$sqlcountry = "select * from tbl_tehsil WHERE status='1'";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--select---'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->tehsil_id] = ucfirst($rscountry->tehsil_name);
+	  }
+	}
+	$form['tehsil_id'] = array(
+		'#type' => 'select',
+		'#title' => t('Tehsil'),
+		'#required' => true,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		
+	);			
+	
+	$form['type'] = array(
+	'#type' =>'select',
+	'#title' => 'Type',
+	'#required' =>TRUE,
+	'#default_value' =>'', 
+	'#options' => array('' => '--Select--','alr' => 'ALR', 'defaulter' => 'Defaulter'),
+	
+		
+	);
+	
+	$form['submit'] = array(
+	'#type' => 'button',
+	'#default_value' => t('Generate')
+	);
+	return $form;
+	}
+	
+	
+function defaulterlist6_form_validate($form,&$form_state){
+	
+
+ $startdate= $form_state['values']['startdate'];
+ $enddate= $form_state['values']['enddate'];
+$type =$form_state['values']['type'];
+
+ if((strtotime($startdate)) > (strtotime($enddate)))
+ { 
+	 form_set_error('form','Start Date Can Not Be Greater Than To Date'); 
+ }
+
+	}
+	
+	function interestleadger_theme() {
+	
+	return array(
+				 
+		'interestleadger_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'interestleadger_form',
+                                 ),
+								 
+		'defaulterlist_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'defaulterlist_form',
+                                 ),							 
+						 
+       'defaulterlist6_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'defaulterlist6_form',
+                                 ),							 
+						 
+
+				 );
+}
+
+

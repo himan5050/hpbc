@@ -1,0 +1,156 @@
+<?php
+
+function interestsubsidy_init() {
+	//drupal_add_js(drupal_get_path('module','interestsubsidy').'/interestsubsidy.js');
+	
+}
+function interestsubsidy_perm() {
+	return array('edit interestsubsidy','administer interestsubsidy', 'create interestsubsidy', 'view interestsubsidy');
+}
+
+function interestsubsidy_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit interestsubsidy', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create interestsubsidy', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view interestsubsidy', $account);
+	}
+}
+ 
+ function interestsubsidy_menu(){
+	 
+	 $items['interestsubsidy/interestsubsidylist'] = array(
+		'title' => 'List of Interest Subsidy',
+		'page callback' => 'interestsubsidy_list',
+		'access arguments' => array('administer interestsubsidy'),
+		'file' =>'interestsubsidy.php',			 
+		'type' => MENU_NORMAL_ITEM,
+
+	   );
+	$items['interestsubsidy/view/%'] = array(
+		'title' => t('View Interest Subsidy'),
+		'type' => MENU_CALLBACK,
+		'page callback' => 'view_interestsubsidy',
+		'page arguments' => array(2),
+		'file' =>'interestsubsidy.php',			 
+		'access arguments' => array('administer interestsubsidy'),
+									
+							);
+  
+   return $items;
+ }
+  
+  
+  
+
+  
+function interestsubsidy_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjeDispatch', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Loanee Name'), 'field' => 'fname', 'sort' => 'asc'),
+	array('data' => t('Bank Acc.No.'), 'field' => 'bank_account', 'sort' => 'asc'),
+	array('data' => t('Corporation Reg.No.'), 'field' => 'corpreg_number', 'sort' => 'asc'),
+	array('data' => t('Loan Advanced'), 'field' => '', 'sort' => 'asc'),
+	array('data' => t('Status')),
+	array('data' => t('Action'), 'class' => 'addeditview',),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Interest Subsidies', 'list/interestsubsidyList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid FROM node
+	 INNER JOIN tbl_interestsubsidy ON (node.nid=tbl_interestsubsidy.nid)
+	 WHERE node.uid='".$user->uid."' AND( fname LIKE '".$val."' OR lname LIKE '".$val."' OR bankaccount LIKE '".$val."' OR corpreg_number LIKE '".$val."' OR loan_advanced LIKE '".$val."') ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM node
+	INNER JOIN tbl_interestsubsidy ON (node.nid=tbl_interestsubsidy.nid)
+	 WHERE node.uid='".$user->uid."' AND( fname LIKE '".$val."' OR lname LIKE '".$val."' OR bankaccount LIKE '".$val."' OR corpreg_number LIKE '".$val."' OR loan_advanced LIKE '".$val."') ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	   $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  * FROM node
+	 INNER JOIN tbl_interestsubsidy ON (node.nid=tbl_interestsubsidy.nid)
+	 WHERE node.uid='".$user->uid."'".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/interestsubsidyList';
+
+	 $output = '<form method="POST" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjeDispatch', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/interestsubsidyList');
+	}	
+	$output .='</td></tr>';	
+	$addurl = l("Add Interest Subsidy","node/add/interestsubsidy");
+   	$lising = "List of Interest Subsidy";
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>	
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>
+	
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit",array('attributes'=>array('id'=>'edit-state')));
+		$viewurl = l("View","viewinterestsubsidy/".$rs->nid,array('attributes'=>array('id'=>'edit-state')));
+//		$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+
+		$cnode = node_load($rs->nid);
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' =>ucwords($rs->fname.' '.$rs->lname)),
+			array('data' => $rs->bank_account),
+            array('data' => $rs->corpreg_number),
+            array('data' => $rs->loan_advanced),
+            array('data' => $rs->status),
+			array('data' => $viewurl." | ".$editurl),
+		);
+		
+	
+	 
+	
+	  
+	}
+}
+
+     if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, 20,0 );
+	return $output;
+  }

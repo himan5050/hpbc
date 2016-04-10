@@ -1,0 +1,135 @@
+<?php
+global $base_url;
+
+/**
+ *hook_perm
+ */
+  
+ 
+function vehiclePollutionReport_perm() {
+	return array('edit vehiclePollutionReport','administer vehiclePollutionReport', 'create vehiclePollutionReport', 'view vehiclePollutionReport');
+}
+
+function vehiclePollutionReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit vehiclePollutionReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create vehiclePollutionReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view vehiclePollutionReport', $account);
+	}
+	
+}
+
+
+function vehiclePollutionReport_menu(){
+
+  $items['vehiclePollutionReport_vehicle'] = array(
+										'title' => t('Vehicle Pollution Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'vehiclePollutionReport_vehicle',
+										'access arguments' => array('administer vehiclePollutionReport_vehicle'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function vehiclePollutionReport_vehicle(){
+  return drupal_get_form('vehiclePollutionReport_vehicle_form');
+}
+
+function vehiclePollutionReport_vehicle_form(){
+
+global $base_url;
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Vehicle Pollution Register', 'vehicleAMCReport_vehicle');
+  drupal_set_breadcrumb($breadcrumb);
+ 
+ $form['reg_no'] = array(
+                                '#type' => 'textfield',
+							
+								'#size' => '30',
+ );
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						  
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',	  
+  ); 
+  return $form;
+}
+
+
+
+function vehiclePollutionReport_vehicle_form_validate($form, &$form_state){
+	
+	$values = $form_state['values'];
+	
+	$from_date = $values['from_date'];
+	$to_date = $values['to_date'];
+	if(!empty($from_date) && !empty($to_date)){
+	if($from_date>$to_date){
+	
+	form_set_error(to_date,'To Date should be greater than From Date');
+	}
+	}
+	
+	
+	if($from_date == '' && $to_date !=''){
+		
+	form_set_error('from_date','Form Date is required.');	
+		
+	}
+	//echo $to_date;exit;
+	if($to_date == '' && $from_date !=''){
+		
+	form_set_error('to_date','To Date is required.');	
+		
+	}
+	
+}
+
+/**
+ *@ hook_theme 
+*/
+
+ function vehiclePollutionReport_theme() {
+	
+	return array(
+		
+		'vehiclePollutionReport_vehicle_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'vehiclePollutionReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

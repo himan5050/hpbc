@@ -1,0 +1,5 @@
+;$id:
+name="ALR"
+core =6.x
+version = 6.x - 1
+description ="This module for ALR System"

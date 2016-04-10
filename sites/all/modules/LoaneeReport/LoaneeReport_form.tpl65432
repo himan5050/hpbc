@@ -1,0 +1,87 @@
+<?php
+global $base_url;
+
+/**
+ *hook_perm
+ */
+ 
+function LoaneeDetails_perm() {
+	return array('edit LoaneeDetails','administer LoaneeDetails', 'create LoaneeDetails', 'view LoaneeDetails');
+}
+
+function LoaneeDetails_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit LoaneeDetails', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create LoaneeDetails', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view LoaneeDetails', $account);
+	}
+	
+}
+
+
+function LoaneeDetails_menu(){
+
+  $items['LoaneeDetailsReport_loanee'] = array(
+										'title' => t('Loane Details'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'LoaneeDetailsReport_loanee',
+										'access arguments' => array('administer LoaneeDetailsReport_loanee'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function LoaneeDetailsReport_loanee(){
+  return drupal_get_form('LoaneeDetailsReport_loanee_form');
+}
+
+function LoaneeDetailsReport_loanee_form(){
+ 
+  global $base_url;
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Loanee Details Report', 'LoaneeDetailsReport_loanee');
+  drupal_set_breadcrumb($breadcrumb);
+ 
+ $form['acc_no'] = array(
+                                '#type' => 'textfield',
+								'#title' => t('Account Number'),
+								'#size' => '30',
+ );
+ 
+
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+
+
+ function LoaneeDetails_theme() {
+	
+	return array(
+		
+		'LoaneeDetailsReport_loanee_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'LoaneeDetails_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

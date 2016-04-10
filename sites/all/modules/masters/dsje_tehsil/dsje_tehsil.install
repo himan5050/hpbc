@@ -1,0 +1,96 @@
+<?php
+function dsje_tehsil_schema() {
+
+	
+	//Tehsil table
+   $schema['tbl_tehsil'] = array(
+							 'fields' => array(
+											   'tehsil_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+														  
+															  
+											   'tehsil_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 
+											 
+											   'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '900',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+	                                           'description' => array(
+															  'type' => 'varchar',
+															  'length' => '900',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+	                                          'state_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											  'district_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),				  
+															  
+	                                          
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'tehsil_id' => array('tehsil_id'),
+												),
+							 'primary key' => array('tehsil_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_tehsil_install() {
+	drupal_install_schema('dsje_tehsil');
+}
+
+function dsje_tehsil_uninstall() {
+	drupal_uninstall_schema('dsje_tehsil');
+}

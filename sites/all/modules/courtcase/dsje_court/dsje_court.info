@@ -1,0 +1,6 @@
+;$id 13/10/2011 Mohit Verma
+name = "court Name"
+description ="court"
+core = 6.x
+version =6.x-1
+package="Court case Module"

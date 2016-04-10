@@ -1,0 +1,465 @@
+<?php
+function dsje_gender_init() {
+	//drupal_add_css(drupal_get_path('module', 'rec_language') .'/rec_language.css');
+	
+}
+
+
+function dsje_gender_perm() {
+	return array('edit dsje_gender','administer dsje_gender', 'create dsje_gender', 'view dsje_gender');
+}
+
+function dsje_gender_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_gender', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_gender', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_gender', $account);
+	}
+	
+}
+
+function dsje_gender_menu() {
+	
+	
+	$items['admin/rec/listgender'] = array(
+										'title' => t('List of gender'),
+										'description' => 'Allow user to View gender',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewgender',
+										'access arguments' => array('administer dsje_gender'),
+													 
+									  );
+	
+	$items['admin/rec/listgender/addgender'] = array(
+										'title' => t('Create gender'),
+										'description' => 'Allow user to add gender',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_gender',
+										'access arguments' => array('administer dsje_gender'),
+													 
+									  );
+   	$items['admin/rec/listgender/edit/gender/%'] = array(
+								
+										'title' => t('Edit gender'),
+										'description' => 'Allow user to add gender',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addgenderedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_gender'),
+													 
+									  );
+   $items['admin/rec/listgender/view/gender/%'] = array(
+								
+										'title' => t('View gender'),
+										'description' => 'Allow user to add gender',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addgenderview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_gender'),
+													 
+									  );
+     $items['admin/rec/del/gender/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'gender_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_gender'),
+													 
+									  );
+    $items['admin/rec/enable/gender/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'gender_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_gender'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing gender
+ */
+
+function viewgender(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'recgender', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('gender'), 'field' => 'gender_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List gender', 'admin/rec/listgender/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT gender_id, gender_name, status FROM tbl_genders where UPPER(gender_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_genders where UPPER(gender_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT gender_id, gender_name, status FROM tbl_genders ".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'recgender', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/rec/listgender');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'recgender', 'code01', NULL),"admin/rec/listgender/addgender");
+   	$lising = getMessage( 'recgender', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/rec/listgender/edit/gender/".$row->gender_id,array('attributes'=>array('id'=>'edit-gender-id')));
+		$viewurl = l("View","admin/rec/listgender/view/gender/".$row->gender_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/rec/del/gender/$row->gender_id/$row->gender_name");
+        }else{
+		  $deleteurl = l("Enable","admin/rec/enable/gender/$row->gender_id/$row->gender_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->gender_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_gender(){
+ return drupal_get_form('dsje_gender_form');
+}
+
+function dsje_gender_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of gender', 'admin/rec/listgender');
+  if($array[3] == 'addgender'){
+     $breadcrumb[] = l('Add gender', 'admin/rec/listgender/addgender');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['gender_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('gender Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listgender'),
+);
+	return $form;
+}
+
+function dsje_gender_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $gender_name = trim($values['gender_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('gender_name',$gender_name,'gender');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_genders` (`gender_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$gender_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('recgender', 'code05', array("0"=>$gender_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/rec/listgender');
+	}
+}
+
+function dsje_gender_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$gender_name = trim($values['gender_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('gender_name',$gender_name,'gender');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_genders} where UCASE(gender_name)= '".strtoupper($gender_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('recgender', 'code06', array("0"=>$gender_name));
+			form_set_error('gender_name', $message);
+		}
+	}	
+}
+
+function rec_addgenderedit($gender_id){
+ return drupal_get_form('dsje_gender_form_edit',$gender_id);
+}
+
+function dsje_gender_form_edit(&$form_states,$gender_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List gender', 'admin/rec/listgender');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit gender', 'admin/rec/listgender/edit/gender/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlgender = "select * from tbl_genders where gender_id=$gender_id";
+	$resgender = db_query($sqlgender);
+	$rsgender = db_fetch_object($resgender);
+	
+	$form['gender_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsgender->gender_id,
+	);
+	
+	$form['gender_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('gender Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsgender->gender_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['prev_gender_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsgender->gender_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsgender->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listgender'),
+);
+	return $form;
+}
+
+function dsje_gender_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$gender_id = $values['gender_id'];
+	$gender_name = ParseData($values['gender_name']);
+	$prev_gender_name = ParseData($values['prev_gender_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('gender_name',$gender_name,'gender');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_genders} where LOWER(gender_name)= '".strtolower($gender_name)."' GROUP BY gender_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_gender_name), strtolower($gender_name))==0){
+			db_query("UPDATE `tbl_genders` set `gender_name` = '".$gender_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where gender_id='".$gender_id."'");
+			
+			$message = getMessage('recgender', 'code05', array("0"=>$gender_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listgender");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_genders` set `gender_name` = '".$gender_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where gender_id='".$gender_id."'");
+				
+				$message = getMessage('recgender', 'code05', array("0"=>$gender_name));
+				drupal_set_message($message);
+				drupal_goto("admin/rec/listgender");	
+			
+			}else{
+				db_query("UPDATE `tbl_genders` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where gender_id='".$gender_id."'");
+				
+				$message = getMessage('recgender', 'code06', array("0"=>$gender_name));
+				form_set_error('gender_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_gender_theme() {
+	
+	return array(
+				 
+		'dsje_gender_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_gender_form',
+                                 ),
+        'dsje_gender_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_gender_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_gender_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_gender_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_gender_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function gender_delete($sid, $sno){
+  $gender_id =  $sid;
+  db_query("UPDATE {tbl_genders} SET status=0 WHERE gender_id ='".$gender_id."'");
+  $message = getMessage('recgender', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/rec/listgender");
+ }
+
+
+  function gender_enable($sid, $sno){
+    $gender_id =  $sid;
+    db_query("UPDATE {tbl_genders} SET status=1 WHERE gender_id ='".$gender_id."'");
+  
+    $message = getMessage('recgender', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/rec/listgender");
+  }
+
+  function rec_addgenderview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List gender', 'admin/rec/listgender');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View gender', 'admin/rec/listgender/view/gender/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from tbl_genders where gender_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>gender Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td>gender:</td><td>'.ucwords($rs->gender_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='</table></div>';
+$output .=  l(t('Back'), 'admin/rec/listgender');
+ return $output;
+  }
+	
+	

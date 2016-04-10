@@ -1,0 +1,136 @@
+<?php
+//global $base_url;
+
+/**
+ *hook_perm
+ 
+ 
+ */
+ 
+ function interestsubsidyReport_init() {
+	//drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+ 
+function interestsubsidyReport_perm() {
+	return array('edit interestsubsidyReport','administer interestsubsidyReport', 'create interestsubsidyReport', 'view interestsubsidyReport');
+}
+
+function interestsubsidyReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit interestsubsidyReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create interestsubsidyReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view interestsubsidyReport', $account);
+	}
+	
+}
+
+
+function interestsubsidyReport_menu(){
+
+  $items['report_interestsubsidyReport'] = array(
+										'title' => t('Interest Subsidy Report'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'interestsubsidy_Report',
+										'access arguments' => array('administer interestsubsidyReport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function interestsubsidy_Report(){
+  return drupal_get_form('interestsubsidyReport_form');
+}
+
+function interestsubsidyReport_form(){
+	
+global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Interest Subsidy Report', 'report_interestsubsidyReport');
+  drupal_set_breadcrumb($breadcrumb);
+
+
+$form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+						   
+		);				   
+ 	
+$sqlcountry = "select * from tbl_district WHERE status='1' ORDER BY district_name ";
+	$rescountry =db_query($sqlcountry);
+	$countryarray[''] = array();
+	$countryarray[''] = '--Select--'; 
+	if($rescountry){
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->district_id] = ucwords($rscountry->district_name);
+	  }
+	}
+	
+
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => false,
+		'#default_value' => '',
+		'#options' => $countryarray,
+	);
+    
+ 
+ 
+
+ 
+ 
+						   
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function interestsubsidyReport_theme() {
+	
+	return array(
+		
+		'interestsubsidyReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'interestsubsidyReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

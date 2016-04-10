@@ -1,0 +1,50 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the simplify_node_add module.
+ */
+/**
+ * Implementation of hook_uninstall().
+ */
+function simplify_node_add_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE '%s%'", 'simplify_node_add_');
+  cache_clear_all('variables', 'cache');
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function simplify_node_add_update_6100() {
+  $types = node_get_types();
+  foreach ($types AS $type) {
+    $sna_types = variable_get('simplify_node_add_' . $type->type, array());
+    $sna_types['format'] = 0;
+    variable_set('simplify_node_add_' . $type->type, $sna_types);
+  }
+  $ret[] = array('success' => TRUE, 'query' => 'Format type has been deleted');
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function simplify_node_add_update_6101() {
+  $ret[] = update_sql("DELETE FROM {variable} WHERE name LIKE 'simplify_node_add_%'");
+  cache_clear_all('variables', 'cache');
+  drupal_set_message(t('All settings of the simplify node add module have been removed due to role specific settings.'));
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function simplify_node_add_update_6102() {
+  $types = node_get_types();
+  foreach ($types AS $type) {
+    $sna_types = variable_get('simplify_node_add_' . $type->type, array());
+    $sna_types['format'] = 0;
+    variable_set('simplify_node_add_' . $type->type, $sna_types);
+  }
+  $ret[] = array('success' => TRUE, 'query' => 'Format type has been deleted again due to wrong code');
+  return $ret;
+}

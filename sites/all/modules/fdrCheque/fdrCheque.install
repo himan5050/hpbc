@@ -1,0 +1,112 @@
+<?php
+function fdrCheque_schema() {
+
+  //nodal table
+   $schema['tbl_fdrCheque'] = array(
+							 'fields' => array(
+											   
+                                               'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+												   
+										   'fdr_type' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+                                         
+										   'account_no' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										 
+										  'cheque_no' => array(
+															  'type' => 'varchar',
+															  'length' => '6',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										   'bank_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'amount' => array(
+															  'type' => 'varchar',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ), 
+										 'cheque_status' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											'fdr_status' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+											
+												
+												
+															  
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+                                             
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('vid'),
+							 );
+	return $schema;
+}
+function fdrCheque_install() {
+	drupal_install_schema('fdrCheque');
+}
+
+function fdrCheque_uninstall() {
+	drupal_uninstall_schema('fdrCheque');
+}

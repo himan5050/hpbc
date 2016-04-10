@@ -1,0 +1,1047 @@
+<?php
+
+
+function dsje_Hearing_init() {
+	drupal_add_js(drupal_get_path('module', 'dsje_Hearing') .'/dsje_Hearing.js');
+	
+}
+
+function dsje_Hearing_perm() {
+	return array('edit dsje_Hearing','administer dsje_Hearing', 'create dsje_Hearing', 'view dsje_Hearing');
+}
+
+function dsje_Hearing_node_info() {
+	return array (
+					'dsje_Hearing' => array (
+										'name' => t('List Of Cout Case'),
+										'module' => 'dsje_Hearing',
+										'description' => "Create Court case",
+										'has_title' => TRUE,
+										'title_label' => t('Hearing'),
+										'has_body' => FALSE,
+										),
+				);
+}
+
+
+function dsje_Hearing_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_Hearing', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_Hearing', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_Hearing', $account);
+	}
+	
+}
+
+
+
+function dsje_Hearing_menu() {
+
+
+	
+	
+	
+//bank branch Details Menu
+
+  $items['dsje/listhearing'] = array(
+										'title' => t('List of Court Case'),
+										'description' => 'Allow user to View Hearing',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewcourtcasehearing',
+										'access arguments' => array('administer dsje_Hearing'),
+													 
+									  );
+	
+	
+  	$items['dsje/listhearing/view/hearing/%'] = array(
+										'title' => t('View Court Case'),
+										'description' => 'Allow user to add Hearing',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addhearingview',
+                                        'page arguments' => array(4),
+		                                'access arguments' => array('administer dsje_Hearing'),
+													 
+									  );
+   $items['dsje/del/hearing/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'courtcase_delete1',
+		                                'page arguments' => array(3),
+		                                'access arguments' => array('administer dsje_Hearing'),
+													 
+									  );
+   $items['dsje/enable/hearing/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'courtcase_enable',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer dsje_Hearing'),
+													 
+									  );
+									  
+									  
+	$items['list/downloadcourtcase/%'] = array(
+									'type' => MENU_CALLBACK,
+									'page callback' => 'download_courtcase',
+									'page arguments' => array(2),
+									'access arguments' => array('access content'),		 
+								  );
+								  
+	$items['list/upload/%'] = array(
+										'title' => t('Scan copy of Detail'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'uploadcase',
+										 'page arguments' => array(2),
+										'access arguments' => array('administer dsje_Hearing'),
+													 
+									  );  							  
+								  									  
+	
+	return $items;
+}
+
+
+
+
+ function viewcourtcasehearing(){
+    global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage( 'dsjecourtcase', 'code04', NULL);
+  
+ $header = array(
+		array('data' => t('S. No.')),
+		array('data' => t('Court Case No.'), 'field' => 'tbl_courtcasehearing.courtcase_id', 'sort' => 'asc'),
+	    array('data' => t('Court Case Title'), 'field' => 'tbl_courtcasehearing.title_case', 'sort' => 'asc'),
+		array('data' => t('Lawyer Name'), 'field' => 'tbl_courtcasehearing.title_case', 'sort' => 'asc'),
+		array('data' => t('Status'), 'field' => 'tbl_courtcasehearing.court_states', 'sort' => 'asc'),
+        //array('data' => t('Lawyer Address'), 'field' => 'tbl_lawyer.lawyer_name', 'sort' => 'asc'),
+		array('data' => t('Action'),'class' => 'addeditviewlarge'),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Court Case', 'dsje/listcourtcase/nt'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+	
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	
+	 $query = "SELECT node.nid,tbl_courtcasehearing.courtcase_id,  tbl_courtcasehearing.title_case,tbl_courtcasehearing.court_states,tbl_lawyer.lawyer_name,tbl_lookups.lookup_name  FROM {node}
+	 INNER JOIN tbl_courtcasehearing ON (node.nid=tbl_courtcasehearing.nid)  INNER JOIN tbl_lawyer ON (tbl_courtcasehearing.lawyer_id=tbl_lawyer.lawyer_id)
+	 LEFT JOIN tbl_lookups on (tbl_lookups.lookup_id = tbl_courtcasehearing.court_states)   where tbl_courtcasehearing.title_case LIKE '".$val."' OR tbl_courtcasehearing.courtcase_id LIKE '".$val."' OR tbl_lawyer.lawyer_name LIKE '".$val."' OR tbl_lookups.lookup_name LIKE '".$val."'".tablesort_sql($header);
+
+	$sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	 INNER JOIN tbl_courtcasehearing ON (node.nid=tbl_courtcasehearing.nid) INNER JOIN tbl_lawyer ON (tbl_courtcasehearing.lawyer_id=tbl_lawyer.lawyer_id) 
+	 LEFT JOIN tbl_lookups on (tbl_lookups.lookup_id = tbl_courtcasehearing.court_states)   where tbl_courtcasehearing.title_case LIKE '".$val."' OR tbl_courtcasehearing.courtcase_id LIKE '".$val."' OR tbl_lawyer.lawyer_name LIKE '".$val."' OR tbl_lookups.lookup_name LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	//$_REQUEST['page']=0;
+ 
+ }else{
+   $query = "SELECT node.nid,tbl_courtcasehearing.courtcase_id, tbl_courtcasehearing.title_case,tbl_courtcasehearing.court_states, tbl_lawyer.lawyer_name FROM {node}
+	 INNER JOIN tbl_courtcasehearing ON (node.nid=tbl_courtcasehearing.nid) INNER JOIN tbl_lawyer ON (tbl_courtcasehearing.lawyer_id=tbl_lawyer.lawyer_id) INNER JOIN tbl_court_names ON (tbl_courtcasehearing.court_name_id=tbl_court_names.court_name_id) LEFT JOIN tbl_lookups on (tbl_lookups.lookup_id = tbl_courtcasehearing.court_states)".tablesort_sql($header);
+ }
+ 
+ global $base_url;
+$action = $base_url.'/dsje/listhearing';
+ $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjecourtcase', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','dsje/listhearing');
+	}
+	
+	$addurl = l(getMessage( 'dsjecourtcase', 'code01', NULL),"node/add/dsje-Hearing");
+	
+	$output .='</td><td colspan="3"></td></tr>';
+	 
+   	$lising = getMessage( 'dsjecourtcase', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($rs=db_fetch_object($result)) {
+		$counter++;
+		
+		$sqlde="select court_states from {tbl_courtcasehearing} where	courtcase_id = '".$rs->courtcase_id."'";
+		$tyui=db_query($sqlde);
+		$tu=db_fetch_object($tyui);
+		if($tu->court_states == 144)
+		{
+		$viewurl = l("View","dsje/listhearing/view/hearing/".$rs->nid,array('attributes'=>array('id'=>'edit-state')));	
+		$addcourtcasehearing = l("Case Detail","dsje/listcourtcase/".$rs->nid);
+		$adduploadfile = l("Upload Case Detail","list/upload/".$rs->nid);
+		$action = $viewurl." | ".$addcourtcasehearing." | ".$adduploadfile; 
+		}
+		else{
+		
+		$editurl = l("Edit","node/$rs->nid/edit",array('attributes'=>array('id'=>'edit-state')));
+		$adduploadfile = l("Upload Case Detail","list/upload/".$rs->nid);
+		$viewurl = l("View","dsje/listhearing/view/hearing/".$rs->nid,array('attributes'=>array('id'=>'edit-state')));
+		$deleteurl = l("Delete","dsje/del/hearing/".$rs->nid,array('attributes'=>array('id'=>'edit-state')));
+		$addcourtcasehearing = l("Case Detail","dsje/listcourtcase/".$rs->nid,array('attributes'=>array('id'=>'edit-state')));
+		$action = $viewurl." | ".$editurl." | ".$deleteurl." | ".$addcourtcasehearing."|".$adduploadfile;
+		}
+		//$addcourtcasehearing=1("Add court Case Hearing","dsje/listcourtcase/addcourt/".$rs->nid);
+		
+		
+		/*if($row->status=='1'){
+		  $deleteurl = l("Disable","dsje/del/court/".$row->courtcase_id."/".$row->case_no);
+		}else{
+		  $deleteurl = l("Enable","dsje/enable/court/".$row->courtcase_id."/".$row->case_no);
+		}
+		if($rs->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}*/
+			
+			
+			
+			
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => $rs->courtcase_id),
+			array('data' => ucwords($rs->title_case)),
+			array('data' => ucwords($rs->lawyer_name)),
+			
+			array('data' => getLookupName($rs->court_states)),
+			array('data' => $action),
+			//array('data' => $viewurl."|".$editurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+
+function dsje_Hearing_form(&$node) {
+			global $user;
+			global $base_url;
+	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Court Case', 'dsje/listhearing');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Court Case', 'node/'.$array[1].'/edit');
+	}
+ // print_r($array);
+  //exit;
+	if($array[1] == 'add' && $array[2] == 'dsje-Hearing'){
+	 $breadcrumb[] = l('Add Court Case ', 'node/add/dsje-Hearing');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+	
+	$type = node_get_types('type', $node);
+	
+	
+	$sql = "select * from {tbl_courtcase} where courtcase_id='".$courtcase_id."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+
+	
+	
+	
+	$form['courtcase_id'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Case No.',
+	  '#required' =>TRUE,
+	  '#size' =>15, 
+	  '#default_value' => $node->courtcase_id,
+	  '#maxlength'=>15,
+	  '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),		
+	
+	  
+	);
+	
+	
+	$sqllawyer2 = "select * from {tbl_court_names} where status =1 ORDER BY court_name_name ASC";
+	$rescountry2 =db_query($sqllawyer2);
+	if($rescountry2){
+		$countryarray2[''] = '--Select--';
+		while($rscountry2 = db_fetch_object($rescountry2)){
+			$countryarray2[$rscountry2->court_name_id] = ucwords($rscountry2->court_name_name);
+		}
+	}
+	
+	
+	$form['court_name_id'] = array(
+	  '#type' =>'select',
+	  '#title' =>'Court Name',
+	  '#required' =>TRUE,
+	  '#default_value' => $node->court_name_id,
+	  '#options' => $countryarray2, 
+	 
+	  
+	);
+	
+	
+	
+	
+	$form['date1'] = array(
+	  '#type' =>'date_popup',
+	  '#date_format' => 'd-m-Y',
+	  '#title' =>'Case Registration Date',
+	  '#required' => TRUE,
+	  '#maxlength'=>10,
+	  '#default_value' => $node->date1,	
+	);
+	
+	
+	if($array[2] == 'edit'){
+	
+	$form['hearing_date'] = array(
+	 '#type' =>'textfield',
+	  '#title' =>'Hearing Date',
+	  '#required' => TRUE,
+	  '#maxlength'=>10,
+	  '#size'=>45,
+	  '#default_value' => $node->hearing_date,	
+	 '#attributes' => array('readonly' => 'readonly'),
+	  
+	);	
+	
+	
+	}
+	
+	else{
+	$form['hearing_date'] = array(
+	  '#type' =>'date_popup',
+	  '#date_format' => 'd-m-Y',
+	  '#title' =>'Hearing Date',
+	  '#required' => TRUE,
+	  '#maxlength'=>10,
+	  '#size'=>45,
+	  '#default_value' => $node->hearing_date,	
+	 
+	  
+	);	
+		
+	}
+	
+	$form['title_case'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Case Title',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#maxlength'=>45,
+	  '#default_value' =>$node->title_case,	
+	  '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),		
+	  	
+	);
+	
+	$form['loan_account'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Loan Account No(if applicable)',
+	  '#required' =>False,
+	  '#size' => 41,
+	  '#maxlength'=>15,
+	  '#default_value' =>$node->loan_account,
+	  '#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"edit-loan-account",15)'),					
+	);
+	
+	$form['case_detail'] = array(
+	  '#type' =>'textarea',
+	  '#title' =>'Case Detail',
+	  '#required' =>TRUE,
+	  '#size' => 41,	
+	   '#maxlength'=>250,
+	   '#default_value' =>$node->case_detail,
+	   '#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-case-detail",250)'),		
+	);
+	
+	/*$form['scan_detail'] = array(
+						   '#type' => 'file',
+						   '#title' => t('Scan copy of Detail'),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   '#default_value' => '',
+						   '#id' => 'fghj',
+						   );*/
+	
+	$form['name_opposite'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Name of Opposite Party',
+	  '#required' =>TRUE,
+	  '#maxlength'=>45,
+	   '#default_value' =>$node->name_opposite,	
+	   '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),				
+	);
+	
+	$form['opposite_address'] = array(
+	  '#type' =>'textarea',
+	  '#title' =>'Address',
+	  '#required' =>TRUE,
+	   '#maxlength'=>100,
+	   '#default_value' =>$node->opposite_address,	
+	   '#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-opposite-address",45)'),				
+	);
+	
+	$sqlcountry = "select * from {tbl_dsjestate} WHERE status='1' ORDER BY state_name ASC";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--Select--'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->state_id] = ucwords($rscountry->state_name);
+	  }
+	}
+	$form['state_id'] = array(
+		'#type' => 'select',
+		'#title' => t('State'),
+		'#required' => TRUE,
+		'#default_value' => $node->state_id,
+		'#options' => $countryarray,
+		'#ahah' => array(
+					  'path' => 'rec/district',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'zone',
+					  ),
+	);
+	
+	
+	
+    $zonearray[''] = '--Select--';
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $node->district_id,
+		'#options' =>$zonearray,
+		'#ahah' => array(
+					  'path' => 'rec/tehsil',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'state',
+					  ), 
+	);
+    
+    $statearray[' '] = '--Select--';
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $node->tehsil_id,
+			'#options' => $statearray,
+		);
+	
+	$sqllawyer = "select * from {tbl_lawyer} where status =1 ORDER BY lawyer_name ASC";
+	$rescountry1 =db_query($sqllawyer);
+	if($rescountry1){
+		$countryarray1[' '] = '--Select--';
+		while($rscountry1 = db_fetch_object($rescountry1)){
+			$countryarray1[$rscountry1->lawyer_id] = ucwords($rscountry1->lawyer_name);
+		}
+	}
+	
+	$form['lawyer_id'] = array(
+	  '#type' =>'select',
+	  '#title' =>'Lawyer Name',
+	  '#required' =>TRUE,
+	  '#default_value' =>$node->lawyer_id,	
+	  '#options' => $countryarray1,	
+	  '#attributes' => array('onchange'=> 'return showlawyer(this.value,"'.$base_url.'")'),
+      
+		 
+		 		
+	);
+	
+	$sqllawyer1 = "select * from {tbl_lawyer} where status =1 ORDER BY lawyer_name ASC";
+	$rescountry2 =db_query($sqllawyer1);
+	if($rescountry2){
+		$countryarray2[''] = '--Select--';
+		while($rscountry2 = db_fetch_object($rescountry2)){
+			$countryarray1[$rscountry2->lawyer_id] = $rscountry2->address;
+		}
+	}
+	
+  $sql = "SELECT node.nid,tbl_courtcasehearing.courtcase_id, tbl_courtcasehearing.title_case,tbl_courtcasehearing.date1,tbl_courtcasehearing.hearing_date,tbl_courtcasehearing.fee_charge,tbl_court_names.court_name_name,tbl_courtcasehearing.name_opposite, tbl_courtcasehearing.opposite_address,tbl_lawyer.lawyer_name,tbl_lawyer.phone_no,tbl_lawyer.email,tbl_courtcasehearing.case_detail,tbl_dsjestate.state_name,tbl_district.district_name,tbl_tehsil.tehsil_name,tbl_courtcasehearing.scan_detail,tbl_courtcasehearing.loan_account,tbl_courtcasehearing.court_states  FROM {node}
+	 INNER JOIN tbl_courtcasehearing ON (node.nid=tbl_courtcasehearing.nid)  INNER JOIN tbl_lawyer ON (tbl_courtcasehearing.lawyer_id=tbl_lawyer.lawyer_id) INNER JOIN tbl_court_names ON (tbl_courtcasehearing.court_name_id=tbl_court_names.court_name_id) INNER JOIN tbl_dsjestate ON (tbl_courtcasehearing.state_id=tbl_dsjestate.state_id) INNER JOIN tbl_district ON (tbl_courtcasehearing.district_id=tbl_district.district_id)INNER JOIN tbl_tehsil ON (tbl_courtcasehearing.tehsil_id=tbl_tehsil.tehsil_id) where node.nid='".$node->nid."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+	
+		
+	$form['phone_no'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Phone No',
+	  '#required' =>False,
+	  '#id' => 'phone_id',
+	  '#default_value' => $rs->phone_no,
+	  '#attributes' => array('readonly' => 'readonly'),
+	
+	
+	);
+	
+	$form['fee_charge'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Fee',
+	  '#required' =>TRUE,
+	  '#id' => 'fee_id',
+	  '#default_value' =>$node->fee_charge,
+	  '#size' => 41,
+	  '#maxlength'=>11,	
+	  '#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"fee_id",11)'),		
+	  	
+	);
+	
+	$form['email'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Email',
+	  '#required' =>FALSE,
+	  '#id' => 'email_id',
+	  '#default_value' => $rs->email,
+	  '#attributes' => array('readonly' => 'readonly'),
+	 
+	 		
+	);
+	
+	$form['courtcaseid'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rs->courtcase_id,
+	);
+	
+	
+	$form['cancel'] = array(
+        '#type' => "markup",
+        '#value' => l(t('Back'), 'dsje/listhearing'),
+);
+	
+
+	
+	return $form;
+	
+}
+
+
+function dsje_Hearing_validate($form, &$form_state) {
+
+  $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Court Case', 'dsje/listhearing');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Court Case', 'node/'.$array[1].'/edit');
+	}
+ // print_r($array);
+  //exit;
+	if($array[1] == 'add' && $array[2] == 'dsje-Hearing'){
+	 $breadcrumb[] = l('Add Court Case', 'node/add/dsje-Hearing');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+  
+  $values = $form_state['values'];
+
+ if($form->tehsil_id == 0){
+   form_set_error('tehsil_id','Please select Tehsil.');
+ }
+  
+  if($form->district_id == 0){
+   form_set_error('district_id','Please select District.');
+ }
+ 
+ 
+ 
+   //$courtcase_id = parseData(trim($values['courtcase_id']));
+    $courtcaseid=$form->courtcaseid;
+   $courtcase_id=$form->courtcase_id;
+   $title_case = $form->title_case;
+   $title_case = $form->title_case;
+   $case_detail = $form->case_detail;
+   $date = $form->date1;
+   $loan_account = $form->loan_account;
+   $name_opposite = $form->name_opposite;
+   $opposite_address = $form->opposite_address;
+   //$date = parseData(trim($values['date']));
+   //$hearing_date = parseData(trim($values['hearing_date']));
+    $curda=date("Y-m-d");
+    $rtyu=strtotime($form->date1);
+  $hearing_date = $from->hearing_date;
+   $rtyu1=strtotime("+1",strtotime($form->hearing_date));
+
+   if($rtyu >= $rtyu1)
+               {
+              form_set_error(hearing_date, t('Hearing Date should be more than or equal to Case Registration Date'));
+             }
+		
+	/*if($date > $curda)
+	{
+	form_set_error('date',"Case Registration Date Should be should be greater then Current date");	
+		
+	}*/
+   
+ /* $sql = "SELECT * FROM {tbl_courtcasehearing} where courtcase_id= '".$courtcase_id."'";
+	   $res = db_query($sql);
+	  
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjecourtcase', 'code06', array("0"=>$courtcase_id));
+			form_set_error('courtcase_id', $message);
+	   }*/
+	alphanumeric('courtcase_id',$courtcase_id,'Case No');    
+	alphanumeric('title_case',$title_case,'Case Tittle');   
+    textonlywithdotne('case_detail',$case_detail,'Case Detail');    
+	alphanumeric('name_opposite',$name_opposite,'Name Of Oppostie Party'); 
+	textonlywithdotne('opposite_address',$opposite_address,'Address.'); 
+	//isValidaccount('loan_account',$loan_account,'Account Number.'); 
+	
+	loanaccountlength($loan_account,'loan_account'); 
+  	
+	 if($loan_account){
+	  $AllowRegex  = '^[a-zA-Z0-9 / /]*$';
+	   if(!ereg($AllowRegex, $loan_account)) {
+        form_set_error('loan_account',t("Please enter your valid Account Number."));
+	  } 
+	}
+	
+	if($courtcaseid ==  $courtcase_id){
+  }
+  else{
+	
+	$sqlu = "SELECT * FROM {tbl_courtcasehearing} where courtcase_id='$courtcase_id' ";
+	$resu = db_query($sqlu);
+	if($rsu = db_fetch_object($resu)){
+		$message = 'Case no already in use.';	
+		form_set_error('courtcase_id', $message);
+	}
+  }
+	
+  }
+
+
+
+function dsje_Hearing_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	
+	if($form_id == 'node_delete_confirm'){
+	//print_r($form);
+	
+	}
+	
+	if($form_id =='dsje_Hearing_node_form'){
+	
+	$form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	}
+	
+ }
+
+
+function dsje_Hearing_insert($node) {
+	global $user;
+	
+	$file = file_save_upload('scan_detail', array(), file_directory_path());
+	if($file) {
+		$fileid = $file->filepath;
+	}
+	else {
+		$fileid = $node->file;
+	}  
+	
+
+	//$case_no = $node->case_no;
+	$courtcase_id = $node->courtcase_id;
+	$court_name_id = $node->court_name_id;
+	$date1 = $node->date1;
+	$hearing_date = $node->hearing_date;
+	//$court_states = 'pending For decision';
+	$court_states = 288;
+	$title_case = $node->title_case;
+	$case_detail = $node->case_detail;
+	$scan_detail = $node->scan_detail;
+	$loan_account = $node->loan_account;
+	$name_opposite = $node->name_opposite;
+	$opposite_address = $node->opposite_address;
+	$state_id = $node->state_id;
+	$district_id = $node->district_id;
+	$tehsil_id = $node->tehsil_id;
+	$lawyer_id = $node->lawyer_id;
+	$fee_charge = $node->fee_charge;
+	//$address = $node->address;
+	//$phone_no = $node->phone_no;
+	//$email = $node->email;
+	$nid = $node->nid;
+	$vid = $node->vid;
+
+	$sql = "INSERT INTO `tbl_courtcasehearing` (`nid` ,`vid`  ,`courtcase_id`,`court_name_id`,`date1`,`hearing_date`,`court_states`,`title_case`,`case_detail`,`scan_detail`,`loan_account`,`name_opposite`,`opposite_address`,`state_id`,`district_id`,`tehsil_id`,`lawyer_id`,`fee_charge`,`first_hearing_date`) values('".$nid."','".$vid."','".$courtcase_id."','".$court_name_id."','".$date1."','".$hearing_date."','".$court_states."','".$title_case."','".$case_detail."','".$fileid ."','".$loan_account."','".$name_opposite."','".$opposite_address."','".$state_id."','".$district_id."','".$tehsil_id."','".$lawyer_id."','".$fee_charge."','".$hearing_date."')";
+	db_query($sql);
+	$message = getMessage('dsjecourtcase', 'code05', array("0"=>$title_case));
+	drupal_set_message($message);
+	drupal_goto('dsje/listhearing');
+
+}
+
+
+function download_courtcase($courtcasedownload_id){
+	global $base_path;
+	
+	include_once drupal_get_path('module', 'dsje_Hearing')."/PHPFileDownload.php";
+	
+	$query = "SELECT scan_detail FROM {tbl_courtcasehearing} WHERE courtcase_id='$courtcasedownload_id'";
+	$obj = db_fetch_object(db_query($query));
+	$newsletter_format = $obj->newsletter_format;
+	$newsletter_file = $obj->scan_detail;
+	$newsletter_size = $obj->newsletter_size;
+	
+	$pos = strrpos($newsletter_file, "/");
+	$filename = substr($newsletter_file,($pos+1));
+	$realpath = $_SERVER['DOCUMENT_ROOT'].$base_path.$newsletter_file;
+	echo $fileDown = new PHPFileDownload(null,null,$filename,null,$realpath);
+    $fileDown->exportData();
+}
+
+
+
+function dsje_addhearingview($id){
+				$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Court Case', 'dsje/listhearing');
+  if($array[2] == 'view'){
+     $breadcrumb[] = l('View Court Case', 'dsje/listhearing/view/hearing/'.$array[4].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+ $sql = "SELECT node.nid,tbl_courtcasehearing.courtcase_id, tbl_courtcasehearing.title_case,tbl_courtcasehearing.date1,tbl_courtcasehearing.hearing_date,tbl_courtcasehearing.fee_charge,tbl_court_names.court_name_name,tbl_courtcasehearing.name_opposite, tbl_courtcasehearing.opposite_address,tbl_lawyer.lawyer_name,tbl_lawyer.phone_no,tbl_lawyer.email,tbl_courtcasehearing.case_detail,tbl_dsjestate.state_name,tbl_district.district_name,tbl_tehsil.tehsil_name,tbl_courtcasehearing.scan_detail,tbl_courtcasehearing.loan_account,tbl_courtcasehearing.court_states  FROM {node}
+	 INNER JOIN tbl_courtcasehearing ON (node.nid=tbl_courtcasehearing.nid)  INNER JOIN tbl_lawyer ON (tbl_courtcasehearing.lawyer_id=tbl_lawyer.lawyer_id) INNER JOIN tbl_court_names ON (tbl_courtcasehearing.court_name_id=tbl_court_names.court_name_id) INNER JOIN tbl_dsjestate ON (tbl_courtcasehearing.state_id=tbl_dsjestate.state_id) INNER JOIN tbl_district ON (tbl_courtcasehearing.district_id=tbl_district.district_id)INNER JOIN tbl_tehsil ON (tbl_courtcasehearing.tehsil_id=tbl_tehsil.tehsil_id) where node.nid=$id";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+
+  if($rs->scan_detail){
+   $status =l('Download',$rs->scan_detail);
+ }else{
+   $status ='N/A';
+ }
+ 
+  if($rs->loan_account){
+   $loan =$rs->loan_account;
+ }else{
+   $loan ='N/A';
+ }
+
+
+
+ $output .='<div id="form-container"><table cellpadding="2" cellspacing="1" border="1" id="form-container">';
+ $output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Court Case Details</h2></td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Case No.:</td><td class="normal">'.ucwords($rs->courtcase_id).'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Court Name:</td><td class="normal">'.ucwords($rs->court_name_name).'</td></tr>';
+    
+   $output .='<tr class="evenrow"><td width="50%">Case Registration Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date1)).'</td></tr>';  
+    $output .='<tr class="oddrow"><td width="50%">Hearing Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->hearing_date)).'</td></tr>'; 
+	$output .='<tr class="evenrow"><td width="50%">Case Title:</td><td class="normal">'.ucwords($rs->title_case).'</td></tr>'; 
+    $output .='<tr class="oddrow"><td width="50%">Case Detail:</td><td class="normal">'.ucwords($rs->case_detail).'</td></tr>';
+	 $output .='<tr class="evenrow"><td width="50%">Case Detail Scan Copy File:</td><td class="normal">'.$status.'</td></tr>';
+	 $output .='<tr class="oddrow"><td width="50%">Loan Account No.:</td><td class="normal">'.$loan.'</td></tr>';
+	 $output .='<tr class="evenrow"><td width="50%">Name of Opposite Party:</td><td class="normal">'.ucwords($rs->name_opposite).'</td></tr>';
+	 $output .='<tr class="oddrow"><td width="50%">Opposite Party Address:</td><td class="normal">'.ucwords($rs->opposite_address).'</td></tr>';
+	  $output .='<tr class="evenrow"><td width="50%">State:</td><td class="normal">'.ucwords($rs->state_name).'</td></tr>';
+	  $output .='<tr class="oddrow"><td width="50%">District:</td><td class="normal">'.ucwords($rs->district_name).'</td></tr>';
+	  $output .='<tr class="evenrow"><td width="50%">Tehsil:</td><td class="normal">'.ucwords($rs->tehsil_name).'</td></tr>';
+	  $output .='<tr class="oddrow"><td width="50%">Lawyer Name:</td><td class="normal">'.ucwords($rs->lawyer_name).'</td></tr>';
+	   $output .='<tr class="evenrow"><td width="50%">Fee:</td><td class="normal">'.round($rs->fee_charge).'</td></tr>';
+	    $output .='<tr class="oddrow"><td width="50%">Phone No:</td><td class="normal">'.$rs->phone_no.'</td></tr>';
+		  $output .='<tr class="evenrow"><td width="50%">Email:</td><td class="normal">'.$rs->email.'</td></tr>';
+		   $output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.getLookupName($rs->court_states).'</td></tr>';
+  $output .='<tr class="evenrow"><td class="back" colspan="2" align="center">'.l(t('Back'), 'dsje/listhearing').'</td></tr>';
+ $output .='</table></div>';
+ return $output;
+
+}
+
+
+//edit section 
+
+
+function dsje_Hearing_load($node) {
+	$result = db_query("SELECT * from {tbl_courtcasehearing} WHERE vid = $node->vid");
+	return db_fetch_object($result);
+}
+
+
+function dsje_Hearing_update($node) {
+	global $user;
+	
+	 $file = file_save_upload('scan_detail', array(), file_directory_path());
+	if($file) {
+		$fileid = $file->filepath;
+	}
+	else {
+		$fileid = $node->file;
+	}  
+	
+
+	$case_no = $node->case_no;
+	$court_name_id= $node->court_name_id;
+	$courtcase_id = $node->courtcase_id;
+	$date = $node->date1;
+	$hearing_date = $node->hearing_date;
+	$title_case = $node->title_case;
+	$case_detail = $node->case_detail;
+	$scan_detail = $node->scan_detail;
+	$loan_account = $node->loan_account;
+	$name_opposite = $node->name_opposite;
+	$opposite_address = $node->opposite_address;
+	$state_id = $node->state_id;
+	$district_id = $node->district_id;
+	$tehsil_id = $node->tehsil_id;
+	$lawyer_id = $node->lawyer_id;
+	$fee_charge = $node->fee_charge;
+	//$address = $node->address;
+	//$phone_no = $node->phone_no;
+	//$email = $node->email;
+	
+	 $nid = $node->nid;
+	$vid = $node->vid;
+	
+	$sql = "UPDATE `tbl_courtcasehearing` set `courtcase_id`='".$courtcase_id."' ,`court_name_id`='".$court_name_id."',`date1`='".$date."' ,`hearing_date`='".$hearing_date."' ,`title_case`='".$title_case."',`case_detail`='".$case_detail."',`scan_detail`='".$fileid."',`loan_account`='".$loan_account."',`name_opposite`='".$name_opposite."',`opposite_address`='".$opposite_address."',`state_id`='".$state_id."',`district_id`='".$district_id."',`tehsil_id`='".$tehsil_id."',`lawyer_id`='".$lawyer_id."',`fee_charge`='".$fee_charge."' where nid=$nid"; 	
+    db_query($sql);
+	 
+	
+		$message = getMessage('dsjecourtcase', 'code10', array("0"=>$title_case));
+	drupal_set_message($message);
+	drupal_goto('dsje/listhearing');
+
+}
+
+function dsje_Hearing_theme() {
+	
+	return array(
+				 
+		'dsje_Hearing_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_Hearing_node_form',
+                                 ),
+								 
+								 
+       'uploadcase_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'uploadcase_form',
+                                 ),
+
+				 );
+}
+
+  function courtcase_delete1($id) {
+  
+     $sql = "select tbl_courtcasehearing.courtcase_id,tbl_courtcase.case_no  from {tbl_courtcasehearing} left join tbl_courtcase on(tbl_courtcasehearing.courtcase_id=tbl_courtcase.case_no) where tbl_courtcasehearing.nid='".$id."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+
+if($rs->case_no){
+
+
+  
+	drupal_set_message('Please Delete Court Case From court Case Hearing Section.');
+	drupal_goto('dsje/listhearing');	
+	}
+	
+	else
+	{
+	
+	$asd=db_query("select * from {tbl_courtcasehearing} where nid = '".$id."'");
+	
+	$azs=db_fetch_object($asd);
+	
+	$title_case=$azs->title_case;
+	
+	//echo "DELETE from {tbl_courtcasehearing} WHERE nid = '".$id."'";exit;
+	
+	db_query("DELETE from {tbl_courtcasehearing} WHERE nid = '".$id."'");
+	
+	//db_query('DELETE FROM {node} WHERE nid = '.$node->nid);
+	$message = getMessage('dsjecourtcase', 'code11', array("0"=>$title_case));
+  
+	drupal_set_message($message);
+	drupal_goto('dsje/listhearing');
+	
+	
+	
+	}
+
+	
+}
+
+function uploadcase($id){
+
+ return drupal_get_form('uploadcase_form',$id);
+ 
+ 
+ 
+}
+
+
+function uploadcase_form($form1,$id)
+{
+	
+	
+	$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Court Case', 'dsje/listhearing');
+ 
+     $breadcrumb[] = l('Scan copy of Detail', 'list/upload/'.$id);
+
+  drupal_set_breadcrumb($breadcrumb);
+	
+	
+$form['nid'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$id,
+	
+	);	
+	
+	global $base_url;
+	
+	$form['#attributes'] = array('enctype' => "multipart/form-data");
+ $rosi=	db_query("select scan_detail from {tbl_courtcasehearing} where nid='".$id."'");
+$rosis=db_fetch_object($rosi);
+//echo $rosis->scan_detail;exit;
+
+						   
+						   if($rosis->scan_detail){
+							   
+							   
+						   $form['download_link']=array(
+						   
+						   '#type'=>'markup',
+						  
+						   '#value' => l('Download',$base_url.'/'.$rosis->scan_detail),
+						   );
+						   
+						  
+						   
+						   $val = substr($rosis->scan_detail,20,(strlen($rosis->scan_detail)-20));
+						   }else{
+							   $val ="";
+							   }
+						   $form['scan_detail'] = array(
+						   '#type' => 'file',
+						   '#title' => t('Scan copy of Detail'),
+						   '#required' => '',
+						   '#size' => '30',
+						   '#default_value' => 'sites/default/files/'.$id,
+						   '#description' => t('Please upload file with extension .pdf,.zip.rar,doc,txt,docx,xls,ppt,xlsx,pptx&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.$val),
+						   
+						   
+						 
+						   );	
+						   
+ $form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save'),
+	);						   
+						   
+return $form;						   
+						   
+	
+}
+
+function uploadcase_form_validate($form, &$form_state)
+ {
+	 
+	  $values = $form_state['values'];
+	  $scan=$values['scan_detail'];
+	  //$scan_detail = parseData(trim($values['scan_detail']));
+	  	//$target_path = "sites/default/files/";
+	//$extension = findexts($_FILES['files']['name']['scan_detail']);
+	//$filename = $createdon.'.'.$extension;
+	
+	if($scan){
+	
+	 $extension = fileexts($_FILES['files']['name']['scan_detail']);
+	//pdf, doc, docx, txt,xls,xlsx,pptx,ppt
+	if($extension == '.pdf' || $extension == '.zip' || $extension == '.rar'|| $extension == '.doc'|| $extension == '.txt' || $extension == '.docx' || $extension == '.xls' || $extension == '.xlsx' || $extension == '.ppt' || $extension == '.pptx'){ 
+	
+	}
+	else{
+		
+		form_set_error('scan_detail','Please upload file with extension .pdf,.zip.rar,doc,txt,docx,xls,ppt,pptx');
+		
+	}
+	}
+ }
+ 
+ 
+ function uploadcase_form_submit($form, &$form_state)
+ {
+	
+  global $user;
+  
+  $values = $form_state['values'];
+  $scan_detail = $values['scan_detail'];
+  $createdon = time();
+   
+	$target_path = "sites/default/files/";
+	$extension = findexts($_FILES['files']['name']['scan_detail']);
+	$filename = $createdon.'.'.$extension;
+	
+	
+	if($_FILES['files']['name']['scan_detail']){
+		$filename = $createdon.'.'.$extension;
+		@chmod("sites/default/files", 0777);
+		move_uploaded_file($_FILES['files']['tmp_name']['scan_detail'], $target_path.$filename);
+		@chmod($target_path.$filename, 0777);
+		
+		$filename = $target_path.$createdon.'.'.$extension;
+   
+	
+	}
+  
+  
+	
+	//echo "UPDATE {tbl_courtcasehearing} SET scan_detail= '".$fileid."' where nid ='".$values['nid']."'";exit;
+	
+  $sql = db_query("UPDATE {tbl_courtcasehearing} SET scan_detail= '".$filename."' where nid ='".$values['nid']."'");
+  //$message = getMessage('dsjegrievance', 'code05', array("0"=>$application_name));
+   
+  drupal_set_message('Copy of Detail has been uploaded successfully');
+  drupal_goto('dsje/listhearing');
+	
+			}
+			
+	 
+	
+ 
+
+
+

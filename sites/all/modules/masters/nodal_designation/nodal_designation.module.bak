@@ -1,0 +1,395 @@
+<?php
+
+function nodal_designation_perm() {
+	return array('edit nodal_designation','administer nodal_designation', 'create nodal_designation', 'view nodal_designation');
+}
+
+function nodal_designation_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit nodal_designation', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create nodal_designation', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view nodal_designation', $account);
+	}
+	
+}
+
+function nodal_designation_menu() {
+	
+	
+	$items['nodal_designation_list'] = array(
+										'title' => t('List of Designation'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'list_nodal_designation',
+										'access arguments' => array('administer nodal_designation'),
+													 
+									  );
+	
+	$items['nodal_designation_list/add'] = array(
+										'title' => t('Add Designation'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'add_nodal_designation',
+										'access arguments' => array('administer nodal_designation'),
+													 
+									  );
+   	$items['nodal_designation_list/edit/%'] = array(
+								
+										'title' => t('Edit Designation'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'edit_nodal_designation',
+                                        'page arguments' => array(2),
+		                                'access arguments' => array('administer nodal_designation'),
+													 
+									  );
+  $items['nodal_designation_list/view/%'] = array(
+										'title' => t('View Designation'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'view_nodal_designation',
+                                        'page arguments' => array(2),
+		                                'access arguments' => array('administer nodal_designation'),
+													 
+									  );
+     $items['nodal_designation_list/disable/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'company_nodal_designation_delete',
+		                                'page arguments' => array(2,3),
+		                                'access arguments' => array('administer nodal_designation'),
+													 
+									  );
+   $items['nodal_designation_list/enable/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'company_nodal_designation_enable',
+		                                'page arguments' => array(2,3),
+		                                'access arguments' => array('administer nodal_designation'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing Company Franchisee
+ */
+ function list_nodal_designation(){
+    global $user;
+	global $base_url;
+	$limit = 20;
+    $utility_id = getUserUtility($user->uid);
+	$header = array(
+			array('data' => t('S.No')),
+			array('data' => t('Designation'), 'field' => 'nodal_designation_name', 'sort' => 'asc'),
+			array('data' => t('Status')),
+			array('data' => t('Action')),
+	);
+	
+	
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	$query = "SELECT nodal_designation_id, nodal_designation_name, status FROM tbl_nodal_designation where UPPER(nodal_designation_name) LIKE '".$val."' AND utility_id='".$utility_id."'".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count FROM tbl_nodal_designation where UPPER(nodal_designation_name) LIKE '".$val."' AND utility_id='".$utility_id."'".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT nodal_designation_id, nodal_designation_name, status FROM tbl_nodal_designation where utility_id='".$utility_id."'".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t($rscounter->count .'record(s) found.')." | ".l('View All','nodal_designation_list');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l('Add Designation',"nodal_designation_list/add");
+   	$lising = t( 'List of Designation');
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","nodal_designation_list/edit/".$row->nodal_designation_id);
+		$viewurl = l("View","nodal_designation_list/view/".$row->nodal_designation_id);
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","nodal_designation_list/disable/".$row->nodal_designation_id."/".$row->nodal_designation_name);
+		}else{
+		  $deleteurl = l("Enable","nodal_designation_list/enable/".$row->nodal_designation_id."/".$row->nodal_designation_name);
+		}
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->nodal_designation_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function edit_nodal_designation($nodal_designation_id){
+ return drupal_get_form('nodal_designation_form_edit',$nodal_designation_id);
+}
+
+function nodal_designation_form_edit(&$form_states,$nodal_designation_id) {
+				  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Designation ', 'nodal_designation_list');
+  if($array[1] == 'edit'){
+     $breadcrumb[] = l('Edit Designation ', 'nodal_designation_list/edit/'.$array[2].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);	
+	$sqlnodal_designation = "select * from tbl_nodal_designation where nodal_designation_id=$nodal_designation_id";
+	$resnodal_designation = db_query($sqlnodal_designation);
+	$rsnodal_designation = db_fetch_object($resnodal_designation);
+	
+	$form['nodal_designation_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Designation'),
+		'#required' => TRUE,
+		'#default_value' =>$rsnodal_designation->nodal_designation_name,
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlynw(event)'),
+	);
+   
+	$form['prev_nodal_designation_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsnodal_designation->nodal_designation_name,
+	);
+	
+	$form['nodal_designation_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsnodal_designation->nodal_designation_id,
+	);
+    
+	
+	$form['status'] = array(
+		'#type' => 'hidden',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rsnodal_designation->status,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+function nodal_designation_form_edit_validate($form, &$form_state) {
+   $values = $form_state['values'];
+   textonlynw('nodal_designation_name',$values['nodal_designation_name'],'Designation');
+}
+
+function nodal_designation_form_edit_submit($form, &$form_state) {
+	global $user;
+	$utility_id = getUserUtility($user->uid);
+
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$nodal_designation_id = $values['nodal_designation_id'];
+	$nodal_designation_name = parseData(trim($values['nodal_designation_name']));
+	$prev_nodal_designation_name = parseData(trim($values['prev_nodal_designation_name']));
+
+ $countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_nodal_designation} where LOWER(nodal_designation_name)= '".strtolower($nodal_designation_name)."' AND nodal_designation_id !='".$nodal_designation_id."' GROUP BY nodal_designation_id" ));
+		$count = $countObj->count;
+     
+			if( strcmp(strtolower($prev_nodal_designation), strtolower($nodal_designation_name))==0){
+			db_query("UPDATE `tbl_nodal_designation` set `nodal_designation_name` = '".$nodal_designation_name."' ,`status`='".$status."' ,`utility_id`='".$utility_id."' where nodal_designation_id='".$nodal_designation_id."'");
+			
+			$message = 'Designation' .$nodal_designation_name.' has been updated successfully.';
+			drupal_set_message($message);
+			drupal_goto("nodal_designation_list");	
+				
+				}
+				
+				else
+					{
+			if($count==0){
+				db_query("UPDATE `tbl_nodal_designation` set `nodal_designation_name` = '".$nodal_designation_name."' ,`status`='".$status."' ,`utility_id`='".$utility_id."' where nodal_designation_id='".$nodal_designation_id."'");
+				
+			$message = 'Designation'.$nodal_designation_name.' has been updated successfully.';
+			drupal_set_message($message);
+			drupal_goto("nodal_designation_list");	
+				}
+				else{
+				db_query("UPDATE `tbl_nodal_designation` set `nodal_designation_name` = '".$nodal_designation_name."' ,`status`='".$status."' ,`utility_id`='".$utility_id."' where nodal_designation_id='".$nodal_designation_id."'");
+				$message = 'Designation' .$nodal_designation_name.' already exist.';
+				form_set_error('nodal_designation_name', $message);
+		}
+	  }
+}
+function add_nodal_designation(){
+ return drupal_get_form('nodal_designation_form');
+}
+function nodal_designation_form() {
+							  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Designation ', 'nodal_designation_list');
+  if($array[1] == 'add'){
+     $breadcrumb[] = l('Add Designation ', 'nodal_designation_list/add');
+  }
+  drupal_set_breadcrumb($breadcrumb);	
+   $form['nodal_designation_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Designation'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlynw(event)'),
+	);
+   
+		
+	$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+function nodal_designation_form_validate($form, &$form_state) {
+     $values = $form_state['values'];
+	 $nodal_designation_name = ParseData(trim($values['nodal_designation_name']));
+      textonlynw('nodal_designation_name',$values['nodal_designation_name'],'Designation');
+      $sql = "SELECT * FROM {tbl_nodal_designation} where UCASE(nodal_designation_name)= '".strtoupper($nodal_designation_name)."' ";
+	  $res = db_query($sql);
+	 if($rs = db_fetch_object($res)){
+			$message = 'Designation'.$nodal_designation_name.' already exist.';
+			form_set_error('nodal_designation_name', $message);
+		}
+	
+}
+function nodal_designation_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $nodal_designation_name = ParseData(trim($values['nodal_designation_name']));
+    $status = $values['status'];
+	$utility_id = getUserUtility($user->uid);
+    
+	$sql = "SELECT * FROM {tbl_nodal_designation} where UCASE(nodal_designation_name)= '".strtoupper($nodal_designation_name)."' AND status !=1";
+    $res = db_query($sql);
+    if($rs = db_fetch_object($res)){
+		  db_query("UPDATE tbl_nodal_designation SET status=1 where nodal_designation_id=$rs->nodal_designation_id");
+	}else{
+
+	db_query("INSERT INTO `tbl_nodal_designation` (`nodal_designation_name`,`status` ,`utility_id`) VALUES('".$nodal_designation_name."','".$status."','".$utility_id."') ");
+   }
+   $message = 'Designation'.$nodal_designation_name.' has been saved successfully.';
+			drupal_set_message($message);
+			drupal_goto("nodal_designation_list");	
+}
+
+
+function nodal_designation_theme() {
+	
+	return array(
+				 
+		'nodal_designation_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'nodal_designation_form',
+                                 ),
+        'nodal_designation_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'nodal_designation_form_edit',
+                                 ),
+
+				 );
+}
+
+function company_nodal_designation_delete($sid,$name){
+  $nodal_designation_id = $sid;
+  $sql = "SELECT nodal_designation_id FROM tbl_participant_master where nodal_designation_id='".$nodal_designation_id."' AND status=1";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  if($rs->nodal_designation_id){
+    form_set_error('','The Designation'.$nodal_designation_name.' cannot be disabled as it has other entities mapped to it.');
+  }else{
+	  db_query("UPDATE `tbl_nodal_designation` SET status=0 WHERE nodal_designation_id='".$nodal_designation_id."'");
+	  $message = 'Designation'.$nodal_designation_name.' has been disabled successfully.';
+	  drupal_set_message($message);
+	  
+  }
+  drupal_goto('nodal_designation_list');
+}
+
+function company_nodal_designation_enable($sid,$name){
+	  $nodal_designation = $sid;
+      db_query("UPDATE `tbl_nodal_designation` SET status=1 WHERE nodal_designation_id='".$nodal_designation."'");
+	  $message = 'Designation'.$nodal_designation_name.' has been enabled successfully.';
+	  drupal_set_message($message);
+	  drupal_goto('nodal_designation_list');
+ }
+  
+  function view_nodal_designation($id){
+				  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Designation ', 'nodal_designation_list');
+  if($array[1] == 'view'){
+     $breadcrumb[] = l('View Designation ', 'nodal_designation_list/view/'.$array[2].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);	
+    $sql = "select * from tbl_nodal_designation where nodal_designation_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+      $status ='Enabled';
+	}else{
+	   $status ='Disabled';
+	}
+ 
+	 $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+	 $output .='<tr class="oddrow"><td colspan="2"><h2>Designation Details</h2></td></tr>';
+	 $output .='<tr class="evenrow"><td>Designation:</td><td>'.ucwords($rs->nodal_designation_name).'</td></tr>';
+	 $output .='<tr class="oddrow"><td>Status:</td><td>'.$status.'</td></tr>';
+	 $output .='</table></div>';
+	 return $output;
+  }
+	
+	

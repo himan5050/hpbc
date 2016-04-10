@@ -1,0 +1,74 @@
+<?php
+function resignation_schema() {
+
+  //nodal table
+   $schema['tbl_resignation'] = array(
+							 'fields' => array(
+											
+											   'emp_id' => array(
+															   'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => '',
+															  ),
+                                         
+											   'reason' => array(
+															   'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => '',
+															  ),
+															  
+												
+															  		  
+											  'regdate' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												  'effectdate' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+												  'options' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+												
+											'status' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'resigndate'  => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'doc_id'  => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+                                               
+											   ),
+									
+							 );
+	return $schema;
+}
+function resignation_install() {
+	drupal_install_schema('resignation');
+}
+
+function resignation_uninstall() {
+	drupal_uninstall_schema('resignation');
+}

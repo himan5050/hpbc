@@ -1,0 +1,92 @@
+<?php
+function dsje_court_schema() {
+
+  
+//Lawyer table
+ $schema['tbl_courtcase'] = array(
+							 'fields' => array(
+											   'courtcase_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+															  
+											 'case_no' => array(
+															  'type' => 'varchar',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),			  
+															  
+											  
+	                                        'hearing_date' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											'current_hearing_date' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+															  
+											'next_hearing_date' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),			  
+											
+                                    	   	 
+											   	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'courtcase_id' => array('courtcase_id'),
+												),
+							 'primary key' => array('courtcase_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_court_install() {
+	drupal_install_schema('dsje_court');
+}
+
+function dsje_court_uninstall() {
+	drupal_uninstall_schema('dsje_court');
+}

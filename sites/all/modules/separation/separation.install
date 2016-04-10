@@ -1,0 +1,126 @@
+<?php
+function separation_schema() {
+
+  //nodal table
+   $schema['tbl_separation'] = array(
+							 'fields' => array(
+											
+											   'emp_id' => array(
+															   'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => '',
+															  ),
+                                         
+											   'reason' => array(
+															   'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => '',
+															  ),
+															  
+												'orderno' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  		  
+											  'regdate' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+												   'separationtype' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+												   'effectdate' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												  'resigndate' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												 
+											'status' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+                                               
+											   ),
+									
+							 );
+
+			 $schema['tbl_nocdetail'] = array(
+							 'fields' => array(
+											
+											   'emp_id' => array(
+															   'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => '',
+															  ),
+                                          'options' =>array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+												  'upload_document' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+											   'particulars' => array(
+															   'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => '',
+															  ),
+															  
+												'amount_due' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  		  
+											  'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															),
+											'status' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+                                               
+											   ),
+									
+							 );
+	return $schema;
+}
+function separation_install() {
+	drupal_install_schema('separation');
+}
+
+function separation_uninstall() {
+	drupal_uninstall_schema('separation');
+}

@@ -1,0 +1,119 @@
+<?php
+
+/**
+ *hook_perm
+ */
+ 
+ function mmloanReport_init() {
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+function mmloanReport_perm() {
+	return array('edit mmloanReport','administer mmloanReport', 'create mmloanReport', 'view mmloanReport');
+}
+
+function mmloanReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit mmloanReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create mmloanReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view mmloanReport', $account);
+	}
+	
+}
+
+
+function mmloanReport_menu(){
+
+  $items['mmloanReport_fdr'] = array(
+										'title' => t('Margin Money Loan Report'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'mmloanReport_fdr',
+										'access arguments' => array('administer mmloanReport_fdr'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function mmloanReport_fdr(){
+  return drupal_get_form('mmloanReport_fdr_form');
+}
+
+function mmloanReport_fdr_form(){
+ global $base_url;
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Margin Money Loan Report', 'mmloanReport_fdr');
+  drupal_set_breadcrumb($breadcrumb);
+ 
+ $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => FALSE,
+	'#default_value'=>$_POST['district_id'],
+		'#options' =>selectdistrict1(),
+		
+	);
+ 
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+				
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+
+$form['page'] = array(
+ 	                       '#type' => 'hidden',
+						   '#default_value' => '0',
+						   
+ );
+
+
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function mmloanReport_theme() {
+	
+	return array(
+		
+		'mmloanReport_fdr_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'mmloanReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

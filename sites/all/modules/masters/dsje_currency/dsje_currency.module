@@ -1,0 +1,518 @@
+<?php
+function dsje_currency_init() {
+}
+
+
+function dsje_currency_perm() {
+	return array('edit dsje_currency','administer dsje_currency', 'create dsje_currency', 'view dsje_currency');
+}
+
+function dsje_currency_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_currency', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_currency', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_currency', $account);
+	}
+	
+}
+
+function dsje_currency_menu() {
+	
+	
+	$items['admin/rec/listcurrency'] = array(
+										'title' => t('List of currency'),
+										'description' => 'Allow user to View currency',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewcurrency',
+										'access arguments' => array('administer dsje_currency'),
+													 
+									  );
+	
+	$items['admin/rec/listcurrency/addcurrency'] = array(
+										'title' => t('Add currency'),
+										'description' => 'Allow user to add currency',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addcurrency',
+										'access arguments' => array('administer dsje_currency'),
+													 
+									  );
+   	$items['admin/rec/listcurrency/edit/currency/%'] = array(
+								
+										'title' => t('Edit currency'),
+										'description' => 'Allow user to add currency',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addcurrencyedit',
+		                                'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_currency'),
+													 
+									  );
+		 $items['admin/rec/listcurrency/view/currency/%'] = array(
+								
+										'title' => t('view currency'),
+										'description' => 'Allow user to view currency',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_viewcurrency',
+		                                'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_currency'),
+													 
+									  );
+    $items['admin/rec/del/currency/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'currency_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_currency'),
+													 
+									  );
+  $items['admin/rec/enable/currency/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'currency_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_currency'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing currency
+ */
+ function viewcurrency(){
+ global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage('reccurrency', 'code04', NULL);
+
+   
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('Currency Name'), 'field' => 'currency_name', 'sort' => 'asc'),
+		array('data' => t('Currency Abbreviation'), 'field' => 'currabrev', 'sort' => 'asc'),
+		////array('data' => t('Remarks')),
+	    array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List currency', 'admin/dsje/listcurrency/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+		$val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+		$query = "SELECT currency_id, currency_name, currabrev, status FROM tbl_currencies where  UPPER(currency_name) LIKE '".$val."'".tablesort_sql($header);
+        $sqlcount = "SELECT COUNT(*) AS count FROM tbl_currencies where  UPPER(currency_name) LIKE '".$val."'".tablesort_sql($header);
+		$rscount = db_query($sqlcount);
+		$rscounter = db_fetch_object($rscount);
+	}else{
+	  	$query = "SELECT currency_id, currency_name,currabrev, status FROM tbl_currencies".tablesort_sql($header);
+	}
+
+	$output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('reccurrency', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/rec/listcurrency');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage('reccurrency', 'code01', NULL),"admin/rec/listcurrency/addcurrency");
+   	$lising = getMessage('reccurrency', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query,$limit);
+	
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/rec/listcurrency/edit/currency/".$row->currency_id,array('attributes'=>array('id'=>'edit-currency')));
+		$viewurl = l("View","admin/rec/listcurrency/view/currency/".$row->currency_id,array('attributes'=>array('id'=>'edit-currency')));
+     if($row->status=='1'){
+		$deleteurl = l("Disable","admin/rec/del/currency/".$row->currency_id."/".$row->currency_name);
+     }else{
+		$deleteurl = l("Enable","admin/rec/enable/currency/".$row->currency_id."/".$row->currency_name);
+     }
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->currency_name)),
+			array('data' => ucwords($row->currabrev)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function rec_addcurrencyedit($currency_id){
+ return drupal_get_form('dsje_currency_form_edit',$currency_id);
+}
+
+function dsje_currency_form_edit(&$form_states,$currency_id) {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+ // $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of currencies', 'admin/rec/listcurrency');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit currency', 'admin/rec/listcurrency/edit/currency/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlcurrency = "select * from tbl_currencies where currency_id='$currency_id'";
+	$rescurrency = db_query($sqlcurrency);
+	$rscurrency = db_fetch_object($rescurrency);
+	
+	$form['currency_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscurrency->currency_id,
+	);
+	
+	$form['currency_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('currency Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rscurrency->currency_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	
+	$form['currabrev'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Currency Abbreviation'),
+		'#required' => TRUE,
+		'#default_value' =>$rscurrency->currabrev,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	
+	/*$form['country'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('country'),
+		'#required' => TRUE,
+		'#default_value' =>$rscurrency->country,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);*/
+
+	$form['prev_currency_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscurrency->currency_name,
+	);
+
+
+	
+  
+  /*$form['status'] = array(
+		'#type' => 'hidden',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rscurrency->status,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listcurrency'),
+);
+	return $form;
+}
+
+function dsje_currency_form_edit_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $currency_name = parseData(trim($values['currency_name']));
+  $currabrev = parseData(trim($values['currabrev']));
+  //$remarks = parseData(trim($values['remarks']));
+  $currency_id = $values['currency_id'];
+$s = textonlyn('currency_name',$currency_name,'currency Name');
+//$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+if($s == 0 && $s1 == 0){
+  $sql = "SELECT * FROM {tbl_currencies} where UCASE(currency_name)= '".strtoupper($currency_name)."'  and currency_id !='".$currency_id."'";
+   $res = db_query($sql);
+  
+  if($rs = db_fetch_object($res)){
+		$message = getMessage('reccurrency', 'code06', array("0"=>$currency_name));
+		form_set_error('currency_name', $message);
+   }
+}
+	
+}
+function dsje_currency_form_edit_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+	
+    //$remarks = trim($values['remarks']);
+    $status = 1;
+	$createdby = $user->uid;
+	$currency_id = $values['currency_id'];
+	$currency_name = parseData(trim($values['currency_name']));
+	$currabrev = parseData(trim($values['currabrev']));
+	//$country = parseData(trim($values['country']));
+	$prev_currency_name = parseData($values['prev_currency_name']);
+	$createdon = time();
+	$s = textonlyn('currency_name',$currency_name,'currency Name');
+	//$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_currencies} where LOWER(currency_name)= '".strtolower($currency_name)."' GROUP BY currency_id"));
+$count = $countObj->count;
+
+if( strcmp(strtolower($prev_currency_name), strtolower($currency_name))==0){
+		db_query("UPDATE `tbl_currencies` set `currency_name` = '".$currency_name."' ,`currabrev` = '".$currabrev."'  ,`status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' where currency_id='".$currency_id."'");
+		$message = getMessage('reccurrency', 'code05', array("0"=>$currency_name));
+		drupal_set_message($message);
+		drupal_goto("admin/rec/listcurrency");	
+		}
+		else
+		{
+		if($count==0){
+			db_query("UPDATE `tbl_currencies` set `currency_name` = '".$currency_name."' ,`currabrev` = '".$currabrev."' ,`status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."'  where `currency_id`='".$currency_id."'");
+			$message = getMessage('reccurrency', 'code05', array('0'=>$currency_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listcurrency");	
+		
+			}else{
+			db_query("UPDATE `tbl_currencies` set `currency_name` = '".$currency_name."' ,`currabrev` = '".$currabrev."' ,`status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' , where currency_id='".$currency_id."'");
+			$message = getMessage('reccurrency', 'code06', array("0"=>$currency_name));
+			form_set_error('currency_name', $message);
+		 }	
+	}
+	}
+
+}
+function rec_addcurrency(){
+ return drupal_get_form('dsje_currency_form');
+}
+function dsje_currency_form() {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of currencies', 'admin/rec/listcurrency');
+  if($array[2] == 'listcurrency'){
+     $breadcrumb[] = l('Add currency', 'admin/rec/listcurrency/addcurrency');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['currency_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('currency Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+        '#attributes' => array('onkeypress' => 'return textonlyn(event)'), 
+	);
+	
+	$form['currabrev'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Currency Abbreviation'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+        '#attributes' => array('onkeypress' => 'return textonlyn(event)'), 
+	);
+	
+	
+	/*$form['country'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('country'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+        '#attributes' => array('onkeypress' => 'return textonlyn(event)'), 
+	);*/
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listcurrency'),
+);
+	return $form;
+}
+
+function dsje_currency_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $currency_name = parseData(trim($values['currency_name']));
+  $remarks = parseData(trim($values['remarks']));
+  
+	$s = textonlyn('currency_name',$currency_name,'currency Name');
+	//$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	  $sql = "SELECT * FROM {tbl_currencies} where UCASE(currency_name)= '".strtoupper($currency_name)."' AND status =1";
+	   $res = db_query($sql);
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('reccurrency', 'code06', array("0"=>$currency_name));
+			form_set_error('currency_name', $message);
+	   }
+ }	
+}
+
+
+function dsje_currency_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $currency_name = parseData(trim($values['currency_name']));
+	 $currabrev = parseData(trim($values['currabrev']));
+	//  $country = parseData(trim($values['country']));
+   // $remarks = parseData(trim($values['remarks']));
+    $status = 1;
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+    $sql = "SELECT * FROM {tbl_currencies} where UCASE(currency_name)= '".strtoupper($currency_name)."' AND status !=1";
+    $res = db_query($sql);
+  
+    if($rs = db_fetch_object($res)){
+      db_query("UPDATE tbl_currencies SET status=1 where currency_id=$rs->currency_id");
+    }else{
+	  db_query("INSERT INTO `tbl_currencies` (`currency_name`, `currabrev`,`status` ,`createdby` ,`createdon`) VALUES('".$currency_name."','".$currabrev."','".$status."','".$createdby."','".$createdon."') ");
+     }
+	  $message = getMessage('reccurrency', 'code05', array('0'=>$currency_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listcurrency");	
+
+}
+
+
+function dsje_currency_theme() {
+	
+	return array(
+				 
+		'dsje_currency_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_currency_form',
+                                 ),
+        'dsje_currency_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_currency_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_currency_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_currency_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_currency_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+  function currency_delete($sid,$name){
+	  $currency_id = $sid;
+   db_query("UPDATE `tbl_currencies` set `status`=0 where currency_id='".$currency_id."'");
+ $message = getMessage('reccurrency', 'code07', array("0"=>$name));
+ drupal_set_message($message);
+ drupal_goto('admin/rec/listcurrency');
+ }
+
+   function currency_enable($sid,$name){
+	  $currency_id = $sid;
+   db_query("UPDATE `tbl_currencies` set `status`=1 where currency_id='".$currency_id."'");
+ $message = getMessage('reccurrency', 'code09', array("0"=>$name));
+ drupal_set_message($message);
+ drupal_goto('admin/rec/listcurrency');
+ }
+
+function rec_viewcurrency($currency_id){
+
+$array = explode('/',$_GET['q']);
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of currencies', 'admin/rec/listcurrency');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View currency', 'admin/rec/listcurrency/view/currency');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sql = "select * from tbl_currencies where currency_id = '$currency_id' ";
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+ if($rs->status =='0'){
+  $status ='Disabled';
+}else{
+  $status ='Enabled';
+}
+
+
+//$remarks = ucfirst($rs->remarks);
+ //if($remarks==''){$remarks='N/A';}
+
+
+
+$output ='<div id="dms-agreement">';
+$output .='<table cellpadding="3" cellspacing="2" border="0" id="wrapper">';
+$output .='<tr class="oddrow"><td colspan="2"><h2>currency Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td>Currency Name:</td><td>'.ucwords($rs->currency_name).'</td></tr>';
+$output .='<tr class="evenrow"><td>Currency Abbreviation:</td><td>'.ucwords($rs->currabrev).'</td></tr>';
+////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+$output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+
+ $output .='</table></div>';
+ $output .=  l(t('Back'), 'admin/rec/listcurrency');
+return $output;
+  }
+
+
+
+  
+  
+	
+	

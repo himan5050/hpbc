@@ -1,0 +1,734 @@
+<?php
+function dsje_district_perm() {
+	return array('edit dsje_district','administer dsje_district', 'create dsje_district', 'view dsje_district');
+}
+
+function dsje_district_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_district', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_district', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_district', $account);
+	}
+}
+
+function dsje_district_menu() {
+	
+	
+	$items['dsje/listdistrict'] = array(
+										'title' => t('List of District'),
+										'description' => 'Allow user to View District',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewdistrict',
+										'access arguments' => array('administer dsje_district'),
+													 
+									  );
+	
+	$items['dsje/listdistrict/adddistrict'] = array(
+										'title' => t('Add District'),
+										'description' => 'Allow user to add District',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_adddistrict',
+										'access arguments' => array('administer dsje_district'),
+													 
+									  );
+   	$items['dsje/listdistrict/edit/district/%'] = array(
+								
+	                                    'title' => t('Edit District'),
+										'description' => 'Allow user to add District',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_adddistrictedit',
+                                        'page arguments' => array(4),  
+		                                'access arguments' => array('administer dsje_district'),
+													 
+									  );
+     	$items['dsje/listdistrict/view/district/%'] = array(
+								
+	                                    'title' => t('View District'),
+										'description' => 'Allow user to add District',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_adddistrictview',
+                                        'page arguments' => array(4), 
+		                                'access arguments' => array('administer dsje_district'),
+													 
+									  );
+
+      $items['dsje/del/district/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'district_delete',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer dsje_district'),
+													 
+									  );
+      $items['dsje/enable/district/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'district_enable',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer dsje_district'),
+													 
+									  );
+	return $items;
+}
+
+
+/** listing states */
+function viewdistrict(){
+global $user;
+global $base_url;
+global $xpathObj;
+$limit = (int)getMessage( 'dsjedistrict', 'code04', NULL);
+$lising = 'List of District';
+$addurl = l("Add of District","dsje/listdistrict/adddistrict");
+
+$output = '<table width="100%" cellpadding="2" cellspacing="1" border="0" id="wrapper">
+<tr>
+<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+</tr>
+</table>';
+ 
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('District'), 'field' => 'tbl_district.district_name', 'sort' => 'asc'),
+        //array('data' => t('Zone'), 'field' => 'tbl_zones.zone_name', 'sort' => 'asc'),
+	    array('data' => t('State'), 'field' => 'tbl_dsjestate.state_name', 'sort' => 'asc'),
+		////array('data' => t('Remarks')),
+	    array('data' => t('Status'), 'field' => 'tbl_district.status', 'sort' => 'asc'),
+		//array('data' => t('Action'),'class' => 'addeditview'),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of District', 'dsje/listdistrict/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	 
+	 
+	 
+	 
+	 
+	 
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	
+	 $status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "UPPER(tbl_dsjestate.state_name) LIKE '".$val."' OR UPPER(tbl_district.district_name) LIKE '".$val."'";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "tbl_district.status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(tbl_dsjestate.state_name) LIKE '".$val."' OR UPPER(tbl_district.district_name) LIKE '".$val."') AND tbl_district.status='".$status."'";
+	 }
+	 
+	 
+	 $query = "SELECT tbl_district.district_id,tbl_district.district_name, tbl_dsjestate.state_id, tbl_dsjestate.state_name, tbl_district.remarks, tbl_district.status FROM {tbl_district} INNER JOIN tbl_dsjestate ON (tbl_dsjestate.state_id=tbl_district.state_id) where ".$searchquery ."".tablesort_sql($header);
+	
+     $sqlcount = "SELECT COUNT(*) AS count FROM {tbl_district} INNER JOIN tbl_dsjestate ON (tbl_dsjestate.state_id=tbl_district.state_id) where ".$searchquery ." ".tablesort_sql($header);
+	 $rscount = db_query($sqlcount);
+	 $rscounter = db_fetch_object($rscount);
+	  //$_REQUEST['page']=0;
+	}else{
+	  $query = "SELECT tbl_district.district_id,tbl_district.district_name , tbl_dsjestate.state_id,tbl_dsjestate.state_name, tbl_district.remarks, tbl_district.status FROM {tbl_district} INNER JOIN tbl_dsjestate ON (tbl_dsjestate.state_id=tbl_district.state_id)  ".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/dsje/listdistrict';
+
+$t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+	$output = '<form method="post" action="'.$action.'"><table width="100%" cellpadding="2" cellspacing="1" border="0" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'dsjedistrict', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','dsje/listdistrict');
+	
+	}
+	
+	$output .='</td><td colspan="3" class="searchrecord"></td></tr>';	
+	$addurl = l(getMessage( 'dsjedistrict', 'code01', NULL),"dsje/listdistrict/adddistrict");
+   	$lising = getMessage( 'dsjedistrict', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query,$limit);
+
+	
+	if($_REQUEST['page']){
+		 $counter = $_REQUEST['page']*$limit;
+		}else{
+		 $counter = 0;
+	}
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","dsje/listdistrict/edit/district/".$row->district_id);
+		$viewurl = l("View","dsje/listdistrict/view/district/".$row->district_id);
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","dsje/del/district/$row->district_id/$row->district_name");
+		}else{
+		  $deleteurl = l("Enable","dsje/enable/district/$row->district_id/$row->district_name");
+		}
+		$testurl = l("Test","/list/loans");
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		//$state_union_territory = $row->state_union_territory;
+		
+		
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->district_name)),
+            //array('data' => ucwords($row->zone_name)),
+            array('data' => ucwords($row->state_name)),
+			//array('data' => $row->remarks),
+			array('data' => $st),
+			//array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		//$rowurls[] = l($rows[],"list/loans");
+	}
+	
+	if($rows== NULL)
+	$header=NULL;
+	
+	
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+ 
+ 
+ 
+function dsje_adddistrict(){
+ return drupal_get_form('dsje_district_form');
+}
+
+/**
+ *form creation
+ */
+
+function dsje_district_form() {
+	$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of District', 'dsje/listdistrict');
+  if($array[2] == 'adddistrict'){
+     $breadcrumb[] = l('Add District', 'dsje/listdistrict/adddistrict');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+
+	
+	$sqlcountry = "select * from {tbl_dsjestate} WHERE status='1' ORDER BY state_name";
+	$rescountry =db_query($sqlcountry);
+	$countryarray[''] = array();
+	$countryarray[''] = '--Select--'; 
+	if($rescountry){
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->state_id] = ucwords($rscountry->state_name);
+	  }
+	}
+	$countryarray1[''] = '--Select--'; 
+	$form['state_id'] = array(
+		'#type' => 'select',
+		'#title' => t('State'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		
+	);
+	
+	
+    
+	
+	/*$form['short_code'] = array(
+		'#type' => 'textfield',
+		'#size' => '41',
+		'#title' => t('Unicode'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+		'#maxlength'=>2,
+	);*/
+	
+	
+	$form['short_code'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('District Code'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#maxlength'=>3,
+		'#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	);
+	
+	$form['district_name'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('District Name'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	
+	
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>'',
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/listdistrict'),
+	
+);
+
+$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+/**
+ *submit handler
+ */
+
+function dsje_district_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $state_id =$values['state_id'];
+    //$zone_id = $values['zone_id'];
+    $district_name = trim($values['district_name']);
+	$short_code = strtoupper($values['short_code']);
+	//$state_union_territory = parseData(trim($values['state_union_territory']));
+   // $remarks = parseData(trim($values['remarks']));
+   // $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+	$updatedby = $user->uid;
+	$updatedon = $createdon;
+	
+	//$sqlu=db_query("select * FROM {tbl_district} where short_code ='$short_code'");
+	
+     
+   db_query("INSERT INTO {tbl_district} (short_code, `district_name`,`remarks` ,`state_id` , `status` ,`createdby` ,`createdon` ,`updatedby` ,`updatedon`) VALUES('".$short_code."','".$district_name."', '".$remarks."','".$state_id."','".$status."','".$createdby."','".$createdon."','".$updatedby."','".$updatedon."') ");
+	$message = getMessage('dsjedistrict', 'code05', array("0"=>$district_name));
+	drupal_set_message($message);
+	drupal_goto('dsje/listdistrict');
+}
+
+function dsje_district_form_validate($form, &$form_state) {
+	
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of District', 'dsje/listdistrict');
+  if($array[2] == 'adddistrict'){
+     $breadcrumb[] = l('Add District', 'dsje/listdistrict/adddistrict');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	
+	$values = $form_state['values'];
+	$state_id = $values['state_id'];
+	//$zone_id = $values['zone_id'];
+	$district_name = trim($values['district_name']);
+	 $short_code = $values['short_code'];
+	$remarks = trim($values['remarks']);
+	 fononlyn('short_code',$short_code,'District code');
+	 
+	if((strlen($short_code))!=3){
+		 $message = 'Length of district code should be three.';	
+		form_set_error('short_code', $message);
+	}
+	
+	$sqlu = "SELECT * FROM {tbl_district} where short_code='$short_code' ";
+	$resu = db_query($sqlu);
+	if($rsu = db_fetch_object($resu)){
+		$message = 'Sorry! Unicode already in use.';	
+		form_set_error('short_code', $message);
+	}
+	
+	
+	$s = textonlyn('district_name',$district_name,'District Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_district} where state_id='$state_id' AND LOWER(district_name)= '".strtolower($district_name)."'";
+		$res = db_query($sql);
+	  
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjedistrict', 'code06', array("0"=>$state_name));	
+			form_set_error('district_name', $message);
+		}
+	}
+}
+
+
+
+function dsje_adddistrictedit($id){
+ return drupal_get_form('dsje_district_form_edit',$id);
+}
+
+function dsje_district_form_edit($form_state,$id) {
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of District', 'dsje/listdistrict');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit District', 'dsje/listdistrict/edit/district/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+	$sqlstate = "select * FROM {tbl_district} where district_id='$id' ";
+	$resstate = db_query($sqlstate);
+	$rsstate = db_fetch_object($resstate);
+	
+	$sqlcountry = "select * from {tbl_dsjestate} WHERE status='1' ORDER BY state_name";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->state_id] = ucwords($rscountry->state_name);
+	  }
+	}
+	$form['state_id'] = array(
+		'#type' => 'select',
+		'#title' => t('State'),
+		'#required' => TRUE,
+		'#default_value' => $rsstate->state_id,
+		'#options' => $countryarray,
+		
+	);
+	
+	
+
+	
+	
+	$form['short_code'] = array(
+		'#type' => 'textfield',
+		'#size' => '41',
+		'#title' => t('District Code'),
+		'#required' => true,
+		'#default_value' => $rsstate->short_code,
+		'#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+		'#maxlength'=>3,
+	);
+	
+	$form['prev_state_uid'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $rsstate->short_code,
+		
+	);
+	
+	$form['district_id'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $id,
+		
+	);
+	
+	$form['prev_state_name'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $rsstate->district_name,
+		
+	);
+    
+	$form['district_name'] = array(
+		'#type' => 'textfield',
+		'#size' => '20',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' =>$rsstate->district_name,
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+
+	
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>$rsstate->remarks,
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rsstate->status,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/listdistrict'),
+	
+);
+	
+	$form['submit'] = array(
+	'#type' => 'submit',
+	'#default_value' => t('Save')
+	);
+	return $form;
+}
+function dsje_district_form_edit_validate($form, &$form_state) { 
+$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of District', 'dsje/listdistrict');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit District', 'dsje/listdistrict/edit/district/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+   global $user;
+	$values = $form_state['values'];
+    $district_id = $values['district_id'];
+	$state_id =$values['state_id'];
+    //$zone_id = $values['zone_id'];
+    $district_name = trim($values['district_name']);
+	$prev_state_name = $values['prev_state_name'];	
+    $remarks = parseData(trim($values['remarks']));
+	$short_code = trim($values['short_code']);
+    //$status = $values['status'];
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	alphabet('short_code',$short_code,'District code');
+	 
+	if(strlen($short_code )==2){
+		$message = 'Length of district code should be three.';	
+		form_set_error('short_code', $message);
+	}
+
+	
+    $countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_district} where LOWER(district_name)= '".strtolower($district_name)."' GROUP BY district_id"));
+		    $count = $countObj->count;
+			
+			if( strcmp(strtolower($prev_state_name), strtolower($district_name))==0){
+							
+			}else{
+				if($count==0){
+				
+				}else{
+				
+					//db_query("UPDATE `tbl_states` set `state_name` ='".$state_name."'  , `remarks`='".$remarks."' ,`country_id`= '".$country_id."',`zone_id`= '".$zone_id."',updatedby='".$updatedby."'  ,updatedon='".$updatedon."' where state_id='$state_id'");
+					//$message = getMessage('recState', 'code06', array("0"=>$state_name));
+					//form_set_error('state_name', $message);
+					form_set_error('state_name', 'The State Name '.$state_name.' alreday exist.');
+					//drupal_goto("rec/liststate");	
+				}
+			}
+	 
+} 
+
+function dsje_district_form_edit_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $district_id = $values['district_id'];
+	$state_id =$values['state_id'];
+    //$zone_id = $values['zone_id'];
+	$short_code = $values['short_code'];
+	$prev_state_uid = $values['prev_state_uid'];
+    $district_name = trim($values['district_name']);
+	//$state_union_territory = parseData(trim($values['state_union_territory']));
+	$prev_state_name = $values['prev_state_name'];	
+    $remarks = parseData(trim($values['remarks']));
+	
+	$field = "";
+	if( strcmp(strtolower($prev_state_uid), strtolower($short_code))==0){
+	
+	}else{
+		$sqlU = "SELECT COUNT(*) AS countUnicode FROM {tbl_district} where short_code= '".$short_code."'";
+		$countUnicodeObj = db_fetch_object(db_query($sqlU));
+		$countUnicode = $countUnicodeObj->countUnicode;
+		$countUnicode = (int)$countUnicode;
+		if($countUnicode == 0){
+			$field = "short_code = '$short_code', ";
+		}else{
+		//	form_set_error('short_code', 'Sorry! Unicode '.$short_code.' alreday in use.');
+		}
+	}
+
+	
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('district_name',$district_name,'District Name');
+    $s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+    if($s == 0 && $s1 == 0){
+	    
+			$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_district} where LOWER(district_name)= '".strtolower($district_name)."' GROUP BY district_id"));
+		    $count = $countObj->count;
+			
+			if( strcmp(strtolower($prev_state_name), strtolower($district_name))==0){
+				db_query("UPDATE {tbl_district} set $field `district_name` ='".$district_name."', `remarks`='".$remarks."' ,`state_id`= '".$state_id."',updatedby='".$updatedby."'  ,updatedon='".$updatedon."' where district_id='$district_id'");
+				$message = getMessage('dsjedistrict', 'code10', array("0"=>$district_name));
+				drupal_set_message($message);
+				drupal_goto("dsje/listdistrict");				
+			}else{
+				if($count==0){
+					db_query("UPDATE {tbl_district} set $field  `district_name` ='".$district_name."',`remarks`='".$remarks."' ,`state_id`= '".$state_id."' ,updatedby='".$updatedby."'  ,updatedon='".$updatedon."' where district_id='$district_id'");
+					$message = getMessage('dsjedistrict', 'code10', array("0"=>$district_name));
+					drupal_set_message($message);
+					drupal_goto("dsje/listdistrict");		
+				}else{
+					form_set_error('district_name', 'The District Name '.$district_name.' alreday exist.');
+				}
+			}
+       
+	}
+}
+
+/**
+ *hook_theme
+ */
+function dsje_district_theme() {
+	
+	return array(
+				 
+		'dsje_district_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_district_form',
+                                 ),
+        'dsje_district_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_district_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+ function dsje_district_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_district_form_edit'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	}
+ }
+
+
+ function district_delete($id,$sno){
+	$district_id =  $id;
+	//$sql = "select district_id,status FROM {tbl_district} WHERE district_id ='".$district_id."' and status=1";
+    //$res = db_query($sql);
+    /*if($rs = db_fetch_object($res)){
+     form_set_error('form','The District '.$sno.' cannot be disabled as it has other entities mapped to it.');
+	 $st=1;
+	 //The Distict  cannot be disabled as it has other entities mapped to it.
+   }*/
+   //if($st !=1){
+		//db_query("UPDATE {tbl_dsjestate} SET status=0 WHERE state_id ='".$state_id."'");
+		db_query("UPDATE {tbl_district} SET status=0 WHERE district_id ='".$district_id."'");
+		
+		$message = getMessage('dsjedistrict', 'code07', array("0"=>$sno));
+		drupal_set_message($message);
+   //}
+	drupal_goto("dsje/listdistrict");
+ }
+
+  function district_enable($id,$sno){
+	$district_id =  $id;
+	//db_query("UPDATE {tbl_dsjestate} SET status=1 WHERE state_id ='".$state_id."'");
+	db_query("UPDATE {tbl_district} SET status=1 WHERE district_id ='".$district_id."'");
+	
+	$message = getMessage('dsjedistrict', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+	drupal_goto("dsje/listdistrict");
+ }
+
+//api
+ 
+
+  
+
+
+function dsje_adddistrictview($id){
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of District', 'dsje/listdistrict');
+  if($array[2] == 'view'){
+     $breadcrumb[] = l('View District', 'dsje/listdistrict/view/district/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * FROM {tbl_district} where district_id = $id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+	$status ='Enabled';
+	}else{
+	$status ='Disabled';
+	}
+	
+	//$remarks = ucfirst($rs->remarks);
+	if($remarks==''){$remarks='N/A';}
+	
+	$short_code = ucfirst($rs->short_code);
+	if($short_code==''){$short_code='N/A';}
+	
+	$statename = getState($rs->state_id);
+	//$zonename = getZone($rs->zone_id);
+	$output .='<table cellpadding="2" cellspacing="1" border="0" id="wrapper2">';
+	$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>District Details</h2></td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">District Code:</td><td class="normal">'.ucwords($rs->short_code).'</td></tr>';
+	$output .='<tr class="oddrow"><td width="50%">District:</td><td class="normal">'.ucwords($rs->district_name).'</td></tr>';	
+	$output .='<tr class="evenrow"><td width="50%">State:</td><td class="normal">'.ucwords($statename).'</td></tr>';
+	//$output .='<tr class="evenrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+	$output .='<tr class="oddrow"><td>Status:</td><td class="normal">'.$status.'</td></tr>';
+	$output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'dsje/listdistrict').'</td></tr>';
+	$output .='</table>';
+	return $output;
+}	

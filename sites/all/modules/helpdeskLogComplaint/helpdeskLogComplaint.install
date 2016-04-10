@@ -1,0 +1,254 @@
+<?php
+function helpdeskLogComplaint_schema() {
+
+  //nodal table
+   $schema['tbl_helpdeskLogComplaint'] = array(
+							 'fields' => array(
+											   
+                                               'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                         
+										'complaint_no' => array(
+															  'type' => 'int',
+															  'length' => '400',
+															  'auto_increment'=> TRUE,
+															  'not null' => TRUE,
+															 
+															  ),
+											'application_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+														
+														
+											'complaint_type' => array(
+															  'type' => 'varchar',
+															  'length' => '25',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+														
+														
+											'related_to' => array(
+															  'type' => 'varchar',
+															  'length' => '25',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											'subject' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											'details' => array(
+															  'type' => 'varchar',
+															  'length' => '500',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											
+															 					  
+											'assign_to' => array(
+															  'type' => 'varchar',
+															  'length' => '25',
+															  'not null' => TRUE,
+															  'default' => 0
+										
+															 ), 
+															 
+												'priority' => array(
+															  'type' => 'varchar',
+															  'length' => '25',
+															  'not null' => TRUE,
+															  'default' => 0
+										
+															 ), 
+										'status' => array(
+															  'type' => 'varchar',
+															  'length' => '25',
+															  'not null' => TRUE,
+															  'default' => 0
+										
+															 ), 
+															 
+										'date_time' => array(
+															  'type' => 'varchar',
+															  'length' => '30',
+															  'not null' => TRUE,
+															  'default' => 0
+										
+															 ), 
+											'submit_by' => array(
+															  'type' => 'varchar',
+															  'length' => '30',
+															  'not null' => TRUE,
+															  'default' => 0
+										
+															 ), 
+															 		 
+													'soft' => array(
+															  'type' => 'varchar',
+															  'length' => '30',
+															  'not null' => TRUE,
+															  'default' => 0
+										
+															 ), 
+														
+														'doc_id' => array(
+															  'type' => 'int',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => 0
+										
+															 ), 
+														
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+                                             
+											 	'statusnodal' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 
+											 
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('complaint_no'),
+						 );
+	
+	 $schema['tbl_helpdeskComment'] = array(
+							 'fields' => array(
+											   
+                                               'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                         
+										'complaint_no' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															 
+															  ),
+									  'comment_id' => array(
+	   														  'type' => 'int',
+															  'length' => '40',
+															  'auto_increment'=> TRUE,
+															  'not null' => TRUE,
+															 
+															  ),
+	
+										
+											'date_time2' => array(
+															  'type' => 'varchar',
+															  'length' => '30',
+															  'not null' => TRUE,
+															  'default' => 0
+										
+															 ), 
+											'submit_by' => array(
+															  'type' => 'varchar',
+															  'length' => '30',
+															  'not null' => TRUE,
+															  'default' => 0
+										
+															 ), 
+															 
+												'status' => array(
+															  'type' => 'varchar',
+															  'length' => '25',
+															  'not null' => TRUE,
+															  'default' => 0
+										
+															 ), 
+											'document' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+										
+															 ), 	 
+												'comment' => array(
+															  'type' => 'varchar',
+															  'length' => '500',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  	 
+															 
+											'statusnodal' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 
+											 
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('comment_id'),
+						 );
+	
+	
+	return $schema;
+}
+function helpdeskLogComplaint_install() {
+	drupal_install_schema('helpdeskLogComplaint');
+}
+
+function helpdeskLogComplaint_uninstall() {
+	drupal_uninstall_schema('helpdeskLogComplaint');
+}

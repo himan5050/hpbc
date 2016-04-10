@@ -1,0 +1,4 @@
+;$id 12/15/2010 Neshat Khan
+name ="Check List"
+core =6.x
+package="REC Master Tables"

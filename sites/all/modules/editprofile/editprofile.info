@@ -1,0 +1,4 @@
+; $Id$
+name = Edit Profile
+description = "Edit Profile"
+core = 6.x

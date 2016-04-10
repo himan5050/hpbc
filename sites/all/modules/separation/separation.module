@@ -1,0 +1,1215 @@
+<?php
+session_start();
+
+function separation_init() {
+	drupal_add_js(drupal_get_path('module', 'separation') .'/separation.js');
+	drupal_add_css(drupal_get_path('module', 'separation') .'/separation.css');
+	
+}
+
+function separation_perm() {
+	return array('edit separation','administer separation', 'create separation', 'view separation');
+}
+
+function separation_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit separation', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create separation', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view separation', $account);
+	}
+}
+
+function separation_menu(){
+
+$items['separationlist'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'separation_list_page',
+	//'page arguments' => array(1),
+	'access arguments' => array('administer separation'),
+);
+ 
+
+$items['separationform'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'separation_page',
+	//'page arguments' => array(1),
+	'access arguments' => array('administer separation'),
+);
+	$items['separationedit/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'separation_edit_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer separation'),
+);
+$items['separationsearch/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'separation_search_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer separation'),
+);
+$items['separationview/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'separationview',
+	'page arguments' => array(1),
+	'access arguments' => array('administer separation'),
+);
+$items['noc-detail/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'dueamount_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer separation'),
+);
+$items['noc-edit-detail/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'due_edit_amount_page',
+	'page arguments' => array(1,2),
+	'access arguments' => array('administer separation'),
+);
+//dueamount_page
+return $items;
+
+}
+
+
+
+ 
+
+function separation_form(){
+	$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	global $base_url;
+	//echo '<pre>';
+	//print_r($array);
+	//exit;
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Separation', 'separationlist');
+	
+	if($array[0] == 'separationform'){
+	$breadcrumb[] = l('Separation Entry Form', 'separationform');
+	}
+	
+	
+
+	drupal_set_breadcrumb($breadcrumb);
+	
+     $form['emp_id'] = array(
+	'#type' => 'select',
+	'#title' => t('Employee ID'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#options' => selectSemployee(),
+	'#attributes' => array('onchange'=> 'return showemp(this.value,"'.$base_url.'")'),
+	); 
+	
+	$form['separation_type'] = array(
+	'#type' => 'select',
+	'#title' => t('Separation Type'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#options' => getseparationlist(),
+	
+	); 
+	
+	 $form['separation_detail'] = array(
+	'#type' => 'fieldset', 
+    '#title' => t('Separation Detail'), 
+     '#collapsible' => FALSE, 
+	'#collapsed' => FALSE,
+    );
+	$form['separation_detail']['reason'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Reason'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#maxlength' =>200,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-reason",200)'),
+	);
+	$form['separation_detail']['orderno'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Order No.'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-orderno",20)'),
+	);
+	
+	$form['separation_detail']['efc_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Effective Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' =>'',
+	);
+
+	$form['separation_detail']['resignation_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Last Working Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' =>'',
+	);
+
+	
+
+	
+	$form['submit'] = array(
+	'#type' => 'submit',
+		'#value' =>t('Save'),
+	);
+return $form;
+} 
+function separation_edit_form($form_state,$empid){
+	global $base_url;
+	$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	//echo '<pre>';
+	//print_r($array);
+	//exit;
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Separation', 'separationlist');
+	$breadcrumb[] = l('List of NOC', 'noc-detail/'.$empid);
+	$breadcrumb[] = l('Add Noc', 'separationedit/'.$empid);
+	
+	$sql ="select * from tbl_separation  where emp_id='".$empid."' ";
+	$res = db_query($sql);
+	$rs= db_fetch_object($res);
+
+	drupal_set_breadcrumb($breadcrumb);
+	
+     $form['empid'] = array(
+	'#type' => 'hidden',
+	'#value'=>$empid,
+	);
+	/* $form['noc_detail'] = array(
+	'#type' => 'fieldset', 
+    '#title' => t('NOC Detail'), 
+     '#collapsible' => FALSE, 
+	'#collapsed' => FALSE,
+    );
+	*/
+	$form['branchoffice'] = array(
+		'#type'=>'select',
+		'#default_value' =>$_SESSION['brancho'],
+		'#options' => nocOfficesList($empid),
+		'#required'=>TRUE,
+		'#title'=>t('Branch/Office'),
+		'#attributes' => array('onchange' =>'return shownocvalue("'.$base_url.'",this.value,"'.$empid.'")'),
+	);
+	/*$form['nocoption'] = array(
+	'#type' =>'radios',
+	'#title' => t('NOC'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->options,
+	'#options'=>array('1'=>'Yes','2'=>'No'),
+	);*/
+	$form['#attributes'] = array('enctype' => "multipart/form-data");
+	
+	$form['uploadfile'] = array(
+	'#type' =>'file',
+	'#title' =>t('Upload Document'),
+	'#required' => FALSE,
+	'#size' =>30,
+	'#description'=>t('Allowed extensions: pdf doc docx txt xls xlsx pptx ppt'),
+	//'#description'=>$rs->fileupload,
+	);
+//$rs->upload_document
+	
+	
+	
+	$form['submit'] = array(
+	'#type' => 'submit',
+		'#value' =>t('Save'),
+	);
+return $form;
+} 
+
+/*
+function dueamount_form($form_state,$empid){
+
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Separation', 'separationlist');
+	$breadcrumb[] = l('Due Form', 'due-amount/'.$empid);
+	drupal_set_breadcrumb($breadcrumb);
+
+
+ $form['empid'] = array(
+	'#type' => 'hidden',
+	'#value'=>$empid,
+	);
+$form['particulars'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Particulars'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->particulars,
+	'#maxlength' =>200,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-particulars",200)'),
+	);
+	$form['amount_due'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Amount due'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->amount_due,
+	'#attributes' => array('onkeypress' =>'return paypaymain_custom(event,"edit-amount-due",10)'),
+	);
+	$form['remarks'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Remarks'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->remarks,
+	'#maxlength' =>200,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-remarks",200)'),
+	);
+
+$form['submit'] = array(
+	'#type' => 'submit',
+		'#value' =>t('Save'),
+	);
+
+return $form;
+
+
+}
+
+function dueamount_form_submit($form,&$form_state){
+$empid = $form_state['values']['empid'];
+	$particulars = $form_state['values']['particulars'];
+	$remarks = $form_state['values']['remarks'];
+	$amount_due = $form_state['values']['amount_due'];
+
+db_query("insert into tbl_nocdetail (emp_id,particulars,amount_due,remarks,status) values ('".$empid."','".$particulars."','".$amount_due."','".$remarks."',1)");
+$message = getMessage('separationlist', 'code09', array("0"=>$amount_due));
+	drupal_set_message($message);
+	drupal_goto('separationlist');
+}
+*/
+function dueamount_page($empid){
+	global $base_url;
+	$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Separation', 'separationlist');
+	$breadcrumb[] = l('List of NOC', 'noc-detail/'.$empid);
+	drupal_set_breadcrumb($breadcrumb);
+$data .='<table id="wrapper"><tr><td align="left" class="tblHeaderLeft">List of NOC <span class="addrecord">'.l('Add NOC','separationedit/'.$empid).'</span></td></tr></table>';
+$data .= '<table><thead><tr><th>S. No.</th><th>Office/Branch Name</th><th>Date</th><th>Upload Document</th></tr><thead><tbody>';
+$sql ="select * from tbl_addnoc where emp_id ='".$empid."'";
+$res = db_query($sql);
+$counter = 1;
+while($rs = db_fetch_object($res)){
+
+if($rs->uploaddocument){$link =l('Download',$base_url.'/'.$rs->uploaddocument, array('attributes' => array('target' => '_blank')));}
+else{$link ='';}
+if($counter%2 == 0){$class='even';}
+else{$class='odd';}
+$data .='<tr class='.$class.'><td>'.$counter.'</td><td>'.l(ucwords(getCorporationName($rs->branch)),'noc-edit-detail/'.$rs->branch.'/'.$empid).'</td><td>'.date('d-m-Y',strtotime($rs->submitdate)).'</td><td>'.$link.'</td><tr>';
+$counter++;
+}
+$data .='</tbody> </table>';
+
+
+
+//$output = drupal_get_form('dueamount_form',$empid);
+return $data;
+}
+
+
+function ssearch_form(){
+
+$form['search_box']=array(
+	'#type' => 'textfield',
+	'#title' => '',
+	'#required' => FALSE,
+	'#size' => 60,
+	'#prefix' => '<div class="listsearchie7 frightie7">',
+);
+
+$form['search'] = array(
+	'#type' => 'submit',
+	'#value' =>t('Search'),
+	'#suffix' => '</div>'	
+);
+return $form;
+}
+
+function separation_form_validate($form,&$form_state){
+	$date= substr($form_state['values']['resignation_date'],0,10);
+	 $edate= substr($form_state['values']['efc_date'],0,10);
+	$ctime = date("Y-m-d",time());
+	
+	if(isset($_SESSION['err']))
+		unset($_SESSION['err']);
+	if($edate && $date && $date<$edate){
+			form_set_error('resignation_date','Last working date should be greater then to Effect date.');
+			$_SESSION['err'] = 1;
+		   }
+	
+	if($edate && $edate <$ctime){
+		form_set_error('efc_date','Effect date should be greater then to Current date.');
+			$_SESSION['err'] = 1;
+	}
+
+
+	if($date && $date <$ctime){
+		form_set_error('resignation_date','Last working date should be greater then to Current date.');
+		$_SESSION['err'] = 1;
+	}
+
+}
+
+
+function separation_form_submit($form,&$form_state){
+
+$empid= $form_state['values']['emp_id'];
+	$reson= $form_state['values']['reason'];
+	$orderno= $form_state['values']['orderno'];
+	$stype= $form_state['values']['separation_type'];
+	$date= $form_state['values']['resignation_date'];
+	$edate= $form_state['values']['efc_date'];
+	$employname = empname($empid);
+	$currentdate= time();
+
+
+ $sql = "select email,doj from tbl_joinings where employee_id='".$empid."'";
+$res= db_query($sql);
+$rs= db_fetch_object($res);
+$parameter = '';
+$to = $rs->email;
+$parameter = json_encode(array('0'=>ucwords($employee_name),'1'=>date('d-m-Y',strtotime($date)),'2'=>$totalyear));
+createMail('separationemployee',$to,'',$parameter);
+
+
+ $totalyear = dateDiffByYear(date('Y-m-d',strtotime($rs->doj)),date('Y-m-d',strtotime($date)));
+
+$hlist = getHodList($empid);
+$hodlist = explode(',',$hlist);
+foreach($hodlist as $key =>$val){
+
+$uload = user_load($val);
+
+ $username = $uload->name;
+$usermail = $uload->mail;
+
+$parameter = '';
+$to = $usermail;
+$parameter = json_encode(array('0'=>$username,'1'=>$employee_name,'2'=>date('d-m-Y',strtotime($date)),'3'=>$totalyear));
+createMail('separation',$to,'',$parameter);
+
+}
+
+
+		db_query("insert into tbl_separation (emp_id,reason,orderno,regdate,status,separationtype,effectdate,resigndate) VALUES ('".$empid."','".$reson."','".$orderno."','".$date."','0','".$stype."','".$edate."','".$currentdate."')");
+		 "insert into tbl_separation (emp_id,reason,orderno,regdate,status,separationtype,effectdate,resigndate) VALUES ('".$empid."','".$reson."','".$orderno."','".$date."','0','".$stype."','".$edate."','".$currentdate."')";
+		
+	$message = getMessage('separationlist', 'code05', array("0"=>$employname));
+	drupal_set_message($message);
+	drupal_goto('separationlist');
+		
+		
+		//drupal_set_message('Separation has been saved successfully');
+		//drupal_goto("separationlist");
+
+}
+//particulars,remarks,amount_due
+function separation_edit_form_validate($form,&$form_state){
+	/*
+	$option = $form_state['values']['nocoption'];
+	$ufile = $form_state['values']['uploadfile'];
+	$particulars = $form_state['values']['particulars'];
+	$remarks = $form_state['values']['remarks'];
+	$amount_due = $form_state['values']['amount_due'];
+if($option == 1 && $particulars == ''){
+form_set_error('particulars','particulars field is required.');
+}
+if($option == 1 && $remarks==''){
+form_set_error('remarks','remarks field is required.');
+}
+if( $option == 1 && $amount_due==''){
+form_set_error('amount_due','amount due field is required.');
+}
+*/
+}
+function separation_edit_form_submit($form,&$form_state){
+	$branchoffice = $form_state['values']['branchoffice'];
+	$ufile = $form_state['values']['uploadfile'];
+	$empid = $form_state['values']['empid'];
+	unset($_SESSION['emp_id']);
+	unset($_SESSION['brancho']);
+//echo '<pre>';
+//print_r($form_state);
+//exit;
+	$employname = empname($empid);
+	
+	if($_FILES['files']['name']['uploadfile']){
+	$createdon = time();
+	$target_path = "sites/default/files/";
+	$extension = fileexts($_FILES['files']['name']['uploadfile']);
+	//pdf, doc, docx, txt,xls,xlsx,pptx,ppt
+	if($extension == '.pdf' || $extension == '.zip' || $extension == '.rar'|| $extension == '.doc'|| $extension == '.txt' || $extension == '.docx' || $extension == '.xls' || $extension == '.xlsx' || $extension == '.ppt' || $extension == '.pptx'){ 
+			$filename = $createdon.$extension;
+			
+			move_uploaded_file($_FILES['files']['tmp_name']['uploadfile'], $target_path.$filename);
+			$logo = $target_path.$filename;
+			db_query("insert into tbl_addnoc (branch,uploaddocument,emp_id) values ('".$branchoffice."','".$logo."','".$empid."')");
+			db_query("update tbl_separation SET status=1 where emp_id='".$empid."'");
+			
+	$message = getMessage('separationlist', 'code08', array("0"=>$employname));
+	drupal_set_message($message);
+	drupal_goto('noc-detail/'.$empid);
+			
+			//drupal_set_message('Separation has been updated successfully');
+			//drupal_goto('separationlist');
+			}
+			else{
+			form_set_error('uploadfile','Please upload file with extension .pdf .doc .docx .txt .xls .xlsx .pptx .ppt');
+		}
+	}
+	else{
+		
+			db_query("insert into tbl_addnoc (branch,uploaddocument,emp_id) values ('".$branchoffice."','".$logo."','".$empid."')");
+			$message = getMessage('separationlist', 'code08', array("0"=>$employname));
+	drupal_set_message($message);
+	drupal_goto('noc-detail/'.$empid);
+			
+			
+			//drupal_set_message('Separation has been updated successfully');
+			//drupal_goto('separationlist');
+	}
+
+	
+}
+
+/*Extension of uploaded file
+*/
+function fileexts($filename) { 
+$filename = strtolower($filename) ; 
+$exts = split("[/\\.]", $filename) ; 
+$n = count($exts)-1; 
+$exts = $exts[$n]; 
+return '.'.strtolower($exts); 
+}
+
+
+function ssearch_form_submit($form,&$form_state){
+	$keydata = $form_state['values']['search_box'];
+drupal_goto('separationsearch/'.$keydata);
+
+}
+
+
+function separation_page(){
+
+$output = drupal_get_form('separation_form');
+
+return $output;
+}
+
+function separation_edit_page($empid){
+	global $base_url;
+	$particulars = ($_POST['particulars'])?$_POST['particulars']:'';
+	$amount_due = ($_POST['amount_due'])?$_POST['amount_due']:'';
+	$remarks = ($_POST['remarks'])?$_POST['remarks']:'';
+	/*
+	$sql = "select tbl_separation.separationtype as separationtype,tbl_separation.resigndate as resigndate,tbl_separation.effectdate as effectdate,tbl_separation.reason as reason,tbl_separation.orderno as orderno ,tbl_separation.regdate as regdate,tbl_joinings.doj as doj,tbl_joinings.employee_name as empname,tbl_joinings.email as email,tbl_joinings.employee_type as emptype,tbl_joinings.current_officeid as officeid,tbl_joinings.dob as dob from tbl_separation INNER JOIN tbl_joinings ON (tbl_separation.emp_id = tbl_joinings.employee_id) where tbl_separation.emp_id = '".$empid."'";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	
+	$output = "<table cellspacing='2' cellpadding='1' border='0' id='form-container'>";
+	$output .= "<tr class='evenrow'><td colspan=2 align='center'><h2>Employee Detail</h2></td></tr>";
+	$output .= "<tr class='oddrow'><td width='50%'>Employee ID:</td><td class='normal'>" . $empid. "</td></tr>";
+    $output .= "<tr class='evenrow'><td>Employee Name:</td><td class='normal'>" . $rs->empname . "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Date of Birth:</td><td class='normal'>" . date("d-m-Y",strtotime($rs->dob)). "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Date of Joining:</td><td class='normal'>" . date("d-m-Y",strtotime($rs->doj)). "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Office:</td><td class='normal'>" . getCorporationName($rs->officeid). "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Employee Type:</td><td class='normal'>" .getLookupName($rs->emptype). "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Email ID:</td><td class='normal'>" .$rs->email. "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Separation Type:</td><td class='normal'>".getLookupName($rs->separationtype). "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Reason:</td><td class='normal'>" . $rs->reason. "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Order No.:</td><td class='normal'>" . $rs->orderno. "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Form Submit Date:</td><td class='normal'>".date("d-m-Y",$rs->resigndate). "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Effective Date:</td><td class='normal'>".date("d-m-Y",strtotime($rs->effectdate)). "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Last Working Date:</td><td class='normal'>" . date("d-m-Y",strtotime($rs->regdate)). "</td></tr>";
+	$output .= "</table>";*/
+
+$output .= drupal_get_form('separation_edit_form',$empid);
+
+if($_SESSION['brancho'] && $_SESSION['emp_id']){
+$output .= '<div id="nocvalue"><table><thead><tr><th>S. No.</th><th>Particular</th><th>Remarks</th><th>Amount</th></tr><thead><tbody>';
+$sql ="select * from tbl_nocdetail where branch='".$_SESSION['brancho']."' AND emp_id ='".$empid."'";
+$res = db_query($sql);
+$counter = 0;
+while($rs = db_fetch_object($res)){
+$counter++;
+if($counter%2 == 0){$class='even';}
+else{$class='odd';}
+$output .='<tr class='.$class.'><td>'.$counter.'</td><td>'.$rs->particulars.'</td><td>'.$rs->remarks.'</td><td>'.round($rs->amount_due,2).'</td><tr>';
+}
+$output .='</tbody> </table>';
+}
+else{
+$output .= '<div id="nocvalue"><table><tr><th>S. No.</th><th>Particular</th><th>Remarks</th><th>Amount</th></tr></table>';
+}
+$officelist = offices();
+$output .='<table class="adddue"><tr><td align="left"><a href="javascript:void(0)" onclick="shownocdiv();"> <b>ADD Due Amount</b></a></td></tr></table>';
+$output .='<div id="fieldnoc" style="display:none">
+   <form name="form" method="post" action="">
+<table>
+   <tr class="evenrow">   
+      <td width="50%">Particulars: <span style="color:#FF0000">*</span></td>
+	 <td><textarea cols="60" rows="5" name="particulars" id="edit-particulars" onkeypress="return textonlywithdotnemax(event,&quot;edit-particulars&quot;,200)" class="form-textarea resizable required  textarea-processed">'.$particulars.'</textarea><input type="hidden" name="brancho" value='.$_SESSION["brancho"].' /></td>		   		   
+    </tr>
+	
+	<tr class="oddrow">
+	   <td>Due Amount:<span style="color:#FF0000">*</span></td><td><input type="text" maxlength="11" name="amount_due" id="edit-amount-due" size="60" onkeypress="return paypay(event,&quot;edit-amount-due&quot;,10)" value = "'.$amount_due.'" class="form-text required" /></td></tr>
+	<tr class="evenrow">
+	  <td>Remarks: <span style="color:#FF0000">*</span></td>
+	  <td><textarea cols="60" rows="5" name="remarks" id="edit-remarks" onkeypress="return textonlywithdotnemax(event,&quot;edit-remarks&quot;,200)" class="form-textarea resizable required  textarea-processed">'.$remarks.'</textarea></td>	  
+    </tr>
+	
+    <tr class="oddrow">
+	  <td align="center" colspan="2"><input type="submit" name="save" value="Add"  /> </td>
+    </tr>
+    </table>
+	</form>
+    </div></div>';
+
+//$output .=';
+//print_r($_REQUEST);exit;
+	if(isset($_SESSION['err']))
+		unset($_SESSION['err']);
+	if(isset($_SESSION['scriptcss']))
+		unset($_SESSION['scriptcss']);
+if(isset($_REQUEST['save'])){
+$scriptcss = '';
+if($_REQUEST['particulars'] == '' || $_REQUEST['remarks'] =='' || $_REQUEST['amount_due']==''){
+
+	if(isset($_SESSION['err']))
+		unset($_SESSION['err']);
+	if(isset($_SESSION['scriptcss']))
+		unset($_SESSION['scriptcss']);
+	if($_REQUEST['particulars'] == ''){
+		form_set_error('particulars','Particulars field is required');
+		$_SESSION['err'] = 1;
+		$scriptcss .= '$("#edit-particulars").addClass("error");';
+	}
+	if($_REQUEST['remarks'] == ''){form_set_error('remarks','Remarks field is required');$_SESSION['err'] = 1;
+		$scriptcss .= '$("#edit-remarks").addClass("error");';
+	}
+	if($_REQUEST['amount_due'] == ''){form_set_error('amount_due','Amount Due field is required');$_SESSION['err'] = 1;
+		$scriptcss .= '$("#edit-amount-due").addClass("error");';
+	}else{
+		if(paypay('amount_due',$_POST['amount_due'],'Amount Due'))
+		{
+			$scriptcss .= '$("#edit-amount-due").addClass("error");';
+		}
+	}
+	if($scriptcss)
+		$_SESSION['scriptcss'] = $scriptcss;
+}else{
+	if($_REQUEST['amount_due'] != ''){
+		if(paypay('amount_due',$_POST['amount_due'],'Amount Due')){
+			$_SESSION['err'] = 1;
+			$scriptcss .= '$("#edit-amount-due").addClass("error");';
+			if($scriptcss)
+				$_SESSION['scriptcss'] = $scriptcss;
+		}else{
+			$particulars = $_REQUEST['particulars'];
+			$remarks = $_REQUEST['remarks'];
+			$amount_due = $_REQUEST['amount_due'];
+			$branch = $_REQUEST['brancho'];
+		db_query("insert into tbl_nocdetail (emp_id,branch,particulars,amount_due,remarks,status) values ('".$empid."','".$branch."','".$particulars."','".$amount_due."','".$remarks."',1)");
+		$message = getMessage('separationlist', 'code09', array("0"=>$amount_due));
+			drupal_set_message($message);
+			unset($_REQUEST['amount_due']);
+		}
+
+	}
+}
+}
+//echo $_REQUEST['amount_due'].'gggggg';exit;
+	if(isset($_SESSION['err']) && $_SESSION['err'])
+	{
+		$output .= '<script>$(document).ready (function(){shownocdiv();';
+		if(isset($_SESSION['scriptcss']))
+			$output .= $_SESSION['scriptcss'];
+		$output .= '});</script>';
+	}
+return $output;
+}
+
+function separation_list_page(){
+	
+	$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Separation', 'separationlist');
+	drupal_set_breadcrumb($breadcrumb);
+
+	$sql = "select tbl_separation.effectdate as effectdate,tbl_separation.orderno as orderno,tbl_separation.emp_id as emp_id ,tbl_separation.regdate as regdate,tbl_joinings.employee_name as empname from tbl_separation INNER JOIN tbl_joinings ON (tbl_separation.emp_id = tbl_joinings.employee_id) ";
+	$output = searchlistseparation($sql) ;
+	
+return $output;
+}
+function separation_search_page($empid){
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Separation', 'separationlist');
+	drupal_set_breadcrumb($breadcrumb);
+
+$val = '%'.strtoupper($empid).'%'; $val=addslashes($val);
+
+$sql = "select tbl_separation.effectdate as effectdate,tbl_separation.orderno as orderno,tbl_separation.emp_id as emp_id ,tbl_separation.regdate as regdate,tbl_joinings.employee_name as empname from tbl_separation INNER JOIN tbl_joinings ON (tbl_separation.emp_id = tbl_joinings.employee_id) WHERE (tbl_separation.emp_id LIKE '".$empid."' OR tbl_separation.orderno LIKE '".$val."' OR tbl_joinings.employee_name LIKE '".$val."')";
+
+
+
+
+//$sql = "select * from tbl_separation WHERE (emp_id LIKE '".$empid."' OR orderno LIKE '".$val."' )";
+
+	$output = searchlistseparation($sql) ;
+	
+return $output;
+}
+
+
+
+function searchlistseparation($sqlquery){
+unset($_SESSION['emp_id']);
+unset($_SESSION['brancho']);
+$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Employee Name'), 'field' => 'tbl_separation .emp_id', 'sort' => 'asc'),
+	array('data' => t('Order No.'), 'field' => 'tbl_separation .orderno', 'sort' => 'asc'),
+	array('data' => t('Effective Date'), 'field' => 'tbl_separation .effectdate', 'sort' => 'asc'),
+	array('data' => t('Last Working Date'), 'field' => 'tbl_separation .regdate', 'sort' => 'asc'),
+	array('data' => t('Action')),
+	
+	);
+	$sql = $sqlquery.tablesort_sql($header);
+	$count_query = "SELECT COUNT(*) as mycount FROM (" . $sql . ") AS count_query";
+	$cres = db_query($count_query);
+	$crs = db_fetch_object($cres);
+	$totalcount = $crs->mycount;
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	$result = pager_query($sql,10,0,$count_query);
+if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$links = l('View','separationview/'.$rs->emp_id);
+		//$links .= ' | '.l('Add NOC','separationedit/'.$rs->emp_id);
+		$links .= ' | '.l('View NOC','noc-detail/'.$rs->emp_id);
+		
+		
+		$enewdate = date("d-m-Y" ,strtotime($rs->effectdate));
+		$lnewdate = date("d-m-Y" ,strtotime($rs->regdate));
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => $rs->empname.'('.$rs->emp_id.')'),
+		array('data' => $rs->orderno),	
+		array('data' => $enewdate),
+		array('data' => $lnewdate),
+		array('data' => $links),
+            
+          
+		);
+	  }
+}
+if($rows== NULL)
+	$header=NULL;
+
+    if(arg(0)=='separationsearch'){
+		$output .='<table  id="wrapper" class="searchrecord"><tr><td>'.$totalcount.' Record(s) Found | '.l('View All','separationlist').'</td></tr></table>';
+	}
+	 $output .='<table id="wrapper"><tr><td class="tblHeaderLeft">List of Separation <span class="addrecord">'.l('Separation Form','separationform').'</span></td><td class="tblHeaderRight">'.drupal_get_form('ssearch_form').'</td></tr></table>';
+	 
+	// $output .='<div class="uploadcss">';
+	$output .=theme_table($header,$rows);
+	 $output .=theme('pager', NULL, 20,0 );
+// $output .='<div>';
+  
+	return $output;
+  }
+
+
+/*
+function noclistpage($empid){
+
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Separation', 'separationlist');
+	drupal_set_breadcrumb($breadcrumb);
+
+	$sql = "select * from tbl_nocdetail where emp_id='".$empid."'";
+	$output = noclist($sql) ;
+	
+return $output;
+
+}
+
+function nocsearchlist($keydata,$empid){
+
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Separation', 'separationlist');
+	drupal_set_breadcrumb($breadcrumb);
+
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);
+
+$sql = "select * from tbl_nocdetail  WHERE (particulars LIKE '".$val."' OR amount_due LIKE '".$val."' OR remarks LIKE '".$val."') AND emp_id ='".$empid."'";
+
+$output = noclist($sql) ;
+	
+return $output;
+
+}
+
+
+
+
+function noclist($sqlquery){
+
+$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Employee ID'), 'field' => 'tbl_nocdetail .emp_id', 'sort' => 'asc'),
+	array('data' => t('Particulars'), 'field' => 'tbl_nocdetail .orderno', 'sort' => 'asc'),
+	array('data' => t('Amount due'), 'field' => 'tbl_nocdetail .effectdate', 'sort' => 'asc'),
+	array('data' => t('Remarks'), 'field' => 'tbl_nocdetail .regdate', 'sort' => 'asc'),
+	array('data' => t('Action')),
+	
+	);
+	$sql = $sqlquery.tablesort_sql($header);
+	$count_query = "SELECT COUNT(*) as mycount FROM (" . $sql . ") AS count_query";
+	$cres = db_query($count_query);
+	$crs = db_fetch_object($cres);
+	$totalcount = $crs->mycount;
+	$result = pager_query($sql,10,0,$count_query);
+if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		//$editlink = l('Add NOC','separationedit/'.$rs->emp_id);
+		//$viewlink = l('View','separationview/'.$rs->emp_id);
+		//$enewdate = date("d-m-Y" ,strtotime($rs->effectdate));
+		$lnewdate = date("d-m-Y" ,strtotime($rs->regdate));
+		$rows[] = array(
+		array('data' => $counter),
+		array('data' => $rs->empname.'('.$rs->emp_id.')'),
+		array('data' => $rs->orderno),	
+		array('data' => $enewdate),
+		array('data' => $lnewdate),
+		array('data' => $viewlink.' | '.$editlink),
+            
+          
+		);
+	  }
+}
+if($rows== NULL)
+	$header=NULL;
+
+    if(arg(0)=='separationsearch'){
+		$output .='<table  id="wrapper" class="searchrecord"><tr><td>'.$totalcount.' Record(s) Found | '.l('View All','separationlist').'</td></tr></table>';
+	}
+	 $output .='<table id="wrapper"><tr><td class="tblHeaderLeft">List of Separation <span class="addrecord">'.l('Separation Form','separationform').'</span></td><td class="tblHeaderRight">'.drupal_get_form('ssearch_form').'</td></tr></table>';
+	 
+	 $output .='<div class="uploadcss">';
+	$output .=theme_table($header,$rows);
+	 $output .=theme('pager', NULL, 20,0 );
+ $output .='<div>';
+  
+	return $output;
+  }
+
+*/
+
+function separation_theme() {
+	
+	return array(
+				 
+		'separation_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'separation',
+			),
+        'separation_edit_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'separation_edit',
+			),
+			 'dueamount_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dueamount_form',
+			),
+			
+			'noc_edit_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'separation_edit',
+			),
+
+				 );
+}
+
+
+function getseparationlist(){
+ $sql = " select lookup_id,lookup_name from tbl_lookups where lookupType_id=78 ORDER BY lookup_name ASC";
+
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+$senderarray[''] = '--Select--';
+if($res){
+
+while($rs = db_fetch_object($res)){
+
+$senderarray[$rs->lookup_id] = ucwords($rs->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function selectSemployee()
+{
+$sql="select employee_id, employee_name from tbl_joinings where employee_id NOT IN (select emp_id from tbl_separation) ORDER BY employee_id";
+$res = db_query($sql);
+$cat[''] = '--Select--'; 
+ while($rs = db_fetch_object($res)){
+    $cat[$rs->employee_id] = $rs->employee_id.'-'.$rs->employee_name;
+  }
+  return $cat;
+
+}
+
+
+function separationview($empid){
+	$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Separation', 'separationlist');
+	$breadcrumb[] = l('View Separation', 'separationview/'.$empid);
+	drupal_set_breadcrumb($breadcrumb);
+
+
+	$sql = "select tbl_separation.separationtype as separationtype,tbl_joinings.email as email,tbl_separation.effectdate as effectdate,tbl_separation.resigndate as resigndate,tbl_separation.reason as reason,tbl_separation.orderno as orderno ,tbl_separation.regdate as regdate,tbl_joinings.doj as doj,tbl_joinings.employee_name as empname,tbl_joinings.employee_type as emptype,tbl_joinings.current_officeid as officeid,tbl_joinings.dob as dob from tbl_separation INNER JOIN tbl_joinings ON (tbl_separation.emp_id = tbl_joinings.employee_id) where tbl_separation.emp_id = '".$empid."'";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	
+	$output = "<table cellspacing='2' cellpadding='1' border='0' id='form-container'>";
+	$output .= "<tr class='evenrow'><td colspan='2' align='center'><h2>Separation Detail</h2></td></tr>";
+	$output .= "<tr class='oddrow'><td width='50%'>Employee ID:</td><td class='normal'>" . $empid. "</td></tr>";
+    $output .= "<tr class='evenrow'><td>Employee Name:</td><td class='normal'>" . $rs->empname . "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Date of Birth:</td><td class='normal'>" . date("d-m-Y",strtotime($rs->dob)). "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Date of Joining:</td><td class='normal'>" . date("d-m-Y",strtotime($rs->doj)). "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Office:</td><td class='normal'>" . getCorporationName($rs->officeid). "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Employee Type:</td><td class='normal'>" .getLookupName($rs->emptype). "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Email ID:</td><td class='normal'>" .$rs->email. "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Separation Type:</td><td class='normal'>".getLookupName($rs->separationtype). "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Reason:</td><td class='normal'>" . $rs->reason. "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Order No.:</td><td class='normal'>" . $rs->orderno. "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Form Submit Date:</td><td class='normal'>".date("d-m-Y",$rs->resigndate). "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Effective Date:</td><td class='normal'>".date("d-m-Y",strtotime($rs->effectdate)). "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Last Working Date:</td><td class='normal'>" . date("d-m-Y",strtotime($rs->regdate)). "</td></tr>";
+	$output .= "<tr class='evenrow'><td colspan='2' class='back' align='center'>".l('Back','separationlist')."</td></tr>";
+	$output .= "</table>";
+
+
+
+
+return $output;
+}
+
+
+function getHodList($emp_id){
+
+ $sql = "select officeid from tbl_joinings where employee_id='".$emp_id."'";
+$res = db_query($sql);
+$rs= db_fetch_object($res);
+$offic = $rs->officeid;
+
+ $psql = "SELECT DISTINCT(current_officeid) FROM tbl_transferpromotions WHERE employee_id ='".$emp_id."' AND current_officeid !='".$offic."'";
+$pres = db_query($psql);
+while($prs = db_fetch_object($pres)){$officelist .= $prs->current_officeid.',';}
+
+$alloffices = $officelist.','.$offic;
+
+
+$officelistarray = explode(',',$alloffices);
+foreach($officelistarray as $key => $val){
+	 $val;
+	 $hsql = "select program_uid from tbl_joinings where officeid='".$val."'";
+	$hres = db_query($hsql);
+	while($hrs = db_fetch_object($hres)){if(getRole($hrs->program_uid) == 13){$uidlist .=$hrs->program_uid.',';}}
+}
+//echo $uidlist;exit;
+return $uidlist;
+
+
+}
+/*
+function empname($empid){
+$sql = "select * from tbl_joinings where employee_id = '".$empid."'";
+$res = db_query($sql);
+
+$rs = db_fetch_object($res);
+	return $rs->employee_name;
+	}
+
+*/
+
+	function offices(){
+	
+	 $sqloffice = "select corporation_id,corporation_name  from tbl_corporations where status ='1' ORDER BY corporation_name ASC";
+	$resoffice =db_query($sqloffice);
+	$officearray ='<select name="office"><option selected>--Select--</option>';
+	if($resoffice){
+	  while($rsoffice = db_fetch_object($resoffice)){
+	   // $officearray[$rsoffice->corporation_id] = ucwords($rsoffice->corporation_name);
+	    
+		$officearray .='<option value="'.$rsoffice->corporation_id.'"  '.$selected.'>'.$rsoffice->corporation_name.'</option>';
+	  }
+	}
+$officearray .=' </select>';
+	return $officearray;
+	
+	
+
+
+
+
+/*
+
+
+$data='<b>Workflow Detail Id:</b> <select name="drop2" onchange="showvalue(this.value);">';
+	$data .='<option value="" selected>--Select--</option>';
+	while($row=db_fetch_object($result)) {
+		//$workflowdtarray[$row->workflow_details_id] = $row->workflow_details_id;
+	  if($wf_details  == $row->workflow_details_id){
+		 $selected ="selected";
+	  }else{
+		$selected ="";
+	  }
+     $data .='<option value="'.$row->workflow_details_id.'"  '.$selected.'>'.$row->workflow_details_id.'( '.rolename($row->role).' )'.'</option>';
+   
+	}
+   $data .=' </select>';
+
+
+
+*/
+	}
+
+
+	function noc_edit_form($form_state,$empid,$branch){
+	global $base_url;
+	$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	//echo '<pre>';
+	//print_r($array);
+	//exit;
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Separation', 'separationlist');
+	$breadcrumb[] = l('List of NOC', 'noc-detail/'.$empid);
+	$breadcrumb[] = l('Edit Noc', 'separationedit/'.$empid);
+	drupal_set_breadcrumb($breadcrumb);
+$sql="select uploaddocument from  tbl_addnoc where emp_id='".$empid."' AND branch='".$branch."' ORDER BY submitdate DESC";
+$res= db_query($sql);
+$rs = db_fetch_object($res);
+$file = $rs->uploaddocument;
+if($file){
+	$fliemessage = $file;
+	}
+	else{
+	$fliemessage = 'No file Uploaded';
+	}
+	
+	
+	
+     $form['empid'] = array(
+	'#type' => 'hidden',
+	'#value'=>$empid,
+	);
+	$form['bid']=array(
+	'#type'=>'hidden',
+	'#value'=>$branch,
+	);
+	$form['branchoffice'] = array(
+		'#type'=>'textfield',
+		'#default_value' =>ucwords(getCorporationName($branch)),
+		//'#options' => SelectOffices(),
+		'#required'=>FALSE,
+		'#title'=>t('Branch/Office'),
+		'#attributes' => array('readonly' =>'readonly'),
+	);
+	
+	$form['#attributes'] = array('enctype' => "multipart/form-data");
+	$form['ufile']=array(
+	'#type'=>'markup',
+	'#value'=>t('<span id="ufile">'.$fliemessage.'</span>'),
+	);
+	$form['uploadfile'] = array(
+	'#type' =>'file',
+	'#title' =>t('Upload Document'),
+	'#required' => FALSE,
+	'#size' =>30,
+	'#description'=>t('Allowed extensions: pdf doc docx txt xls xlsx pptx ppt'),
+	//'#description'=>$rs->fileupload,
+	);
+//$rs->upload_document
+	
+	
+	
+	$form['submit'] = array(
+	'#type' => 'submit',
+		'#value' =>t('Save'),
+	);
+return $form;
+} 
+
+function due_edit_amount_page($branch,$emp_id){
+	
+	  $sql ="select tbl_addnoc.uploaddocument as uploaddocument, tbl_addnoc.emp_id as emp_id,tbl_addnoc.branch as branch,tbl_nocdetail.particulars as particulars,tbl_nocdetail.amount_due as amount_due,tbl_nocdetail.remarks as remarks from tbl_addnoc INNER JOIN tbl_nocdetail ON(tbl_addnoc.branch=tbl_nocdetail.branch) where tbl_addnoc.branch='".$branch."' AND tbl_addnoc.emp_id='".$emp_id."'";
+
+$output .= drupal_get_form('noc_edit_form',$emp_id,$branch);
+$output .= '<div id="nocvalue"><table><thead><tr><th>S. No.</th><th>Particular</th><th>Remarks</th><th>Amount</th></tr><thead><tbody>';
+
+//$sql ="select tbl_addnoc.uploaddocument as uploaddocument, tbl_addnoc.emp_id as emp_id,tbl_addnoc.branch as branch,tbl_nocdetail.particulars as particulars,tbl_nocdetail.amount_due as amount_due,tbl_nocdetail.remarks as remarks from tbl_addnoc INNER JOIN tbl_nocdetail ON(tbl_addnoc.emp_id=tbl_nocdetail.emp_id) where tbl_addnoc.branch='".$branch."' AND tbl_addnoc.emp_id='".$emp_id."' ";
+
+$res = db_query($sql);
+$counter = 0;
+while($rs = db_fetch_object($res)){
+	$counter++;
+	if($counter%2 == 0){$class='even';}
+	else{$class='odd';}
+	$output .='<tr class='.$class.'><td>'.$counter.'</td><td>'.$rs->particulars.'</td><td>'.$rs->remarks.'</td><td>'.round($rs->amount_due,2).'</td><tr>';
+	}
+$output .='</tbody> </table>';
+
+
+$output .='<table class="adddue"><tr><td align="left"><a href="javascript:void(0)" onclick="shownocdiv();"> <b>ADD Due Amount</b></a></td></tr></table>';
+$output .='<div id="fieldnoc" style="display:none">
+   <form name="form" method="post" action="">
+<table>
+   <tr class="evenrow">   
+      <td width="50%">Particulars: <span style="color:#FF0000">*</span></td>
+	 <td><textarea cols="60" rows="5" name="particulars" id="edit-particulars" onkeypress="return textonlywithdotnemax(event,&quot;edit-particulars&quot;,200)" class="form-textarea resizable required  textarea-processed"></textarea><input type="hidden" name="brancho" value='.$branch.' /></td>		   		   
+    </tr>
+	
+	<tr class="oddrow">
+	   <td>Due Amount:<span style="color:#FF0000">*</span></td><td><input type="text" maxlength="128" name="amount_due" id="edit-amount-due" size="60" onkeypress="return paypaymain_custom(event,&quot;edit-amount-due&quot;,10)" class="form-text required" /></td></tr>
+	<tr class="evenrow">
+	  <td>Remarks: <span style="color:#FF0000">*</span></td>
+	  <td><textarea cols="60" rows="5" name="remarks" id="edit-remarks" onkeypress="return textonlywithdotnemax(event,&quot;edit-remarks&quot;,200)" class="form-textarea resizable required  textarea-processed"></textarea></td>	  
+    </tr>
+	
+    <tr class="oddrow">
+	  <td align="center" colspan="2"><input type="submit" name="save" value="Add"  /> </td>
+    </tr>
+    </table>
+	</form>
+    </div></div>';
+
+//$output .=';
+//print_r($_REQUEST);exit;
+if(isset($_REQUEST['save'])){
+if($_REQUEST['particulars'] == '' || $_REQUEST['remarks'] =='' || $_REQUEST['amount_due']==''){
+	if($_REQUEST['particulars'] == ''){form_set_error('particulars','Particulars field is required');}
+	if($_REQUEST['remarks'] == ''){form_set_error('remarks','Remarks field is required');}
+	if($_REQUEST['amount_due'] == ''){form_set_error('amount_due','Amount Due field is required');}
+}
+else{
+	if($_REQUEST['amount_due'] != ''){
+		$particulars = $_REQUEST['particulars'];
+		$remarks = $_REQUEST['remarks'];
+		$amount_due = $_REQUEST['amount_due'];
+		$branch = $_REQUEST['brancho'];
+	db_query("insert into tbl_nocdetail (emp_id,branch,particulars,amount_due,remarks,status) values ('".$emp_id."','".$branch."','".$particulars."','".$amount_due."','".$remarks."',1)");
+	$message = getMessage('separationlist', 'code09', array("0"=>$amount_due));
+		drupal_set_message($message);
+		unset($_REQUEST['amount_due']);
+
+	}
+}}
+return $output;
+
+}
+
+	function noc_edit_form_submit($form,&$form_state){
+	$branchoffice = $form_state['values']['branchoffice'];
+	$ufile = $form_state['values']['uploadfile'];
+	$empid = $form_state['values']['empid'];
+	$bid = $form_state['values']['bid'];
+	unset($_SESSION['emp_id']);
+	unset($_SESSION['brancho']);
+//echo '<pre>';
+//print_r($form_state);
+//exit;
+	$employname = empname($empid);
+	
+	if($_FILES['files']['name']['uploadfile']){
+	$createdon = time();
+	$target_path = "sites/default/files/";
+	$extension = fileexts($_FILES['files']['name']['uploadfile']);
+	//pdf, doc, docx, txt,xls,xlsx,pptx,ppt
+	if($extension == '.pdf' || $extension == '.zip' || $extension == '.rar'|| $extension == '.doc'|| $extension == '.txt' || $extension == '.docx' || $extension == '.xls' || $extension == '.xlsx' || $extension == '.ppt' || $extension == '.pptx'){ 
+			$filename = $createdon.$extension;
+			
+			move_uploaded_file($_FILES['files']['tmp_name']['uploadfile'], $target_path.$filename);
+			$logo = $target_path.$filename;
+			db_query("update tbl_addnoc SET uploaddocument='".$logo."' where emp_id='".$empid."' AND branch='".$bid."'");
+			db_query("update tbl_separation SET status=1 where emp_id='".$empid."'");
+			
+	$message = getMessage('separationlist', 'code10', array("0"=>ucwords(getCorporationName($bid))));
+	drupal_set_message($message);
+	drupal_goto('noc-detail/'.$empid);
+			
+			//drupal_set_message('Separation has been updated successfully');
+			//drupal_goto('separationlist');
+			}
+			else{
+			form_set_error('uploadfile','Please upload file with listed extension.');
+			}
+	}
+else{			
+	$message = getMessage('separationlist', 'code10', array("0"=>ucwords(getCorporationName($bid))));
+	drupal_set_message($message);
+	drupal_goto('noc-detail/'.$empid);
+}
+	}
+	
+
+	
+
+
+
+
+function nocOfficesList($empid){
+     $sqloffice = "select corporation_id,corporation_name  from tbl_corporations where status ='1' AND corporation_id NOT IN(select branch from tbl_addnoc where emp_id='".$empid."' )  ORDER BY corporation_name ASC";
+	$resoffice =db_query($sqloffice);
+	if($resoffice){
+      $officearray[''] = '--Select--'; 
+	  while($rsoffice = db_fetch_object($resoffice)){
+	    $officearray[$rsoffice->corporation_id] = ucwords($rsoffice->corporation_name);
+	  }
+	}
+	return $officearray;
+}

@@ -1,0 +1,466 @@
+<?php
+function dsje_pension_init() {
+	//drupal_add_css(drupal_get_path('module', 'dsje_language') .'/dsje_language.css');
+	
+}
+
+
+function dsje_pension_perm() {
+	return array('edit dsje_pension','administer dsje_pension', 'create dsje_pension', 'view dsje_pension');
+}
+
+function dsje_pension_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_pension', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_pension', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_pension', $account);
+	}
+	
+}
+
+function dsje_pension_menu() {
+	
+	
+	$items['admin/dsje/listpension'] = array(
+										'title' => t('List of pension'),
+										'description' => 'Allow user to View pension',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewpension',
+										'access arguments' => array('administer dsje_pension'),
+													 
+									  );
+	
+	$items['admin/dsje/listpension/addpension'] = array(
+										'title' => t('Create pension'),
+										'description' => 'Allow user to add pension',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_pension',
+										'access arguments' => array('administer dsje_pension'),
+													 
+									  );
+   	$items['admin/dsje/listpension/edit/pension/%'] = array(
+								
+										'title' => t('Edit pension'),
+										'description' => 'Allow user to add pension',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addpensionedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_pension'),
+													 
+									  );
+   $items['admin/dsje/listpension/view/pension/%'] = array(
+								
+										'title' => t('View pension'),
+										'description' => 'Allow user to add pension',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addpensionview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_pension'),
+													 
+									  );
+     $items['admin/dsje/del/pension/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'pension_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_pension'),
+													 
+									  );
+    $items['admin/dsje/enable/pension/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'pension_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_pension'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing pension
+ */
+
+function viewpension(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjepension', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('Type of pension'), 'field' => 'pension_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List pension', 'admin/dsje/listpension/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT pension_id, pension_name, status FROM tbl_pensions where UPPER(pension_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_pensions where UPPER(pension_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT pension_id, pension_name, status FROM tbl_pensions ".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjepension', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listpension');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjepension', 'code01', NULL),"admin/dsje/listpension/addpension");
+   	$lising = getMessage( 'dsjepension', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listpension/edit/pension/".$row->pension_id,array('attributes'=>array('id'=>'edit-pension-id')));
+		$viewurl = l("View","admin/dsje/listpension/view/pension/".$row->pension_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/pension/$row->pension_id/$row->pension_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/pension/$row->pension_id/$row->pension_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->pension_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_pension(){
+ return drupal_get_form('dsje_pension_form');
+}
+
+function dsje_pension_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of pension', 'admin/dsje/listpension');
+  if($array[3] == 'addpension'){
+     $breadcrumb[] = l('Add pension', 'admin/dsje/listpension/addpension');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['pension_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('pension Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listpension'),
+);
+	return $form;
+}
+
+function dsje_pension_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $pension_name = trim($values['pension_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('pension_name',$pension_name,'pension');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_pensions` (`pension_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$pension_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjepension', 'code05', array("0"=>$pension_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listpension');
+	}
+}
+
+function dsje_pension_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$pension_name = trim($values['pension_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('pension_name',$pension_name,'pension');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_pensions} where UCASE(pension_name)= '".strtoupper($pension_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjepension', 'code06', array("0"=>$pension_name));
+			form_set_error('pension_name', $message);
+		}
+	}	
+}
+
+function dsje_addpensionedit($pension_id){
+ return drupal_get_form('dsje_pension_form_edit',$pension_id);
+}
+
+function dsje_pension_form_edit(&$form_states,$pension_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List pension', 'admin/dsje/listpension');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit pension', 'admin/dsje/listpension/edit/pension/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlpension = "select * from tbl_pensions where pension_id=$pension_id";
+	$respension = db_query($sqlpension);
+	$rspension = db_fetch_object($respension);
+	
+	$form['pension_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rspension->pension_id,
+	);
+	
+	$form['pension_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('pension Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rspension->pension_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['prev_pension_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rspension->pension_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rspension->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listpension'),
+);
+	return $form;
+}
+
+function dsje_pension_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$pension_id = $values['pension_id'];
+	$pension_name = ParseData($values['pension_name']);
+	$prev_pension_name = ParseData($values['prev_pension_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('pension_name',$pension_name,'pension');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_pensions} where LOWER(pension_name)= '".strtolower($pension_name)."' GROUP BY pension_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_pension_name), strtolower($pension_name))==0){
+			db_query("UPDATE `tbl_pensions` set `pension_name` = '".$pension_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where pension_id='".$pension_id."'");
+			
+			$message = getMessage('dsjepension', 'code05', array("0"=>$pension_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listpension");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_pensions` set `pension_name` = '".$pension_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where pension_id='".$pension_id."'");
+				
+				$message = getMessage('dsjepension', 'code05', array("0"=>$pension_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listpension");	
+			
+			}else{
+				db_query("UPDATE `tbl_pensions` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where pension_id='".$pension_id."'");
+				
+				$message = getMessage('dsjepension', 'code06', array("0"=>$pension_name));
+				form_set_error('pension_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_pension_theme() {
+	
+	return array(
+				 
+		'dsje_pension_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_pension_form',
+                                 ),
+        'dsje_pension_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_pension_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_pension_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_pension_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_pension_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function pension_delete($sid, $sno){
+  $pension_id =  $sid;
+  db_query("UPDATE {tbl_pensions} SET status=0 WHERE pension_id ='".$pension_id."'");
+  $message = getMessage('dsjepension', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listpension");
+ }
+
+
+  function pension_enable($sid, $sno){
+    $pension_id =  $sid;
+    db_query("UPDATE {tbl_pensions} SET status=1 WHERE pension_id ='".$pension_id."'");
+  
+    $message = getMessage('dsjepension', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listpension");
+  }
+
+  function dsje_addpensionview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List pension', 'admin/dsje/listpension');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View pension', 'admin/dsje/listpension/view/pension/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from tbl_pensions where pension_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>pension Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td>pension:</td><td>'.ucwords($rs->pension_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='</table></div>';
+$output .=  l(t('Back'), 'admin/dsje/listpension');
+ return $output;
+  }
+	
+	

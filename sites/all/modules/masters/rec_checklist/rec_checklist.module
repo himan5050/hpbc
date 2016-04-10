@@ -1,0 +1,443 @@
+<?php
+function rec_checklist_init() {
+}
+
+function rec_checklist_perm() {
+	return array('edit rec_checklist','administer rec_checklist', 'create rec_checklist', 'view rec_checklist');
+}
+
+function rec_checklist_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit rec_checklist', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create rec_checklist', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view rec_checklist', $account);
+	}
+	
+}
+
+function rec_checklist_menu() {
+	$items['admin/rec/listchecklist'] = array(
+										'title' => t('CheckList'),
+										'description' => 'Allow user to View CheckList',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewchecklist',
+										'access arguments' => array('administer rec_checklist'),
+													 
+									  );
+									  
+	$items['admin/rec/addchecklist'] = array(
+										'title' => t('CheckList'),
+										'description' => 'Allow user to add CheckList',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_checklist',
+										'access arguments' => array('administer rec_mou'),		 
+									  );
+									  
+   	$items['admin/rec/edit/checklist/%'] = array(
+										'title' => t('CheckList'),
+										'description' => 'Allow user to add CheckList',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addchecklistedit',
+										'page arguments' =>array(4),  
+										'access arguments' => array('administer rec_checklist'),					 
+									  );
+									  
+	 $items['admin/rec/view/checklist/%'] = array(
+										'title' => t('CheckList'),
+										'description' => 'Allow user to view CheckList',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_viewchecklistedit',
+										'page arguments' =>array(4),  
+										'access arguments' => array('administer rec_checklist'),					 
+									  );
+
+   $items['admin/del/checklist/%/%'] = array(
+									'title' => t('CheckList'),
+									'description' => 'Allow user to deleteCheckList',
+									'type' => MENU_CALLBACK,
+									'page callback' => 'rec_delchecklist',
+									'page arguments' =>array(3,4),  
+									'access arguments' => array('administer rec_checklist'),							 
+						  );
+   $items['admin/enable/checklist/%/%'] = array(
+									'title' => t('CheckList'),
+									'description' => 'Allow user to deleteCheckList',
+									'type' => MENU_CALLBACK,
+									'page callback' => 'rec_enablechecklist',
+									'page arguments' =>array(3,4),  
+									'access arguments' => array('administer rec_checklist'),							 
+						  );
+return $items;
+}
+
+
+/** listing Check List */
+function viewchecklist(){
+global $user;
+global $base_url;
+$limit = (int)getMessage('recChecklist', 'code04', NULL);
+
+$header = array(
+	array('data' => t('S.No')),
+	array('data' => t('Checklist Item Name'), 'field' => 'checklist_item_name', 'sort' => 'asc'),
+	array('data' => t('Status')),
+	array('data' => t('Action')),
+);
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List checklist', 'admin/dsje/listchecklist/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	$query = "SELECT checklist_id, checklist_item_name, status FROM tbl_checklist_master  where UPPER(checklist_item_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count FROM tbl_checklist_master  where UPPER(checklist_item_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	}else{
+	$query = "SELECT checklist_id, checklist_item_name, status FROM tbl_checklist_master ".tablesort_sql($header);
+	}
+$output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'recChecklist', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/rec/listchecklist');
+	}
+
+$output .='</td><td colspan="3" class="tblHeaderRight">
+<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+<input type="submit" name="search" value="Go"></td></tr>';
+
+$addurl = l(getMessage( 'recChecklist', 'code01', NULL),"admin/rec/addchecklist");
+$lising = getMessage( 'recChecklist', 'code02', NULL);
+	
+$output .='<tr>
+<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+</tr>
+</table></form>';
+$result = pager_query($query,$limit);
+
+if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+}
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/rec/edit/checklist/".$row->checklist_id,array('attributes'=>array('id'=>'edit-checklist_id')));
+		$viewurl = l("View","admin/rec/view/checklist/".$row->checklist_id);
+		
+		if($row->status=='1'){
+			   $st='Enabled';
+			   $deleteurl = l("Disable","admin/del/checklist/$row->checklist_id/$row->checklist_item_name");
+			}else{
+			   $st ='Disabled';
+			    $deleteurl = l("Enable","admin/del/checklist/$row->checklist_id/$row->checklist_item_name");
+			}
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($row->checklist_item_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+$output .= theme('pager', NULL, $limit,0 );
+return $output;
+}
+
+function rec_checklist(){
+ return drupal_get_form('rec_checklist_form');
+}
+function rec_checklist_form() {
+	
+  $form['checklist_item_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Checklist Item Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rschecklist->checklist_item_name,
+		'#size' =>30,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+
+	
+	$form['id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rschecklist->checklist_id,
+	);
+    
+
+    $form['description'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Checklist Item Details'),
+		'#required' => FALSE,
+		'#default_value' => $rschecklist->checklist_item_details,
+		'#rows' => 5,
+        '#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); 
+
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' => $rschecklist->remarks,
+		'#rows' => 5,
+        '#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+    
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' =>1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listchecklist'),
+);
+	return $form;
+}
+function rec_checklist_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $checklist_item_name = ParseData($values['checklist_item_name']);
+  $desc = parseData($values['description']);
+  $remarks = parseData($values['remarks']);
+
+   $s = textonlyn('checklist_item_name',$checklist_item_name,'CheckList Item Name');
+  $s1 = textonlywithdotne('description',$desc, 'Checklist Item Details');
+  $s2 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	 if($s == 0 && $s1 == 0 && $s2 == 0 ){
+
+		  $sql = "SELECT * FROM {tbl_checklist_master} where UCASE(checklist_item_name)= '".strtoupper($checklist_item_name)."' AND status =1";
+		   $res = db_query($sql);
+		  
+		  if($rs = db_fetch_object($res)){
+				$message = getMessage('recChecklist', 'code06', array("0"=>$checklist_item_name));
+				form_set_error('checklist_item_name', $message);
+		   }
+	 }
+	
+}
+
+function rec_checklist_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $checklist_item_name = parseData($values['checklist_item_name']);
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+    $desc = parseData($values['description']);
+	$remarks = parseData($values['remarks']);
+	db_query("INSERT INTO `tbl_checklist_master` (`checklist_item_name`,`status` ,`createdby` ,`createdon`,`checklist_item_details` ,`remarks`) VALUES('".$checklist_item_name."','".$status."','".$createdby."','".$createdon."','".$desc."','".$remarks."')");
+	
+	$message = getMessage('recChecklist', 'code05', array("0"=>$checklist_item_name));
+	drupal_set_message($message);
+	drupal_goto('admin/rec/listchecklist');
+}
+
+
+function rec_addchecklistedit($id){
+	return drupal_get_form('rec_checklist_form_edit',$id);
+}
+
+function rec_viewchecklistedit($chk_id){
+    $sqlchecklist = "select * from tbl_checklist_master where checklist_id=$chk_id";
+	$reschecklist = db_query($sqlchecklist);
+	$rschecklist = db_fetch_object($reschecklist);
+    /*
+	 checklist_item_name] => Feedback Faculty - Individual
+    [status] => 1
+    [createdby] => 1
+    [createdon] => 1293453462
+    [updatedby] => 0
+    [updatedon] => 
+    [checklist_item_details] => Individual Feedback on Faculty
+    [remarks] => 
+
+	*/
+	 if($rschecklist->status ==1){
+   $status ='Enabled';
+ }else{
+   $status ='Disabled';
+ }
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="evenrow"><td colspan="2"><h2>Check List Details</h2></td></tr>';
+ $output .='<tr class="oddrow"><td>Name:</td><td>'.ucwords($rschecklist->checklist_item_name).'</td></tr>';
+ $output .='<tr class="evenrow"><td>Details:</td><td>'.ucwords($rschecklist->checklist_item_details).'</td></tr>';
+ $output .='<tr class="oddrow"><td>Remarks:</td><td>'.ucfirst($rschecklist->remarks).'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='</table></div>';
+$output .=  l(t('Back'), 'admin/rec/listchecklist');
+ return $output;
+}
+
+function rec_checklist_form_edit($form_state,$id) {
+	$sqlchecklist = "select * from tbl_checklist_master where checklist_id='$id' ";
+	$reschecklist = db_query($sqlchecklist);
+	$rschecklist = db_fetch_object($reschecklist);
+	
+	$form['checklist_item_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Checklist Item Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rschecklist->checklist_item_name,
+		'#size' =>30,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+
+		$form['prev_checklist_item_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' => $rschecklist->checklist_item_name,
+	);
+
+	$form['id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rschecklist->checklist_id,
+	);
+    
+    $form['description'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Checklist Item Details'),
+		'#required' => FALSE,
+		'#default_value' => $rschecklist->checklist_item_details,
+		'#rows' => 5,
+        '#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); 
+
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' => $rschecklist->remarks,
+		'#rows' => 5,
+        '#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+    
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rschecklist->status,
+		'#options' => array('0'=>'No','1'=>'Yes'),
+	);*/
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listchecklist'),
+);
+	return $form;
+}
+
+
+function rec_checklist_form_edit_submit($form, &$form_state) {
+global $user;
+
+
+$values = $form_state['values'];
+$status = $values['status'];
+
+$id = $values['id'];
+$checklist_item_name = parseData($values['checklist_item_name']);
+$prev_checklist_item_name = parseData($values['prev_checklist_item_name']);
+$desc = parseData($values['description']);
+$remarks = parseData($values['remarks']);
+$updatedby = $user->uid;
+$updatedon = time();
+  $s = textonlyn('checklist_item_name',$checklist_item_name,'CheckList Item Name');
+  $s1 = textonlywithdotne('description',$desc, 'Checklist Item Details');
+  $s2 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	 if($s == 0 && $s1 == 0 && $s2 == 0 ){
+	$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_checklist_master} where LOWER(checklist_item_name)= '".strtolower($checklist_item_name)."' GROUP BY checklist_id"));
+	$count = $countObj->count;
+
+		if( strcmp(strtolower($prev_checklist_item_name), strtolower($checklist_item_name))==0){
+			db_query("UPDATE `tbl_checklist_master` set `checklist_item_name` = '".$checklist_item_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`checklist_item_details`='".$desc."' ,`remarks`='".$remarks."' where checklist_id='".$id."'");
+			
+			$message = getMessage('recChecklist', 'code05', array("0"=>$checklist_item_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listchecklist");	
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_checklist_master` set `checklist_item_name` = '".$checklist_item_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`checklist_item_details`='".$desc."' ,`remarks`='".$remarks."' where checklist_id='".$id."'");
+				$message = getMessage('recChecklist', 'code05', array('0'=>$checklist_item_name));
+				drupal_set_message($message);
+				drupal_goto("admin/rec/listchecklist");	
+			
+				}else{
+				db_query("UPDATE `tbl_checklist_master` set  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`checklist_item_details`='".$desc."' ,`remarks`='".$remarks."' where checklist_id='".$id."'");
+				
+				$message = getMessage('recChecklist', 'code06', array("0"=>$checklist_item_name));
+				form_set_error('checklist_item_name', $message);
+			 }	
+		}
+	 }
+}
+
+function rec_checklist_theme() {
+	return array(
+		'rec_checklist_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_checklist_form',
+                                 ),
+        'rec_checklist_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_checklist_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function rec_checklist_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='rec_checklist_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='rec_checklist_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+
+function rec_delchecklist($id, $sno){
+ db_query("UPDATE `tbl_checklist_master` set `status`=0 where checklist_id='".$id."'");
+ $message = getMessage('recChecklist', 'code07', array("0"=>$sno));
+ drupal_set_message($message);
+ drupal_goto('admin/rec/listchecklist');
+}
+
+function rec_enablechecklist($id, $sno){
+ db_query("UPDATE `tbl_checklist_master` set `status`=1 where checklist_id='".$id."'");
+ $message = getMessage('recChecklist', 'code09', array("0"=>$sno));
+ drupal_set_message($message);
+ drupal_goto('admin/rec/listchecklist');
+}
+  
+  
+	
+	

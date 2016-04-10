@@ -1,0 +1,130 @@
+<?php
+
+
+/**
+ *hook_perm
+ */
+ 
+ function HelpdeskReport_init() {
+	drupal_add_css(drupal_get_path('module', 'HelpdeskReport') .'/report_style.css');
+	
+}
+
+function HelpdeskReport_perm() {
+	return array('edit HelpdeskReport','administer HelpdeskReport', 'create HelpdeskReport', 'view HelpdeskReport');
+}
+
+function HelpdeskReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit HelpdeskReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create HelpdeskReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view HelpdeskReport', $account);
+	}
+	
+}
+
+
+function HelpdeskReport_menu(){
+
+  $items['HelpdeskReport'] = array(
+										'title' => t('Help Desk Report'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'HelpdeskReport',
+										'access arguments' => array('administer HelpdeskReport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function HelpdeskReport(){
+  return drupal_get_form('HelpdeskReport_form');
+}
+
+function HelpdeskReport_form(){
+ global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Help Desk Report', 'HelpdeskReport');
+  drupal_set_breadcrumb($breadcrumb);
+
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('From Date'),
+						   '#required' => TRUE,
+						   '#size' => '15',
+						   
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('To Date'),
+						   '#required' => TRUE,
+						   '#size' => '15',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+
+function HelpdeskReport_form_validate($form, &$form_state){
+	
+	$values = $form_state['values'];
+	
+	$from_date = $values['from_date'];
+	$to_date = $values['to_date'];
+	$diary_no = $values['diary_no'];
+	if(!empty($to_date)){
+	if($from_date>$to_date){form_set_error(to_date,t('To Date should be greater than From Date'));}
+	}
+	
+}
+
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function HelpdeskReport_theme() {
+	
+	return array(
+		
+		'HelpdeskReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'HelpdeskReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}
+
+
+/*function HelpdeskReport_cron(){
+	
+	
+	
+	
+	
+}	*/

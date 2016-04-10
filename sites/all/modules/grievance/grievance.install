@@ -1,0 +1,120 @@
+<?php
+function grievance_install() {
+	drupal_install_schema('grievance');
+}
+
+function grievance_uninstall() {
+	drupal_uninstall_schema('grievance');
+}
+
+function grievance_schema() {
+	
+	$schema['tbl_grievance'] = array(
+							 'fields' => array(
+											   'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                       'section' => array(
+																   'type' => 'varchar',
+																   'length' => '45',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+                                               'application_type' => array(
+																   'type' => 'varchar',
+																   'length' => '45',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+																   
+												'district_id' => array(
+																   'type' => 'varchar',
+																   'length' => '25',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+																   				   
+                                               'office' => array(
+																   'type' => 'varchar',
+																   'length' => '25',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ), 
+																   
+											 'datecurrent' => array(
+																   'type' => 'varchar',
+																   'length' => '255',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ), 			   
+																   
+                                                 'application_detail' => array(
+																   'type' => 'varchar',
+																   'length' => '255',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+												 'application_name' => array(
+																   'type' => 'varchar',
+																   'length' => '45',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),	
+											 'application_category' => array(
+																   'type' => 'varchar',
+																   'length' => '25',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+										    'permanent_address' => array(
+																   'type' => 'varchar',
+																   'length' => '50',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+										  'correspondence_address' => array(
+																   'type' => 'varchar',
+																   'length' => '50',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),							   
+											'telephone_number' => array(
+																   'type' => 'varchar',
+																   'length' => '10',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),	
+										 'mobile_number' => array(
+																   'type' => 'varchar',
+																   'length' => '10',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+										 'email_address' => array(
+																   'type' => 'varchar',
+																   'length' => '40',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+									
+
+
+
+                                         ),      
+											 
+							 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('vid'),
+							 );
+	return $schema;
+}

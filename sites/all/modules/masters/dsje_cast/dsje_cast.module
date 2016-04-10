@@ -1,0 +1,703 @@
+
+
+<?php
+session_start();
+function dsje_cast_init() {
+	drupal_add_css(drupal_get_path('module', 'dsje_cast') .'/dsje_style.css');
+
+	}
+
+function dsje_cast_perm() {
+	return array('edit dsje_cast','administer dsje_cast', 'create dsje_cast', 'view dsje_cast');
+}
+
+function dsje_cast_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_cast', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_cast', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_cast', $account);
+	}
+}
+
+function dsje_cast_menu() {
+	
+	
+	$items['dsje/list-caste'] = array(
+										'title' => t('List of Caste'),
+										'description' => 'Allow user to View Caste',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewcast',
+										'access arguments' => array('administer dsje_cast'),
+													 
+									  );
+	
+	$items['dsje/list-caste/addcaste'] = array(
+										'title' => t('Add Caste'),
+										'description' => 'Allow user to add Caste',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addcast',
+										'access arguments' => array('administer dsje_cast'),
+													 
+									  );
+   	$items['dsje/list-caste/edit/caste/%'] = array(
+								
+	                                    'title' => t('Edit Caste'),
+										'description' => 'Allow user to add Caste',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addcastedit',
+                                        'page arguments' => array(4),  
+		                                'access arguments' => array('administer dsje_cast'),
+													 
+									  );
+ $items['dsje/list-caste/view/caste/%'] = array(
+								
+	                                    'title' => t('View Caste'),
+										'description' => 'Allow user to add Caste',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addcastview',
+                                        'page arguments' => array(4), 
+		                                'access arguments' => array('administer dsje_cast'),
+													 
+									  );
+
+      $items['dsje/del/caste/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'cast_delete',
+		                                'page arguments' => array(3),
+		                                'access arguments' => array('administer dsje_cast'),
+													 
+									  );
+      $items['dsje/enable/caste/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'cast_enable',
+		                                'page arguments' => array(3),
+		                                'access arguments' => array('administer dsje_cast'),
+													 
+									  );
+	  $items['search-caste-list'] = array(
+										'title' => '',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'search_cast',
+										//'page arguments' => array(1),
+										'access arguments' => array('administer dsje_cast'),
+									);
+
+	return $items;
+}
+
+
+/** listing states */
+//function viewcast(){
+	
+	
+	
+function cast_search_form(){
+	//session_start();
+$form['status']=array(
+'#type'=>'select',
+'#title'=>t('Status'),
+'#required'=>FALSE,
+'#default_value'=>$_SESSION['status'],
+'#options'=>array(''=>'--Select--','0'=>'Disabled','1'=>'Enabled'),
+
+);
+
+$form['search_box']=array(
+'#type' => 'textfield',
+'#title' => '',
+'#required' => FALSE,
+'#size' => 55,
+'#default_value'=>$_SESSION['search_box'],
+//'#attributes' =>array('onkeypress' => 'return onlychar(event)'),
+);
+
+$form['search'] = array(
+'#type' => 'submit',
+'#value' =>t('search'),
+);
+return $form;
+}
+
+//Status:<select name="searchtextstatus">
+//	<option value="" selected = "selected">--Select--</option>
+	//<option value=0 '.$selected0.'>Disabled</option>
+//	<option value=1 '.$selected1.'>Enabled</option>
+	
+//	</select>&nbsp;&nbsp;
+
+function cast_search_form_validate($form,&$form_state){
+ if(is_numeric($form_state['values']['search_box'])){
+	 form_set_error('search_box', 'Please enter Alphabetic value only.');
+ 
+ }
+
+}
+function cast_search_form_submit($form, &$form_state){
+
+//echo '<pre>';
+//print_r($form_state);
+//exit;
+
+$status = $form_state['values']['status'];
+$keydata = $form_state['values']['search_box'];
+$_SESSION['status']=$status;
+$_SESSION['search_box']=$keydata;
+
+drupal_goto('search-caste-list');
+
+
+
+}
+function viewcast(){
+
+$output = listcast();
+return $output;
+}
+
+function search_cast(){
+
+$output =searchlistcast();
+return $output;
+//echo $keydata;
+}
+
+function listcast(){
+
+unset($_SESSION['status']);
+unset($_SESSION['search_box']);
+//$_SESSION['status']=$status;
+//$_SESSION['search_box']=$keydata;
+
+$header = array(
+	array('data' => t('S. No')),
+	array('data' => t('Caste'), 'field' => 'tbl_cast.cast_name', 'sort' => 'asc'),
+	array('data' => t('Caste Type'), 'field' => 'tbl_cast.cast_type_id', 'sort' => 'asc'),
+	array('data' => t('Religion') ,'field' => 'tbl_cast.religion_id', 'sort' => 'asc'),
+	array('data' => t('Status'),'field' => 'tbl_cast.status', 'sort' => 'asc'),
+	array('data' => t('Actions'), 'class' => 'addeditview'),
+		
+	);
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+   if($array[0] == '' ) {
+   $breadcrumb[] = l('List of Castes', 'dsje/list-caste');
+	}  
+drupal_set_breadcrumb($breadcrumb);
+
+$sql = "select * from {tbl_cast}".tablesort_sql($header);
+
+
+$count_query = "SELECT COUNT(*) FROM (" . $sql . ") AS count_query";
+
+$result = pager_query($sql, 10, 0, $count_query);
+
+
+
+if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+
+		if($rs->status==1){
+		  $deleteurl = l("Disable","dsje/del/caste/".$rs->cast_id);
+        }else{
+		  $deleteurl = l("Enable","dsje/enable/caste/".$rs->cast_id);
+		
+		}
+
+		if($rs->status ==1){
+	$status ='Enabled';
+	}else{
+	$status ='Disabled';
+	}
+		
+		$viewlink = l('View','dsje/list-caste/view/caste/'.$rs->cast_id);
+		$editlink = l('Edit','dsje/list-caste/edit/caste/'.$rs->cast_id);
+		//$newdate = date("d-m-Y" ,$rs->dateofupload);
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($rs->cast_name)),
+			array('data' => ucwords(getdataname($rs->cast_type_id))),
+            array('data' => ucwords(getdataname($rs->religion_id))),
+            array('data' => $status),
+			array('data' => $viewlink.' | '.$editlink.' | '.$deleteurl),
+          
+		);
+	  }
+}
+
+
+
+
+ if($rows== NULL)
+	$header=NULL;
+	 
+	 //$output .='<div class="uploadcss">';
+	 $output .='<table id="wrapper"><tr><td class="tblHeaderLeft">List of Caste <span class="addrecord">'.l('Add Caste','dsje/list-caste/addcaste').'</span></td><td class="tblHeaderRight">'.drupal_get_form('cast_search_form').'</td></tr></table>';
+	$output .=theme_table($header,$rows);	
+	$output .=theme('pager', NULL, 1,0);
+
+// $output .='<div>';
+   //$output .= $rscounter->countno;
+	return $output;
+  }
+
+
+
+
+
+function searchlistcast(){
+
+$header = array(
+	array('data' => t('S. No')),
+	array('data' => t('Caste'), 'field' => 'tbl_cast.cast_name', 'sort' => 'asc'),
+	array('data' => t('Caste Type'), 'field' => 'tbl_cast.cast_type_id', 'sort' => 'asc'),
+	array('data' => t('Religion') ,'field' => 'tbl_cast.religion_id', 'sort' => 'asc'),
+	array('data' => t('Status'),'field' => 'tbl_cast.status', 'sort' => 'asc'),
+	array('data' => t('Actions')),
+	
+	);
+    $breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+    $breadcrumb[] = l('List of Castes', 'dsje/list-caste');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+ $status=$_SESSION['status'];
+ $keydata=$_SESSION['search_box'];
+
+
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);	
+if(($status == 0 || $status == 1) && $keydata==''){
+ $sql = "select tbl_cast.religion_id,tbl_cast.status,tbl_cast.cast_type_id,tbl_cast.cast_name,tbl_lookups.lookup_id, tbl_lookups.lookup_name,tbl_cast.cast_id from {tbl_cast} 
+ INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id IN (tbl_cast.religion_id,tbl_cast.cast_type_id)) 
+ WHERE tbl_cast.status='".$status."' GROUP BY tbl_cast.cast_id".tablesort_sql($header);
+}
+if(($status == 0 || $status == 1) && $keydata){
+ $sql = "select tbl_cast.religion_id,tbl_cast.status,tbl_cast.cast_type_id,tbl_cast.cast_name,tbl_lookups.lookup_id, tbl_lookups.lookup_name,tbl_cast.cast_id from {tbl_cast} 
+ INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id IN (tbl_cast.religion_id,tbl_cast.cast_type_id)) 
+ WHERE (tbl_lookups.lookup_name LIKE '".$val."' OR tbl_cast.cast_name LIKE '".$val."') AND tbl_cast.status='".$status."' GROUP BY tbl_cast.cast_id".tablesort_sql($header);
+
+}
+ if($keydata && $status==''){
+ $sql = "select tbl_cast.religion_id,tbl_cast.status,tbl_cast.cast_type_id,tbl_cast.cast_name,tbl_lookups.lookup_id, tbl_lookups.lookup_name,tbl_cast.cast_id from {tbl_cast} 
+ INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id IN (tbl_cast.religion_id,tbl_cast.cast_type_id)) 
+ WHERE (tbl_lookups.lookup_name LIKE '".$val."' OR tbl_cast.cast_name LIKE '".$val."') GROUP BY tbl_cast.cast_id".tablesort_sql($header);
+ 
+}
+ if($keydata=='' && $status==''){
+ $sql = "select tbl_cast.religion_id,tbl_cast.status,tbl_cast.cast_type_id,tbl_cast.cast_name,tbl_lookups.lookup_id, tbl_lookups.lookup_name,tbl_cast.cast_id from {tbl_cast} 
+ INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id IN (tbl_cast.religion_id,tbl_cast.cast_type_id)) 
+  GROUP BY tbl_cast.cast_id".tablesort_sql($header);
+}
+    
+
+//drupal_set_message($sql);
+$count_query = "SELECT COUNT(*) as mycount FROM (" . $sql . ") AS count_query";
+$cres = db_query($count_query);
+$crs = db_fetch_object($cres);
+$totalcount = $crs->mycount;
+$result = pager_query($sql,10, 0, $count_query);
+
+if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*10;
+	}else{
+	$counter = 0;
+	}
+if($result){
+        
+	  while($rs = db_fetch_object($result)){
+		   $counter++;
+	   
+		if($rs->status==1){
+		  $deleteurl = l("Disable","dsje/del/caste/".$rs->cast_id);
+        }else{
+		  $deleteurl = l("Enable","dsje/enable/caste/".$rs->cast_id);
+		
+		}
+		
+		if($rs->status ==1){
+	$status ='Enabled';
+	}else{
+	$status ='Disabled';
+	}
+		$viewlink = l('View','dsje/list-caste/view/caste/'.$rs->cast_id);
+		$editlink = l('Edit','dsje/list-caste/edit/caste/'.$rs->cast_id);
+		//$newdate = date("d-m-Y" ,$rs->dateofupload);
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($rs->cast_name)),
+			array('data' => ucwords(getdataname($rs->cast_type_id))),
+            array('data' => ucwords(getdataname($rs->religion_id))),
+            array('data' => $status),
+			array('data' => $viewlink.' | '.$editlink.' | '.$deleteurl),
+          
+		);
+	  }
+}
+
+ if($rows== NULL)
+	$header=NULL;
+	$output .='<table  id="wrapper" class="searchrecord"><tr><td>'.$totalcount.' Record(s) Found | '.l('View All','dsje/list-caste').'</td></tr></table>';
+	
+	 $output .='<table id="wrapper"><tr><td class="tblHeaderLeft">List of Caste <span class="addrecord">'.l('Add Caste','dsje/list-caste/addcaste').'</span></td><td align="right">'.drupal_get_form('cast_search_form').'</td></tr></table>';
+	// $output .='<div class="uploadcss">';
+	$output .=theme_table($header,$rows);
+	 $output .=theme('pager', NULL, 20,0 );
+// $output .='<div>';
+  
+	return $output;
+  }
+
+ 
+ 
+ 
+function dsje_addcast(){
+ return drupal_get_form('dsje_cast_form');
+}
+
+/**
+ *form creation
+ */
+
+function dsje_cast_form() {
+  $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Caste', 'dsje/list-caste');
+  $breadcrumb[] = l('Add Caste', 'dsje/list-caste/addcaste');
+  
+
+  drupal_set_breadcrumb($breadcrumb);
+
+	
+	$sqlreligion= "select lookup_name,lookup_id from {tbl_lookups} WHERE status='1' AND lookupType_id ='5' ORDER BY lookup_name";
+	$resreligion =db_query($sqlreligion);
+	$religionarray[''] = array();
+	$religionarray[''] = '--Select--'; 
+	if($resreligion){
+	  while($rsreligion = db_fetch_object($resreligion)){
+	    $religionarray[$rsreligion->lookup_id] = ucwords($rsreligion->lookup_name);
+	  }
+	}
+	
+
+	$sqlcasttype = "select lookup_name,lookup_id from {tbl_lookups} WHERE status='1' AND lookupType_id ='8' ORDER BY lookup_name";
+	$rescasttype =db_query($sqlcasttype);
+	$casttypearray[''] = array();
+	$casttypearray[''] = '--Select--'; 
+	if($rescasttype){
+	  while($rscasttype = db_fetch_object($rescasttype)){
+	    $casttypearray[$rscasttype->lookup_id] = ucwords($rscasttype->lookup_name);
+	  }
+	}
+	
+	$form['religion_id'] = array(
+		'#type' => 'select',
+		'#title' => t('Religion'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' => $religionarray,
+		
+	);
+	
+	$form['cast_type_id'] = array(
+		'#type' => 'select',
+		'#title' => t('Caste Type'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' => $casttypearray,
+		
+	);
+	
+	$form['cast_name'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('Caste Name'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return onlychar(event)'),
+	);
+	
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/list-caste'),
+	
+);
+
+$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+/**
+ *submit handler
+ */
+
+function dsje_cast_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $religion_id =$values['religion_id'];
+    $cast_type = $values['cast_type_id'];
+    $cast_name = trim($values['cast_name']);
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+	$updatedby = $user->uid;
+	$updatedon = $createdon;
+     
+   db_query("INSERT INTO {tbl_cast} (religion_id,cast_type_id,`cast_name`,`status` ,`createdby` ,`createdon` ,`updatedby` ,`updatedon`) VALUES('".$religion_id."','".$cast_type."','".$cast_name."', '".$status."','".$createdby."','".$createdon."','".$updatedby."','".$updatedon."') ");
+	$message = getMessage('dsjecast', 'code05', array("0"=>$cast_name));
+	drupal_set_message($message);
+	drupal_goto('dsje/list-caste');
+	
+}
+
+function dsje_cast_form_validate($form, &$form_state) {
+$values = $form_state['values'];
+    $religion_id =$values['religion_id'];
+    $cast_type = $values['cast_type_id'];
+    $cast_name = trim($values['cast_name']);
+
+	 $sql="select count(cast_name) as cast_name from {tbl_cast} where religion_id='".$religion_id."' AND cast_type_id='".$cast_type."' AND cast_name='".$cast_name."'";
+	
+	$res=db_query($sql);
+	$rs=db_fetch_object($res);
+	if($rs->cast_name >0){
+		form_set_error('cast_name',$cast_name.' already exist');
+	}
+
+
+
+	
+}
+
+
+
+function dsje_addcastedit($id){
+ return drupal_get_form('dsje_cast_form_edit',$id);
+}
+
+function dsje_cast_form_edit($form_state,$id) {
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Caste', 'dsje/list-caste');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Caste', 'dsje/list-caste/edit/caste/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+	
+$sqlreligion= "select lookup_name,lookup_id from {tbl_lookups} WHERE status='1' AND lookupType_id ='5' ORDER BY lookup_name";
+	$resreligion =db_query($sqlreligion);
+	$religionarray[''] = array();
+	$religionarray[''] = '--Select--'; 
+	if($resreligion){
+	  while($rsreligion = db_fetch_object($resreligion)){
+	    $religionarray[$rsreligion->lookup_id] = ucwords($rsreligion->lookup_name);
+	  }
+	}
+	
+
+	$sqlcasttype = "select lookup_name,lookup_id from {tbl_lookups} WHERE status='1' AND lookupType_id ='8' ORDER BY lookup_name";
+	$rescasttype =db_query($sqlcasttype);
+	$casttypearray[''] = array();
+	$casttypearray[''] = '--Select--'; 
+	if($rescasttype){
+	  while($rscasttype = db_fetch_object($rescasttype)){
+	    $casttypearray[$rscasttype->lookup_id] = ucwords($rscasttype->lookup_name);
+	  }
+	}
+
+$sql = "select * from {tbl_cast} where cast_id ='".$id."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+	$form['religion_id'] = array(
+		'#type' => 'select',
+		'#title' => t('Religion'),
+		'#required' => TRUE,
+		'#default_value' => $rs->religion_id,
+		'#options' => $religionarray,
+		
+	);
+	
+	$form['cast_type_id'] = array(
+		'#type' => 'select',
+		'#title' => t('Caste Type'),
+		'#required' => TRUE,
+		'#default_value' =>$rs->cast_type_id,
+		'#options' => $casttypearray,
+		
+	);
+	
+	$form['cast_name'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('Caste Name'),
+		'#required' => TRUE,
+		'#default_value' => $rs->cast_name,
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return onlychar(event)'),
+	);
+	
+	
+		
+	$form['cast_id'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $id,
+		
+	);
+
+
+$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/list-caste'),
+	
+);
+	
+	$form['submit'] = array(
+	'#type' => 'submit',
+	'#default_value' => t('Save')
+	);
+	return $form;
+}
+function dsje_cast_form_edit_validate($form, &$form_state) { 
+   global $user;
+	//echo '<pre>';
+	//print_r($form_state);
+	//exit;
+	$values = $form_state['values'];
+    $religion_id =$values['religion_id'];
+    $cast_type = $values['cast_type_id'];
+    $cast_name = trim($values['cast_name']);
+	$cast_id = $values['cast_id'];	
+	$sql="select cast_name from {tbl_cast} where religion_id ='".$religion_id."' AND cast_type_id ='".$cast_type."' AND cast_id !='".$cast_id."'";
+	$res=db_query($sql);
+	$rs=db_fetch_object($res);
+	if($rs->cast_name == $cast_name){
+		form_set_error('cast_name',$cast_name.' already exist');
+	}
+} 
+
+function dsje_cast_form_edit_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $religion_id =$values['religion_id'];
+    $cast_type = $values['cast_type_id'];
+    $cast_name = trim($values['cast_name']);
+	$cast_id = $values['cast_id'];	
+	$updatedby=time();
+    db_query("UPDATE {tbl_cast} SET religion_id='".$religion_id."', cast_type_id='".$cast_type."',`cast_name`='".$cast_name."',`updatedby`='".$user->uid."' ,`updatedon`='".$updatedby."' where cast_id='".$cast_id."'");
+	$message = getMessage('dsjecast', 'code10', array("0"=>$cast_name));
+	drupal_set_message($message);
+	drupal_goto('dsje/list-caste');
+	
+}
+
+/**
+ *hook_theme
+ */
+function dsje_cast_theme() {
+	
+	return array(
+				 
+		'dsje_cast_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_cast_form',
+                                 ),
+        'dsje_cast_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_cast_form_edit',
+                                 ),
+
+				 );
+}
+
+
+
+
+ function cast_delete($id){
+	$cast_id =  $id;
+	
+	db_query("UPDATE {tbl_cast} SET status=0 WHERE cast_id ='".$cast_id."'");
+	$sql = "select cast_name from {tbl_cast} where cast_id='".$cast_id."'";
+	$res = db_query($sql);
+	$rs= db_fetch_object($res);
+
+	$message = getMessage('dsjecast', 'code07', array("0"=>$rs->cast_name));
+	drupal_set_message($message);
+   
+	drupal_goto("dsje/list-caste");
+ }
+
+  function cast_enable($id){
+	$cast_id =  $id;
+	db_query("UPDATE {tbl_cast} SET status=1 WHERE cast_id ='".$cast_id."'");
+	$sql = "select cast_name from {tbl_cast} where cast_id='".$cast_id."'";
+	$res = db_query($sql);
+	$rs= db_fetch_object($res);
+	$message = getMessage('dsjecast', 'code09', array("0"=>$rs->cast_name));
+	drupal_set_message($message);
+	drupal_goto("dsje/list-caste");
+ }
+
+
+ 
+
+  
+
+
+function dsje_addcastview($id){
+	
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Caste', 'dsje/list-caste');
+  if($array[2] == 'view'){
+     $breadcrumb[] = l('View Caste', 'dsje/list-caste/view/caste/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from {tbl_cast} where cast_id = $id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+	$status ='Enabled';
+	}else{
+	$status ='Disabled';
+	}
+	 
+
+	$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+	$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Caste Details</h2></td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">Religion:</td><td class="normal">'.ucwords(getdataname($rs->religion_id)).'</td></tr>';	
+	$output .='<tr class="oddrow"><td width="50%">Caste Type:</td><td class="normal">'.ucwords(getdataname($rs->cast_type_id)).'</td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">Caste:</td><td class="normal">'.ucwords($rs->cast_name).'</td></tr>';
+	$output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+	$output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'dsje/list-caste').'</td></tr>';
+	$output .='</table>';
+
+	return $output;
+}	
+
+
+function getdataname($lookup_id){
+	$sql ="select lookup_name from {tbl_lookups} where lookup_id='".$lookup_id."'";
+	$res= db_query($sql);
+	$rs = db_fetch_object($res);
+	return $rs->lookup_name;
+}

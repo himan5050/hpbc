@@ -1,0 +1,144 @@
+<?php
+
+
+/**
+ *hook_perm
+ */
+ 
+ function vacancyReport_init() {
+	//drupal_add_css(drupal_get_path('module', 'vacancyReport') .'/report_style.css');
+	
+}
+
+function vacancyReport_perm() {
+	return array('edit vacancyReport','administer vacancyReport', 'create vacancyReport', 'view vacancyReport');
+}
+
+function vacancyReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit vacancyReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create vacancyReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view vacancyReport', $account);
+	}
+	
+}
+
+
+function vacancyReport_menu(){
+
+  $items['vacancyReport'] = array(
+										'title' => t('Vacancy list with status details'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'vacancyReport',
+										'access arguments' => array('administer vacancyReport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function vacancyReport(){
+  return drupal_get_form('vacancyReport_form');
+}
+
+function vacancyReport_form(){
+ global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Vacancy list with status details', 'vacancyReport');
+  drupal_set_breadcrumb($breadcrumb);
+
+ $form['status'] = array(       '#type' => 'select',
+								'#title' => t('Status'),
+								'#required' => FALSE,
+								'#default_value' =>'--Select--',
+								'#options' => DeputationStatus(), 
+								);
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('From Date'),
+						   '#required' => FALSE,
+						   '#size' => '15',
+						   
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('To Date'),
+						   '#required' => FALSE,
+						   '#size' => '15',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+function vacancyReport_form_validate($form, &$form_state)
+{
+	$values = $form_state['values'];
+	
+	$from_date = $values['from_date'];
+	$to_date = $values['to_date'];
+	$status = $values['status'];
+	
+if($from_date == '' && $to_date == '' && $status == ''){
+  form_set_error('form','Please enter any one of search field..');
+}else if($from_date != '' && $to_date == ''){
+  form_set_error('to_date','Please enter To Date');
+}
+else if($to_date != '' && $from_date == ''){
+  form_set_error('from_date','Please enter From Date');
+}
+else if($to_date != '' && $from_date != '' &&($to_date < $from_date)){
+
+  form_set_error('to_date','To Date should be greater than the From Date');
+
+
+}	
+}
+
+ function vacancyReport_theme() {
+	
+	return array(
+		
+		'vacancyReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'vacancyReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}
+
+
+/*function vacancyReport_cron(){
+	
+	
+	
+	
+	
+}	*/

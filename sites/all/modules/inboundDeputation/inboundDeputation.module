@@ -1,0 +1,1069 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/inboundDeputation.inc');
+drupal_add_js(drupal_get_path('module','inboundDeputation').'/rec_program.js');
+
+function inboundDeputation_node_info() {
+	return array (
+					'inboundDeputation' => array (
+										'name' => t('List of Vacancies'),
+										'module' => 'inboundDeputation',
+										'description' => "Creates Deputation Vacancies",
+										'has_title' => TRUE,
+										'title_label' => t('Deputation Vacancies'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function inboundDeputation_perm() {
+	return array('edit inboundDeputation','administer inboundDeputation', 'create inboundDeputation', 'view inboundDeputation');
+}
+
+function inboundDeputation_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit inboundDeputation', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create inboundDeputation', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view inboundDeputation', $account);
+	}
+}
+ 
+ function inboundDeputation_menu(){
+	 $items['list/inboundDeputationList'] = array(
+		   'title' => 'List of Vacancies',
+		   'page callback' => 'inboundDeputation_list',
+		   'access arguments' => array('administer inboundDeputation'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewinboundDeputation/%'] = array(
+								'title' => t('view Deputation Vacancies'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_inboundDeputation',
+								'page arguments' => array(1),
+								'access arguments' => array('administer inboundDeputation'),
+		                        
+						);
+  
+  $items['admin/dsje/del/inboundDeputation/%'] =  array(
+	               						 'title' => t('Delete Deputation Vacancies'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'inboundDeputation_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer inboundDeputation'),
+													 
+	);
+ $items['admin/dsje/enable/inboundDeputation/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'inboundDeputation_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer inboundDeputation'),
+														 
+	);	
+	
+	
+	$items['dsje/selectHired'] = array(
+										'page callback' => 'selectHired',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function inboundDeputation_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjeinboundDeputation', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Deputation Order No.'), 'field' => 'tbl_inbounddeputation.order_no', 'sort' => 'asc'),
+	array('data' => t('Vacancy Title'), 'field' => 'tbl_inbounddeputation.vacancy_title', 'sort' => 'asc'),
+	array('data' => t('Starting From'), 'field' => 'tbl_inbounddeputation.date_from', 'sort' => 'asc'),
+//	array('data' => t('Status'), 'field' => 'tbl_inbounddeputation.status2', 'sort' => 'asc'),
+	array('data' => t('Action'),'class' => 'addeditview',),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Vacancies', 'list/inboundDeputationList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	$datewa=date('Y-m-d',strtotime($_REQUEST['searchtext']));
+	 $sql = "SELECT  node.nid,node.uid, tbl_inbounddeputation.order_no, tbl_inbounddeputation.vacancy_title,tbl_inbounddeputation.date_from,tbl_inbounddeputation.status2 FROM {node}
+	 INNER JOIN tbl_inbounddeputation ON (node.nid=tbl_inbounddeputation.nid)
+	 WHERE node.uid='".$user->uid."' AND( tbl_inbounddeputation.order_no LIKE '".$val."' OR tbl_inbounddeputation.vacancy_title LIKE '".$val."' OR tbl_inbounddeputation.date_from LIKE '".$datewa."' OR tbl_inbounddeputation.status2 LIKE '".$val."'  ) ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_inbounddeputation ON (node.nid=tbl_inbounddeputation.nid)
+	 
+	 WHERE node.uid='".$user->uid."' AND( tbl_inbounddeputation.order_no LIKE '".$val."' OR tbl_inbounddeputation.vacancy_title LIKE '".$val."' OR tbl_inbounddeputation.date_from LIKE '".$datewa."' OR tbl_inbounddeputation.status2 LIKE '".$val."'  ) ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	    $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid,tbl_inbounddeputation.order_no,tbl_inbounddeputation.vacancy_title, tbl_inbounddeputation.date_from , tbl_inbounddeputation.status2 FROM {node}
+	 INNER JOIN tbl_inbounddeputation ON (node.nid=tbl_inbounddeputation.nid)
+	 WHERE node.uid='".$user->uid."'".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/inboundDeputationList';
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjeinboundDeputation', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/inboundDeputationList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage('dsjeinboundDeputation', 'code01', NULL),"node/add/inboundDeputation");
+   	$lising = getMessage('dsjeinboundDeputation', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewinboundDeputation/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/inboundDeputation/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/inboundDeputation/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => $rs->order_no),
+			array('data' => $rs->vacancy_title),
+			array('data' => date('d-m-Y',strtotime($rs->date_from))),
+          //	array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	return $output .=theme('pager', NULL, 20,0 );
+  }
+
+function inboundDeputation_delete($nid){
+   $node = node_load($nid);
+ 
+ // db_query("Delete FROM {tbl_inbounddeputation} WHERE courtcase_id ='".$courtcase_id."'");
+  db_query("DELETE FROM {tbl_inbounddeputation} WHERE nid ='".$node->nid."'");
+  drupal_set_message(' Deputation Vacancy has been deleted successfully.');
+  drupal_goto("list/inboundDeputationList");
+ }
+
+function inboundDeputation_enable($nid){
+ $orderwa1=db_query("select order_no FROM {tbl_inbounddeputation} where nid='".$nid."'");
+  $orderno=db_fetch_object($orderwa1);
+  //echo $orderno->order_no;exit;
+ // exit;
+  $node = node_load($nid);
+  db_query("DELETE FROM {tbl_inbounddeputation} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Deputation Vacancy has been deleted successfully.');
+  
+   $message=getMessage('dsjeinboundDeputation','code07',array("0"=>$orderno->order_no));
+  drupal_set_message($message);
+  
+ // db_query("UPDATE {tbl_inbounddeputation} SET 	statusnodal =1 WHERE nid ='".$node->nid."'");
+  //drupal_set_message('Deputation Vacancy has been enabled successfully.');
+  drupal_goto("list/inboundDeputationList");
+ }
+
+
+function inboundDeputation_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Vacancies', 'list/inboundDeputationList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Deputation Vacancy', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Deputation Vacancy', 'node/add/inboundDeputation'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  if(is_numeric(arg(1))){
+	$sql = "SELECT * FROM {node} INNER JOIN tbl_inbounddeputation ON (node.nid=tbl_inbounddeputation.nid) WHERE node.nid=".arg(1);
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+  }
+	////////////////////////////////////
+		
+	$koiya=db_query("select * FROM {tbl_inbounddeputation} where nid='".$node->nid."'");
+	$koko=db_fetch_object($koiya);
+	
+	
+		$form['prev_order_no'] = array(
+	'#type' =>'hidden',
+	'#default_value'=> $rs->order_no,
+	);
+	
+	$form['order_no'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Deputation Order No.'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->order_no,
+	 '#maxlength'=>18,
+	'#size' =>25,
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	$form['vacancy_title'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Vacancy Title'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->vacancy_title,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' => 'return textcoursename(event)'),
+	);
+	
+	$form['job_description'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Job Description'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->job_description,
+	 '#maxlength'=>500,
+	'#size' =>500,
+	'#rows'=>'5',
+	'#cols'=>'10',
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	$form['pay_details'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Pay Details'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->pay_details,
+	 '#maxlength'=>200,
+	'#size' =>200,
+	'#rows'=>5,
+	'#columns'=>10,
+	'#attributes' => array('onkeypress' => 'return alphanumericdot(event)'),
+	);
+	
+	   $form['duration_years'] = array(
+ 
+                '#type' => 'textfield',
+                '#title' => t('Years'),
+                 '#required' =>TRUE,
+                  '#default_value' => $rs->duration_years,
+                 '#maxlength'=> 2,
+				 '#attributes' => array('onkeypress' => 'return fononlyn(event)')
+
+);
+
+$form['duration_months'] = array(
+ 
+                '#type' => 'textfield',
+                '#title' => t('Months'),
+                 '#required' =>TRUE,
+                  '#default_value' => $rs->duration_months,
+                 '#maxlength' => 2,
+				 '#attributes' => array('onkeypress' => 'return fononlyn(event)')
+
+);
+/*
+$form['duration_days'] = array(
+ 
+                '#type' => 'select',
+                '#title' => t('Duration in Days'),
+                 '#required' =>TRUE,
+                  '#default_value' => $node->duration_days,
+                 '#options' => DurationDays(),
+
+);*/
+	
+	
+	$form['date_from'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Joining From',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->date_from,
+	);
+	
+	$form['date_last'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Last Date of Application',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->date_last,
+	);
+	
+	$kk=db_query("select status2 FROM {tbl_inbounddeputation} where tbl_inbounddeputation.nid = '".$rs->nid."'");
+	$rs=db_fetch_object($kk);
+	if($rs->status2 != '')
+	{
+	$form['status2'] = array(
+        '#id' => 'status2_id',
+		'#type' => 'select',
+		'#title' => t('Status'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rs->status2,
+		 '#options' => DeputationStatus(),
+		 '#attributes' => array('onchange' => 'return  hired()'),
+		
+		);
+}
+
+
+
+
+//if ($rs->status2 == 'Hired')
+{
+	
+	
+		
+	$form['employee_id'] = array(
+	'#type' =>'textfield',
+	
+	'#title' => t('Previous Employee Id'),
+	'#required' =>FALSE,
+	'#size' =>15,  
+   '#maxlength'=>15, 
+    
+	'#default_value' =>$koko->employee_id, 
+	'#attributes' => array('onkeypress' => 'return  alphanumeric(event)'),	
+	
+	
+	);
+	
+	$form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Employee Name'),
+	'#required' =>FALSE,
+	'#size' =>45,
+	'#maxlength'=>45,  
+	'#default_value' =>$koko->employee_name, 
+	 '#attributes' => array('onkeypress' => 'return  alphabet(event)'),	
+	);
+
+	$form['new_organization'] = array(
+ 
+                '#type' => 'select',
+                '#title' => t('Previous Organization'),
+	              '#required' =>FALSE,
+                  '#default_value' => $koko->new_organization,
+                 '#options' => NewOrganization(),
+				 
+				
+
+);
+		
+	
+	$form['corporation_office'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Previous Branch'),
+	'#required' =>FALSE,
+	'#size' =>45,
+	'#maxlength'=>45,  
+	'#default_value' =>$koko->corporation_office, 
+	'#attributes' => array('onkeypress' => 'return  alphabet(event)'),	
+	);
+	$form['department'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Previous Department'),
+	'#required' =>FALSE,
+	'#size' =>45,
+	'#maxlength'=>45,  
+	'#default_value' =>$koko->department,
+	'#attributes' => array('onkeypress' => 'return  alphabet(event)'),	 
+	);
+	
+	$form['designation'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Previous Designation'),
+	'#required' =>FALSE,
+	'#size' =>45,
+	'#maxlength'=>45,  
+	'#default_value' =>$koko->department, 
+	'#attributes' => array('onkeypress' => 'return  alphabet(event)'),	
+	);
+	
+	$form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	 '#required' =>FALSE,
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $koko->email,
+	 '#attributes' => array('onkeypress' => 'return  emailvali(event)'),		
+
+  );
+  
+
+  $form['mobile'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Mobile No.'),
+	 '#required' =>FALSE,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $koko->mobile,
+	'#attributes' => array('onkeypress' => 'return  fononlyn(event)'),	
+  );
+
+  $form['phone'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Phone No.'),
+	 '#required' =>FALSE,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $koko->phone,
+	'#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  }
+  
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/inboundDeputationList'),
+);
+return $form;
+} 
+
+function selectHired() {
+  
+  
+    $status2 = $_POST['status2'];
+	
+	$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_get_cache($form_build_id, $form_state);
+	
+	$form = form_builder('inboundDeputation_form', $form, $form_state);
+	
+	
+	
+	if ($status2 == 95){
+
+		
+	$form['employee_id'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Employee Id'),
+	'#required' =>FALSE,
+	'#size' =>15,  
+   '#maxlength'=>15, 
+	'#default_value' =>$node->employee_id,
+	'#attributes' => array('onkeypress' => 'return  alphanumeric(event)'),	 
+	);
+	
+	$form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Employee Name'),
+	'#required' =>FALSE,
+	'#size' =>45,
+	'#maxlength'=>45,  
+	'#default_value' =>$node->employee_name, 
+	'#attributes' => array('onkeypress' => 'return  alphabet(event)'),	
+	);
+		$form['new_organization'] = array(
+ 
+                '#type' => 'select',
+                '#title' => t('External Organization'),
+                 '#required' =>FALSE,
+                  '#default_value' => $node->new_organization,
+                 '#options' => NewOrganization(),
+
+);
+	
+	$form['corporation_office'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Corporation Office'),
+	'#required' =>FALSE,
+	'#size' =>45,
+	'#maxlength'=>45,  
+	'#default_value' =>$node->corporation_office, 
+	'#attributes' => array('onkeypress' => 'return  alphabet(event)'),	
+	);
+	$form['department'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Department'),
+	'#required' =>FALSE,
+	'#size' =>45,
+	'#maxlength'=>45,  
+	'#default_value' =>$node->department, 
+	'#attributes' => array('onkeypress' => 'return  alphabet(event)'),	
+	);
+	
+	$form['designation'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Designation'),
+	'#required' =>FALSE,
+	'#size' =>45,
+	'#maxlength'=>45,  
+	'#default_value' =>$node->department, 
+	'#attributes' => array('onkeypress' => 'return  alphabet(event)'),	
+	);
+	
+	$form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	 '#required' =>FALSE,
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $node->email,	
+  );
+  
+
+  $form['mobile'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Mobile No.'),
+	 '#required' =>FALSE,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $node->mobile,
+	 '#attributes' => array('onkeypress' => 'return  fononlyn(event)'),	
+  );
+
+  $form['phone'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Phone No.'),
+	 '#required' =>FALSE,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $node->phone,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+	
+	$output = drupal_render($form['employee_id']);
+	$output .= drupal_render($form['employee_name']);
+	$output .= drupal_render($form['corporation_office']);
+	$output .= drupal_render($form['department']);
+	$output .= drupal_render($form['designation']);
+	$output .= drupal_render($form['email']);
+	$output .= drupal_render($form['mobile']);
+	$output .= drupal_render($form['phone']);
+	
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+	
+	}
+	else
+	{
+	return drupal_json(array('status' =>TRUE , 'data' =>''));
+	}
+	
+	}
+
+function getorderNo($order_no){
+  $sql = "select * FROM {tbl_inbounddeputation} where order_no='".$order_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->order_no=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+function getorderNo_edit($order_no,$prev_order_no){
+  $sql = "select * FROM {tbl_inbounddeputation} where order_no='".$order_no."' AND order_no != '".$prev_order_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->order_no=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+
+function inboundDeputation_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	/*$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Vacancies', 'list/inboundDeputationList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Deputation Vacancy', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add Deputation Vacancy', 'node/add/inboundDeputation');
+	}*/
+	
+	
+	////////////
+	 $breadcrumb = array();
+        $breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Vacancies', 'list/inboundDeputationList');
+        if(arg(1) !='add'){
+		  $breadcrumb[] = l('Edit Deputation Vacancy ', 'node/'.arg(1).'/edit');	
+		}else{
+         $breadcrumb[] = l('Add Deputation Vacancy', 'node/add/intboundDeputation');
+      
+		}
+	
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+  	$order_no=$form->order_no;
+	if($form->prev_order_no == ''){
+	 $statusid = getorderNo($order_no); 
+		if($statusid){
+		form_set_error('order_no',$order_no.t(' Deputation Order No. already exist.'));
+		
+		}
+		}
+		else {
+	 $statusid = getorderNo_edit($order_no,$form->prev_order_no); 
+		if($statusid){
+		form_set_error('order_no',$order_no.t(' Deputation Order No. already exist.'));
+		
+		}
+		
+		}
+	
+  
+  
+  
+  alphanumeric('order_no',$form->order_no,'Deputation Order No.');
+  alphanumeric('vacancy_title',$form->vacancy_title,'Vacancy Title');
+textonlywithdotne('job_description',$form->job_description,'Job Description');	
+fononlyn('duration_years',$form->duration_years,'No. of Years');
+fononlyn('duration_months',$form->duration_months,'No. of Months');
+textonlywithdotne('pay_details',$form->pay_details,'Pay Details');
+$mon=$form->duration_months;
+	if($mon > 11)
+	{
+	form_set_error('duration_months', t('No. of Months should not be more than 11.'));
+	}	
+	$name1=db_query("select lookup_name from {tbl_lookups} where lookup_id=95");
+	$name=db_fetch_object($name1);
+		$date_last=$form->date_last;
+	$date_from=$form->date_from;
+	//print_r($form);exit;
+	 if($date_last >= $date_from && ((!empty($date_last)) && (!empty($date_from))))
+   {
+      form_set_error(date_last, t('Last date of application should be less than the joining date'));
+   }
+	$statusto= $form->status2 ;
+	if($form->status2== 95)
+	{
+	if($form->employee_id==''){form_set_error('',t('Employee Id field is required.'));}
+	if($form->employee_name==''){form_set_error('',t('Employee Name field is required.'));}
+	if($form->new_organization==''){form_set_error('',t('External Organization field is required.'));}
+	if($form->corporation_office==''){form_set_error('',t('Corporation Office field is required.'));}
+	if($form->designation==''){form_set_error('',t('Designation field is required.'));}
+	if($form->department==''){form_set_error('',t('Department field is required.'));}
+	
+	alphabet('employee_name',$form->employee_name,'Employee Name');
+	alphanumeric ('employee_id',$form->employee_id,'Employee Id');
+	alphabet ('corporation_office',$form->corporation_office,'Corporation Office');
+	alphabet ('department',$form->department,'Department');
+	alphabet ('designation',$form->designation,'Designation');
+	textonlywithdotne ('new_organization',$form->new_organization,'New Organization');
+	fononlyn('duration_years',$form->duration_years,'Years');
+	fononlyn('duration_months',$form->duration_months,'Months');
+	fononlyn('mobile',$form->mobile,'Mobile No.');
+	mobilelength($form->mobile,'mobile');
+	phonelength($form->phone,'phone');
+	fononlyn('phone',$form->phone,'Phone No.');
+	////
+	$email=$form->email;
+	if($form->phone=='' && $form->mobile=='')
+  {
+  form_set_error('',t('Please enter Phone Number OR Mobile Number'));
+  }
+  if($email !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (eregi($pattern, $email)){
+          return true;
+       }
+       else {
+          form_set_error('email', t('You must enter valid Email Id.'));
+       }    
+	}
+	$statusemail = getEmail($email); 
+		if($statusemail){
+		form_set_error('email',$email.t(' Email address already exist.'));
+		}
+	
+	//
+
+	
+	/* if($phone=='' && $mobile=='')
+  {
+  form_set_error('',t('Please enter Phone No. OR Mobile No.'));
+  }
+	*/
+	}
+	$statusto= $form->status2 ;
+	if($statusto == 95)
+	{
+	
+	
+	}
+	else {}
+	
+
+ 
+	
+  
+	 
+}
+
+/**
+ *hook_form_alter
+ */
+function inboundDeputation_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='inboundDeputation_node_form'){
+	
+
+	    $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	 $form['author_information']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	  $form['path']['#type'] = hidden;
+	 
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function inboundDeputation_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+  $order_no= $node->order_no;
+  $vacancy_title = $node->vacancy_title;
+	$job_description = $node->job_description;
+ $pay_details=$node->pay_details;
+ 
+ //
+ $employee_id = $node->employee_id;
+ $employee_name= $node->employee_name;
+ $corporation_office= $node->corporation_office;
+ $department= $node->department;
+ $designation= $node->designation;
+ $phone= $node->phone;
+ $mobile= $node->mobile;
+ $email= $node->email;
+ 
+ //
+    $duration_months = $node->duration_months;
+	 $duration_years = $node->duration_years;
+	  $duration_days = $node->duration_days;
+	  $date_from =$node->date_from;
+  $date_last =$node->date_last;
+	 
+	
+	 
+	// $status2='Published'; 
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+ /*drupal_set_message( "INSERT INTO {tbl_inbounddeputation} (`vid`, `nid`,`order_no`,`vacancy_title`, `job_description`,`pay_details`,`duration_years`,`duration_months`,`duration_days`,`date_from`,`date_last`,`status2`,`statusnodal`) VALUES ('".$vid."','".$nid."','".$order_no."','".$vacancy_title."','".$job_description."','".$pay_details."','".$duration_years."','".$duration_months."','".$duration_days."','".$date_from."','".$date_last."','".$status2."','".$statusnodal."')");*/
+
+db_query ("INSERT INTO {tbl_inbounddeputation} (`vid`, `nid`,`order_no`,`vacancy_title`, `job_description`,`pay_details`,`duration_years`,`duration_months`,`duration_days`,`date_from`,`date_last`,`status2`,`statusnodal`) VALUES ('".$vid."','".$nid."','".$order_no."','".$vacancy_title."','".$job_description."','".$pay_details."','".$duration_years."','".$duration_months."','".$duration_days."','".$date_from."','".$date_last."',94,'".$statusnodal."')");
+
+
+
+
+
+
+
+	
+  //  drupal_set_message('Deputation Vacancy Entry has been saved successfully.');
+
+$message=getMessage('dsjeinboundDeputation','code05',array("0"=>$node->order_no));
+  drupal_set_message($message);
+  
+	drupal_goto("list/inboundDeputationList");
+
+ 
+ 
+ }
+
+function inboundDeputation_update($node){
+	
+	 global $user;
+   
+  //all values
+  /////////
+  $order_no= $node->order_no;
+  $vacancy_title = $node->vacancy_title;
+	$job_description = $node->job_description;
+ $pay_details=$node->pay_details;
+	
+	 $employee_id = $node->employee_id;
+ $employee_name= $node->employee_name;
+ $corporation_office = $node->corporation_office;
+ $department = $node->department;
+ $designation = $node->designation;
+ $phone = $node->phone;
+ $mobile = $node->mobile;
+ $email = $node->email;
+
+	 $duration_months = $node->duration_months;
+	 $duration_years = $node->duration_years;
+	  $duration_days = $node->duration_days;
+	  $date_from =$node->date_from;
+  $date_last =$node->date_last;
+	 $status2=$node->status2; 
+
+	$statusnodal = $node->statusnodal;
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$uid=$node->uid;
+	
+	 $new_organization=$node->new_organization;
+	
+	db_query("UPDATE {tbl_inbounddeputation} SET `order_no`='".$order_no."',`vacancy_title`='".$vacancy_title."',`job_description`='".$job_description."',`pay_details`='".$pay_details."',`duration_years`='".$duration_years."',`duration_months`='".$duration_months."',`duration_days`='".$duration_days."',`date_from`='".$date_from."',`date_last`='".$date_last."',`status2`='".$status2."',`employee_id`='".$employee_id."',`employee_name`='".$employee_name."',`corporation_office`='".$corporation_office."',`new_organization`='".$new_organization."',`department`='".$department."',`designation`='".$designation."',`phone`='".$phone."',`mobile`='".$mobile."',`email`='".$email."',`statusnodal`='".$statusnodal."' WHERE nid='".$nid."'");
+	
+		
+	$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$employee_name,1=>$employee_id,2=>$employee_name,3=>$orderno,4=>$corporation_office,5=>$designation,6=>$department,7=>$date_from)); 
+/*$parameter .= json_encode(array(1=>$employee_id)); 
+$parameter .= json_encode(array(2=>$employee_name)); 
+$parameter .= json_encode(array(3=>$orderno));
+$parameter .= json_encode(array(4=>$corporation_office)); 
+$parameter .= json_encode(array(5=>$designation)); 
+$parameter .= json_encode(array(6=>$department)); 
+*/
+
+createMail('inboundDeputation', $email,'',$parameter,'');
+
+$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto))
+{
+	
+	$parameter = '';
+//$to = $u->mail;
+
+$parameter = json_encode(array(0=>$ms->name,1=>$employee_id,2=>$employee_name,3=>$orderno,4=>$corporation_office,5=>$designation,6=>$department)); 
+/*$parameter = json_encode(array(0=>$ms->name)); 
+$parameter .= json_encode(array(1=>$employee_id)); 
+$parameter .= json_encode(array(2=>$employee_name)); 
+$parameter .= json_encode(array(3=>$orderno));
+$parameter .= json_encode(array(4=>$corporation_office)); 
+$parameter .= json_encode(array(5=>$designation)); 
+$parameter .= json_encode(array(6=>$department)); 
+//$to = $u->mail;
+	*/
+createMail('inboundDeputation', $ms->mail,'',$parameter,'');
+}
+
+}
+
+
+
+	//drupal_set_message('Deputation Vacancies have been updated successfully.');
+	
+	$message=getMessage('dsjeinboundDeputation','code06',array("0"=>$node->order_no));
+  drupal_set_message($message);
+  
+	drupal_goto("list/inboundDeputationList");
+	
+	
+}
+
+
+function inboundDeputation_theme() {
+	
+	return array(
+				 
+		'inboundDeputation_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'inboundDeputation_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+
+/* 
+function inboundDeputation_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_inbounddeputation ON (node.nid=tbl_inbounddeputation.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+*/
+  
+function view_inboundDeputation($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Vacancies', 'list/inboundDeputationList');
+   if($array[0] == 'viewinboundDeputation'){
+     $breadcrumb[] = l('View Deputation Vacancy', 'viewinboundDeputation/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * FROM {tbl_inbounddeputation} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from {users} where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+
+
+$status2= getLookupName($rs->status2);
+
+
+$output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="form-container">';
+$output .='<tr class="oddrow"><td colspan="2"><h2>Inbound Deputation </h2></td></tr>';
+
+$output .='<tr class="evenrow"><td width="50%">Deputation Order No. :</td><td class="normal"> '.$rs->order_no.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Vacancy Title:</td><td class="normal"> '.ucwords($rs->vacancy_title).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Job Description:</td><td class="normal"> '.ucwords($rs->job_description).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Pay Details:</td><td class="normal"> '.ucwords($rs->pay_details).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" colspan="2">DURATION</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Years:</td><td class="normal"> '.$rs->duration_years.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Months:</td><td class="normal">'.$rs->duration_months.'</td></tr>';
+//$output .='<tr class="oddrow"><td width="50%">Days:</td><td class="normal">'.$rs->duration_days.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Starting From:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date_from)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Last Date of Application:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date_last)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status2.'</td></tr>';
+
+if ($rs->status2 == 95){
+
+$output .='<tr class="evenrow"><td width="50%">Employee Id:</td><td class="normal"> '.ucwords($rs->employee_id).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Employee Name:</td><td class="normal"> '.ucwords($rs->employee_name).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Previous Organization:</td><td class="normal">'.ucwords(getLookupName($rs->new_organization)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Previous Branch:</td><td class="normal"> '.ucwords($rs->corporation_office).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Previous Department:</td><td class="normal"> '.ucwords($rs->department).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Previous Designation:</td><td class="normal"> '.ucwords($rs->designation).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Phone No.:</td><td class="normal"> '.$rs->phone.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Mobile No.:</td><td class="normal"> '.$rs->mobile.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Email:</td><td class="normal"> '.$rs->email.'</td></tr>';
+}
+//$output .='<tr class="oddrow"><td>Status:</td><td>'.$rs->status2.'</td></tr>';
+
+if ($rs->status2 == 95){
+$output .= '<tr class="oddrow"><td align="center" colspan="2" class="back">'. l(t('Back'), 'list/inboundDeputationList') .'</td></tr>';
+}else{
+$output .= '<tr class="evenrow"><td align="center" colspan="2" class="back">'. l(t('Back'), 'list/inboundDeputationList') .'</td></tr>';
+
+
+}
+
+ $output .='</table>';
+
+return $output ;
+}

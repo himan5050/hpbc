@@ -1,0 +1,215 @@
+<?php
+global $base_url;
+
+/**
+ *hook_perm
+ */
+ 
+function LoanIssueDetail_perm() {
+	return array('edit LoanIssueDetail','administer LoanIssueDetail', 'create LoanIssueDetail', 'view LoanIssueDetail');
+}
+
+function LoanIssueDetail_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit LoanIssueDetail', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create LoanIssueDetail', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view LoanIssueDetail', $account);
+	}
+	
+}
+
+
+function LoanIssueDetail_menu(){
+
+  $items['loanissuedetailreport'] = array(
+										'title' => t('Loan Issue Details'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'loanissuedetailreport',
+										'access arguments' => array('administer loanissuedetailreport'),
+													 
+									  );
+									
+   $items['dsje/sector22'] = array(
+										'page callback' => 'mysector22',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+										
+										
+										
+   return $items;
+}
+//////////////////// 
+
+function SelectSector2()
+  {
+  
+  $query2 = "SELECT * FROM tbl_sectors order by sector_name ASC";
+   $result2 = db_query($query2);
+    $sectorarray = array(''=>'--Select--');
+    while($row2=db_fetch_object($result2))
+          {
+		  
+		  
+             $sectorarray[$row2->sector_id]=ucwords($row2->sector_name);
+          }
+  return $sectorarray;
+ }
+ 
+
+function SelectDistrict2()
+  {
+  
+  $query22 = "SELECT * FROM tbl_district  order by  district_name ASC ";
+   $result22 = db_query($query22);
+    $districtarray2 = array(''=>'--Select--');
+    while($row22=db_fetch_object($result22))
+          {
+		  
+		  
+             $districtarray2[$row22->district_name]=ucwords ($row22->district_name);
+          }
+  return $districtarray2;
+ }
+ 
+
+///////////////////////
+
+
+function loanissuedetailreport(){
+	 $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Loan Issue Details Report', 'loanissuedetailreport');
+  drupal_set_breadcrumb($breadcrumb);
+  return drupal_get_form('LoanIssueDetailsReport_form');
+}
+
+function LoanIssueDetailsReport_form()
+{
+ 
+  global $base_url;
+//breadcrumb
+
+ 
+ $form['district'] = array(
+	            '#type' => 'select',
+	         
+	            '#default_value' =>$districtarray2,
+	            '#options' =>SelectDistrict2(),
+								
+ );
+ 
+ 
+						   
+						   
+	/* $form['sector'] = array(
+                                '#type' => 'textfield',
+								'#title' => t('Sector'),
+								'#size' => '30',
+ );
+ 					   
+	$form['scheme'] = array(
+                                '#type' => 'textfield',
+								'#title' => t('Scheme'),
+								'#size' => '30',
+ );					   
+	*/	
+				   
+   $form['sector9'] = array(
+	            '#type' => 'select',
+	       
+	            '#default_value' =>$node->religion,
+	            '#options' => SelectSector2(), 
+				'#ahah' => array(
+				                       'path' => 'dsje/sector22',
+				                      'method' => 'replace',
+				                      'effect' => 'slide',
+				                      'wrapper' =>'sector',
+				                       ),
+						   
+ );
+ $schemearray7 = array(''=>'--Select--');
+ 
+ $form['scheme4'] = array(
+	'#type' => 'select',
+	'#options' => $schemearray7, 
+	'#id' => 'edit-scheme',
+	'#name' => 'scheme4',
+	);
+ 
+ 
+ 
+ 
+  $form['account'] = array(
+                                '#type' => 'textfield',
+						
+								
+ );
+ 
+ 
+ 
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#value' =>'Generate Report',
+  ); 
+  return $form;
+}
+function mysector22() {
+    $sector_id = $_POST['sector9'];
+	
+	$query = "SELECT scheme_name,loan_scheme_id FROM tbl_scheme_master WHERE sector = '".$sector_id."' order by  scheme_name ASC";
+	$result = db_query($query);
+	//$schemearray = array();
+	$schemearray7 = array(''=>"--Select--");
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$schemearray7[$row->loan_scheme_id] = ucwords($row->scheme_name);
+		$counter++;
+	}
+	if($counter==0) {
+		$schemearray7[''] = "--Select--";
+	}
+	$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('dsje_joinings_form', $form, $form_state);
+
+
+	
+	 $form['scheme4'] = array(
+	'#type' => 'select',
+
+	'#required' => FALSE,
+	//'#default_value' =>'--Select--',
+	'#id' => 'edit-scheme',
+	'#name' => 'scheme4',
+	'#options' => $schemearray7, 
+	);
+
+	$output = drupal_render($form['scheme4']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+ function LoanIssueDetail_theme() {
+	
+	return array(
+		
+		'LoanIssueDetailsReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'LoanIssueDetails_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

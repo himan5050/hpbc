@@ -1,0 +1,71 @@
+<?php
+function bankname_dsje_schema() {
+
+  //Bank Name table
+   $schema['tbl_bankname'] = array(
+							 'fields' => array(
+											   'bankname_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'bank_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '900',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'bankname_id' => array('bankname_id'),
+												),
+							 'primary key' => array('bankname_id'),
+							 );
+	
+	return $schema;
+}
+
+function bankname_dsje_install() {
+	drupal_install_schema('bankname_dsje');
+}
+
+function bankname_dsje_uninstall() {
+	drupal_uninstall_schema('bankname_dsje');
+}

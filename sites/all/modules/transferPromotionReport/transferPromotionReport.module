@@ -1,0 +1,132 @@
+<?php
+
+
+/**
+ *hook_perm
+ */
+ 
+ function transferPromotionReport_init() {
+	//drupal_add_css(drupal_get_path('module', 'transferPromotionReport') .'/report_style.css');
+	
+}
+
+function transferPromotionReport_perm() {
+	return array('edit transferPromotionReport','administer transferPromotionReport', 'create transferPromotionReport', 'view transferPromotionReport');
+}
+
+function transferPromotionReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit transferPromotionReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create transferPromotionReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view transferPromotionReport', $account);
+	}
+	
+}
+
+
+function transferPromotionReport_menu(){
+
+  $items['transferPromotionReport'] = array(
+										'title' => t('Transfer Promotion Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'transferPromotionReport',
+										'access arguments' => array('administer transferPromotionReport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function transferPromotionReport(){
+  return drupal_get_form('transferPromotionReport_form');
+}
+
+function transferPromotionReport_form(){
+ global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Transfer Promotion Register', 'transferPromotionReport');
+  drupal_set_breadcrumb($breadcrumb);
+
+ $form['status'] = array(       '#type' => 'select',
+								'#title' => t(''),
+								'#required' => FALSE,
+								'#default_value' =>'--Select--',
+								'#options' => SelectAction(), 
+								);
+ 
+ 	$form['employee_id'] = array(
+	'#type' =>'textfield',
+	'#title' => t(''),
+	'#required' =>FALSE,
+	'#size' =>15, 
+	 '#maxlength'=>15, 
+	'#default_value' =>$node->employee_id, 
+	//'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+    $form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t(''),
+	'#required' => FALSE,
+	'#default_value' =>$node->employee_name,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	//'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+$form['Departmentid'] = array(
+	'#type' => 'select',
+	'#title' => t(''),
+	'#required' => FALSE,
+	'#default_value' =>$node->Departmentid,
+	'#options' => SelectDepartment(), 
+	);
+	
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function transferPromotionReport_theme() {
+	
+	return array(
+		
+		'transferPromotionReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'transferPromotionReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}
+
+
+/*function transferPromotionReport_cron(){
+	
+	
+	
+	
+	
+}	*/

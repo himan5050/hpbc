@@ -1,0 +1,6 @@
+;$id 
+name="Helpdesk Log Complaint"
+description="Corporation users will be able to log complaints using this module."
+core =6.x
+version = 6.x-1
+package="Dsje"

@@ -1,0 +1,465 @@
+<?php
+function dsje_nationality_init() {
+	//drupal_add_css(drupal_get_path('module', 'rec_language') .'/rec_language.css');
+	
+}
+
+
+function dsje_nationality_perm() {
+	return array('edit dsje_nationality','administer dsje_nationality', 'create dsje_nationality', 'view dsje_nationality');
+}
+
+function dsje_nationality_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_nationality', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_nationality', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_nationality', $account);
+	}
+	
+}
+
+function dsje_nationality_menu() {
+	
+	
+	$items['admin/dsje/listnationality'] = array(
+										'title' => t('List of nationality'),
+										'description' => 'Allow user to View nationality',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewnationality',
+										'access arguments' => array('administer dsje_nationality'),
+													 
+									  );
+	
+	$items['admin/dsje/listnationality/addnationality'] = array(
+										'title' => t('Create nationality'),
+										'description' => 'Allow user to add nationality',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_nationality',
+										'access arguments' => array('administer dsje_nationality'),
+													 
+									  );
+   	$items['admin/dsje/listnationality/edit/nationality/%'] = array(
+								
+										'title' => t('Edit nationality'),
+										'description' => 'Allow user to add nationality',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addnationalityedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_nationality'),
+													 
+									  );
+   $items['admin/dsje/listnationality/view/nationality/%'] = array(
+								
+										'title' => t('View nationality'),
+										'description' => 'Allow user to add nationality',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addnationalityview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_nationality'),
+													 
+									  );
+     $items['admin/dsje/del/nationality/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'nationality_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_nationality'),
+													 
+									  );
+    $items['admin/dsje/enable/nationality/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'nationality_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_nationality'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing nationality
+ */
+
+function viewnationality(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjenationality', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('nationality'), 'field' => 'nationality_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List nationality', 'admin/dsje/listnationality/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT nationality_id, nationality_name, status FROM tbl_nationalities where UPPER(nationality_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_nationalities where UPPER(nationality_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT nationality_id, nationality_name, status FROM tbl_nationalities ".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjenationality', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listnationality');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjenationality', 'code01', NULL),"admin/dsje/listnationality/addnationality");
+   	$lising = getMessage( 'dsjenationality', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listnationality/edit/nationality/".$row->nationality_id,array('attributes'=>array('id'=>'edit-nationality-id')));
+		$viewurl = l("View","admin/dsje/listnationality/view/nationality/".$row->nationality_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/nationality/$row->nationality_id/$row->nationality_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/nationality/$row->nationality_id/$row->nationality_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->nationality_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_nationality(){
+ return drupal_get_form('dsje_nationality_form');
+}
+
+function dsje_nationality_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of nationality', 'admin/dsje/listnationality');
+  if($array[3] == 'addnationality'){
+     $breadcrumb[] = l('Add nationality', 'admin/dsje/listnationality/addnationality');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['nationality_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('nationality Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listnationality'),
+);
+	return $form;
+}
+
+function dsje_nationality_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $nationality_name = trim($values['nationality_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('nationality_name',$nationality_name,'nationality');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_nationalities` (`nationality_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$nationality_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjenationality', 'code05', array("0"=>$nationality_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listnationality');
+	}
+}
+
+function dsje_nationality_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$nationality_name = trim($values['nationality_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('nationality_name',$nationality_name,'nationality');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_nationalities} where UCASE(nationality_name)= '".strtoupper($nationality_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjenationality', 'code06', array("0"=>$nationality_name));
+			form_set_error('nationality_name', $message);
+		}
+	}	
+}
+
+function rec_addnationalityedit($nationality_id){
+ return drupal_get_form('dsje_nationality_form_edit',$nationality_id);
+}
+
+function dsje_nationality_form_edit(&$form_states,$nationality_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List nationality', 'admin/dsje/listnationality');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit nationality', 'admin/dsje/listnationality/edit/nationality/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlnationality = "select * from tbl_nationalities where nationality_id=$nationality_id";
+	$resnationality = db_query($sqlnationality);
+	$rsnationality = db_fetch_object($resnationality);
+	
+	$form['nationality_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsnationality->nationality_id,
+	);
+	
+	$form['nationality_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('nationality Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsnationality->nationality_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['prev_nationality_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsnationality->nationality_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsnationality->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listnationality'),
+);
+	return $form;
+}
+
+function dsje_nationality_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$nationality_id = $values['nationality_id'];
+	$nationality_name = ParseData($values['nationality_name']);
+	$prev_nationality_name = ParseData($values['prev_nationality_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('nationality_name',$nationality_name,'nationality');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_nationalities} where LOWER(nationality_name)= '".strtolower($nationality_name)."' GROUP BY nationality_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_nationality_name), strtolower($nationality_name))==0){
+			db_query("UPDATE `tbl_nationalities` set `nationality_name` = '".$nationality_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where nationality_id='".$nationality_id."'");
+			
+			$message = getMessage('dsjenationality', 'code05', array("0"=>$nationality_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listnationality");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_nationalities` set `nationality_name` = '".$nationality_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where nationality_id='".$nationality_id."'");
+				
+				$message = getMessage('dsjenationality', 'code05', array("0"=>$nationality_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listnationality");	
+			
+			}else{
+				db_query("UPDATE `tbl_nationalities` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where nationality_id='".$nationality_id."'");
+				
+				$message = getMessage('dsjenationality', 'code06', array("0"=>$nationality_name));
+				form_set_error('nationality_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_nationality_theme() {
+	
+	return array(
+				 
+		'dsje_nationality_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_nationality_form',
+                                 ),
+        'dsje_nationality_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_nationality_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_nationality_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_nationality_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_nationality_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function nationality_delete($sid, $sno){
+  $nationality_id =  $sid;
+  db_query("UPDATE {tbl_nationalities} SET status=0 WHERE nationality_id ='".$nationality_id."'");
+  $message = getMessage('dsjenationality', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listnationality");
+ }
+
+
+  function nationality_enable($sid, $sno){
+    $nationality_id =  $sid;
+    db_query("UPDATE {tbl_nationalities} SET status=1 WHERE nationality_id ='".$nationality_id."'");
+  
+    $message = getMessage('dsjenationality', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listnationality");
+  }
+
+  function rec_addnationalityview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List nationality', 'admin/dsje/listnationality');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View nationality', 'admin/dsje/listnationality/view/nationality/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from tbl_nationalities where nationality_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>nationality Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td>nationality:</td><td>'.ucwords($rs->nationality_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='</table></div>';
+$output .=  l(t('Back'), 'admin/dsje/listnationality');
+ return $output;
+  }
+	
+	

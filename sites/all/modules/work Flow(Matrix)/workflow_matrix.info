@@ -1,0 +1,6 @@
+;$id 11/17/2011 Neshat khan
+name = "Workflow Matrix"
+description ="Workflow Matrix"
+core = 6.x
+version =6.x-1
+package="Workflow Matrix"

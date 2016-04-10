@@ -1,0 +1,474 @@
+<?php
+function rec_designation_init() {
+}
+
+
+function rec_designation_perm() {
+	return array('edit rec_designation','administer rec_designation', 'create rec_designation', 'view rec_designation');
+}
+
+function rec_designation_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit rec_designation', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create rec_designation', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view rec_designation', $account);
+	}
+	
+}
+
+function rec_designation_menu() {
+	
+	
+	$items['admin/rec/listdesignation'] = array(
+										'title' => t('List of Designation'),
+										'description' => 'Allow user to View Designation',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewdesignation',
+										'access arguments' => array('administer rec_designation'),
+													 
+									  );
+	
+	$items['admin/rec/listdesignation/adddesignation'] = array(
+										'title' => t('Add Designation'),
+										'description' => 'Allow user to add Designation',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_adddesignation',
+										'access arguments' => array('administer rec_designation'),
+													 
+									  );
+									  
+   	$items['admin/rec/listdesignation/edit/designation/%'] = array(
+								
+										'title' => t('Edit Designation'),
+										'description' => 'Allow user to add Designation',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_adddesignationedit',
+		                                'page arguments' => array(5),
+		                                'access arguments' => array('administer rec_designation'),
+													 
+									  );
+		 $items['admin/rec/listdesignation/view/designation/%'] = array(
+								
+										'title' => t('view Designation'),
+										'description' => 'Allow user to view Designation',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_viewdesignation',
+		                                'page arguments' => array(5),
+		                                'access arguments' => array('administer rec_designation'),
+													 
+									  );
+    $items['admin/rec/del/designation/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'designation_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_designation'),
+													 
+									  );
+  $items['admin/rec/enable/designation/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'designation_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_designation'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing designation
+ */
+ function viewdesignation(){
+ global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage('recDesignation', 'code04', NULL);
+
+   
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Designation Name'), 'field' => 'designation_name', 'sort' => 'asc'),
+		////array('data' => t('Remarks')),
+	    array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List designation', 'admin/rec/listdesignation/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+		$val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+		$query = "SELECT designation_id, designation_name, remarks, status FROM tbl_designations where  UPPER(designation_name) LIKE '".$val."'".tablesort_sql($header);
+        $sqlcount = "SELECT COUNT(*) AS count FROM tbl_designations where  UPPER(designation_name) LIKE '".$val."'".tablesort_sql($header);
+		$rscount = db_query($sqlcount);
+		$rscounter = db_fetch_object($rscount);
+	}else{
+	  	$query = "SELECT designation_id, designation_name, remarks, status FROM tbl_designations".tablesort_sql($header);
+	}
+
+	$output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('recDesignation', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/rec/listdesignation');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage('recDesignation', 'code01', NULL),"admin/rec/listdesignation/adddesignation");
+   	$lising = getMessage('recDesignation', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query,$limit);
+	
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/rec/listdesignation/edit/designation/".$row->designation_id,array('attributes'=>array('id'=>'edit-designation')));
+		$viewurl = l("View","admin/rec/listdesignation/view/designation/".$row->designation_id,array('attributes'=>array('id'=>'edit-designation')));
+     if($row->status=='1'){
+		$deleteurl = l("Disable","admin/rec/del/designation/".$row->designation_id."/".$row->designation_name);
+     }else{
+		$deleteurl = l("Enable","admin/rec/enable/designation/".$row->designation_id."/".$row->designation_name);
+     }
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->designation_name)),
+		//	array('data' => ucfirst($row->remarks)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function rec_adddesignationedit($designation_id){
+ return drupal_get_form('rec_designation_form_edit',$designation_id);
+}
+
+function rec_designation_form_edit(&$form_states,$designation_id) {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of Designations', 'admin/rec/listdesignation');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Designation', 'admin/rec/listdesignation/edit/designation/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+	$sqldesignation = "select * from tbl_designations where designation_id='$designation_id'";
+	$resdesignation = db_query($sqldesignation);
+	$rsdesignation = db_fetch_object($resdesignation);
+	
+	$form['designation_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsdesignation->designation_id,
+	);
+	
+	$form['designation_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Designation Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsdesignation->designation_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+
+	$form['prev_designation_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsdesignation->designation_name,
+	);
+
+
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>$rsdesignation->remarks,
+		'#cols' =>30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+  
+  /*$form['status'] = array(
+		'#type' => 'hidden',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rsdesignation->status,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listdesignation'),
+);
+	return $form;
+}
+
+function rec_designation_form_edit_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $designation_name = parseData(trim($values['designation_name']));
+  $remarks = parseData(trim($values['remarks']));
+  $designation_id = $values['designation_id'];
+$s = textonlyn('designation_name',$designation_name,'Designation Name');
+$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+if($s == 0 && $s1 == 0){
+  $sql = "SELECT * FROM {tbl_designations} where UCASE(designation_name)= '".strtoupper($designation_name)."'  and designation_id !='".$designation_id."'";
+   $res = db_query($sql);
+  
+  if($rs = db_fetch_object($res)){
+		$message = getMessage('recDesignation', 'code06', array("0"=>$designation_name));
+		form_set_error('designation_name', $message);
+   }
+}
+	
+}
+function rec_designation_form_edit_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+	
+    $remarks = trim($values['remarks']);
+    $status = $values['status'];
+	$createdby = $user->uid;
+	$designation_id = $values['designation_id'];
+	$designation_name = parseData(trim($values['designation_name']));
+	$prev_designation_name = parseData($values['prev_designation_name']);
+	$createdon = time();
+	$s = textonlyn('designation_name',$designation_name,'Designation Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_designations} where LOWER(designation_name)= '".strtolower($designation_name)."' GROUP BY designation_id"));
+$count = $countObj->count;
+
+if( strcmp(strtolower($prev_designation_name), strtolower($designation_name))==0){
+		db_query("UPDATE `tbl_designations` set `designation_name` = '".$designation_name."' ,`status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."'  ,`remarks`='".$remarks."' where designation_id='".$designation_id."'");
+		$message = getMessage('recDesignation', 'code05', array("0"=>$designation_name));
+		drupal_set_message($message);
+		drupal_goto("admin/rec/listdesignation");	
+		}
+		else
+		{
+		if($count==0){
+			db_query("UPDATE `tbl_designations` set `designation_name` = '".$designation_name."' ,`status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`remarks`='".$remarks."' where designation_id='".$designation_id."'");
+			$message = getMessage('recDesignation', 'code05', array('0'=>$designation_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listdesignation");	
+		
+			}else{
+			db_query("UPDATE `tbl_designations` set `status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."'  ,`remarks`='".$remarks."' where designation_id='".$designation_id."'");
+			$message = getMessage('recDesignation', 'code06', array("0"=>$designation_name));
+			form_set_error('designation_name', $message);
+		 }	
+	}
+	}
+
+}
+function rec_adddesignation(){
+ return drupal_get_form('rec_designation_form');
+}
+function rec_designation_form() {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of Designations', 'admin/rec/listdesignation');
+  if($array[2] == 'listdesignation'){
+     $breadcrumb[] = l('Add Designation', 'admin/rec/listdesignation/adddesignation');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['designation_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Designation Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+        '#attributes' => array('onkeypress' => 'return textonlyn(event)'), 
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>'',
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listdesignation'),
+);
+	return $form;
+}
+
+function rec_designation_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $designation_name = parseData(trim($values['designation_name']));
+  $remarks = parseData(trim($values['remarks']));
+  
+	$s = textonlyn('designation_name',$designation_name,'Designation Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	  $sql = "SELECT * FROM {tbl_designations} where UCASE(designation_name)= '".strtoupper($designation_name)."' AND status =1";
+	   $res = db_query($sql);
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('recDesignation', 'code06', array("0"=>$designation_name));
+			form_set_error('designation_name', $message);
+	   }
+ }	
+}
+
+
+function rec_designation_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $designation_name = parseData(trim($values['designation_name']));
+    $remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+    $sql = "SELECT * FROM {tbl_designations} where UCASE(designation_name)= '".strtoupper($designation_name)."' AND status !=1";
+    $res = db_query($sql);
+  
+    if($rs = db_fetch_object($res)){
+      db_query("UPDATE tbl_designations SET status=1 where designation_id=$rs->designation_id");
+    }else{
+	  db_query("INSERT INTO `tbl_designations` (`designation_name` ,`remarks`,`status` ,`createdby` ,`createdon`) VALUES('".$designation_name."','".$remarks."','".$status."','".$createdby."','".$createdon."') ");
+     }
+	  $message = getMessage('recDesignation', 'code05', array('0'=>$designation_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listdesignation");	
+
+}
+
+
+function rec_designation_theme() {
+	
+	return array(
+				 
+		'rec_designation_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_designation_form',
+                                 ),
+        'rec_designation_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_designation_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function rec_designation_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='rec_designation_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='rec_designation_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+  function designation_delete($sid,$name){
+	  $designation_id = $sid;
+   db_query("UPDATE `tbl_designations` set `status`=0 where designation_id='".$designation_id."'");
+ $message = getMessage('recDesignation', 'code07', array("0"=>$name));
+ drupal_set_message($message);
+ drupal_goto('admin/rec/listdesignation');
+ }
+
+   function designation_enable($sid,$name){
+	  $designation_id = $sid;
+   db_query("UPDATE `tbl_designations` set `status`=1 where designation_id='".$designation_id."'");
+ $message = getMessage('recDesignation', 'code09', array("0"=>$name));
+ drupal_set_message($message);
+ drupal_goto('admin/rec/listdesignation');
+ }
+
+function rec_viewdesignation($designation_id){
+	$sql = "select * from tbl_designations where designation_id = '$designation_id' ";
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+ if($rs->status =='0'){
+  $status ='Disabled';
+}else{
+  $status ='Enabled';
+}
+
+
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+
+
+
+$output ='<div id="dms-agreement">';
+$output .='<table cellpadding="3" cellspacing="2" border="0" id="wrapper">';
+$output .='<tr class="oddrow"><td colspan="2"><h2>Designation Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td>Designation Name:</td><td>'.ucwords($rs->designation_name).'</td></tr>';
+//$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+$output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+
+ $output .='</table></div>';
+ $output .=  l(t('Back'), 'admin/rec/listdesignation');
+return $output;
+  }
+
+
+
+  
+  
+	
+	

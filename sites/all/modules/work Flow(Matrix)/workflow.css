@@ -1,0 +1,20 @@
+.workflowcol{display: inline-block;float: left;width: 430px;}
+.workflowcol #edit-workflow-list-wrapper  #edit-workflow-list label{ width:174px;}
+.workflowcol #edit-to-date-wrapper label{ width:135px;}
+#edit-dispatch-number-wrapper label{width:135px;}
+.bttncol{display: inline-block;float: left;width: 386px; text-align:right; margin-top:5px;}
+
+.outcol #edit-duration-years-wrapper label{width:70px;}
+.outcol #edit-duration-months-wrapper label{width:70px;}
+
+.pteg{ margin-left:30px;}
+.outcol input[type="text"]{width:50px;}
+
+.outcol{display: inline-block;float: left;width: 185px;}
+.outbond{margin-left:265px;}
+
+.workflowcss .wfcss h3{display:inline-block; width:300px;}
+#mysearch{float:right;}
+.hcss{width:37%;}
+.mcss{width:505px;}
+#smscss{margin-right:30px;}

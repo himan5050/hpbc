@@ -1,0 +1,71 @@
+<?php
+function dsje_testModule_schema() {
+
+  //language table
+   $schema['tbl_testModules'] = array(
+							 'fields' => array(
+											   'testModule_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'testModule_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                    	   	   'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'testModule_id' => array('testModule_id'),
+												),
+							 'primary key' => array('testModule_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_testModule_install() {
+	drupal_install_schema('dsje_testModule');
+}
+
+function dsje_testModule_uninstall() {
+	drupal_uninstall_schema('dsje_testModule');
+}

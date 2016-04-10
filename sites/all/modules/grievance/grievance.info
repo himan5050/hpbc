@@ -1,0 +1,4 @@
+; $Id$
+name = Grievance
+description = "Grievance"
+core = 6.x

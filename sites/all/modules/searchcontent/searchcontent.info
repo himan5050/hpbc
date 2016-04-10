@@ -1,0 +1,6 @@
+;$id 
+name="Search Content"
+description="Search the listed content "
+core =6.x
+version = 6.x-1
+package="Content Search"

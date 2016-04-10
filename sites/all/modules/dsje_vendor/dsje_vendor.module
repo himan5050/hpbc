@@ -1,0 +1,1241 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/dsje_joinings.inc');
+//drupal_add_css(drupal_get_path('module', 'dsje_guestuser') .'/dsje_guestuser.css');
+
+function dsje_vendor_perm() {
+	return array('edit dsje_vendor','administer dsje_vendor', 'create dsje_vendor', 'view dsje_vendor');
+}
+
+function dsje_vendor_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_vendor', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_vendor', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_vendor', $account);
+	}
+}
+ 
+ function dsje_vendor_menu(){
+	 $items['list/vendor'] = array(
+		   'title' => 'List of Vendors',
+		   'page callback' => 'vendor',
+		   'access arguments' => array('administer dsje_vendor'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewvendor/%'] = array(
+								'title' => t('view Vendor'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_vendor',
+								'page arguments' => array(1),
+								'access arguments' => array('administer dsje_vendor'),
+		                        
+						);
+  
+  $items['admin/dsje/del/vendor/%/%'] =  array(
+	               						 'title' => t('Delete Vendor'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'vendor_delete',
+		           			             'page arguments' => array(4,5),
+		               			         'access arguments' => array('administer dsje_vendor'),
+													 
+	);
+ $items['admin/dsje/enable/vendor/%/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'vendor_enable',
+		            			            'page arguments' => array(4,5),
+		                  				    'access arguments' => array('administer dsje_vendor'),
+														 
+	);	
+
+$items['create_vendor'] = array(
+	'title' => 'Vendor Registration Form',
+	'type' => MENU_CALLBACK,
+	'page callback' => 'create_vendor',
+	'access arguments' => array('access content'),
+    'access callback' => TRUE,
+);		
+
+$items['edit_vendor/%'] = array(
+	'title' => '',
+	'type' => MENU_CALLBACK,
+	'page callback' => 'edit_vendor',
+	  'page arguments' => array(1),
+	'access arguments' => array('access content'),
+    'access callback' => TRUE,
+);
+
+
+   return $items;
+ }
+  
+  
+  
+
+  
+function vendor(){
+	global $user, $base_url;
+	$limit =(int)getMessage('recvendor', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Vendor Name'), 'field' => 'tbl_vendor.employee_name', 'sort' => 'asc'),
+	array('data' => t('Email ID'), 'field' => 'tbl_vendor.email', 'sort' => 'asc'),
+	array('data' => t('State'),'field'=> 'tbl_vendor.state_id','sort'=>'asc'),
+	array('data' => t('Status'),'field'=> 'tbl_vendor.statusnodal','sort'=>'asc'),
+	array('data' => t('Action'), 'class' => 'addeditview'),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Vendors', 'list/vendor'.$array[1].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	
+	
+	$status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "tbl_vendor.employee_name LIKE '".$val."' OR tbl_vendor.state_id LIKE '".$val."' OR tbl_vendor.email LIKE '".$val."' OR tbl_dsjestate.state_name LIKE '".$val."' ";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "tbl_vendor.statusnodal='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(tbl_vendor.employee_name LIKE '".$val."' OR tbl_vendor.state_id LIKE '".$val."' OR tbl_vendor.email LIKE '".$val."' OR tbl_dsjestate.state_name LIKE '".$val."') AND tbl_vendor.statusnodal='".$status."'";
+	 } 
+	 	
+		
+		/////////////state
+	
+   $sql ="select   tbl_vendor.employee_name,tbl_vendor.vendor_id,tbl_vendor.email,tbl_vendor.status2,tbl_vendor.state_id,tbl_vendor.statusnodal from {tbl_vendor} INNER JOIN tbl_dsjestate ON (tbl_vendor.state_id=tbl_dsjestate.state_id) 
+   where (".$searchquery.")".tablesort_sql($header);
+   
+   
+   $sqlcount1 = "SELECT COUNT(*) AS count from {tbl_vendor}
+	INNER JOIN tbl_dsjestate  ON (tbl_vendor.state_id=tbl_dsjestate.state_id)
+	WHERE (".$searchquery.")";
+   
+		
+		
+		///////////////state
+		
+		
+	 /*$sql ="select employee_name,email,status2,state_id,statusnodal from {tbl_vendor} where (employee_name LIKE '".$val."' OR state_id LIKE '".$val."' OR email LIKE '".$val."'  )".tablesort_sql($header);
+	 */
+	  
+	
+   $sqlcount = "SELECT COUNT(*) asncount FROM (" . $sql . ") AS count_query";
+    $dbcount = db_query($sqlcount);
+   $rscount = db_fetch_object($dbcount);
+$tcount =  $rscount->asncount;
+   
+   /*$sqlcount1 = "SELECT COUNT(*) AS count_query  from {tbl_vendor} where (employee_name LIKE '".$val."' OR state_id LIKE '".$val."' OR email LIKE '".$val."')";*/
+  
+   $result = pager_query($sql,$limit,0, $sqlcount);
+	 
+	}else{
+	
+	   $sql ="select employee_name,email,vendor_id,status2,state_id,statusnodal from {tbl_vendor}".tablesort_sql($header);
+	   $sqlcount = "SELECT COUNT(*) FROM (" . $sql . ") AS count_query";
+	   $result = pager_query($sql,$limit,0, $sqlcount);
+	}
+	
+$t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+	 $output = '<form method="post" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	
+	$output .= t(getMessage('recvendor', 'code01', array("0"=>$tcount)))." | ".l('View All','list/vendor');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage('recvendor', 'code02', NULL),"create_vendor");
+   $lising =getMessage('recvendor', 'code03', NULL); 
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>	
+	</tr>
+	</table></form>';
+
+	
+	
+	if($_REQUEST['page']){
+
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		
+		$editurl = l("Edit","edit_vendor/".$rs->vendor_id);
+
+		$viewurl = l("View","viewvendor/".$rs->email);
+		//$po_working_zone_id = $rs ->po_working_zone_id;
+		/*if($po_working_zone_id){
+			$zone_name = getWorkingZone($po_working_zone_id);
+		}else{
+			$zone_name = 'N/A';
+		}*/
+		  
+		if($rs->statusnodal == 1){
+		       $st='Enable';
+		       $deleteurl = l("Disable","admin/dsje/del/vendor/".$rs->email.'/'.$rs->employee_name);
+		}else{
+			   $st ='Disable';
+			   $deleteurl = l("Enable","admin/dsje/enable/vendor/".$rs->email.'/'.$rs->employee_name);
+		}
+
+      
+		 // $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($rs->employee_name)),
+			//array('data' => ucwords($rs->employee_type)),
+            array('data' => $rs->email),
+            array('data' => getState($rs->state_id)),
+			//array('data' => ucwords($rs->designation_name)),
+			//array('data' => ucwords($zone_name)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." |".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+
+ if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, $limit,0 );
+	
+		return $output ;
+  }
+
+function vendor_delete($emailid,$name){
+  
+  db_query("UPDATE {users} SET status=0 WHERE mail ='".$emailid."'");
+  db_query("UPDATE {tbl_vendor } SET statusnodal=0 ,status2='Inactive User' WHERE email ='".$emailid."'");
+  drupal_set_message('User '.$name.' has been disabled successfully.');
+  drupal_goto("list/vendor");
+ }
+
+function vendor_enable($emailid,$name){
+  
+  db_query("UPDATE {users} SET status=1 WHERE mail ='".$emailid."'");
+  db_query("UPDATE {tbl_vendor } SET statusnodal=1 ,status2='Active User' WHERE email ='".$emailid."'");
+  drupal_set_message('User '.$name.' has been enabled successfully.');
+  drupal_goto("list/vendor");
+
+//email will be sent on enabling and disabling if required later on
+ }
+
+
+function create_vendor(){
+  return drupal_get_form('vendor_form');
+}
+
+
+
+function vendor_form($form){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Vendor', 'list/vendor');
+	$breadcrumb[] = l('Vendor Registration Form', 'create_vendor');
+	
+	drupal_set_breadcrumb($breadcrumb);
+   
+  
+	
+    $form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Name'),
+	'#required' => TRUE,
+    //'#maxlength'=>45,
+	'#size' =>45,
+	'#default_value' => $node->employee_name,
+	'#id' => 'edit-employee-name',
+	 '#attributes' => array('onkeypress' => 'return textnospeno(event,"edit-employee-name",45)'),
+	);
+	
+     $form['officeid2'] = array(
+	'#type' => 'select',
+	'#title' => t('Corporation Office'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->officeid2,
+	'#options' => SelectOffices(), 
+	);
+	
+	
+	
+    $form['pan'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Pan'),
+	'#required' => TRUE,
+    '#maxlength'=>10,
+	'#minlength'=>10,
+	'#size' =>45,
+	'#default_value' => $node->pan,
+	'#id' => 'pan',
+	'#attributes' => array('onkeypress' =>'return alphanumeric(event)'),
+	);
+	
+	$form['sales_tax'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Sales Tax'),
+	'#required' => TRUE,
+    '#maxlength'=>15,
+	'#size' =>45,
+	'#default_value' => $node->sales_tax,
+	'#id' => 'sales_tax',
+	'#attributes' => array('onkeypress' =>'return alphanumeric(event)'),
+	);
+	
+	$form['cst'] = array(
+	'#type' =>'textfield',
+	'#title' => t('CST'),
+	'#required' => TRUE,
+    '#maxlength'=>15,
+	'#size' =>45,
+	'#default_value' => $node->cst,
+	'#id' => 'cst',
+	'#attributes' => array('onkeypress' =>'return alphanumeric(event)'),
+	);
+	
+	$form['dob'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Birth',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $node->dob,
+	);
+	
+
+		
+	$form['gender'] = array(
+	'#type' => 'select',
+	'#title' => t('Gender'),
+	'#required' => TRUE,
+	'#default_value' => $node->gender,
+	'#options' => selectGender(),
+	);
+	
+	
+	
+
+ $form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	 '#required' =>TRUE,
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $node->email,
+	 '#id' =>'email_vali',
+	  '#attributes' => array('onkeypress' =>'return emailvali(event)'),
+  );
+  
+
+
+
+$form['add_type'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Address Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $node->add_type,
+		 '#options' => AddressType(),
+
+);
+
+  $form['add_line1'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 1'),
+	'#required' => TRUE,
+	'#default_value' =>$node->add_line1,
+	'#size' =>25,
+	 '#maxlength'=>100,
+	  '#id' =>'add_line1',
+	  '#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"add_line1",100)'),
+	);
+	
+  $form['add_line2'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 2'),
+	'#required' => TRUE,
+	'#default_value' =>$node->add_line2,
+	'#size' =>25,
+	 '#maxlength'=>100,
+	  '#id' =>'add_line2',
+	 '#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"add_line2",25)'),
+	);
+	
+$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>$node->state_id,
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	
+	
+
+	 	
+
+	 $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $node->district_id,
+		'#options' =>array(''=>'--Select--'),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $node->tehsil_id,
+			'#options' =>array(''=>'--Select--'),
+		   
+		);
+	
+		
+	
+	
+  $form['block'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Block'),
+	'#required' => TRUE,
+	'#default_value' =>$node->block,
+	 '#maxlength'=>20,
+	'#size' =>20,
+ '#id' =>'t-block',
+	'#attributes' => array('onkeypress' =>'return textnospe(event,"t-block",20)'),
+	);
+	
+		
+  	
+ $form['pincode'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('PIN Code'),
+	 '#required' =>FALSE,
+	 '#size' =>15, 
+	 '#maxlength'=>6,
+	 '#minlength'=>6,
+	 '#default_value' => $node->pincode,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+
+	
+		$form['logindetails'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('<b>Login Info</b>'),
+		'#tree' => TRUE,
+		);
+		$form['logindetails']['username'] = array(
+		'#type' =>'textfield',
+		'#title' => t('User Name'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		 '#maxlength'=>60,
+		'#default_value' => '',
+		'#attributes' => array('onkeypress' =>'return addressvalidation(event)'),
+		);
+		
+		$form['logindetails']['password'] = array(
+		'#type' =>'password',
+		'#title' => t('Password'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		 '#maxlength'=>60,
+		'#id' => 'da_password', 
+		'#attributes' => array('onkeyup' => 'checkPassword()'), 
+	    '#description' =>'<div id="test"></div>',	
+		);
+		
+		$form['logindetails']['cpassword'] = array(
+		'#type' =>'password',
+		'#title' => t('Confirm Password'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		 '#maxlength'=>60,
+			 '#description' =>'The Password contains, Must be at least 8 characters,
+     Must contain at least one lower case letter, one upper case letter, one digit and one special character,
+    Valid special characters are -   @#$%^&+=',	
+		); 
+
+	   //$form['logindetails']['my_captcha'] = array(
+       //'#type' => 'captcha',
+       //'#captcha_type' => 'captcha/Math',
+   // );
+		
+
+$form['submit'] = array(
+	'#type' => 'submit',
+	'#value' => t('Register'),
+);
+return $form;
+} 
+
+
+function edit_vendor($vendor_id){
+	
+  return drupal_get_form('vendor_form_edit',$vendor_id);
+}
+
+
+
+function vendor_form_edit($form_state,$vendor_id){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Vendor', 'list/vendor');
+	$breadcrumb[] = l('Edit Vendor Registration Form', 'edit_vendor');
+	
+	drupal_set_breadcrumb($breadcrumb);
+   $stuff=db_query("select * from {tbl_vendor} where vendor_id='".$vendor_id."'");
+   $rs=db_fetch_object($stuff);
+  
+	
+
+	$form['vendorid']=array(
+		
+	'#type' =>'hidden',
+		'#default_value' => $rs->vendor_id,
+	
+	);
+
+    $form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Name'),
+	'#required' => TRUE,
+    //'#maxlength'=>45,
+	'#size' =>45,
+	'#default_value' => $rs->employee_name,
+	'#id' => 'edit-employee-name',
+	 '#attributes' => array('onkeypress' => 'return textnospeno(event,"edit-employee-name",45)'),
+	);
+	
+	     $form['officeid2'] = array(
+	'#type' => 'select',
+	'#title' => t('Corporation Office'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->officeid2,
+	'#options' => SelectOffices(), 
+	);
+	
+	
+	$form['dob'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Birth',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->dob,
+	);
+	
+
+		
+	$form['gender'] = array(
+	'#type' => 'select',
+	'#title' => t('Gender'),
+	'#required' => TRUE,
+	'#default_value' => $rs->gender,
+	'#options' => selectGender(),
+	);
+	
+	
+	
+$form['prev_email']=array(
+
+ '#type' =>'hidden',
+'#default_value' => $rs->email,
+);
+ $form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	 '#required' =>TRUE,
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $rs->email,
+	 '#id' =>'email_vali',
+	  '#attributes' => array('onkeypress' =>'return emailvali(event)'),
+  );
+  
+
+
+
+$form['add_type'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Address Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rs->add_type,
+		 '#options' => AddressType(),
+
+);
+
+  $form['add_line1'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 1'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->add_line1,
+	'#size' =>25,
+	 '#maxlength'=>100,
+	  '#id' =>'add_line1',
+	  '#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"add_line1",100)'),
+	);
+	
+  $form['add_line2'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 2'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->add_line2,
+	'#size' =>25,
+	 '#maxlength'=>100,
+	  '#id' =>'add_line2',
+	 '#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"add_line2",25)'),
+	);
+	
+$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->state_id,
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	
+	
+
+	 	
+
+	 $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $rs->district_id,
+		'#options' =>array(''=>'--Select--'),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $rs->tehsil_id,
+			'#options' =>array(''=>'--Select--'),
+		   
+		);
+	
+		
+	
+	
+  $form['block'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Block'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->block,
+	 '#maxlength'=>20,
+	'#size' =>20,
+ '#id' =>'t-block',
+	'#attributes' => array('onkeypress' =>'return textnospe(event,"t-block",20)'),
+	);
+	
+		
+  	
+ $form['pincode'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('PIN Code'),
+	 '#required' =>FALSE,
+	 '#size' =>15, 
+	 '#maxlength'=>6,
+	  '#minlength'=>6,
+	 '#default_value' => $rs->pincode,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+ $form['pan'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Pan'),
+	'#required' => TRUE,
+    '#maxlength'=>10,
+	'#minlength'=>10,
+	'#size' =>45,
+	'#default_value' => $rs->pan,
+	'#id' => 'pan',
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	
+	);
+	
+	$form['sales_tax'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Sales Tax'),
+	'#required' => TRUE,
+   '#maxlength'=>15,
+	'#size' =>45,
+	'#default_value' => $rs->sales_tax,
+	'#id' => 'pan',
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	
+	);
+	
+	$form['cst'] = array(
+	'#type' =>'textfield',
+	'#title' => t('CST'),
+	'#required' => TRUE,
+    '#maxlength'=>15,
+	'#size' =>45,
+	'#default_value' => $rs->cst,
+	'#id' => 'pan',
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	
+	);
+	
+	
+	
+
+	   //$form['logindetails']['my_captcha'] = array(
+       //'#type' => 'captcha',
+       //'#captcha_type' => 'captcha/Math',
+   // );
+		
+
+$form['submit'] = array(
+	'#type' => "submit",
+	'#value' => t('Register'),
+);
+return $form;
+} 
+
+
+
+
+
+
+
+
+
+function vendor_form_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+
+	
+    $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Vendor', 'list/vendor');
+	$breadcrumb[] = l('Vendor Registration Form', 'create_vendor');
+	drupal_set_breadcrumb($breadcrumb);
+	
+	$name = $values['employee_name'];
+	$dob = $values['dob'];
+	$gender = $values['gender'];
+	$mailid = $values['email'];
+	
+	 if($mailid !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (eregi($pattern, $mailid)){
+          return true;
+       }
+       else {
+          form_set_error('email', t('You must enter valid Email Id.'));
+       }    
+	}
+	
+	$addtype = $values['add_type'];
+	
+	$stateid= $values['state_id'];
+	$districtid = $values['district_id'];
+	$tehsilid = $values['tehsil_id'];
+	$block = $values['block'];
+	$pincode = $values['pincode'];
+	$userdetails =  $values['logindetails'];
+	$username = $userdetails['username'];
+	$userpassword = $userdetails['password'];
+	$usercpassword = $userdetails['cpassword'];
+	$pan = $values['pan'];
+	
+  alphanumeric('block',$block,'Block');
+  alphabet('employee_name',$employee_name,'Guest Name');
+  alphanumeric ('add_line1',$add_line1,'Address Line 1');
+  alphanumeric ('add_line2',$add_line2,'Address Line 2');
+  alphanumeric ('pan',$pan,'Pan');
+  alphanumeric ('cst',$cst,'CST');
+ alphanumeric ('sales_tax',$sales_tax,'Sales Tax');
+  pincodelength($pincode,'pincode');
+  panlength($pan,'pan');
+
+  $date2 =  substr($dob,0,10);
+ //echo $values['logindetails']['cpassword'];exit;
+  if($form->logindetails['cpassword'] != 1){
+   custom_user_validate_name($form->logindetails['username'],'username');
+   custom_Password_validate_name( $form->logindetails['password'],'password');
+      $password = $values['logindetails']['password'];
+   $cpassword = $values['logindetails']['cpassword'];
+  if($password != $cpassword){
+    form_set_error(logindetails, t('Password Missmatch.'));
+  }
+  }
+  
+  
+  $year = dateDiff($date2,date('Y-m-d'), $precision = 6);
+
+ if($year[0] < 18){
+	  form_set_error('dob','DOB Can not be less than 18 Years.');
+  }
+ fononlyn('pincode',$pincode,'Pin Code');
+ if($pan!='')
+ {
+   if((strlen($pan))<10)
+   {
+     form_set_error('Pan Number Should Be 10 Character');
+   }
+ }
+ 
+ if($usercpassword != $userpassword){
+   custom_user_validate_name($username,'username');
+   if($userpassword){
+   custom_Password_validate_name( $userpassword,'password');
+   }
+      $password = $userpassword;
+      $cpassword = $usercpassword;
+	  
+			  if($password != $cpassword){
+			//	form_set_error('', t('Password Missmatch.'));
+			  }
+	 
+  }
+
+
+  $email = $mailid;
+   if($form->program_uid){
+  }else{
+		$statusemail = getEmail($email); 
+		if($statusemail){
+		form_set_error('email',$email.t(' Email address already exist.'));
+		}
+		
+		if($username){
+				$statususername = getUsername($username);
+				if($statususername){
+				form_set_error('username',$username.t(' already exist.'));
+				}
+		}
+
+		//else{
+			//form_set_error('username',t(' Please enter User Name.'));
+		//}
+  }
+ 
+ /*if($pan!='' && (strlen($pan)<10))
+ {
+  form_set_error('Pan', t('Pan Number Can Not Be Less Than 10'));
+ }*/
+ 
+  if($email !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (!preg_match($pattern, $email)){
+		 return true;
+       }
+       else {
+          form_set_error('email', t('You must enter valid Email Id.'));
+       } 
+	   
+	}
+
+
+
+}
+
+//edit validate
+
+
+function vendor_form_edit_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+
+	//echo '<pre>';
+	//  print_r($values);
+   // echo '<pre>';exit;
+    $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Vendor', 'list/vendor');
+	$breadcrumb[] = l('Vendor Registration Form', 'create_vendor');
+	drupal_set_breadcrumb($breadcrumb);
+	
+	$name = $values['employee_name'];
+	$dob = $values['dob'];
+	$gender = $values['gender'];
+	$mailid = $values['email'];
+	$addtype = $values['add_type'];
+	
+	$stateid= $values['state_id'];
+	$districtid = $values['district_id'];
+	$tehsilid = $values['tehsil_id'];
+	$block = $values['block'];
+	$pincode = $values['pincode'];
+	$prev_email=$values['prev_email'];
+	$pan=$values['pan'];
+	$cst=$values['cst'];
+	$sales_tax=$values['sales_tax'];
+	 pincodelength($pincode,'pincode');
+  alphanumeric('block',$block,'Block');
+  alphabet('employee_name',$employee_name,'Guest Name');
+  alphanumeric ('add_line1',$add_line1,'Address Line 1');
+  alphanumeric ('add_line2',$add_line2,'Address Line 2');
+  $date2 =  substr($dob,0,10);
+  date('Y-m-d');
+  $year = dateDiff($date2,date('Y-m-d'), $precision = 6);
+  if($year[0] < 18){
+	  form_set_error('dob','DOB Can not be less than 18 Years.');
+  }
+ fononlyn('pincode',$pincode,'Pin Code');
+ 
+ if($pan!='')
+ {
+   if((strlen($pan))<10)
+   {
+     form_set_error('pan','Pan Number Should Be 10 Character');
+   }
+ }
+  $email = $mailid;
+  if($prev_email != $mailid){
+  if($form->program_uid){
+  }else{
+		$statusemail = getEmail($email); 
+		if($statusemail){
+		form_set_error('email',$email.t(' Email address already exist.'));
+		}
+  }
+		
+		//else{
+			//form_set_error('username',t(' Please enter User Name.'));
+		//}
+  }
+
+ 
+  if($email !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (eregi($pattern, $email)){
+          return true;
+       }
+       else {
+          form_set_error('email', t('You must enter valid Email Id.'));
+       }    
+	}
+	
+}
+
+
+
+
+function vendor_form_submit($form, &$form_state) {
+   global $user;
+   $values = $form_state['values'];
+
+	$name = $values['employee_name'];
+	$dob = $values['dob'];
+	$gender = $values['gender'];
+	$mailid = $values['email'];
+	$addtype = $values['add_type'];
+	$addressline1 = $values['add_line1'];
+	$addressline2 = $values['add_line2'];
+	$stateid= $values['state_id'];
+	$districtid = $values['district_id'];
+	$tehsilid = $values['tehsil_id'];
+	$block = $values['block'];
+	$pincode = $values['pincode'];
+	$userdetails =  $values['logindetails'];
+	$pan =  $values['pan'];
+	 $cst =  $values['cst'];
+	 $sales_tax =  $values['sales_tax'];
+	
+	$username = $userdetails['username'];
+	$userpassword = $userdetails['password'];
+	$usercpassword = $userdetails['cpassword'];
+
+	$statusnodal =  1;  
+	
+	$office=$values['officeid2'];
+	
+	//db_query("INSERT into {tbl_vendor} (employee_name,gender,dob,add_type,add_line1,add_line2,district_id,tehsil_id,state_id,block,pincode,email,username,password,statusnodal,status2,pan) VALUES ('".$name."','".$gender."','".$dob."','".$addtype."','".$addressline1."','".$addressline2."','".$districtid."','".$tehsilid."','".$stateid."','".$block."','".$pincode."','".$mailid."','".$username."','".md5($userpassword)."','".$statusnodal."','Active User','".$pan."')");
+
+	db_query("INSERT into {tbl_vendor} (officeid2,employee_name,gender,dob,add_type,add_line1,add_line2,district_id,tehsil_id,state_id,block,pincode,email,username,password,statusnodal,status2,pan,cst,sales_tax) VALUES ('".$office."','".$name."','".$gender."','".$dob."','".$addtype."','".$addressline1."','".$addressline2."','".$districtid."','".$tehsilid."','".$stateid."','".$block."','".$pincode."','".$mailid."','".$username."','".md5($userpassword)."','".$statusnodal."','Active User','".$pan."','".$cst."','".$sales_tax."')");
+
+	
+	$parameter = json_encode(array(0=>"$employee_name",1=>"$username",2=>"$userpassword"));
+
+
+createMail('dsje_vendor', $email,'',$parameter,'');
+	
+	
+	
+	//user table
+	db_query("INSERT INTO {users} (name,pass,mail,status,force_password_change) VALUES('".$username."','".md5($userpassword)."','".$mailid."','0','1')");
+	
+	//db_query("insert INTO {users_roles} (`uid`,`rid`) values ('".$uid."','41')");
+	//mailing system
+	
+	//custom_mail($user->uid,$username,$password,$email,$employee_name);
+//echo 'test';
+  // exit;
+	$sql ="SELECT MAX(uid) as uid FROM {users}";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	$uid = $rs->uid;
+
+	db_query("insert INTO {users_roles} (uid,rid) values ('".$uid."','41')");
+
+	$created = time();
+	db_query("INSERT INTO {force_password_change_users} SET uid='".$uid."',last_force='".$created."'");
+  
+    $message = getMessage('recvendor', 'code05', array("0"=>$name));
+
+  
+    drupal_set_message($message);
+	drupal_goto('list/vendor');
+
+ 
+ }
+ 
+//update
+
+function vendor_form_edit_submit($form,&$form_state){
+   global $user;
+   $values = $form_state['values'];
+ // echo '<pre>';
+    //print_r($values);
+//echo '<pre>';exit;
+   
+	$name = $values['employee_name'];
+	$dob = $values['dob'];
+	$gender = $values['gender'];
+	$mailid = $values['email'];
+	$addtype = $values['add_type'];
+	$addressline1 = $values['add_line1'];
+	$addressline2 = $values['add_line2'];
+	$stateid= $values['state_id'];
+	$districtid = $values['district_id'];
+	$tehsilid = $values['tehsil_id'];
+	$block = $values['block'];
+	$pincode = $values['pincode'];
+	$userdetails =  $values['logindetails'];
+	$username = $userdetails['username'];
+	$userpassword = $userdetails['password'];
+	$usercpassword = $userdetails['cpassword'];
+
+	$statusnodal =  1;  
+	$vendorid=$values['vendorid'];;
+    $pan =  $values['pan'];
+	 $cst =  $values['cst'];
+	 $sales_tax =  $values['sales_tax'];
+
+$office=$values['officeid2'];
+
+	db_query("update {tbl_vendor} set officeid2='".$office."', employee_name='".$name."',gender='".$gender."',dob='".$dob."',add_type='".$addtype."',add_line1='".$addressline1."',add_line2='".$addressline2."',district_id='".$districtid."',tehsil_id='".$tehsilid."',state_id='".$stateid."',block='".$block."',pincode='".$pincode."',email='".$mailid."',statusnodal='".$statusnodal."',pan='".$pan."',cst='".$cst."',sales_tax='".$sales_tax."' where vendor_id='".$vendorid."'");
+	
+
+	//user table
+
+	$prev_email=$form->prev_email;
+	db_query("update {users} set mail='".$mailid."' where mail='".$prev_email."'");
+	
+	
+
+    $message = getMessage('recvendor', 'code06', array("0"=>$name));
+
+  
+    drupal_set_message($message);
+	if(getRole($user->uid) == 41){
+		drupal_goto('welcome-deshboard');	
+	
+	}else{
+       drupal_goto('list/vendor');
+       }
+ 
+ }
+
+
+
+function dsje_vendor_theme() {
+	
+	return array(
+				 
+		'vendor_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_vendor_form',
+                                 ),
+
+			'vendor_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_vendor_form_edit',
+                               ),
+       
+
+				 );
+}
+
+
+  
+function view_vendor($emailid){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Vendors', 'list/vendor');
+       $breadcrumb[] = l('View Users', 'viewemployee/'.$array[1].'');
+  
+  drupal_set_breadcrumb($breadcrumb);
+  
+
+ $sql = "select * from {tbl_vendor} where email = '".$emailid."'";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+ if($rs->gender ==2){
+  $gender ='Female';
+}else{
+  $gender ='Male';
+}
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+
+
+if($rs->pincode ==''){
+  $pincode = 'NA';
+}else{
+  $pincode = $rs->pincode;
+}
+
+$addsql = "select lookup_name from {tbl_lookups} where lookup_id = '".$rs->add_type."' AND lookupType_id = 27";
+$addres = db_query($addsql);
+$addrs = db_fetch_object($addres);
+
+$output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="form_container">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Vendor Details</h2></td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">UID:</td><td class="normal">'.$unique.'</td></tr>';
+//$rid = getRole($rs->program_uid);
+$output .='<tr class="evenrow"><td width="50%">Name:</td><td class="normal">'.ucwords($rs->employee_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date of Birth:</td><td class="normal">'.date('d-m-Y',strtotime(substr($rs->dob,0,10))).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.ucwords($rs->status2).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Gender:</td><td class="normal">'.ucwords(getLookupName($rs->gender)).'</td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">Address:</td><td>';
+$output .='<tr class="evenrow"><td width="50%">Address Type:</td><td class="normal">'.ucwords($addrs->lookup_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Addresss Line 1:</td><td class="normal">'.ucwords($rs->add_line1).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Addresss Line 2:</td><td class="normal">'.ucwords($rs->add_line2).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">State:</td><td class="normal">'.ucwords(getState($rs->state_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">District:</td><td class="normal">'.ucwords(getdistrict($rs->district_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Tehsil:</td><td class="normal">'.ucwords(gettehsil($rs->tehsil_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Block:</td><td class="normal">'.$rs->block.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Pin Code:</td><td class="normal">'.$pincode.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Email Id:</td><td class="normal">'.$rs->email.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Pan:</td><td class="normal">'.$rs->pan.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">CST:</td><td class="normal">'.$rs->cst.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Sales Tax:</td><td class="normal">'.$rs->sales_tax.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Corporation Office:</td><td class="normal">'.getCorporationName($rs->officeid2).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$statusnodal.'</td></tr>';
+if(getRole($user->uid) == 41){
+$output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'welcome-deshboard').'</td></tr>';
+}else{
+$output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'list/vendor').'</td></tr>';	
+}
+ $output .='</table>';
+return $output ;
+}

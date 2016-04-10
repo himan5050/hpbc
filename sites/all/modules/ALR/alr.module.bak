@@ -1,0 +1,1415 @@
+<?php
+global $user;
+/**  ROLE LIST
+
+Workflow name : Arrear of Land Revenue (ALR) Recovery   workflowid of ALR = 10
+
+DM Est (HOD Est) (13)               Level  1   
+Hod Loans (18)        Level  2
+GM(19)              Level  3
+MD(6)			     Level  4
+DRO(22)		     Level  5
+Dealing Hand(37)    Level  6
+
+
+
+DM => Hod Loans => GM => MD => DRO => Dealing Hand
+
+
+//Approved   20
+//Reject     21
+//query      22
+//l approved 23
+//q reply 0 level  24
+//q reply other 25
+
+
+Table   tbl_loanee_detail
+alr_status = 0 you can proceed this account for alr
+alr_status = 1 on alr 
+alr_status = 2 alr successfully approved
+
+
+user list hodloan => hodloan, dmloan=>dmloan,gmloan=>gmloan,mdloan=>mdloan,droloan=>droloan,dealinhloan => dealinhloan
+
+**/
+
+
+
+
+
+
+/**
+*@hook_menu
+*/
+
+function alr_menu(){
+   
+  
+  $items['workflowpending'] = array(
+          'title' => 'All Pending Task',
+	      'page callback' => 'workflowpending',
+	      'type' => MENU_NORMAL_ITEM,
+	      'access arguments' => array('access content'),
+  );
+  
+  
+  $items['alr'] = array(
+          'title' => 'Arrear of Land Revenue (ALR) Recovery',
+	      'page callback' => 'alr',
+	      'type' => MENU_NORMAL_ITEM,
+	      'access arguments' => array('access content'),
+  );
+  //viewdetails
+
+$items['viewdetails/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'viewdetails',
+	'page arguments' => array(1),
+	'access arguments' => array('access content'),
+	
+);
+
+//allalrilst
+  $items['allalrilst'] = array(
+          'title' => 'Arrear of Land Revenue (ALR) Recovery List',
+	      'page callback' => 'allalrilst',
+	      'type' => MENU_NORMAL_ITEM,
+	      'access arguments' => array('access content'),
+  );
+   $items['alr_pending'] = array(
+          'title' => 'Arrear of Land Revenue (ALR) Recovery  (Pending)',
+	      'page callback' => 'alr_pending',
+	      'type' => MENU_NORMAL_ITEM,
+	      'access arguments' => array('access content'),
+  );
+ 
+  $items['action_arl/%/%/%/%'] = array(
+          'title' => 'Arrear of Land Revenue (ALR) Recovery  (Action)',
+	      'page callback' => 'action_arl',
+	      'type' => MENU_NORMAL_ITEM,
+	      'page arguments' => array(1,2,3,4),
+	      'access arguments' => array('access content'),
+  ); 
+
+
+//commnet
+
+$items['allcomments/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'allcomments',
+	'page arguments' => array(1),
+	'access arguments' => array('access content'),
+	
+);
+
+$items['allco/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'alr_comment_list_page',
+	'page arguments' => array(1),
+	'access arguments' => array('access content'),
+	
+);
+
+$items['alr_comment-search-list/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'alr_comment_search_page',
+	'page arguments' => array(1,2),
+	'access arguments' => array('access content'),
+
+);
+
+$items['alr_comment-reply-form/%/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'alr_comment_creply_page',
+	'page arguments' => array(1,2,3),
+	'access arguments' => array('access content'),
+
+);
+
+
+$items['alr_send-comment/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'alr_send_comment_page',
+	'page arguments' => array(1,2),
+	'access arguments' => array('access content'),
+	
+);
+	$items['alr_pending-comment-list'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'alr_pending_comment_page',
+	//'page arguments' => array(1,2),
+	'access arguments' => array('access content'),
+
+);
+
+  return $items;
+}
+
+
+
+
+function workflowpending(){
+    global $user;
+global $base_url;
+$breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = l('List of Pending workflow', 'workflowpending');
+
+	drupal_set_breadcrumb($breadcrumb);
+	
+  $limit = (int)getMessage( 'listpworkflow', 'code04', NULL);
+
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Workflow Name.'), 'field' => 'w.workflow_name', 'sort' => 'asc'),
+		array('data' => t('Task Current Role'), 'field' => 'wdetail.role', 'sort' => 'asc'),
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	
+
+
+
+   /*	$pendingloansql = "SELECT wt.doc_id, wdetail.role AS role, task_date AS task, wt.level
+LEVEL , workflow_name, home_url
+FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_workflow_details wdetail
+WHERE wt.doc_id = wd.doc_id
+AND wd.workflow_id = wdetail.workflow_id
+AND wdetail.workflow_id = w.workflow_id
+AND wdetail.role !=0
+AND wdetail.level = wt.level
+AND wt.status =0
+GROUP BY wt.doc_id ORDER BY workflow_name DESC"; */
+$i=1;
+
+
+
+if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+     $val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 
+	 $query = "SELECT wt.doc_id, wdetail.role AS role, task_date AS task, wt.level
+LEVEL , workflow_name, home_url
+FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_workflow_details wdetail
+WHERE wt.doc_id = wd.doc_id
+AND wd.workflow_id = wdetail.workflow_id
+AND wdetail.workflow_id = w.workflow_id
+AND wdetail.role !=0
+AND wdetail.level = wt.level
+AND wt.status =0
+GROUP BY wt.doc_id ORDER BY workflow_name DESC" .tablesort_sql($header);
+	 
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_workflow_details wdetail
+WHERE wt.doc_id = wd.doc_id
+AND wd.workflow_id = wdetail.workflow_id
+AND wdetail.workflow_id = w.workflow_id
+AND wdetail.role !=0
+AND wdetail.level = wt.level
+AND wt.status =0
+GROUP BY wt.doc_id ORDER BY workflow_name DESC" .tablesort_sql($header); 
+	
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	 $_REQUEST['page']=0;
+
+ }else{
+    $query = "SELECT wt.doc_id, wdetail.role AS role, task_date AS task, wt.level
+LEVEL , workflow_name, home_url
+FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_workflow_details wdetail
+WHERE wt.doc_id = wd.doc_id
+AND wd.workflow_id = wdetail.workflow_id
+AND wdetail.workflow_id = w.workflow_id
+AND wdetail.role !=0
+AND wdetail.level = wt.level
+AND wt.status =0
+GROUP BY wt.doc_id ".tablesort_sql($header);
+ }
+
+
+//   $res = db_query($pendingloansql);
+  //$output ='<table><tr><th>S. No</th><th>Workflow Name</th><th>Task Date</th><th>Task Current Role</th></tr>';
+  // while($rs = db_fetch_object($res)){
+      
+      //$output .='<tr><td>'.$i.'</td><td>'.$rs->workflow_name.'</td><td>'.date('d-m-Y',strtotime($rs->task)).'</td><td>'.rolename($rs->role).'</td></tr>';
+	  //$i++;
+   //}
+ //$output .='</table>';
+
+
+
+global $base_url;
+ $action = $base_url.'/workflowpending';
+
+ $output = '<form method="POST" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'listofalr', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','allalrilst');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight" align="center"></td></tr>';
+	
+	//$addurl = l(getMessage( 'listpworkflow', 'code01', NULL),"alr");
+   	$lising = getMessage( 'listpworkflow', 'code02', NULL);
+	
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		
+		$viewurl = l("View","viewdetails/".$row->account_number);
+		
+	
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => $row->workflow_name),
+			array('data' => date('d-m-Y',strtotime($row->task))),
+			array('data' => rolename($row->role)),
+			array('data' => $viewurl),
+		);
+	}
+	
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	
+	return $output;
+
+
+
+
+}
+
+function task_start_date(){
+  // $sql = "select 
+}
+
+/** 
+* alr list
+*/
+
+function allalrilst(){
+   global $user;
+global $base_url;
+$breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = l('List of ALR', 'allalrilst');
+
+	drupal_set_breadcrumb($breadcrumb);
+$limit = (int)getMessage( 'listofalr', 'code04', NULL);
+
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Account No.'), 'field' => 'account_number', 'sort' => 'asc'),
+		array('data' => t('timestamp'), 'field' => 'timestamp', 'sort' => 'asc'),
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of ALR', 'allalrilst');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+     $val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 
+	 $query = "SELECT  account_number, timestamp FROM tbl_alr   where UPPER(account_number) LIKE '".$val."' OR timestamp LIKE '".strtotime($val)."' and status=0"  .tablesort_sql($header);
+	 
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_alr  where UPPER(account_number) LIKE '".$val."' OR timestamp LIKE '".strtotime($val)."' and status=0";  
+	
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	 $_REQUEST['page']=0;
+
+ }else{
+    $query = "SELECT  account_number, timestamp FROM tbl_alr where  status=0" .tablesort_sql($header);
+ }
+ 
+ global $base_url;
+ $action = $base_url.'/allalrilst';
+
+ $output = '<form method="POST" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'listofalr', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','allalrilst');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight" align="center"></td></tr>';
+	
+	$addurl = l(getMessage( 'listofalr', 'code01', NULL),"alr");
+   	$lising = getMessage( 'listofalr', 'code02', NULL);
+		
+  if(getRole($user->uid) == 13){
+    $addurl = l(getMessage( 'listofalr', 'code01', NULL),"alr");
+  }else{
+    $addurl="";
+  }
+
+
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, 10);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		
+		$viewurl = l("View","viewdetails/".$row->account_number);
+		
+	
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => $row->account_number),
+			array('data' => date('d-m-Y',$row->timestamp)),
+			array('data' => $viewurl),
+		);
+	}
+	
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	
+	return $output;
+}
+
+
+function viewdetails($account_number){
+    $breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = l('List of ALR', 'allalrilst');
+	$breadcrumb[] = l('Details', 'viewdetails/'.arg(1));
+	drupal_set_breadcrumb($breadcrumb);
+	global $base_url;
+   //allalrilst
+   $sql = "select * from tbl_writ where account_number='".$account_number."'";
+   $res = db_query($sql);
+   $i=1;
+   $output .='<table><tr><th>S. No</th><th>Account Number</th><th>ALR Send Date</th><th>Due Date</th><th>Attached Documents</th><th>status</th></tr>';
+   while($rs = db_fetch_object($res)){
+      
+	  if($rs->documents){
+	    $file = l('Download',$base_url.'/'.$rs->documents,array('attributes' => array('target'=>'_blank')));
+	  }else{
+	    $file ='NA';
+	  }
+
+      if($rs->status == 'writ'){
+	     $status = 'Writ Send';
+	  }else if($rs->status == 'summons'){
+	     $status = 'Summons Send';
+	  }else if($rs->status == 'amapp_property'){
+	      $status = 'Movable property Send';
+	  }else if($rs->status == 'sale'){
+	     $status = 'Sale statement is send';
+	  }else if($rs->status == 'warrant'){
+	     $status = 'Warrant Issued';
+	  }else if($rs->status == 'transferred'){
+	     $status= "Property is transferred";
+	  }
+	  else if($rs->status == 'iamapp_property'){
+	      $status = 'Immovable property Send';
+	  }
+	  if($rs->due_date){
+	    $duedate = date('d-m-Y',$rs->due_date);
+	  }else{
+	    $duedate ='NA';
+	  }
+ 
+	  $output .='<tr><td>'.$i.'</td><td>'.$account_number.'</td><td>'.date('d-m-Y',$rs->current_time).'</td><td>'.$duedate.'</td><td>'.$file.'</td><td>'.$status.'</td>';
+	  $i++;
+   } 
+   $output .='</table>';
+   return $output;
+}
+
+
+/**
+ *@alr function
+ */
+
+ function alr(){
+    $breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = l('List of ALR', 'allalrilst');
+	 $breadcrumb[] = l('Create ALR', 'alr');
+	drupal_set_breadcrumb($breadcrumb);
+
+   $output ="";
+   $output .='<form method="POST" action=""><table><tr>';
+   $output .='<td><b>Loan Account Number</b><input type="text" name="account"> Is ALR <select name="isalr">
+   <option value="">--select--</option>
+   <option value="1">Yes</option>
+   <option value="0">No</option>
+   </select>
+   </td><td><input type="submit" name="alrsub" value="Go"></td>';
+  $output .='</tr></table></form>';
+  return drupal_get_form('alr_form');
+
+ }
+
+
+function alr_form(){
+
+  $form['account'] = array(
+     '#type' => 'textfield',
+	 '#title' => 'Account Number',
+	  '#required' => TRUE,
+  );
+  $form['isalr'] = array(
+     '#type' => 'select',
+	 '#title' => 'Is ALR',
+	 '#required' => TRUE,
+     '#default_value' =>1,
+	 '#options' => array('1'=>'Yes','0'=>'No')
+  ); 
+  $form['submit'] = array('#type' => 'submit','#value'=>'Go');
+ return $form;
+}
+
+function alr_form_validate($form,&$form_state){
+  $values = $form_state['values'];
+  //echo '<pre>';
+   // print_r($values);
+	//exit;
+
+   $sql = "select account_id  from tbl_loanee_detail where alr_status=0 and account_id='".$values['account']."'";
+  $res = db_query($sql);
+  if($rs = db_fetch_object($res)){
+  
+  }else{
+    form_set_error('account','Account Number '.$values['account'].' is invalid or running for ALR. Please eneter another account number.');
+  }
+}
+
+
+function alr_form_submit($form,&$form_state){
+   $values = $form_state['values'];
+   	 $time = time();
+	 global $user;
+	 db_query("insert into tbl_workflow_docket (workflow_id,time) values (10,'".$time."')");
+	 $doc_id = db_last_insert_id('tbl_workflow_docket', 'doc_id');
+
+	//insertion in task table
+
+	db_query("insert into {tbl_workflow_task} (level,status,comment,doc_id) VALUES ('2',0,'','".$doc_id."')");
+
+	//insertion in  alr table
+	  db_query("insert into {tbl_alr} (doc_id,account_number,uid,timestamp) VALUES ('".$doc_id."','".$values['account']."','".$user->uid."','".$time."')");
+	 db_query("update {tbl_loanee_detail} SET alr_status=1 WHERE account_id='".$values['account']."'");
+	 drupal_set_message('ALR send successfully for '.$values['account']);
+	 drupal_goto('allalrilst');
+}
+
+if(isset($_REQUEST['alrsub'])){
+
+ global $user;
+if($_REQUEST['isalr'] == 1){
+	 $time = time();
+	 db_query("insert into tbl_workflow_docket (workflow_id,time) values (10,'".$time."')");
+	 $doc_id = db_last_insert_id('tbl_workflow_docket', 'doc_id');
+
+	//insertion in task table
+
+	db_query("insert into {tbl_workflow_task} (level,status,comment,doc_id) VALUES ('2',0,'','".$doc_id."')");
+
+	//insertion in  alr table
+	  db_query("insert into {tbl_alr} (doc_id,account_number,uid,timestamp) VALUES ('".$doc_id."','".$_REQUEST['account']."','".$user->uid."','".$time."')");
+	 db_query("update {tbl_loanee_detail} SET alr_status=1 WHERE account_id='".$_REQUEST['account']."'");
+  }
+}
+
+/**
+  *@ ALR Pending task
+
+  */
+
+  function alr_pending(){
+    $breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = l('List of Pending task', 'alr_pending');
+	drupal_set_breadcrumb($breadcrumb);
+	
+	global $user;
+	$cuser = user_load($user->uid);
+    $roles = implode(',',array_flip($cuser->roles));
+	$role = getRole($user->uid);
+	 // return "Pending task here";
+
+	//Getting all pending task for logged in user role
+
+    $pendingalrsql = "SELECT wt.doc_id, wt.writ_level,alr.account_number,alr.timestamp,wdetail.level,wt.doc_id FROM tbl_workflow_task wt, tbl_workflow_docket wd, tbl_workflow w, tbl_workflow_details wdetail ,tbl_alr alr  WHERE wt.doc_id = wd.doc_id AND wt.doc_id = alr.doc_id AND wd.workflow_id = wdetail.workflow_id AND wdetail.workflow_id = w.workflow_id AND wdetail.role = '".$role."' AND wdetail.level = wt.level AND wt.status = 0 AND w.workflow_id = 10";
+
+	$pendingalrres = db_query($pendingalrsql);
+	$output .='<table>';
+	$output .='<tr><td colspan="3" align="right">'.l('View All ALR','allalrilst').'</td></tr>';
+	$output .='<tr><th>S. No</th><th>Account Number</th><th>ALR Date</th><th>Action</th></tr>';
+	$i=0;
+	while($rspending = db_fetch_object($pendingalrres)){
+       $i++;
+       
+		$qlevel = $rspending->level-1;
+		$flevel = $rspending->level+1;
+		
+      
+        
+		if($rspending->level == 5){
+            $action = l('View','action_arl/view/'.$rspending->account_number.'/'.$rspending->level.'/'.$rspending->doc_id).' | ';
+			if($rspending->writ_level == 'writ'){
+	         	 $action .= l('Send Writ','action_arl/sent_writ/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';  
+	        }else if($rspending->writ_level == 'summons'){
+			    $action .= l('Send Summons','action_arl/sent_summons/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+			}
+		    else if($rspending->writ_level == 'mapp'){
+			    $action .= l('Send Summons','action_arl/sent_summons/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+				$action .= l('Attach Movable Property','action_arl/mapp_property/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+			}
+            
+			else if($rspending->writ_level == 'imapp'){
+			   // $action .= l('Send Summons','action_arl/sent_summons/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+				$action .= l('Attach Immovable Property','action_arl/imapp_property/'.$rspending->account_number.'/6/'.$rspending->doc_id);
+			}
+			else if($rspending->writ_level == 'sale'){
+			   // $action .= l('Send Summons','action_arl/sent_summons/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+				$action .= l('Sent sale statement to Divisional Commissioner for approval','action_arl/sale/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+			}
+			else if($rspending->writ_level == 'transferred'){
+			   // $action .= l('Send Summons','action_arl/sent_summons/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+				$action .= l('Sent property is transferred to the buyer','action_arl/transferred/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+			}
+			else if($rspending->writ_level == 'warrant'){
+			   // $action .= l('Send Summons','action_arl/sent_summons/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+				$action .= l('Sent warrant sale is issued to concerned tehsildar for the auction','action_arl/warrant/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+			}
+		     $action .= l('Write Comment','allco/'.$rspending->doc_id);
+		}else if($rspending->level == 6){
+		   $action = l('View','action_arl/view/'.$rspending->account_number.'/'.$rspending->level.'/'.$rspending->doc_id).' | ';
+		    if($rspending->writ_level == 'writ'){
+	         	 $action .= l('Sent Writ','action_arl/send_writ/'.$rspending->account_number.'/5/'.$rspending->doc_id).' | ';
+	        }else if($rspending->writ_level == 'summons'){
+			    $action .= l('Sent Summons','action_arl/send_summons/'.$rspending->account_number.'/5/'.$rspending->doc_id).' | ';
+			}
+			else if($rspending->writ_level == 'mapp'){
+			    $action .= l('Attached Movable Property','action_arl/amapp_property/'.$rspending->account_number.'/5/'.$rspending->doc_id).' | ';
+			}
+			else if($rspending->writ_level == 'imapp'){
+			    $action .= l('Attached Immovable Property','action_arl/iamapp_property/'.$rspending->account_number.'/5/'.$rspending->doc_id).' | ';
+			}
+
+			else if($rspending->writ_level == 'sale'){
+			   // $action .= l('Send Summons','action_arl/sent_summons/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+				$action .= l('Send sale statement to Divisional Commissioner for approval','action_arl/ssale/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+			}
+            else if($rspending->writ_level == 'transferred'){
+			   // $action .= l('Send Summons','action_arl/sent_summons/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+				$action .= l('Send property is transferred to the buyer','action_arl/stransferred/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+			}
+			else if($rspending->writ_level == 'warrant'){
+			   // $action .= l('Send Summons','action_arl/sent_summons/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+				$action .= l('Send warrant sale is issued to concerned tehsildar for the auction','action_arl/swarrant/'.$rspending->account_number.'/6/'.$rspending->doc_id).' | ';
+			}
+			 $action .= l('Write Comment','allco/'.$rspending->doc_id);
+
+	    }else if($rspending->level == 1){
+		   $action = l('View','action_arl/view/'.$rspending->account_number.'/'.$rspending->level.'/'.$rspending->doc_id).' | ';
+		   $action .= l('Forward','action_arl/forward/'.$rspending->account_number.'/'.$flevel.'/'.$rspending->doc_id).' | ';
+		    $action .= l('Write Comment','allco/'.$rspending->doc_id);
+		}else if($rspending->level == 4){
+		   $action = l('View','action_arl/view/'.$rspending->account_number.'/'.$rspending->level.'/'.$rspending->doc_id).' | ';
+		   $action .= l('Query','action_arl/query/'.$rspending->account_number.'/'.$qlevel.'/'.$rspending->doc_id).' | ';
+		   $action .= l('Reject','action_arl/reject/'.$rspending->account_number.'/'.$flevel.'/'.$rspending->doc_id).' | ';
+		   $action .= l('Approved','action_arl/approved/'.$rspending->account_number.'/'.$flevel.'/'.$rspending->doc_id).' | ';
+		    $action .= l('Write Comment','allco/'.$rspending->doc_id);
+		}else {
+		   $action = l('View','action_arl/view/'.$rspending->account_number.'/'.$rspending->level.'/'.$rspending->doc_id).' | ';
+		   $action .= l('Query','action_arl/query/'.$rspending->account_number.'/'.$qlevel.'/'.$rspending->doc_id).' | ';
+		   $action .= l('Reject','action_arl/reject/'.$rspending->account_number.'/'.$flevel.'/'.$rspending->doc_id).' | ';
+		   $action .= l('Forward','action_arl/forward/'.$rspending->account_number.'/'.$flevel.'/'.$rspending->doc_id).' | ';
+		    $action .= l('Write Comment','allco/'.$rspending->doc_id);
+		}
+      if($rspending->account_number){
+	     $output .='<tr><td>'.$i.'</td><td>'.$rspending->account_number.'</td><td>'.date('d M Y',$rspending->timestamp).'</td><td>'.$action.'</td></tr>';
+      }   
+	}
+  $output .='</table>';
+  return $output;
+  }
+
+
+function action_arl($action_type,$account_number,$level,$doc_id){
+    
+	
+	
+	if($action_type == 'view'){
+	   return view($doc_id);
+	}else if($action_type == 'query'){
+       
+	   	$breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = l('List of Pending task', 'alr_pending');
+	$breadcrumb[] = l('Query', 'action_arl/query/'.arg(2).'/'.arg(3));
+    drupal_set_breadcrumb($breadcrumb);
+	   
+	   $output .='<form method="POST" action=""><table>';
+	   $output .='<tr><td><b>Query : </b><TEXTAREA name="query"></TEXTAREA><input type="hidden" name="level" value="'.$level.'">
+	   <input type="hidden" name="doc_id" value="'.$doc_id.'">
+	   </td><td><input type="submit" name="arlsubmitq" value="query"></td></tr>';
+	  return  $output .='</table></form>';
+	}else if($action_type == 'reject'){
+	   db_query("delete from {tbl_alr} where account_number ='".$account_number."'");
+	   db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."'");
+	   db_query("update {tbl_loanee_detail} SET alr_status=0 WHERE account_id='".$account_number."'");
+	   drupal_goto('alr_pending');
+	}else if($action_type == 'forward'){
+	   $olevel = $level-1;
+	   db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level ='".$olevel."'");
+	   db_query("insert into {tbl_workflow_task} (status,doc_id,level) VALUES (0,'".$doc_id."','".$level."')");
+	   drupal_goto('alr_pending');
+
+
+
+
+	}else if($action_type == 'approved'){
+	   
+	   
+	    $sqlu = "select tbl_loan_detail.o_principal,tbl_loan_detail.o_interest,tbl_loan_detail.o_LD,tbl_loan_detail.o_other_charges,tbl_loan_detail.last_interest_calculated from 
+	   tbl_loan_detail INNER JOIN tbl_loanee_detail ON (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number) where tbl_loanee_detail.account_id='".$account_number."'";
+	   
+	   $resu = db_query($sqlu);
+	   $rsu = db_fetch_object($resu);
+	   db_query("update tbl_alr set o_principal='".$rsu->o_principal."',	o_interest='".$rsu->o_interest."',o_LD='".$rsu->o_LD."',o_other_charges='".$rsu->o_other_charges."',last_interest_calculated='".$rsu->last_interest_calculated."' where account_number='".$account_number."'");
+	   db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."'");
+	   db_query("update {tbl_loanee_detail} SET alr_status=2 WHERE account_id='".$account_number."'");
+	   db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,'writ')");
+	   drupal_goto('alr_pending');
+	}else if ($action_type == 'sent_writ'){
+
+       $output .='<form method="POST" action=""><table>';
+	   $output .='<tr><td><b>Writ : </b><TEXTAREA name="query"></TEXTAREA><input type="hidden" name="level" value="'.$level.'">
+	   <input type="hidden" name="doc_id" value="'.$doc_id.'">
+	   </td><td><input type="submit" name="writsubmitq" value="query"></td></tr>';
+	  return  $output .='</table></form>';
+		 
+		
+       //db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =6");
+	  // db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,2)"); 
+	}else if ($action_type == 'sent_summons'){
+       
+	     $output .='<form method="POST" action=""><table>';
+	   $output .='<tr><td><b>Summons : </b><TEXTAREA name="query"></TEXTAREA><input type="hidden" name="level" value="'.$level.'">
+	   <input type="hidden" name="doc_id" value="'.$doc_id.'">
+	   </td><td><input type="submit" name="summonssubmitq" value="query"></td></tr>';
+	  return  $output .='</table></form>';
+	   
+	  // db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =6");
+	   //db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,2)"); 
+	}
+	else if ($action_type == 'sale'){
+       
+	     $output .='<form method="POST" action=""><table>';
+	   $output .='<tr><td><b>Remarks : </b><TEXTAREA name="query"></TEXTAREA><input type="hidden" name="level" value="'.$level.'">
+	   <input type="hidden" name="doc_id" value="'.$doc_id.'">
+	   </td><td><input type="submit" name="salesubmitq" value="query"></td></tr>';
+	  return  $output .='</table></form>';
+	   
+	  // db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =6");
+	   //db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,2)"); 
+	}
+	
+   else if ($action_type == 'warrant'){
+       
+	     $output .='<form method="POST" action=""><table>';
+	   $output .='<tr><td><b>Remarks : </b><TEXTAREA name="query"></TEXTAREA><input type="hidden" name="level" value="'.$level.'">
+	   <input type="hidden" name="doc_id" value="'.$doc_id.'">
+	   </td><td><input type="submit" name="warrantsubmitq" value="query"></td></tr>';
+	  return  $output .='</table></form>';
+	   
+	  // db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =6");
+	   //db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,2)"); 
+	}
+else if ($action_type == 'transferred'){
+       
+	     $output .='<form method="POST" action=""><table>';
+	   $output .='<tr><td><b>Remarks : </b><TEXTAREA name="query"></TEXTAREA><input type="hidden" name="level" value="'.$level.'">
+	   <input type="hidden" name="doc_id" value="'.$doc_id.'">
+	   </td><td><input type="submit" name="transferredsubmitq" value="query"></td></tr>';
+	  return  $output .='</table></form>';
+	   
+	  // db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =6");
+	   //db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,2)"); 
+	}
+
+	else if ($action_type == 'send_writ'){
+      // db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =5");
+	  // db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,2)"); 
+
+      return drupal_get_form('sent_form','writ',$doc_id,$account_number);
+
+
+	}else if ($action_type == 'send_summons'){
+      // db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =5");
+	   //db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,2)"); 
+	   return drupal_get_form('sent_form','summons',$doc_id,$account_number);
+	}
+
+   else if ($action_type == 'amapp_property'){
+      // db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =5");
+	   //db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,2)"); 
+	   return drupal_get_form('sent_form','amapp_property',$doc_id,$account_number);
+	}
+   else if ($action_type == 'iamapp_property'){
+      // db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =5");
+	   //db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,2)"); 
+	   return drupal_get_form('sent_form','iamapp_property',$doc_id,$account_number);
+	}
+	else if ($action_type == 'mapp_property'){
+       
+	     $output .='<form method="POST" action=""><table>';
+	   $output .='<tr><td><b>Remarks : </b><TEXTAREA name="query"></TEXTAREA><input type="hidden" name="level" value="'.$level.'">
+	   <input type="hidden" name="doc_id" value="'.$doc_id.'">
+	   </td><td><input type="submit" name="mapp_property" value="query"></td></tr>';
+	  return  $output .='</table></form>';
+	   
+	  // db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =6");
+	   //db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,2)"); 
+	}
+
+	else if ($action_type == 'imapp_property'){
+       
+	     $output .='<form method="POST" action=""><table>';
+	   $output .='<tr><td><b>Remarks : </b><TEXTAREA name="query"></TEXTAREA><input type="hidden" name="level" value="'.$level.'">
+	   <input type="hidden" name="doc_id" value="'.$doc_id.'">
+	   </td><td><input type="submit" name="immapp_property" value="query"></td></tr>';
+	  return  $output .='</table></form>';
+	   
+	  // db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =6");
+	   //db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level)  VALUES (0,'".$doc_id."',5,2)"); 
+	}else if($action_type == 'ssale'){
+	   $time =time();
+	   db_query("insert into {tbl_writ} (`current_time`,`account_number`,`status`) values('".$time."','".$account_number."','sale')");
+	   
+	   db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =6");
+    db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level) VALUES (0,'".$doc_id."',5,'warrant')");
+	   
+	   
+	   drupal_goto('alr_pending');
+	}
+
+	else if($action_type == 'swarrant'){
+	   
+	     $time =time();
+	   db_query("insert into {tbl_writ} (`current_time`,`account_number`,`status`) values('".$time."','".$account_number."','warrant')");
+	   db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =6");
+       db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level) VALUES (0,'".$doc_id."',5,'transferred')");
+	   drupal_goto('alr_pending');
+	}
+
+	else if($action_type == 'stransferred'){
+	      $time =time();
+	   db_query("insert into {tbl_writ} (`current_time`,`account_number`,`status`) values('".$time."','".$account_number."','transferred')");
+		 db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$doc_id."' AND level =6");
+       db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level) VALUES (0,'".$doc_id."',5,'final')");
+	   drupal_goto('alr_pending');
+	}
+	
+}
+
+if(isset($_REQUEST['arlsubmitq']) && $_REQUEST['query'] != ''){
+  //   
+       $olevel = $_REQUEST['level']+1;
+	  // echo "update {tbl_workflow_task} SET status=1 WHERE doc_id='".$_REQUEST['doc_id']."' AND level ='".$olevel."'";exit;
+       db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$_REQUEST['doc_id']."' AND level ='".$olevel."'");
+       db_query("insert into {tbl_workflow_task} (status,doc_id,level,comment,uid) VALUES (0,'".$_REQUEST['doc_id']."','".$_REQUEST['level']."','".$_REQUEST['query']."','".$user->uid."')");
+	   drupal_goto('alr_pending');
+}
+
+
+if(isset($_REQUEST['mapp_property']) && $_REQUEST['query'] != ''){
+  //   
+       $olevel = $_REQUEST['level']+1;
+	  // echo "update {tbl_workflow_task} SET status=1 WHERE doc_id='".$_REQUEST['doc_id']."' AND level ='".$olevel."'";exit;
+       db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$_REQUEST['doc_id']."' AND level =5");
+       db_query("insert into {tbl_workflow_task} (status,doc_id,level,comment,writ_level,uid) VALUES (0,'".$_REQUEST['doc_id']."',6,'".$_REQUEST['query']."','mapp','".$user->uid."')");
+	   drupal_goto('alr_pending');
+}
+
+
+
+
+if(isset($_REQUEST['immapp_property']) && $_REQUEST['query'] != ''){
+  //   
+       $olevel = $_REQUEST['level']+1;
+	  // echo "update {tbl_workflow_task} SET status=1 WHERE doc_id='".$_REQUEST['doc_id']."' AND level ='".$olevel."'";exit;
+       db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$_REQUEST['doc_id']."' AND level =5");
+       db_query("insert into {tbl_workflow_task} (status,doc_id,level,comment,writ_level,uid) VALUES (0,'".$_REQUEST['doc_id']."',6,'".$_REQUEST['query']."','imaap','".$user->uid."')");
+	   drupal_goto('alr_pending');
+}
+
+
+
+if(isset($_REQUEST['writsubmitq']) && $_REQUEST['query'] != ''){
+
+       db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$_REQUEST['doc_id']."' AND level =5");
+       db_query("insert into {tbl_workflow_task} (status,doc_id,level,comment,writ_level,uid) VALUES (0,'".$_REQUEST['doc_id']."',6,'".$_REQUEST['query']."','writ','".$user->uid."')");
+	   drupal_goto('alr_pending');
+}
+
+if(isset($_REQUEST['salesubmitq']) && $_REQUEST['query'] != ''){
+
+       db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$_REQUEST['doc_id']."' AND level =5");
+       db_query("insert into {tbl_workflow_task} (status,doc_id,level,comment,writ_level,uid) VALUES (0,'".$_REQUEST['doc_id']."',6,'".$_REQUEST['query']."','sale','".$user->uid."')");
+	   drupal_goto('alr_pending');
+}
+if(isset($_REQUEST['warrantsubmitq']) && $_REQUEST['query'] != ''){
+
+       db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$_REQUEST['doc_id']."' AND level =5");
+       db_query("insert into {tbl_workflow_task} (status,doc_id,level,comment,writ_level,uid) VALUES (0,'".$_REQUEST['doc_id']."',6,'".$_REQUEST['query']."','warrant','".$user->uid."')");
+	   drupal_goto('alr_pending');
+}
+if(isset($_REQUEST['transferredsubmitq']) && $_REQUEST['query'] != ''){
+
+       db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$_REQUEST['doc_id']."' AND level =5");
+       db_query("insert into {tbl_workflow_task} (status,doc_id,level,comment,writ_level,uid) VALUES (0,'".$_REQUEST['doc_id']."',6,'".$_REQUEST['query']."','transferred','".$user->uid."')");
+	   drupal_goto('alr_pending');
+}
+if(isset($_REQUEST['summonssubmitq']) && $_REQUEST['query'] != ''){
+  
+       db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$_REQUEST['doc_id']."' AND level =5");
+       db_query("insert into {tbl_workflow_task} (status,doc_id,level,comment,writ_level,uid) VALUES (0,'".$_REQUEST['doc_id']."',6,'".$_REQUEST['query']."','summons','".$user->uid."')");
+	   drupal_goto('alr_pending');
+}
+
+
+function sent_form($form_state,$staus_name,$doc_id,$account_number){
+   
+  
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+  
+  $form['doc_id'] = array(
+	'#type' =>'hidden',
+	'#default_value'=> $doc_id,
+	);
+   
+  $form['account_number'] = array(
+	'#type' =>'hidden',
+	'#default_value'=> $account_number,
+	);
+    $form['type'] = array(
+	'#type' =>'hidden',
+	'#default_value'=> $staus_name,
+	);
+
+   if($staus_name == 'writ' || $staus_name == 'summons'){
+      $form['due_date'] = array(
+			'#type' => 'date_popup',
+			'#date_format' => 'd-m-Y',
+			'#title' => 'Due Date',
+			'#required' => TRUE,
+			'#size' => '10',
+			'#default_value' => $node->date_from,
+	 );
+   }
+
+   $form['documents'] = array(
+			'#type'  => 'file',
+			'#title' => 'Upload File',
+			'#size' => 30,
+		    '#required' => FALSE,
+  );
+
+ $form['submit'] = array(
+   '#type' => 'submit',
+   '#value' => 'Send', 	 
+ );
+  return $form;
+
+}
+
+/*function sent_form_validate($form, &$form_state) {
+//	print_r($form_state['values']);
+  $type = $form_state['values']['documents'];
+  $exc = strtolower(findexts($_FILES['files']['name']['documents']));
+  
+
+  
+  
+  if($type == 'flash'){
+    if($exc !='.swf'){
+		form_set_error('tmaterial_format','Please upload file with extension swf.');
+	}
+  }
+
+  if($type == 'pdf'){
+		if($exc !='.pdf'){
+		 form_set_error('tmaterial_format','Please upload file with extension pdf.');
+		}
+  }
+  if($type == 'powerpoint'){
+    if( ($exc !='.ppt') || ($exc !='.pptx')){
+	form_set_error('tmaterial_format','Please upload file with extension ppt or pptx.');
+	}
+  }
+
+  if($type == 'word'){
+    if( ($exc !='.doc') || ($exc !='.docx')){
+		form_set_error('tmaterial_format','Please upload file with extension doc or docx.');
+	}
+  }
+}*/
+
+function findexts($filename)
+{
+return end(explode(".", $filename));
+}
+
+
+
+function sent_form_submit($form,&$form_state){
+    
+	$createdon = time();
+	$values = $form_state['values'];
+	$target_path = "sites/default/files/";
+	$extension = findexts($_FILES['files']['name']['documents']);
+	$filename = $createdon.'.'.$extension;
+	@chmod("sites/default/files", 0777);
+   	move_uploaded_file($_FILES['files']['tmp_name']['documents'], $target_path.$filename);
+	@chmod($target_path.$filename, 0777);
+	$filesize = $_FILES['files']['size']['documents']/1024;
+    $filesize .='kb';
+    $filename = $target_path.$createdon.'.'.$extension;
+    $time = time();
+
+    if($values['type'] == 'writ'){
+	  $writ_level = 'summons';
+	}
+	if($values['type'] == 'summons'){
+	  
+   
+	   $writ_level = 'mapp';
+
+
+	}
+	if($values['type'] == 'amapp_property'){
+	  $writ_level = 'imapp';
+	}
+	if($values['type'] == 'iamapp_property'){
+	  $writ_level = 'sale';
+	}
+	db_query("update {tbl_workflow_task} SET status=1 WHERE doc_id='".$values['doc_id']."' AND level =6");
+    db_query("insert into {tbl_workflow_task} (status,doc_id,level,writ_level) VALUES (0,'".$values['doc_id']."',5,'".$writ_level."')");
+	db_query("insert into {tbl_writ} (`due_date`,`current_time`,`documents`,`account_number`,`status`) values('".strtotime($values['due_date'])."','".$time."','".$filename."','".$values['account_number']."','".$values['type']."')");
+	//echo "insert into tbl_writ (due_date,current_time,documents,account_number,status) //values('".$values['due_date']."','".$time."','".$filename."','".$values['account_number']."','".$values['type']."')";exit;
+}
+
+//view
+
+function view($doc_id){
+    
+	$breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = l('List of Pending task', 'alr_pending');
+	$breadcrumb[] = l('View', 'action_arl/view/'.arg(2).'/'.arg(3));
+    drupal_set_breadcrumb($breadcrumb);
+   
+   $sql = "select comment,uid,task_date from tbl_workflow_task where doc_id='".$doc_id."'";
+   $res = db_query($sql);
+   $output ='<table><tr><td>&nbsp;</td></tr><tr><td>'.l('View All Comments','allcomments/'.$doc_id).'</td></tr><tr><td>'.l('View Account Details','accountdetails').'</td></tr><tr><th>Query/ Remarks date</th><th>Query/ Remarks</th><th>Query/ Remarks By</th></tr>';
+   while($rs = db_fetch_object($res)){
+	   $cuser = user_load($rs->uid);
+	   $name = $cuser->name;if($rs->comment){
+       $output .='<tr><td>'.date('d-m-Y',strtotime($rs->task_date)).'</td><td>'.$rs->comment.'</td><td>'.$name.'</td></tr>';
+	   }
+   }
+
+   return $output .='</table>';
+}
+
+function accountdetails(){
+  return "account";
+}
+
+function allcomments($doc_id){
+   $array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = l('List of Pending Task', 'alr_pending');
+	$breadcrumb[] = l('All Comments', 'allcomments/'.arg(1));
+	drupal_set_breadcrumb($breadcrumb);
+   $sql = "select * from tbl_loan_comment where doc_id='".$doc_id."'";
+   $res = db_query($sql);
+   $output ='<table><tr><td>&nbsp;</td></tr><tr><td>'.l('List of Pending Task','alr_pending').'</td></tr><tr><td>'.l('View Account Details','accountdetails').'</td></tr><tr><th>Comment date</th><th>Comment</th><th>Commented By</th><th>Commented To</th></tr>';
+   while($rs = db_fetch_object($res)){
+	   $cuser = user_load($rs->uid);
+	   $name = $cuser->name;if($rs->comment){
+       $output .='<tr><td>'.date('d-m-Y',strtotime($rs->comment_date)).'</td><td>'.$rs->comment.'</td><td>'.rolename($rs->commentedby).'</td><td>'.rolename($rs->commentedto).'</td></tr>';
+	   }
+   }
+
+   return $output .='</table>';
+}
+
+function rolename($rid){
+  $sql = "select name from role where rid='".$rid."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  return $rs->name;
+}
+
+/** comment here **/
+
+function alr_reply_form($form_state,$doc_id,$level,$cid){
+	global $user;
+    $array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = l('Pending Comments', 'alr_pending-comment-list');
+	$breadcrumb[] = l('Pending Comments', 'alr_comment-reply-form/'.arg(1).'/'.arg(2).'/'.arg(3));
+	drupal_set_breadcrumb($breadcrumb);
+
+
+ $form['empid'] = array(
+	'#type' => 'hidden',
+	'#value'=>$level,
+	);
+
+ $form['cid'] = array(
+	'#type' => 'hidden',
+	'#value'=>$cid,
+	);
+ $form['doc_id'] = array(
+	'#type' => 'hidden',
+	'#value'=>$doc_id,
+	);
+ 
+	$form['comment'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Query/Comment'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#maxlength' =>200,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-comment",200)'),
+	);
+	$form['submit'] = array(
+	'#type' => 'submit',
+		'#value' =>t('Send'),
+	);
+return $form;
+} 
+
+function alr_reply_form_submit($form,&$form_state){
+global $user;
+$to = $form_state['values']['empid'];
+$doc_id = $form_state['values']['doc_id'];
+$reply = $form_state['values']['comment'];
+$cid = $form_state['values']['cid'];
+
+    //db_query("update tbl_workflow_task  SET status=2 where doc_id='".$doc_id."' AND level=1");
+//	db_query("update tbl_workflow_task  SET status=0,comment='".$reply."' where doc_id='".$doc_id."' AND level=2");
+	//db_query("update tbl_resignation  SET status=6 where doc_id='".$doc_id."'");
+	db_query("update tbl_loan_comment SET status=1 where  id='".$cid."'");
+	
+	db_query("insert into tbl_loan_comment (commentedby,commentedto,doc_id,comment,status) VALUES ('".getRole($user->uid)."','".$to."','".$doc_id."','".$reply."',0)");
+	//db_query("update tbl_loan_comment SET status=6 where commentedby=2 AND commentedto=1 AND doc_id='".$doc_id."'");
+	
+	//db_query("insert into tbl_loan_comment (commentedby,commentedto,doc_id,comment,status) VALUES ('".$level."','".$to."','".$doc_id."','".$reply."',0)");
+	
+	$msg = t(getMessage('resignation', 'code07', array('0'=>'HOD')));
+		drupal_set_message($msg);
+
+		
+				drupal_goto('alr_pending-comment-list');
+	
+
+
+
+
+}
+
+
+function alr_comment_creply_page($doc_id,$level,$cid){
+
+$output = drupal_get_form('alr_reply_form',$doc_id,$level,$cid);
+return $output;
+
+}
+
+
+function alr_comment_search_form($form_state,$doc_id){
+
+$form['search_box']=array(
+'#type' => 'textfield',
+'#title' => '',
+'#required' => TRUE,
+'#size' => 60,
+);
+$form['doc_id']=array(
+	'#type' => 'hidden',
+	'#default_value' => $doc_id,
+	'#required' => False,
+	'#size' => 60,
+);
+$form['search'] = array(
+'#type' => 'submit',
+	'#value' =>t('search'),
+);
+return $form;
+}
+
+
+
+
+function alr_comment_search_form_submit($form,&$form_state){
+	$keydata = $form_state['values']['search_box'];
+	$doc_id = $form_state['values']['doc_id'];
+    drupal_goto('alr_comment-search-list/'.$keydata.'/'.$doc_id);
+
+}
+
+function alr_comment_list_page($doc_id){
+
+global $user;
+    $array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Comments', 'allco/'.arg(1));
+	drupal_set_breadcrumb($breadcrumb);
+    
+	
+	
+	$sql = "SELECT * FROM tbl_loan_comment where doc_id='".$doc_id."' AND commentedto='".getRole($user->uid)."' and status=0";
+	$output = alr_commentsearch($sql,$doc_id) ;
+	
+    return $output;
+}
+
+function alr_comment_search_page($keydata,$doc_id){
+    global $user;
+	$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Comments', 'allco/'.arg(1));
+	drupal_set_breadcrumb($breadcrumb);
+   
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);
+
+ $sql = " SELECT * FROM tbl_loan_comment where (UPPER(comment) LIKE '".$val."' OR status LIKE '".$val."' OR UPPER(comment_date) LIKE '%".$val."%') AND doc_id='".$doc_id."'  AND commentedto='".getRole($user->uid)."'";
+$output = alr_commentsearch($sql,$doc_id) ;
+	
+return $output;
+}
+
+function alr_pending_comment_page(){
+
+global $user;
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Pending Comment (S)', 'alr_pending-comment-list');
+	drupal_set_breadcrumb($breadcrumb);
+    $to = getRole($user->uid);
+    $doc_id ='';
+    
+	$sql = "SELECT * FROM tbl_loan_comment where commentedto='".$to."' AND status=0";
+	$output = alr_commentsearch($sql,$doc_id) ;
+	
+return $output;
+
+}
+
+
+function alr_commentsearch($sqlquery,$doc_id){
+global $user;
+$limit =(int)getMessage('resignation', 'code04', NULL);
+$header = array(
+		array('data' => t('S.No')),
+		array('data' => t('Comment'), 'field' => 'comment', 'sort' => 'desc'),
+		array('data' => t('Commented by'), 'field' => 'uid', 'sort' => 'asc'),
+		array('data' => t('Commented to'), 'field' => 'uid', 'sort' => 'asc'),
+		array('data' => t('Commented On'), 'field' => 'comment_date', 'sort' => 'desc'),
+		array('data' => t('Action')),
+	);
+
+	$sql = $sqlquery.tablesort_sql($header);
+	$count_query = "SELECT COUNT(*) as mycount FROM (" . $sql . ") AS count_query";
+	$cres = db_query($count_query);
+	$crs = db_fetch_object($cres);
+	$totalcount = $crs->mycount;
+	$result = pager_query($sql,10,0,$count_query);
+if($result){
+   $query = "SELECT r.* FROM tbl_workflow w, tbl_workflow_details wdetail, role r WHERE w.workflow_id = wdetail.workflow_id AND r.rid = wdetail.role AND w.workflow_name = 'Arrear of Land Revenue (ALR) Recovery' "; 
+	$res = db_query($query);
+	while($row = db_fetch_object($res))
+	{
+		$role[$row->rid] = $row->name;
+	} 
+
+
+
+while($rs = db_fetch_object($result)){
+	    $counter++;	    
+
+
+$doc_id2=$rs->doc_id;
+$level = $rs->commentedby;
+$me = getRole($user->uid);
+//$close = l('Close','');
+//$ssl = "select status,id from tbl_loan_comment where doc_id='".$doc_id2."' AND commentedto='".$me."' ORDER BY comment_date DESC";
+//$sres = db_query($ssl);
+//$sr = db_fetch_object($sres);
+//if($sr->status == 0){
+    $links = l('Reply','alr_comment-reply-form/'.$doc_id2.'/'.$level.'/'.$rs->id);
+//}
+
+	  	$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($rs->comment)),
+			array('data' =>$role[$rs->commentedby]),
+			array('data' => $role[$rs->commentedto]),
+			array('data' => date("d-m-Y H:i:s",strtotime($rs->comment_date))),
+			array('data' =>$links),
+		);
+	
+	  }
+}
+
+if($doc_id == ""){
+  $doc_id = $doc_id2;
+}
+
+if($rows== NULL)
+	$header=NULL;
+$output .='<div class="uploadcss">';	
+    if(arg(0)=='alr_comment-search-list'){
+	 $records = t(getMessage('resignation', 'code03', array("0"=>$totalcount)));
+	 $output .='<table  id="wrapper" class="searchrecord"><tr><td>'.$records.' | '.l('View All','alr_pending-comment-list').'</td></tr></table>';
+	}
+	$title = t(getMessage('resignation', 'code11',NULL));
+	 $output .='<table id="wrapper"><tr><td class="tblHeaderLeft">'.$title.'('.l('Add Comment','alr_send-comment/'.$doc_id.'/'.$user->uid).')<span class="addrecord"></span></td><td class="tblHeaderRight">'.drupal_get_form('alr_comment_search_form',$doc_id).'</td></tr></table>';
+	 
+	
+	$output .=theme_table($header,$rows);
+	 $output .=theme('pager', NULL, 20,0 );
+ $output .='<div>';
+  
+	return $output;
+  }
+
+
+
+
+
+function alr_send_comment_form($form_state,$doc_id,$level){
+global $user;
+    $array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	
+	$breadcrumb[] = l('List of Pending Task', 'allco/'.$doc_id);
+	$breadcrumb[] = l('Write Comment', 'alr_send-comment/'.arg(1));
+		
+	drupal_set_breadcrumb($breadcrumb);
+
+
+ $form['empid'] = array(
+	'#type' => 'hidden',
+	'#value'=>$level,
+	);
+ $form['doc_id'] = array(
+	'#type' => 'hidden',
+	'#value'=>$doc_id,
+	);
+	$form['query_to'] = array(
+	'#type' => 'select', 
+    '#title' => t('Query/Comment for'), 
+     '#required' => TRUE, 
+	'#options' => alr_commenttolist($doc_id),
+    );
+	$form['comment'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Query/Comment'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#maxlength' =>200,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-comment",200)'),
+	);
+	$form['submit'] = array(
+	'#type' => 'submit',
+		'#value' =>t('Send'),
+	);
+return $form;
+} 
+
+
+function alr_send_comment_page($doc_id,$level){
+ global $user;
+
+ $output .=drupal_get_form('alr_send_comment_form',$doc_id,$level); 
+return $output;
+}
+
+function alr_send_comment_form_submit($form,&$form_state){
+global $user;
+
+$emp_id = $form_state['values']['empid'];
+$doc_id = $form_state['values']['doc_id'];
+$reply = $form_state['values']['comment'];
+$query_to = $form_state['values']['query_to'];
+
+
+  db_query("insert into tbl_loan_comment (commentedby,commentedto,doc_id,comment,status) VALUES ('".getRole($user->uid)."','".$query_to."','".$doc_id."','".$reply."',0)");
+
+	drupal_goto('allco/'.$doc_id);
+
+	//drupal_goto('viewprofile/'.$emp_id);
+
+
+
+}
+
+
+function alr_commenttolist($doc_id){
+	
+	global $user;
+$query = "SELECT r.* FROM tbl_workflow w, tbl_workflow_details wdetail, role r WHERE w.workflow_id = wdetail.workflow_id AND r.rid = wdetail.role AND w.workflow_name = 'Arrear of Land Revenue (ALR) Recovery' AND r.rid !='".getRole($user->uid)."'"; 
+			$res = db_query($query);
+			$senderarray[''] = '--Select--';
+			if($res){
+				while($row = db_fetch_object($res))
+				{
+					$senderarray[$row->rid] = ucwords($row->name);
+				}
+			}
+
+
+			
+return $senderarray;
+
+
+}

@@ -1,0 +1,487 @@
+<?php
+function alrform_init() {
+	drupal_add_js(drupal_get_path('module', 'alrform') .'/alrform.js');
+	
+}
+function alrform_node_info() {
+	return array (
+					'alrform' => array (
+										'name' => t('ALR Detail'),
+										'module' => 'alrform',
+										'description' => "Add ALR Mod ",
+										'has_title' => TRUE,
+										'title_label' => t('ALR Mod'),
+										'has_body' => FALSE,
+										),
+				);
+}
+
+function alrform_perm() {
+	return array('edit alrform','administer alrform', 'create alrform', 'view alrform');
+}
+
+function alrform_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit alrform', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create alrform', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view alrform', $account);
+	}
+}
+
+
+function caseno(){
+global $user;
+ $use="select * from tbl_loanee_detail where alr_status=2";
+$usq = db_query($use);
+$caseno = array(''=>'--Select--');
+ while($usre = db_fetch_array($usq))
+  {
+  if($usre[account_id])
+  {
+ $scheme_id=$usre['account_id'];
+   $caseno[$scheme_id] = $usre[account_id];
+  }
+  }
+   return $caseno;
+}
+
+
+function district(){
+global $user;
+
+ $use="select * from tbl_district";
+$usq = db_query($use);
+$scheme = array(''=>'--Select--');
+ while($usre = db_fetch_array($usq)){
+ $scheme_id=$usre['district_id'];
+   $scheme[$scheme_id] = $usre[district_name];
+  }
+ 
+  return $scheme;
+}
+
+function alrform_menu(){
+	$items['alrcases'] = array(
+								'title' => 'ALR Cases',
+								'page callback' => 'alrcases',
+								'access arguments' => array('administer alrform'),
+								'type' => MENU_CALLBACK,
+	);
+	
+	
+	$items['alrcaseslist'] = array(
+								'title' => 'ALR Cases',
+								'page callback' => 'alrcaseslist',
+								'access arguments' => array('administer alrform'),
+								'type' => MENU_NORMAL_ITEM,
+	);
+	
+	return $items;
+
+}
+
+function alrform_form(&$node){
+	global $user,$base_url;
+	$rid = getRole($user->uid);
+	//$array = explode('/',$_GET['q']);
+	  $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('ALR List', 'alrcaseslist');
+	$breadcrumb[] = l('ALR Form', 'node/add/alrform');
+	
+	drupal_set_breadcrumb($breadcrumb);
+
+	$form['case_no'] = array(
+	'#type' =>'select',
+	'#title' => t('Case No.'),
+	'#required' =>TRUE,
+	'#default_value' =>'', 
+	'#options' => caseno(),
+	'#attributes' => array('onchange'=> 'return showUsera(this.value,"'.$base_url.'")'),
+		
+	);
+	
+	
+	$form['namee'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Name'),
+	'#id' => 'namee',
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#size' =>41,
+	'#maxlength'=>45,
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)', 'readonly' => 'readonly'),
+	);
+	
+	
+	
+	$form['district'] = array(
+	'#type' =>'select',
+	'#title' => t('District'),
+	'#required' =>TRUE,
+	'#id' => 'district',
+	'#default_value' =>'', 
+	'#options' => district(),
+	
+			
+	);
+	
+	
+	$form['total_amount'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Total Amount '),
+	'#required' => TRUE,
+	'#id' => 'total_amount',
+	'#default_value' =>'',
+	'#size' =>41,
+	'#maxlength'=>11,
+	'#description' => 'When ALR Declared',
+	'#attributes' => array('onkeypress' => 'return paypay(event)' , 'readonly' => 'readonly'),	
+	);
+	
+	$form['talwana'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Talwana (Processing Charges)'),
+	'#required' => TRUE,
+	'#size' => '41',
+	'#default_value' =>'',
+	'#maxlength'=>11,
+	'#attributes' => array('onkeypress' => 'return paypay(event)'),
+	);
+	
+	$form['datee'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Date'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#size' =>41,
+	);
+	
+	
+	$form['receipt_no'] = array(
+	'#type' =>'textfield',
+	'#title' => t('ALR Receipt No.'),
+	'#required' => TRUE,
+	'#size' => '41',
+	'#default_value' =>'',
+	'#maxlength'=>15,
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+		);
+	$form['amount'] = array(
+	'#type' =>'textfield',
+	'#title' => t('ALR Amount'),
+	'#required' => TRUE,
+	'#size' => '41',
+	'#id' => 'amount',
+	'#default_value' =>'',
+	'#maxlength'=>11,
+	'#description' => 'ALR Amount Till Date',
+	'#attributes' => array('onkeypress' => 'return paypay(event)'),
+	);
+	$form['amount_deposited_tehs'] = array(
+	'#type' =>'textfield',
+	'#title' => t('ALR Amount Deposited With Tehsildar'),
+	'#required' => TRUE,
+	'#size' => '41',
+	'#id' => 'amount_deposited_tehs',
+	'#default_value' =>'',
+	'#maxlength'=>11,
+	'#attributes' => array('onkeypress' => 'return paypay(event)'),
+	);
+	$form['amount_deposited_dm'] = array(
+	'#type' =>'textfield',
+	'#title' => t('ALR Amount Deposited With DM'),
+	'#required' => TRUE,
+	'#size' => '41',
+	'#id' => 'amount_deposited_dm',
+	'#default_value' =>'',
+	'#maxlength'=>11,
+	'#attributes' => array('onblur'=> 'return showbaldiff()','onkeypress' => 'return paypay(event)'),
+	);
+	$form['amount_recovered'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Total Amount Recovered'),
+    '#maxlength'=>11,
+	'#required' => TRUE,
+	'#size' => '41',
+	'#id' => 'amount_recovered',
+	'#default_value' =>'',
+	'#attributes' => array('onkeypress' => 'return paypay(event)'),
+	);
+	$form['balance'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Balance'),
+	'#required' => TRUE,
+	'#size' => '41',
+	'#default_value' =>'',
+	'#maxlength'=>11,
+	'#id' => 'balance',
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	$form['remarks'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Remarks'),
+	'#required' => TRUE,
+	'#size' => '41',
+	'#default_value' =>'',
+	'#maxlength'=>200,
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	
+return $form;
+} 
+
+
+function alrform_insert($node){
+   global $user;
+   
+  //all values
+    $nid = $node->nid;
+	$vid = $node->vid;
+	$case_no= $node->case_no;
+    $name = parseData($node->namee);
+    $district = $node->district;
+   
+    $total_amount = $node->total_amount;
+    $talwana = $node->talwana;
+	$date = strtotime($node->datee);
+	$receipt_no = $node->receipt_no;
+	$amount = $node->amount;
+	$amount_deposited_tehs = $node->amount_deposited_tehs;
+	$amount_deposited_dm = $node->amount_deposited_dm;
+	$amount_recovered = $node->amount_recovered;
+	$balance = $node->balance;
+	$remarks = $node->remarks;
+	
+    
+	db_query("INSERT INTO alr(nid,vid,case_no,name,district,total_amount,talwana,date,receipt_no,amount,amount_deposited_tehs,amount_deposited_dm,amount_recovered,balance,remarks) VALUES ('".$nid."','".$vid."','".$case_no."','".$name."','".$district."','".$total_amount."','".$talwana."','".$date."','".$receipt_no."','".$amount."','".$amount_deposited_tehs."','".$amount_deposited_dm."','".$amount_recovered."','".$balance."','".$remarks."')");
+
+	
+   // drupal_set_message('REC Employee '.$program_name.' has been saved successfully.');
+   drupal_set_message('New ALR case has been saved successfully.');
+	drupal_goto("alrcaseslist");
+	
+ }
+
+function alrform_validate($node, &$form)
+	{
+	 $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('ALR List', 'alrcaseslist');
+	$breadcrumb[] = l('ALR Form', 'node/add/alrform');
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	$alrdate=strtotime($node->datee);
+	$curdate=strtotime(date('d-m-Y'));
+	$amount_recovered=$node->amount_recovered;
+	$amount=$node->amount;
+	alphanumeric('namee',$node->namee,'Name');
+	alphanumeric('receipt_no',$node->receipt_no,'Receipt No');
+	//fononlyn('total_amount',$node->total_amount,'Total Amount');
+	fononlyn('talwana',$node->talwana,'Talwana');
+	paypay('amount',$node->amount,'Amount');
+	paypay('amount_deposited_tehs',$node->amount_deposited_tehs,'Amount Deposited Tehsil');
+	paypay('amount_deposited_dm',$node->amount_deposited_dm,'Amount Deposited DM');
+	//fononlyn('amount_recovered',$node->amount_recovered,'Amount Recovered');
+	//fononlyn('balance',$node->balance,'Balance');
+	
+	   if (($alrdate!='') && ($alrdate > $curdate))
+	     {
+		   $message = "Date Can Not be Greater Than Current Date ";
+form_set_error('datee', "$message");
+//drupal_goto("trainingdetails");
+		 }
+		 
+		 if (($amount_recovered!='') && ($amount_recovered > $amount))
+	     {
+		   $message = "Recorvered Amount Can Not Be Greater Than ALR Amount ";
+form_set_error('form', "$message");
+//drupal_goto("trainingdetails");
+		 }
+		 
+	}
+	
+
+function alrcaseslist()
+{
+ global $user, $base_url;
+$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('ALR List', 'alrcaseslist');
+	drupal_set_breadcrumb($breadcrumb);
+$limit = 10;//(int)getMessage('recTrainingDetails', 'code04', NULL);
+
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Case No'), 'field' => 'alr.case_no', 'sort' => 'asc'),
+	array('data' => t('Name'), 'field' => 'alr.name', 'sort' => 'asc'),
+	array('data' => t('Total Amount'), 'field' => 'alr.total_amount', 'sort' => 'asc'),
+	array('data' => t('Date'), 'field' => 'alr.date', 'sort' => 'asc'),
+	array('data' => t('ALR Receipt No.'), 'field' => 'alr.receipt_no', 'sort' => 'asc'),
+	
+	);
+//array('data' => t('Action')),
+  if(isset($_POST['searchtext']) && (!empty($_POST['searchtext']))){
+	$val = $_POST['searchtext'];	 
+	$cond = " AND ( UPPER(alr.name) LIKE '%".strtoupper($val)."%' OR alr.case_no = '".$val."' OR alr.total_amount ='".$val."' OR alr.receipt_no = '".$val."' OR alr.date ='".strtotime($_POST['searchtext'])."')  ";
+	}
+
+$query1 = "select count(*) as count from alr where 1=1 $cond ".tablesort_sql($header);
+
+$rscount = db_query($query1);
+	$rscounter = db_fetch_object($rscount);
+  $output = '
+<form method="post" action="">
+  <table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+    <tr>
+      <td colspan="3" class="tblHeaderLeft"><div class="searchrecord">';
+        
+        if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+        $output .= $rscounter->count ." Record(s) Found | ".l('View All','alrcaseslist');
+        }
+        
+        $output .='</div><span class="addrecord">'.$addurl.'</span></td>
+      <td colspan="3" class="tblHeaderRight"></td>
+    </tr>
+    ';
+    
+    $addurl = l("Add ALR","node/add/alrform");
+   // $lising = getMessage('recTrainingDetails', 'code02', NULL);
+    $lising='List of ALR';
+    $output .='
+    <tr>
+      <td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+      <td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+        <input type="submit" name="search" value="Search" /></td>
+    </tr>
+  </table>
+</form>';
+
+ $query = "select * from alr where 1=1 $cond ".tablesort_sql($header);
+	//echo $query;exit;
+	//exit;
+	
+	$count_query = "SELECT COUNT(*) FROM (" . $query . ") AS count_query";
+	$counter=0;
+	if($_REQUEST['page']){
+		$counter = $_REQUEST['page']*$limit;
+	}else{
+		$counter = 0;
+	}
+	$result = pager_query($query, $limit, 0, $count_query);
+    while($res=db_fetch_array($result))
+	  {
+	    $counter++;
+		
+		$rows[] = array(
+					array('data' => $counter),
+					array('data' => $res['case_no']),
+					array('data' => ucwords($res['name'])),
+					array('data' => $res['total_amount']),
+					array('data' => date('d-m-Y',$res['date'])),
+					array('data' => $res['receipt_no']),
+					
+			);
+	  //array('data' => $viewurl."|".$editurl."|".$deleteurl.$addsession .$sendsms),
+	  }
+	  
+	  $output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+		$output .= theme('pager', NULL, $limit,0 );
+		return $output;
+}
+
+function alrform_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	//exit;
+	if($form_id =='alrform_node_form'){
+	 $form['revision_information']['#type'] = hidden;
+	 $form['author']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	  $form['path']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	}
+	
+	
+	function alrcases(){
+  return drupal_get_form('alrcases_form');
+}
+
+function alrcases_form(){
+	global $user;
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('ALR Cases with Status', 'alrcases');
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+	$form['startdate'] = array(
+	'#type' =>'date_popup',
+	'#title' => t(''),
+	'#required' =>FALSE,
+	'#default_value' =>'', 
+	'#size' => 10,
+	'#date_format' => 'd-m-Y',
+		
+	);
+	$form['enddate'] = array(
+	'#type' =>'date_popup',
+	'#title' => t(''),
+	'#required' =>FALSE,
+	'#default_value' =>'', 
+	'#size' =>10,
+	'#date_format' => 'd-m-Y',
+		
+	);
+	
+	$form['submit'] = array(
+	'#type' => 'button',
+	'#default_value' => t('Generate')
+	);
+	return $form;
+	}
+	
+	
+	function alrform_theme() {
+	//drupal_set_message('hello');
+	
+	return array(
+				 
+		'alrform_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'alrform_node_form',
+                                 ),
+								 
+		'alrcases_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'alrcases_form',
+                                 ),						 
+       			 );
+                         }
+
+

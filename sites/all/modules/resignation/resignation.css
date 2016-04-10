@@ -1,0 +1,6 @@
+#approved-form .form-radios label{width:100px !important;}
+#approved-form .resizable-textarea{float:left;}
+#approved-form fieldset{width:auto;}
+#query-form fieldset{width:auto;}
+#resignsearch-form #edit-search-box-wrapper{margin-top: 0;margin-bottom: 0;}
+#comment-search-form #edit-search-box-wrapper{margin-top: 0;margin-bottom: 0;}

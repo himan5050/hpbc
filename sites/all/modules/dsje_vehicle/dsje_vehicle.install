@@ -1,0 +1,104 @@
+<?php
+function dsje_vehicle_schema() {
+
+  //language table
+   $schema['tbl_vehicles'] = array(
+							 'fields' => array(
+											   'vehicle_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'reg_no' => array(
+															  'type' => 'varchar',
+															  'length' => '40',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+															  
+												'vehicle_type' => array(
+															  'type' => 'varchar',
+															  'length' => '25',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												
+															  
+												  'model' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											     'date_purchase' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+                                                'mfd' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+
+                                    	                          
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+															  
+												'prev_vehicle_type' => array(
+															  'type' => 'varchar',
+															  'length' => '25',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'vehicle_id' => array('vehicle_id'),
+												),
+							 'primary key' => array('vehicle_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_vehicle_install() {
+	drupal_install_schema('dsje_vehicle');
+}
+
+function dsje_vehicle_uninstall() {
+	drupal_uninstall_schema('dsje_vehicle');
+}

@@ -1,0 +1,6 @@
+;$id 16/11/2011 Rai
+name = "Transfer Promotion Register"
+description ="Transfer Promotion report"
+core = 6.x
+version =6.x-1
+package="SC and St Reports"

@@ -1,0 +1,83 @@
+<?php
+function lookup_schema() {
+
+	
+	//District table
+   $schema['tbl_lookups'] = array(
+							 'fields' => array(
+											   'lookup_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+														  
+												'lookup_uid' => array(
+															   'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),	
+															  
+											   'lookup_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 
+											 
+											
+	                                        
+	                                          'lookupType_id' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+	                                          
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'lookup_id' => array('lookup_id'),
+												),
+							 'primary key' => array('lookup_id'),
+							 );
+	
+	return $schema;
+}
+
+function lookup_install() {
+	drupal_install_schema('lookup');
+}
+
+function lookup_uninstall() {
+	drupal_uninstall_schema('lookup');
+}

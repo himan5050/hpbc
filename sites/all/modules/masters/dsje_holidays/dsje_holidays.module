@@ -1,0 +1,595 @@
+
+<?php
+session_start();
+function dsje_holidays_init() {
+	drupal_add_css(drupal_get_path('module', 'dsje_holidays') .'/dsje_holidays.css');
+
+	
+}
+
+function dsje_holidays_perm() {
+	return array('edit dsje_holidays','administer dsje_holidays', 'create dsje_holidays', 'view dsje_holidays');
+}
+
+function dsje_holidays_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_holidays', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_holidays', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_holidays', $account);
+	}
+}
+
+function dsje_holidays_menu() {
+	
+	
+	$items['dsje/list-holidays'] = array(
+										'title' => t('List of Holidays'),
+										'description' => 'Allow user to View Holidays',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewholidays',
+										'access arguments' => array('administer dsje_holidays'),
+													 
+									  );
+	
+	$items['dsje/list-holidays/addholidays'] = array(
+										'title' => t('Add Holidays'),
+										'description' => 'Allow user to add holidays',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addholidays',
+										'access arguments' => array('administer dsje_holidays'),
+													 
+									  );
+   	$items['dsje/list-holidays/edit/holidays/%'] = array(
+								
+	                                    'title' => t('Edit Holiday'),
+										'description' => 'Allow user to add Holiday',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addholidaysedit',
+                                        'page arguments' => array(4),  
+		                                'access arguments' => array('administer dsje_holidays'),
+													 
+									  );
+ $items['dsje/list-holidays/view/holidays/%'] = array(
+								
+	                                    'title' => t('View Holiday'),
+										'description' => 'Allow user to add Holiday',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addholidaysview',
+                                        'page arguments' => array(4), 
+		                                'access arguments' => array('administer dsje_holidays'),
+													 
+									  );
+
+      $items['dsje/del/holidays/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'holidays_delete',
+		                                'page arguments' => array(3),
+		                                'access arguments' => array('administer dsje_holidays'),
+													 
+									  );
+      $items['dsje/enable/holidays/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'holidays_enable',
+		                                'page arguments' => array(3),
+		                                'access arguments' => array('administer dsje_holidays'),
+													 
+									  );
+	  $items['search-holidays-list'] = array(
+										'title' => '',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'search_holidays',
+										//'page arguments' => array(1),
+										'access arguments' => array('administer dsje_holidays'),
+									);
+
+	return $items;
+}
+
+
+/** listing states */
+//function viewcast(){
+	
+	
+	
+function holidays_search_form(){
+	//session_start();
+$form['status']=array(
+'#type'=>'select',
+'#title'=>t('Status'),
+'#required'=>FALSE,
+'#default_value'=>$_SESSION['status'],
+'#options'=>array(''=>'--Select--','0'=>'Disabled','1'=>'Enabled'),
+
+);
+
+$form['search_box']=array(
+'#type' => 'textfield',
+'#title' => '',
+'#required' => FALSE,
+'#size' => 55,
+'#default_value'=>$_SESSION['search_box'],
+//'#attributes' =>array('onkeypress' => 'return onlychar(event)'),
+);
+
+$form['search'] = array(
+'#type' => 'submit',
+'#value' =>t('Search'),
+);
+return $form;
+}
+
+
+
+function holidays_search_form_validate($form,&$form_state){
+ if(is_numeric($form_state['values']['search_box'])){
+	 form_set_error('search_box', 'Please enter Alphabetic value only.');
+ 
+ }
+
+}
+function holidays_search_form_submit($form, &$form_state){
+
+//echo '<pre>';
+//print_r($form_state);
+//exit;
+
+$status = $form_state['values']['status'];
+$keydata = $form_state['values']['search_box'];
+$_SESSION['status']=$status;
+$_SESSION['search_box']=$keydata;
+
+drupal_goto('search-holidays-list');
+
+
+
+}
+function viewholidays(){
+unset($_SESSION['status']);
+unset($_SESSION['search_box']);
+
+$sql = "select * from {tbl_holidays}";
+$output = listholidays($sql);
+return $output;
+}
+
+function search_holidays(){
+$status=$_SESSION['status'];
+ $keydata=$_SESSION['search_box'];
+
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);	
+if(($status == 0 || $status == 1) && $keydata==''){
+ $sql = "select * from {tbl_holidays} WHERE status='".$status."' GROUP BY holidays_id";
+}
+if(($status == 0 || $status == 1) && $keydata){
+ $sql = "select * from {tbl_holidays} WHERE (holidays_name LIKE '".$val."' OR start_date LIKE '".date('Y-m-d',strtotime($keydata))."%') AND status='".$status."' GROUP BY holidays_id";
+
+}
+ if($keydata && $status==''){
+ $sql = "select * from {tbl_holidays} WHERE (holidays_name LIKE '".$val."' OR start_date LIKE '".date('Y-m-d',strtotime($keydata))."%') GROUP BY holidays_id";
+ 
+}
+ if($keydata=='' && $status==''){
+ $sql = "select * from {tbl_holidays}
+  GROUP BY holidays_id";
+}
+
+$output =listholidays($sql);
+return $output;
+//echo $keydata;
+}
+
+function listholidays($sqlquery){
+
+
+//$_SESSION['status']=$status;
+//$_SESSION['search_box']=$keydata;
+
+$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Holidays Name'), 'field' => 'tbl_holidays.holidays_name', 'sort' => 'asc'),
+	array('data' => t('Holiday Date'), 'field' => 'tbl_holidays.start_date', 'sort' => 'asc'),
+	//array('data' => t('End Date') ,'field' => 'tbl_holidays.end_date', 'sort' => 'asc'),
+	array('data' => t('Status'),'field' => 'tbl_holidays.status', 'sort' => 'asc'),
+	array('data' => t('Actions'), 'class' => 'addeditview'),
+		
+	);
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+   if($array[0] == '' ) {
+   $breadcrumb[] = l('List of Holidays', 'dsje/list-holidays');
+	}  
+drupal_set_breadcrumb($breadcrumb);
+
+$sql = $sqlquery.tablesort_sql($header);
+
+$limit =(int)getMessage('dsjeholidays', 'code04', NULL);
+$count_query = "SELECT COUNT(*) as mycount FROM (" . $sql . ") AS count_query";
+$cres = db_query($count_query);
+$crs = db_fetch_object($cres);
+$totalcount = $crs->mycount;
+$result = pager_query($sql,$limit, 0, $count_query);
+//$result = pager_query($sql, 10, 0, $count_query);
+
+if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+
+if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+
+		if($rs->status==1){
+		  $deleteurl = l("Disable","dsje/del/holidays/".$rs->holidays_id);
+        }else{
+		  $deleteurl = l("Enable","dsje/enable/holidays/".$rs->holidays_id);
+		
+		}
+
+		if($rs->status ==1){
+	$status ='Enabled';
+	}else{
+	$status ='Disabled';
+	}
+		
+		$viewlink = l('View','dsje/list-holidays/view/holidays/'.$rs->holidays_id);
+		$editlink = l('Edit','dsje/list-holidays/edit/holidays/'.$rs->holidays_id);
+		//$newdate = date("d-m-Y" ,$rs->dateofupload);
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($rs->holidays_name)),
+			array('data' => date("d-m-Y",strtotime($rs->start_date))),
+           // array('data' => date("d-m-Y",strtotime($rs->end_date))),
+            array('data' => $status),
+			array('data' => $viewlink.' | '.$editlink.' | '.$deleteurl),
+          
+		);
+	  }
+}
+
+
+
+
+ if($rows== NULL)
+	$header=NULL;
+ $title = t(getMessage('dsjeholidays', 'code02',NULL));
+	 $records = t(getMessage('dsjeholidays', 'code03', array("0"=>$totalcount)));
+
+	 if(arg(0)=='search-holidays-list'){
+	 $output .='<table  id="wrapper" class="searchrecord"><tr><td>'.$records.' | '.l('View All','dsje/list-holidays').'</td></tr></table>';
+	 }
+	 $output .='<table id="wrapper"><tr><td class="tblHeaderLeft">'.$title.'<span class="addrecord">'.l('Add Holidays','dsje/list-holidays/addholidays').'</span></td><td class="tblHeaderRight leaveallocation">'.drupal_get_form('holidays_search_form').'</td></tr></table>';
+	$output .=theme_table($header,$rows);	
+	$output .=theme('pager', NULL, 1,0);
+
+
+   //$output .= $rscounter->countno;
+	return $output;
+  }
+
+
+ 
+function dsje_addholidays(){
+ return drupal_get_form('dsje_holidays_form');
+}
+
+/**
+ *form creation
+ */
+
+function dsje_holidays_form() {
+  $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Holidays', 'dsje/list-holidays');
+  $breadcrumb[] = l('Add Holiday', 'dsje/list-holidays/addholidays');
+  
+
+  drupal_set_breadcrumb($breadcrumb);
+
+	$form['holidays_name'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('Holiday Name'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+
+	$form['start_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Holiday Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' =>'',
+	);
+	
+	/*$form['end_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('End Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' =>'',
+	);
+	
+	*/
+	
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/list-holidays'),
+	
+);
+
+$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+/**
+ *submit handler
+ */
+
+function dsje_holidays_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $holidays_name =$values['holidays_name'];
+    $start_date = $values['start_date'];
+    //$end_date = $values['end_date'];
+	$status = 1;
+	//$createdby = $user->uid;
+	//$createdon = time();
+	//$updatedby = $user->uid;
+	//$updatedon = $createdon;
+     
+   db_query("INSERT INTO {tbl_holidays} (holidays_name,start_date,status) VALUES('".$holidays_name."','".$start_date."', '".$status."') ");
+	$message = getMessage('dsjeholidays', 'code05', array("0"=>ucwords($holidays_name)));
+	drupal_set_message($message);
+	drupal_goto('dsje/list-holidays');
+	
+}
+
+function dsje_holidays_form_validate($form, &$form_state) {
+global $user;
+	$values = $form_state['values'];
+    $holidays_name =$values['holidays_name'];
+	 $start_date =date("d-m-Y",strtotime(substr($values['start_date'],0,10)));
+    //$end_date = date("d-m-Y",strtotime(substr($values['end_date'],0,10)));
+	  $ctime = date("d-m-Y",time());
+	$hl = $values['start_date'];
+	$sql="select * from {tbl_holidays} where UCASE(holidays_name)= '".strtoupper($holidays_name)."' ";
+	$res=db_query($sql);
+	
+	if($rs=db_fetch_object($res)){
+		form_set_error('holidays_name',$holidays_name.' already exist');
+	}
+
+/*
+if($end_date<$start_date && $end_date !=''){
+form_set_error('end_date','End date should be greater than Start date.');
+}
+*/
+if($hl == ''){
+//form_set_error('start_date','Holiday Date field is required.');
+}
+ $diff =dateDiffByDays($start_date, $ctime);
+
+if($diff>-1 && $start_date !='01-01-1970'){
+form_set_error('start_date','Start date should be greater than current date.');
+}
+
+	
+}
+
+
+
+function dsje_addholidaysedit($id){
+ return drupal_get_form('dsje_holidays_form_edit',$id);
+}
+
+function dsje_holidays_form_edit($form_state,$id) {
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Holidays', 'dsje/list-holidays');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Holiday', 'dsje/list-holidays/edit/holidays/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+	
+$sql = "select * from {tbl_holidays} where holidays_id ='".$id."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+	
+	$form['holidays_name'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('Holiday Name'),
+		'#required' => TRUE,
+		'#default_value' => $rs->holidays_name,
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+
+	 $form['start_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Holiday Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' =>$rs->start_date,
+	);
+	
+	/*$form['end_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('End Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' =>$rs->end_date,
+	);
+	*/
+		
+	$form['holidays_id'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $id,
+		
+	);
+
+
+$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/list-holidays'),
+	
+);
+	
+	$form['submit'] = array(
+	'#type' => 'submit',
+	'#default_value' => t('Save')
+	);
+	return $form;
+}
+function dsje_holidays_form_edit_validate($form, &$form_state) { 
+  global $user;
+	$values = $form_state['values'];
+    $holidays_name =$values['holidays_name'];
+	 $start_date =date("d-m-Y",strtotime(substr($values['start_date'],0,10)));
+    //$end_date = date("d-m-Y",strtotime(substr($values['end_date'],0,10)));
+	  $ctime = date("d-m-Y",time());
+	$holidays_id = $values['holidays_id'];
+	$sql="select * from {tbl_holidays} where UCASE(holidays_name)= '".strtoupper($holidays_name)."' AND holidays_id !='".$holidays_id."' ";
+	$res=db_query($sql);
+	
+	if($rs=db_fetch_object($res)){
+		form_set_error('holidays_name',$holidays_name.' already exist');
+	}
+
+
+/*if($end_date<$start_date && $end_date !=''){
+form_set_error('end_date','End date should be greater than Start date.');
+}
+*/
+if($start_date<$ctime && $start_date !='' ){
+form_set_error('start_date','Start date should be greater than current date.');
+}
+} 
+
+function dsje_holidays_form_edit_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $holidays_name =$values['holidays_name'];
+    $start_date = $values['start_date'];
+    //$end_date = $values['end_date'];
+	 $holidays_id = $values['holidays_id'];
+	$status = 1;
+// db_query("INSERT INTO {tbl_holidays} (holidays_name,start_date,end_date,status) VALUES('".$holidays_name."','".$start_date."','".$end_date."', '".$status."') ");
+    db_query("update {tbl_holidays} SET holidays_name='".$holidays_name."', start_date='".$start_date."',status=1 where holidays_id='".$holidays_id."'");
+	$message = getMessage('dsjeholidays', 'code10', array("0"=>ucwords($holidays_name)));
+	drupal_set_message($message);
+	drupal_goto('dsje/list-holidays');
+	
+}
+
+/**
+ *hook_theme
+ */
+function dsje_holidays_theme() {
+	
+	return array(
+				 
+		'dsje_holidays_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_holidays_form',
+                                 ),
+        'dsje_holidays_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_holidays_form_edit',
+                                 ),
+
+				 );
+}
+
+
+
+
+ function holidays_delete($id){
+	$holidays_id =  $id;
+	
+	db_query("UPDATE {tbl_holidays} SET status=0 WHERE holidays_id ='".$holidays_id."'");
+	$sql = "select holidays_name from {tbl_holidays} where holidays_id='".$holidays_id."'";
+	$res = db_query($sql);
+	$rs= db_fetch_object($res);
+
+	$message = getMessage('dsjeholidays', 'code07', array("0"=>ucwords($rs->holidays_name)));
+	drupal_set_message($message);
+   
+	drupal_goto("dsje/list-holidays");
+ }
+
+  function holidays_enable($id){
+	$holidays_id =  $id;
+	db_query("UPDATE {tbl_holidays} SET status=1 WHERE holidays_id ='".$holidays_id."'");
+	$sql = "select holidays_name from {tbl_holidays} where holidays_id='".$holidays_id."'";
+	$res = db_query($sql);
+	$rs= db_fetch_object($res);
+	$message = getMessage('dsjeholidays', 'code09', array("0"=>ucwords($rs->holidays_name)));
+	drupal_set_message($message);
+	drupal_goto("dsje/list-holidays");
+ }
+
+
+ 
+
+  
+
+
+function dsje_addholidaysview($id){
+	
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Holidays', 'dsje/list-holidays');
+  if($array[2] == 'view'){
+     $breadcrumb[] = l('View Holiday', 'dsje/list-holidays/view/holidays/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from {tbl_holidays} where holidays_id = $id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+	$status ='Enabled';
+	}else{
+	$status ='Disabled';
+	}
+	 
+
+	$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+	$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Holiday Details</h2></td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">Holiday Name:</td><td class="normal">'.ucwords($rs->holidays_name).'</td></tr>';	
+	$output .='<tr class="oddrow"><td width="50%">Hodiday Date:</td><td class="normal">'.date("d-m-Y",strtotime($rs->start_date)).'</td></tr>';
+	//$output .='<tr class="evenrow"><td width="50%">End Date:</td><td class="normal">'.date("d-m-Y",strtotime($rs->end_date)).'</td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+	$output .='<tr class="oddrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'dsje/list-holidays').'</td></tr>';
+	$output .='</table>';
+
+	return $output;
+}	
+
+
+

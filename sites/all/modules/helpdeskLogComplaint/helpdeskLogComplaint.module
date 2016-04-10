@@ -1,0 +1,1273 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/helpdeskLogComplaint.inc');
+
+drupal_add_js(drupal_get_path('module','helpdeskLogComplaint').'/rec_program.js');
+
+function helpdeskLogComplaint_node_info() {
+	return array (
+					'helpdeskLogComplaint' => array (
+										'name' => t('List of Helpdesk Complaints'),
+										'module' => 'helpdeskLogComplaint',
+										'description' => "Creates Helpdesk Complaints",
+										'has_title' => TRUE,
+										'title_label' => t('Helpdesk Complaints'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function helpdeskLogComplaint_perm() {
+	return array('edit helpdeskLogComplaint','administer helpdeskLogComplaint', 'create helpdeskLogComplaint', 'view helpdeskLogComplaint');
+}
+
+function helpdeskLogComplaint_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit helpdeskLogComplaint', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create helpdeskLogComplaint', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view helpdeskLogComplaint', $account);
+	}
+}
+ 
+ function helpdeskLogComplaint_menu(){
+	 $items['list/helpdeskLogComplaintList'] = array(
+		   'title' => 'List of Helpdesk Complaints',
+		   'page callback' => 'helpdeskLogComplaint_list',
+		   'access arguments' => array('administer helpdeskLogComplaint'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewhelpdeskLogComplaint/%'] = array(
+								'title' => t('view Helpdesk Complaints'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_helpdeskLogComplaint',
+								'page arguments' => array(1),
+								'access arguments' => array('administer helpdeskLogComplaint'),
+		                        
+						);
+  
+  $items['admin/dsje/del/helpdeskLogComplaint/%'] =  array(
+	               						 'title' => t('Delete Helpdesk Complaints'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'helpdeskLogComplaint_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer helpdeskLogComplaint'),
+													 
+	);
+ $items['admin/dsje/enable/helpdeskLogComplaint/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'helpdeskLogComplaint_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer helpdeskLogComplaint'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function helpdeskLogComplaint_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjehelpdeskLogComplaint', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Subject'), 'field' => 'tbl_helpdesklogcomplaint.subject', 'sort' => 'asc'),
+	array('data' => t('Date/Time'), 'field' => 'tbl_helpdesklogcomplaint.date_time', 'sort' => 'asc'),
+	array('data' => t('Status'), 'field' => 'tbl_helpdesklogcomplaint.status2', 'sort' => 'asc'),
+	array('data' => t('Assigned To'), 'field' => 'tbl_helpdesklogcomplaint.assign_to', 'sort' => 'asc'),
+	array('data' => t('Action'), 'class' => 'addeditview'),
+	);
+
+
+$breadcrumb = array();
+
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Helpdesk Complaints', 'list/helpdeskLogComplaintList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	 
+	 $uid = $user->uid;
+	 
+	$rid = getRole($uid);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!='' || $_REQUEST['searchtextstatus']!=''){
+	$val = $_REQUEST['searchtext'];	 
+	
+	$status = $_REQUEST['searchtextstatus'];	
+	 
+	
+
+	 if($rid !=10 && $rid!=11){	
+	
+	 if(substr(strtotime($val),0,5) != ""){
+	  $datval = substr(strtotime($val),0,5); 
+	 $datef = "OR tbl_helpdesklogcomplaint.date_time = '".date('Y-m-d',strtotime($val))."'";
+	 }
+	
+	 if( $val && $status ==''){
+	 $searchquery = "tbl_helpdesklogcomplaint.subject LIKE '%".strtoupper($val)."%' $datef OR  users.name LIKE '%".strtoupper($val)."%' ";
+	 }
+	 
+	 else if( $val=='' && $status){
+	 $searchquery = "tbl_helpdesklogcomplaint.status2='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='125' || $status =='138') ){
+	 $searchquery = "(tbl_helpdesklogcomplaint.subject LIKE '%".strtoupper($val)."%' $datef OR users.name LIKE '%".strtoupper($val)."%') AND tbl_helpdesklogcomplaint.status2 LIKE '%".strtoupper($status)."%'";
+	 }
+
+	 
+    $sql = "SELECT  node.nid,node.uid, tbl_helpdesklogcomplaint.subject,tbl_helpdesklogcomplaint.date_time  ,tbl_helpdesklogcomplaint.status2,tbl_helpdesklogcomplaint.assign_to,users.uid ,users.name FROM {node}
+ INNER JOIN tbl_helpdesklogcomplaint ON (node.nid=tbl_helpdesklogcomplaint.nid and tbl_helpdesklogcomplaint.submit_by='".$user->name."') INNER JOIN users ON (users.uid=tbl_helpdesklogcomplaint.assign_to)
+	 WHERE node.uid='".$user->uid."' and (".$searchquery." ) ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+ INNER JOIN tbl_helpdesklogcomplaint ON (node.nid=tbl_helpdesklogcomplaint.nid and tbl_helpdesklogcomplaint.submit_by='".$user->name."') INNER JOIN users ON (users.uid=tbl_helpdesklogcomplaint.assign_to)
+	 WHERE node.uid='".$user->uid."' and (".$searchquery.") ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	   $_REQUEST['page']=0;
+	
+	 
+	
+
+//rid 
+}
+else if($rid==10)
+{
+if(substr(strtotime($val),0,5) != ""){
+	  $datval = substr(strtotime($val),0,5); 
+	  $datef = "OR tbl_helpdesklogcomplaint.date_time ='".date('Y-m-d',strtotime($val))."'";
+	 }
+	
+	 if( $val && $status ==''){
+	 $searchquery = "tbl_helpdesklogcomplaint.subject LIKE '%".strtoupper($val)."%' $datef OR  users.name LIKE '%".strtoupper($val)."%' ";
+	 }
+	 
+	 else if( $val=='' && $status){
+	 $searchquery = "tbl_helpdesklogcomplaint.status2='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='125' || $status =='138') ){
+	 $searchquery = "(tbl_helpdesklogcomplaint.subject LIKE '%".strtoupper($val)."%' $datef OR users.name LIKE '%".strtoupper($val)."%') AND tbl_helpdesklogcomplaint.status2 LIKE '%".strtoupper($status)."%'";
+	 }
+	 
+
+//--------------------
+
+
+$sql = "SELECT  node.nid,node.uid, tbl_helpdesklogcomplaint.subject,tbl_helpdesklogcomplaint.date_time,tbl_helpdesklogcomplaint.status2,tbl_helpdesklogcomplaint.assign_to,users.uid ,users.name  FROM {node}
+
+ INNER JOIN tbl_helpdesklogcomplaint ON (node.nid=tbl_helpdesklogcomplaint.nid and (tbl_helpdesklogcomplaint.assign_to='".$user->uid."' or tbl_helpdesklogcomplaint.submit_by='".$user->name."' ) )
+ INNER JOIN users ON (users.uid=tbl_helpdesklogcomplaint.assign_to)
+	 WHERE node.uid='".$user->uid."' or(".$searchquery.") ".tablesort_sql($header);
+   
+    $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_helpdesklogcomplaint ON (node.nid=tbl_helpdesklogcomplaint.nid and (tbl_helpdesklogcomplaint.assign_to='".$user->uid."' or tbl_helpdesklogcomplaint.submit_by='".$user->name."' ) )
+	 INNER JOIN users ON (users.uid=tbl_helpdesklogcomplaint.assign_to)
+	 WHERE node.uid='".$user->uid."' or ".$searchquery."".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	//echo $rscounter->count;exit;
+$_REQUEST['page']=0;
+
+
+
+
+//----------------
+
+}
+
+else if($rid==11)
+{
+if(substr(strtotime($val),0,5) != ""){
+
+
+	  $datval = substr(strtotime($val),0,5); 
+	 $datef = "OR tbl_helpdesklogcomplaint.date_time ='".date('Y-m-d',strtotime($val))."'";
+	 }
+	//else {$datef= " OR 1=1";}
+	 if( $val && $status ==''){
+	 $searchquery = "tbl_helpdesklogcomplaint.subject LIKE '%".strtoupper($val)."%'   $datef OR  users.name LIKE '%".strtoupper($val)."%' ";
+	 }
+	 
+	 else if( $val=='' && $status){
+	 $searchquery = "tbl_helpdesklogcomplaint.status2='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='125' || $status =='138') ){
+	 $searchquery = "(tbl_helpdesklogcomplaint.subject LIKE '%".strtoupper($val)."%' $datef OR users.name LIKE '%".strtoupper($val)."%') AND tbl_helpdesklogcomplaint.status2 LIKE '%".strtoupper($status)."%'";
+	 }
+	 
+	 
+	 
+
+  $sql = "SELECT  node.nid,node.uid, tbl_helpdesklogcomplaint.subject,tbl_helpdesklogcomplaint.date_time,tbl_helpdesklogcomplaint.status2,tbl_helpdesklogcomplaint.assign_to,users.uid ,users.name  FROM {node}
+ INNER JOIN tbl_helpdesklogcomplaint ON (node.nid=tbl_helpdesklogcomplaint.nid )
+ INNER JOIN users ON (users.uid=tbl_helpdesklogcomplaint.assign_to)
+	 WHERE (".$searchquery.") ".tablesort_sql($header);
+	
+   
+   $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_helpdesklogcomplaint ON (node.nid=tbl_helpdesklogcomplaint.nid )
+	 INNER JOIN users ON (users.uid=tbl_helpdesklogcomplaint.assign_to)
+	 WHERE  ".$searchquery."  ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	 
+	//echo $rscounter->count;exit;
+$_REQUEST['page']=0;
+
+}
+
+}else{
+
+if($rid !=10 && $rid!=11){	
+ $sql = "SELECT node.nid,node.uid,tbl_helpdesklogcomplaint.subject,tbl_helpdesklogcomplaint.date_time,tbl_helpdesklogcomplaint.status2,tbl_helpdesklogcomplaint.assign_to FROM {node}
+	 INNER JOIN tbl_helpdesklogcomplaint ON (node.nid=tbl_helpdesklogcomplaint.nid and tbl_helpdesklogcomplaint.submit_by='".$user->name."' )
+	 WHERE node.uid='".$user->uid."'".tablesort_sql($header);
+	}
+	
+	else if($rid==10){
+	
+	  $sql = "SELECT node.nid,node.uid,tbl_helpdesklogcomplaint.subject,tbl_helpdesklogcomplaint.date_time,tbl_helpdesklogcomplaint.status2,tbl_helpdesklogcomplaint.assign_to FROM {node}
+	 INNER JOIN tbl_helpdesklogcomplaint ON (node.nid=tbl_helpdesklogcomplaint.nid and (tbl_helpdesklogcomplaint.assign_to='".$user->uid."' or tbl_helpdesklogcomplaint.submit_by='".$user->name."' ) )"
+	 .tablesort_sql($header);
+	
+	//drupal_set_message($sql);
+	}
+	else if($rid==11){
+	
+	 $sql = "SELECT node.nid,node.uid,tbl_helpdesklogcomplaint.subject,tbl_helpdesklogcomplaint.date_time,tbl_helpdesklogcomplaint.status2,tbl_helpdesklogcomplaint.assign_to FROM {node}
+	 INNER JOIN tbl_helpdesklogcomplaint ON (node.nid=tbl_helpdesklogcomplaint.nid ) ".tablesort_sql($header);
+	}
+
+}
+global $base_url;
+$action = $base_url.'/list/helpdeskLogComplaintList';
+
+
+ $t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 125){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 138){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!='' || $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage('dsjehelpdeskLogComplaint', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/helpdeskLogComplaintList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight" align="center"></td></tr>';
+	
+	$addurl = l(getMessage('dsjehelpdeskLogComplaint', 'code01', NULL),"node/add/helpdeskLogComplaint");
+   	$lising = getMessage('dsjehelpdeskLogComplaint', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="125" '.$selected0.'>Assigned</option>
+	<option value="138" '.$selected1.'>Fixed</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewhelpdeskLogComplaint/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/helpdeskLogComplaint/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/helpdeskLogComplaint/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  $status2=getLookupName($rs->status2);
+ if($rs->assign_to==137){ $assign=getLookupName($rs->assign_to);
+ } else{ 
+ $assg=db_query("select name from {users} where uid = '".$rs->assign_to."'"); 
+ $assign2=db_fetch_object($assg);
+ $assign=$assign2->name;
+ }
+  
+if($rs->status2 !=139){
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => $rs->subject),
+			array('data' => date('d-m-Y',strtotime($rs->date_time))),
+			array('data' => $status2),
+			array('data' => $assign),
+			array('data' => $viewurl.'|'.$editurl),
+		);
+		}else{
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => $rs->subject),
+			array('data' => date('d-m-Y',strtotime($rs->date_time))),
+			array('data' => $status2),
+			array('data' => $assign),
+			array('data' => $viewurl),
+		);
+		}
+	  }
+	  
+	}
+     if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, 20,0 );
+	return $output;
+  }
+
+function helpdeskLogComplaint_delete($nid){
+   $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("Delete FROM {tbl_helpdesklogcomplaint} WHERE courtcase_id ='".$courtcase_id."'");
+  db_query("DELETE FROM {tbl_helpdesklogcomplaint} WHERE nid ='".$node->nid."'");
+ // drupal_set_message(' Helpdesk Complaints has been deleted successfully.');
+  $message=getMessage('dsjehelpdeskLogComplaint','code07','');
+  drupal_set_message($message);
+  
+  drupal_goto("list/helpdeskLogComplaintList");
+ }
+
+function helpdeskLogComplaint_enable($nid){
+  
+  $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+  //db_query("UPDATE {tbl_helpdesklogcomplaint} SET statusnodal =1 WHERE nid ='".$node->nid."'");
+  db_query("DELETE FROM {tbl_helpdesklogcomplaint} WHERE nid ='".$node->nid."'");
+  drupal_set_message('Helpdesk Complaints has been deleted successfully.');
+  drupal_goto("list/helpdeskLogComplaintList");
+ }
+
+
+function helpdeskLogComplaint_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	//drupal_set_message($rid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Helpdesk Complaints', 'list/helpdeskLogComplaintList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Helpdesk Complaints', 'node/'.$array[1].'/edit');
+	}
+  
+	
+	 else{
+	 $breadcrumb[] = l('Add Helpdesk Complaints', 'node/add/helpdeskLogComplaint'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  
+	
+		
+	////////////////////////////////////
+	
+	$selectreg1= db_query("select application_name from {tbl_helpdeskapplication}  where statusnodal =1 ORDER BY application_name ASC");
+	
+	$selectregarray = array(''=>'--Select--');
+	while($selectreg = db_fetch_object($selectreg1)){
+	$selectregarray[$selectreg->application_name] = $selectreg->application_name;
+	}
+	
+
+if(is_numeric(arg(1))){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_helpdesklogcomplaint ON (node.nid=tbl_helpdesklogcomplaint.nid) WHERE node.nid=".arg(1);
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+}
+
+	
+	if($node->application_name==''){
+	$form['application_name'] = array(
+	'#type' =>'select',
+	'#title' => t('Application Name'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->application_name,
+	 '#options'=> $selectregarray,
+	  
+	);}
+	else
+	{
+	$form['application_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Application Name'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->application_name,
+	'#attributes' => array('readonly' => 'readonly'),
+	  
+	);
+	
+	
+	}
+	
+	if($rs->complaint_type=='')
+	{
+	$form['complaint_type'] = array(
+	'#type' =>'select',
+	'#title' => t('Complaint Type'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->complaint_type,
+	 '#options'=> selectComplaintType(),
+	);
+	}
+	else
+	{
+	
+		$form['complaint_type'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Complaint Type'),
+	'#required' => TRUE,
+	'#default_value' =>getLookupName($rs->complaint_type),
+	'#attributes' => array('readonly' => 'readonly'), 
+	);
+	}
+	
+	if($rs->related_to=='')
+	{
+	$form['related_to'] = array(
+	  '#id' => 'related2_id',
+	'#type' =>'select',
+	'#title' => t('Related To'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->related_to,
+	 '#options'=> selectRelated(),
+	
+	 //'#attributes' => array('onchange' => 'return software()'),
+	);}
+	
+	else{
+	
+	$form['related_to'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Related To'),
+	'#required' => TRUE,
+	'#default_value' =>getLookupName($rs->related_to),
+	'#attributes' => array('readonly' => 'readonly'), 
+	
+	);
+	
+	}
+	
+	
+	
+	
+	/*$form['editsoft'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Change Type'),
+	'#required' => TRUE,
+	'#default_value' =>$node->related_to,
+	'#attributes' => array('readonly' => 'readonly'), 
+	
+	);*/
+	
+	$rel=db_query("select related_to FROM {tbl_helpdesklogcomplaint} where nid='".$rs->nid."'");
+		$related=db_fetch_object($rel);
+	
+	$rd=arg(2);
+	if( $rs->soft=='' && $rd != 'edit'){
+	$form['soft'] = array(
+	'#type' =>'select',
+	'#title' => t('Change Type'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->soft,
+	 '#options'=> selectSoft(),
+	);
+	}
+	
+	else if( $rs->soft != '' && $rs->related_to !=''){
+		
+		$form['editsoft'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Change Type'),
+	'#required' => FALSE,
+	'#default_value' =>getLookupName($rs->soft),
+	'#attributes' => array('readonly' => 'readonly'), 
+	
+	);
+		
+		}
+	
+	if($rs->subject==''){
+	$form['subject'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Subject'),
+	'#required' => TRUE,
+	'#size'=>45,
+	'#maxlength'=>45,
+	'#default_value' =>$rs->subject,
+	 '#attributes' => array('onkeypress' => 'return  alphanumeric(event)')
+
+	);
+	}
+	else
+	{
+	
+	$form['subject'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Subject'),
+	'#required' => TRUE,
+	'#size'=>45,
+	'#maxlength'=>45,
+	'#default_value' =>$rs->subject,
+	 '#attributes' => array('readonly' => 'readonly'), 
+	);
+	
+	}
+	
+	if($rs->details==''){
+	$form['details'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Call Details/Reason'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->details,
+	 '#maxlength'=>500,
+	'#size' =>500,
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)'), 
+	
+	);
+	}
+	else{
+	$form['details'] = array(
+	'#type' =>'textarea',
+	//'#id'=>'detail',
+	'#title' => t('Call Details/Reason'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->details,
+	 //'#maxlength'=>500,
+	//'#size' =>500,
+	'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	
+	}
+
+	if($rs->priority=='')
+	{
+	$form['priority'] = array(
+	'#type' =>'select',
+	'#title' => t('Priority'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->priority,
+	 '#options'=> selectPriority(),
+	
+	);
+	
+	}
+	else{
+	
+	$form['priority'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Priority'),
+	'#required' => TRUE,
+	'#default_value' =>getLookupName($rs->priority),
+	'#attributes' => array('readonly' => 'readonly'), 
+	
+	);
+	}
+	
+	$form['prev_assign_to'] = array(
+	'#type' =>'hidden',
+	
+	'#default_value' =>$rs->assign_to,
+		);
+	
+	
+	//11-super 10-assitant
+	
+	if($rid==10 || $rid==11){
+	
+	$form['assign_to'] = array(
+	'#type' =>'select',
+	'#title' => t('Assign To'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->assign_to,
+	  '#options'=> helpdeskAssign(),
+		);
+	} 
+	
+	$kk=db_query("select status2 FROM {tbl_helpdesklogcomplaint} where tbl_helpdesklogcomplaint.nid = '".$rs->nid."'");
+	$ros=db_fetch_object($kk);
+	
+
+$form['prev_status2'] = array(
+			'#type' =>'hidden',
+			'#default_value' =>$rs->status2,
+			
+			);
+
+
+
+	if( $rid==11){
+			$form['status2'] = array(
+			'#type' =>'select',
+			'#title' => t('Status'),
+			'#required' => TRUE,
+			'#default_value' =>$rs->status2,
+			  '#options'=> helpdeskStatus(),
+			
+			);
+	}
+	
+	else if ($rid==10 ){
+	$form['status2'] = array(
+			'#type' =>'select',
+			'#title' => t('Status'),
+			'#required' => TRUE,
+			'#default_value' =>$rs->status2,
+			  '#options'=> helpdeskStatus5(),
+			  );
+	
+	}
+	else{
+	if ($ros->status2=='138' )
+	{
+			$form['status2'] = array(
+			'#type' =>'select',
+			'#title' => t('Change Status'),
+			'#required' => TRUE,
+			'#default_value' =>$rs->status2,
+			'#options'=> helpdeskStatus2(),
+	
+	);}
+	else
+	{
+	if($rs->subject!=''){
+		$form['status2'] = array(
+		'#type' =>'textfield',
+		'#title' => t('Status'),
+		'#required' => TRUE,
+		'#default_value' =>getLookupName($rs->status2),
+		  '#attributes' => array('readonly' => 'readonly'), 
+		
+		);
+	}
+	
+	}
+	
+	
+
+	
+	
+	
+
+}
+	
+	if($rs->subject!=''){								
+	$form['comment'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Comment'),
+	
+	'#default_value' =>'',
+	 '#maxlength'=>500,
+	'#size' =>500,
+	'#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-comment",500)'),
+	);
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/helpdeskLogComplaintList'),
+);
+	}
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/helpdeskLogComplaintList'),
+);
+return $form;
+} 
+
+function helpdeskLogComplaint_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	/*$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Helpdesk Complaints', 'list/helpdeskLogComplaintList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Helpdesk Complaints', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add Helpdesk Complaints', 'node/add/helpdeskLogComplaint');
+	}*/
+	
+	$breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Helpdesk Complaints', 'list/helpdeskLogComplaintList');
+        if(arg(1) !='add'){
+		  $breadcrumb[] = l('Edit Helpdesk Complaints', 'node/'.arg(1).'/edit');	
+		}else{
+         $breadcrumb[] = l('Add Helpdesk Complaints', 'node/add/helpdeskLogComplaint');
+      
+		}
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+	$rd=arg(2);
+	$soft=$form->soft;
+	$related_to=$form->related_to;
+	
+	if($related_to==120 && $soft=='')
+	{
+	form_set_error('',t('Change Type field is required.'));
+	
+	}
+	
+	textonlywithdotne('details',$form->details,'Details of call');
+	
+	
+		
+}
+
+/**
+ *hook_form_alter
+ */
+function helpdeskLogComplaint_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='helpdeskLogComplaint_node_form'){
+	
+	  $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+         $form['author_information']['#type'] = hidden;
+         $form['attachments']['#type'] = hidden;
+          $form['path']['#type'] = hidden;
+		  
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function helpdeskLogComplaint_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+  
+  
+ 
+ $details= $node->details;
+$application_name= $node->application_name;
+$complaint_type= $node->complaint_type;
+$related_to=$node->related_to;
+$details=$node->details;
+$priority=$node->priority;
+
+$status2='Not Assigned';
+$submit_by= $user->name;
+$subject=$node->subject;
+    $date_time= $node->date_time;
+    $statusnodal =  1;   // $node->status2nodal;
+    
+	$assign_to='Not Assigned';
+	$soft=$node->soft;
+	$editsoft=$node->editsoft;
+	
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$date_time=date('Y-m-d');
+//echo $date_time;exit;
+db_query ("INSERT INTO {tbl_helpdesklogcomplaint} (`vid`, `nid`,`application_name`,`complaint_type`, `related_to`,`subject`,`details`, `assign_to`,`priority`,`status2`,`date_time`,`submit_by`,`soft`,`statusnodal`) VALUES ('".$vid."','".$nid."','".$application_name."','".$complaint_type."','".$related_to."','".$subject."','".$details."',137,'".$priority."',137,'".$date_time."','".$submit_by."','".$soft."','".$statusnodal."')");
+
+
+	
+	$time1=time();
+db_query("insert into {tbl_workflow_docket} (`workflow_id`,`time`,`status`) values (6,'".$time1."','pending')");
+
+$doc=db_query("select max(doc_id) as doc_id from {tbl_workflow_docket}");
+$doc_id=db_fetch_object($doc);	
+	
+db_query("update {tbl_helpdesklogcomplaint} set doc_id='".$doc_id->doc_id."' where nid='".$node->nid."'");
+
+db_query("insert into {tbl_workflow_task} (`doc_id`,`status`,`level`) values ('".$doc_id->doc_id."',0,1)");
+	
+	
+	
+$finduid=db_query("select * from {users_roles} where rid=11");
+while($ks=db_fetch_object($finduid)){
+
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto))
+{
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$date_time,2=>$user->name)); 
+
+
+//$to = $u->mail;
+	
+createMail('helpdeskIssue_created', $ms->mail,'',$parameter,'');
+}
+
+}
+
+
+
+	
+    //drupal_set_message('Helpdesk Complaints Entry has been saved successfully.');
+	
+	 $message=getMessage('dsjehelpdeskLogComplaint','code05','');
+  drupal_set_message($message);
+	drupal_goto("list/helpdeskLogComplaintList");
+
+ 
+ 
+ }
+
+function helpdeskLogComplaint_update($node){
+	
+	
+	////////////////
+	
+	
+	
+	///////////////
+	  global $user; 
+  
+ $details= $node->details;
+$application_name= $node->application_name;
+$complaint_type= $node->complaint_type;
+$related_to=$node->related_to;
+$details=$node->details;
+$priority=$node->priority;
+
+  $date_time2=time();
+  $date_time=date('Y-m-d');
+ $comment=$node->comment;
+ $submit_by= $user->name;
+   //$complaint_no=$node->complaint_no;
+	$statusnodal = $node->statusnodal;
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$uid=$node->uid;
+	$submit_by= $user->name;
+	
+$assign_to=$node->assign_to;
+$prev_assign_to=$node->prev_assign_to;
+$status2=$node->status2;
+$prev_stat=$node->prev_status2;
+
+$ccd=db_query("select * FROM {tbl_helpdesklogcomplaint} where nid='".$node->nid."'");
+$dko=db_fetch_object($ccd);
+$complaint_no=$dko->complaint_no;
+
+$uid = $user->uid;
+	$rid = getRole($uid);
+
+$doc=db_query("select doc_id FROM {tbl_helpdesklogcomplaint} where nid='".$nid."'");
+$doc_id=db_fetch_object($doc);
+
+if($status2 != $prev_stat || ($prev_assign_to != '' && $prev_assign_to != $assign_to)){
+
+db_query("update {tbl_workflow_task} set status=1 where doc_id=$doc_id->doc_id and status=0");
+
+}
+
+
+
+	//if($status2!=137){
+
+if($rid==10 || $rid==11){
+db_query("INSERT into {tbl_helpdeskcomment} (`vid`,`nid`,`complaint_no`,`date_time2`,`submit_by`,`status2`,`comment`) VALUES ('".$vid."','".$nid."','".$complaint_no."','".$date_time2."','".$submit_by."','".$status2."','".$comment."')");
+
+db_query("update {tbl_helpdesklogcomplaint} SET  `status2`='".$status2."',`assign_to`='".$assign_to."' where nid='".$nid."'");
+
+if($prev_assign_to != '' && $prev_assign_to != $assign_to){
+$doc=db_query("select doc_id FROM {tbl_helpdesklogcomplaint} where nid='".$nid."'");
+$doc_id=db_fetch_object($doc);
+ 
+ //db_query("update {tbl_workflow_task} set status=1 where doc_id='".$doc_id->doc_id."'");
+//echo "insert into {tbl_workflow_task} (`doc_id`,`uid`,`status`) values ('".$doc_id->doc_id."','".$assign_to."',0)";exit;
+ db_query("insert into {tbl_workflow_task} (`doc_id`,`uid`,`status`) values ('".$doc_id->doc_id."','".$assign_to."',0)");
+
+}
+
+
+
+}
+else{
+
+if($status2 != 139 && $status2 !=140){
+//$status2=getLookupId($status2);
+db_query("INSERT into {tbl_helpdeskcomment} (`vid`,`nid`,`complaint_no`,`date_time2`,`submit_by`,`comment`) VALUES ('".$vid."','".$nid."','".$complaint_no."','".$date_time2."','".$submit_by."','".$comment."')");
+
+}
+
+else{
+db_query("INSERT into {tbl_helpdeskcomment} (`vid`,`nid`,`complaint_no`,`date_time2`,`submit_by`,`status2`,`comment`) VALUES ('".$vid."','".$nid."','".$complaint_no."','".$date_time2."','".$submit_by."','".$status2."','".$comment."')");
+
+db_query("update {tbl_helpdesklogcomplaint} SET  `status2`='".$status2."' where nid='".$nid."'");
+}
+}
+
+
+if(!empty($comment)){
+
+
+
+$finduid=db_query("select * from {users_roles} where rid=11");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto))
+{
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$date_time,2=>$user->name)); 
+/*
+$selsubmit=db_query("select submit_by FROM {tbl_helpdesklogcomplaint} where nid='".$node->nid."'");
+$selsub=db_fetch_object($selsubmit);
+$findmail=db_query("select mail from {users} where name='".$selsub->submit_by."'");
+$findemail=db_fetch_object($findemail);
+*///$to = $u->mail;
+	
+createMail('helpdeskIssue_commented', $ms->mail,'',$parameter,'');
+}
+
+}
+
+
+$finduid=db_query("select * from {users_roles} where rid=10");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' AND uid='".$assign_to."'");
+
+while($ms=db_fetch_object($sendto))
+{
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$date_time,2=>$user->name)); 
+
+
+//$to = $u->mail;
+	
+createMail('helpdeskIssue_commented', $ms->mail,'',$parameter,'');
+}
+
+}
+
+
+
+
+///////////////////////////////////
+$selsubmit=db_query("select submit_by FROM {tbl_helpdesklogcomplaint} where nid='".$node->nid."'");
+$selsub=db_fetch_object($selsubmit);
+$findmail=db_query("select mail,name from {users} where name='".$selsub->submit_by."'");
+$findemail=db_fetch_object($findemail);
+//$to = $u->mail;
+	
+
+
+
+$parameter = '';
+$parameter = json_encode(array(0=>$findemail->name,1=>$date_time,2=>$user->name)); 
+
+
+//$to = $u->mail;
+	
+createMail('helpdeskIssue_commented', $findemail->mail,'',$parameter,'');
+
+
+
+}
+////-----------------------------------------------------------------mail on status change -rai
+$prev_status2=$node->status2;
+
+if($prev_status2 != $status2){
+
+$finduid=db_query("select * from {users_roles} where rid=11");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto))
+{
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$date_time,2=>$user->name)); 
+
+
+//$to = $u->mail;
+	
+createMail('helpdeskIssue_status', $ms->mail,'',$parameter,'');
+}
+
+}
+
+
+$finduid=db_query("select * from {users_roles} where rid=10 ");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' AND uid='".$assign_to."' ");
+
+while($ms=db_fetch_object($sendto))
+{
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$date_time,2=>$user->name)); 
+
+
+//$to = $u->mail;
+	
+createMail('helpdeskIssue_status', $ms->mail,'',$parameter,'');
+}
+
+}
+
+
+
+
+///////////////////////////////////
+
+
+
+$selsubmit=db_query("select submit_by FROM {tbl_helpdesklogcomplaint} where nid='".$node->nid."'");
+$selsub=db_fetch_object($selsubmit);
+$findmail=db_query("select mail,name from {users} where name='".$selsub->submit_by."'");
+$findemail=db_fetch_object($findemail);
+//$to = $u->mail;
+	
+
+
+
+$parameter = '';
+$parameter = json_encode(array(0=>$findemail->name,1=>$date_time,2=>$user->name)); 
+
+
+//$to = $u->mail;
+	
+createMail('helpdeskIssue_status', $findemail->mail,'',$parameter,'');
+
+}
+
+
+
+
+
+
+
+
+
+//}else{
+//db_query("INSERT into {tbl_helpdeskcomment} (`vid`,`nid`,`complaint_no`,`date_time2`,`submit_by`,`status2`,`comment`) VALUES //('".$vid."','".$nid."','".$complaint_no."','".$date_time2."','".$submit_by."','".$status2."','".$comment."')");
+
+//}
+	
+	
+
+	//drupal_set_message('Helpdesk Complaints have been updated successfully.');
+	
+	 $message=getMessage('dsjehelpdeskLogComplaint','code06','');
+  drupal_set_message($message);
+	drupal_goto("list/helpdeskLogComplaintList");
+	
+	
+}
+
+
+function helpdeskLogComplaint_theme() {
+	
+	return array(
+				 
+		'helpdeskLogComplaint_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'helpdeskLogComplaint_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ 
+
+
+
+ 
+function helpdeskLogComplaint_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_helpdesklogcomplaint ON (node.nid=tbl_helpdesklogcomplaint.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+ */ 
+function view_helpdeskLogComplaint($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Helpdesk Complaints', 'list/helpdeskLogComplaintList');
+   if($array[0] == 'viewhelpdeskLogComplaint'){
+     $breadcrumb[] = l('View Helpdesk Complaints', 'viewhelpdeskLogComplaint/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * FROM {tbl_helpdesklogcomplaint} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from {users} where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+/*$submit1=db_query("select name from {users} where uid='".$user->uid."'");
+$submit=db_fetch_object($submit1);
+*/
+
+$cn1=db_query("select complaint_no FROM {tbl_helpdesklogcomplaint} where nid='".$node->nid."'");
+$cn=db_fetch_object($cn1);
+echo $cn; 
+$mdk=db_query("select * from {tbl_helpdeskcomment} where complaint_no=$rs->complaint_no");
+//$mdo=db_fetch_object($mdk);
+
+
+$complaint_type=getLookupName($rs->complaint_type);
+$related_to=getLookupName($rs->related_to);
+$priority=getLookupName($rs->priority);
+
+ if($rs->assign_to==137){ $assign_to=getLookupName($rs->assign_to);
+ } else{ 
+ $assg=db_query("select name from {users} where uid = '".$rs->assign_to."'"); 
+ $assign2=db_fetch_object($assg);
+ $assign_to=$assign2->name;
+ }
+
+//$assign_to=getLookupName($rs->assign_to);
+$status2=getLookupName($rs->status2);
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+$output .='<tr class="oddrow"><td colspan="2"><h2>Helpdesk Complaints</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Application Name:</td><td class="normal"> '.ucwords($rs->application_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Complaint Type:</td><td class="normal"> '.ucwords($complaint_type).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Related To:</td><td class="normal"> '.ucwords($related_to).'</td></tr>';
+
+if($related_to==getLookupName(120)){
+$output .='<tr class="oddrow"><td width="50%">Change Type:</td><td class="normal"> '.ucwords(getLookupName($rs->soft)).'</td></tr>';
+
+
+}
+
+
+
+$output .='<tr class="evenrow"><td width="50%">Details of Call:</td><td class="normal"> '.ucwords($rs->details).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Priority:</td><td class="normal"> '.ucwords($priority).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Assigned To:</td><td class="normal"> '.ucwords($assign_to).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal"> '.ucwords($status2).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Complaint Submitted By:</td><td class="normal"> '.ucwords($rs->submit_by).'</td></tr>';
+if($mdk){
+$output .='<tr class="oddrow"><td colspan="2">COMMENTS</td></tr>';
+//$output .='<tr class="oddrow"></tr>';
+}
+if($mdk){
+while($kmo=db_fetch_object($mdk)){
+if($kmo->comment != ''){
+$output .='<tr class="evenrow"><td width="50%">Comment By:</td><td class="normal"> '.ucwords($kmo->submit_by).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Comment On:</td><td class="normal"> '.date('d-m-Y h:m:s',($kmo->date_time2)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Comment:</td><td class="normal"> '.ucwords($kmo->comment).'</td></tr>';
+//$output .='<tr class="evenrow" ></tr>';
+$i++;
+}else{}
+}
+}
+if($rs->status2!=139){
+$output .=  '<tr class="oddrow"><td colspan="2">'.l(t('Add Comment'), 'node/'.$rs->nid.'/edit').'</td></tr>';
+}
+$output .=  '<tr class="evenrow"><td align="center" colspan="2" class="back">'.l(t('Back'), 'list/helpdeskLogComplaintList').'</td></tr>';
+ $output .='</table>';
+ 
+return $output ;
+}

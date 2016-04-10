@@ -1,0 +1,603 @@
+
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/interestsubsidy1.inc');
+drupal_add_js(drupal_get_path('module', 'interestsubsidy1') .'/interestsubsidy1.js');
+
+function interestsubsidy1_node_info() {
+	return array (
+					'interestsubsidy1' => array (
+										'name' => t('List of Interest Subsidy'),
+										'module' => 'interestsubsidy1',
+										'description' => "Creates New interest Subsidy",
+										'has_title' => TRUE,
+										'title_label' => t('Interest Subsidy'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+function interestsubsidy1_perm() {
+	return array('edit interestsubsidy1','administer interestsubsidy1', 'create interestsubsidy1', 'view interestsubsidy1');
+}
+
+function interestsubsidy1_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit interestsubsidy1', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create interestsubsidy1', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view interestsubsidy1', $account);
+	}
+}
+function interestsubsidy1_menu(){
+	 $items['list/interestsubsidy1List'] = array(
+		   'title' => 'List of Interest Subsidy',
+		   'page callback' => 'interestsubsidy1_list',
+		   'access arguments' => array('administer interestsubsidy1'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewinterestsubsidy1/%'] = array(
+								'title' => t('view Interest Subsidy'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_interestsubsidy1',
+								'page arguments' => array(1),
+								'access arguments' => array('administer interestsubsidy1'),
+		                        
+						);
+  
+  $items['admin/dsje/del/interestsubsidy1/%'] =  array(
+	               						 'title' => t('Delete Interest Subsidy'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'interestsubsidy1_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer dispatchform'),
+													 
+	);
+ $items['admin/dsje/enable/interestsubsidy1/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'interestsubsid_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer interestsubsidy1'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  function interestsubsidy1_list() {
+	  global $user; //$base_url;
+	$limit =(int)getMessage('dsjeinterestsubsidy1', 'code04', NULL);
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Name of Loanee'), 'field' => 'tbl_interestsubsidy1.Loanee_details', 'sort' => 'asc'),
+	array('data' => t('Bank A/C No.'), 'field' => 'tbl_interestsubsidy1.bank_acc_no', 'sort' => 'asc'),
+	array('data' => t('Total Loan Advance'), 'field' => 'tbl_interestsubsidy1.tot_adv_loan', 'sort' => 'asc'),
+	//array('data' => t('Status')),
+	array('data' => t('Action'), 'class' => 'addeditview',),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Interest Subsidy', 'list/interestsubsidy1List'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+     if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);
+	
+	$sql = "SELECT  node.nid,node.uid, tbl_interestsubsidy1.Loanee_details, tbl_interestsubsidy1.bank_acc_no, tbl_interestsubsidy1.tot_adv_loan FROM node
+	 INNER JOIN tbl_interestsubsidy1 ON (node.nid=tbl_interestsubsidy1.nid)
+	 WHERE ( tbl_interestsubsidy1.Loanee_details LIKE '".$val."' OR tbl_interestsubsidy1.bank_acc_no LIKE '".$val."' OR tbl_interestsubsidy1.tot_adv_loan LIKE '".$val."') ".tablesort_sql($header);
+  
+   $sqlcount = "SELECT COUNT(*) AS count FROM node
+	INNER JOIN tbl_interestsubsidy1 ON (node.nid=tbl_interestsubsidy1.nid)
+	 
+	 WHERE node.uid='".$user->uid."' AND( tbl_interestsubsidy1.Loanee_details LIKE '".$val."' OR tbl_interestsubsidy1.bank_acc_no LIKE '".$val."' OR tbl_interestsubsidy1.tot_adv_loan LIKE '".$val."') ".tablesort_sql($header);
+	 
+	 $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	   $_REQUEST['page']=0;
+	   
+	   }else{
+	
+	  $sql = "SELECT  node.nid,node.uid, tbl_interestsubsidy1.Loanee_details, tbl_interestsubsidy1.bank_acc_no,tbl_interestsubsidy1.tot_adv_loan FROM node
+	 INNER JOIN tbl_interestsubsidy1 ON (node.nid=tbl_interestsubsidy1.nid)
+	 ".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/interestsubsidy1List';
+
+
+	 $output = '<form method="POST" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjeinterestsubsidy1', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/interestsubsidy1List');
+	}	
+	$output .='</td></tr>';	
+	$addurl = l(getMessage('dsjeinterestsubsidy1', 'code01', NULL),"node/add/interestsubsidy1");
+   	$lising = getMessage('dsjeinterestsubsidy1', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>	
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>
+	
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit",array('attributes'=>array('id'=>'edit-state')));
+		$viewurl = l("View","viewinterestsubsidy1/".$rs->nid,array('attributes'=>array('id'=>'edit-state')));
+//		$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='delete';
+		       $deleteurl = l("Delete","admin/dsje/del/interestsubsidy1/".$rs->nid."/");
+		}
+		else{
+			   $st ='Disabled';
+			 $deleteurl = l("Enable","admin/dsje/enable/interestsubsidy1/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => $rs->Loanee_details),
+			array('data' => $rs->bank_acc_no),
+            array('data' => $rs->tot_adv_loan),
+          	//array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	
+	 
+	
+	  
+	}
+}
+
+     if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, 20,0 );
+	return $output;
+  }
+  
+  function interestsubsidy1_enable($nid){
+  
+  $node = node_load($nid);
+  
+ 
+  db_query("DELETE from tbl_interestsubsidy1 WHERE nid ='".$node->nid."'");
+  $message = getMessage('dsjeinterestsubsidy1', 'code05', array("0"=>$node->interestsubsidy1_no));
+	drupal_set_message($message);
+  drupal_set_message(' Interest Detail has been Deleted successfully.');
+  drupal_goto("list/interestsubsidy1List");
+ }
+
+   
+function interestsubsidy1_load($node){
+//$nodec = node_load($node->nid);
+
+
+
+$sql = "SELECT * FROM node INNER JOIN tbl_interestsubsidy1 ON (node.nid=tbl_interestsubsidy1.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+
+return $rs;
+//return $rs = db_fetch_object($res);
+}
+
+
+function interestsubsidy1_form(&$node){
+	global $user, $base_url;
+	
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Interest Subsidy', 'list/interestsubsidy1List');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Subsidy', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Interest Subsidy', 'node/add/interestsubsidy1'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from users_roles INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  
+
+	
+	
+/*  $form['interestsubsidy1_no'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Serial No.'),
+	 //'#required' =>TRUE,
+	 '#size' =>10,
+	 '#maxlength'=>15,
+	 '#default_value' => $node->interestsubsidy1_no,
+	 '#attributes' => array('onkeypress' => 'return  fononlyn(event)'),	
+  );  */
+	
+    
+	 $form['Loanee_details'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Name of Loanee'),
+	'#required' => TRUE,
+	'#default_value' =>$node->Loanee_details,
+	'#size' =>100,
+	'#maxlength' =>100,
+	'#rows'=>5,
+	'#columns'>5, '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)','readonly' => 'readonly'),
+	);
+
+//tbl_loan_detail sanction_date scheme_name reg_number     tbl_scheme_master (tbl_scheme_master.loan_scheme_id = tbl_loan_detail.scheme_name) where tbl_loan_detail.sanction_date != '0000-00-00'
+
+
+	 $form['corp_reg_no'] = array(
+	'#type' =>'select',
+	'#title' => t('Corporation Registration No.'),
+	'#required' => TRUE,
+	'#options' => Selectreg(),
+	'#default_value' =>$node->corp_reg_no,
+	 '#attributes' => array('onchange' =>'return showinterest(this.value,"'.$base_url.'")'),
+	);
+	
+	 $form['bank_acc_no'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Bank A/C No.'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#default_value' => $node->bank_acc_no,
+		 '#attributes' => array('readonly' => 'readonly'),
+	
+  );
+   $form['tot_adv_loan'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Total Loan Advance'),
+	 '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>15,
+	 '#default_value' => $node->tot_adv_loan,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)','readonly' => 'readonly'),	
+  );
+  
+  
+	$form['dis_date'] = array(
+	  '#type' =>'date_popup',
+	 '#date_format' => 'd-m-Y',
+	  '#title' =>t('Date of Disbursement'),
+	  '#required' => TRUE,
+	  '#size' => '10',
+	 '#default_value' => $node->dis_date,
+     '#attributes' => array('readonly' => 'readonly'),
+	);
+	
+	 $form['d_interest'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Interest'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#default_value' => $node->d_interest,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+   $form['d_Principle'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Principle'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>11,
+	 '#default_value' => $node->d_principle,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+ 
+  
+	  $form['d_total'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Total'),
+	'#required' => TRUE,
+	'#size' =>15,
+	 '#maxlength'=>15,
+	 '#default_value' => $node->d_total,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+	);
+	
+	 $form['p_principle'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Principle'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>11,
+	 '#default_value' => $node->p_principle,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+   $form['p_interest'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Interest'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#default_value' => $node->p_interest,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+ 
+  
+	  $form['p_total'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Total'),
+	'#required' => TRUE,
+	'#size' =>15,
+	 '#maxlength'=>15,
+	 '#default_value' => $node->p_total,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+	);
+	 
+	  $form['interest_sub_due'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Interest Subsidy Due From Corporation'),
+	'#required' => TRUE,
+	'#size' =>15,
+	 '#maxlength'=>15,
+	 '#default_value' => $node->interest_sub_due,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+	);
+	
+	
+	
+	
+	 $form['status_subsidy'] = array(
+	'#type' => 'select',
+	'#title' => t('Status'),
+	'#required' => TRUE,
+	'#default_value' => $node->status_subsidy,
+	'#options' => array('' => '--Select--', 'released'=>'Released','pending'=>'Pending'),
+	 '#attributes' => array('onchange' => 'return changeintrest(this)'),
+	);
+	
+	
+   $form['bank_name'] = array(
+	'#type' =>'select',
+	'#title' => t('Bank Name'),
+	//'#required' => TRUE,
+	'#default_value' =>$node->bank_name,
+	'#options'=> selectbank(),  
+	'#id' => 'bank_nameinterest',
+	'#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	);
+  	
+  $form['cheque_no'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Cheque No'),
+	// '#required' =>TRUE,
+	 '#size' =>10,
+	 '#maxlength'=>6,
+	 '#minlength'=>6,
+	 '#default_value' => $node->cheque_no,
+	 '#id' => 'chequenointerest',
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+ 
+  
+	$form['date1'] = array(
+	  '#type' =>'date_popup',
+	 '#date_format' => 'd-m-Y',
+	  '#title' =>t('Issued date'),
+	 // '#required' => TRUE,
+	  '#size' => '10',
+	  '#id' => 'date1interest',
+	 '#default_value' => $node->date1,	
+	);
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/interestsubsidy1'),
+);
+   
+return $form;
+} 
+
+
+function Selectreg(){
+ 
+  	$sqlreg = "SELECT  tbl_loan_detail.reg_number FROM tbl_loan_detail LEFT OUTER JOIN tbl_scheme_master ON(tbl_scheme_master.loan_scheme_id = tbl_loan_detail.scheme_name) WHERE tbl_loan_detail.sanction_date != '0000-00-00' AND tbl_scheme_master.loan_type='1'";
+	$resreg = db_query($sqlreg);
+	$regaray[' '] = '--Select--';
+	while($rsreg = db_fetch_object($resreg)){
+	   $regaray[$rsreg->reg_number] = $rsreg->reg_number;
+	}
+  return $regaray;
+} 
+function interestsubsidy1_validate($form, &$form_state){
+   global $user;
+   $breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Interest Subsidy', 'list/interestsubsidy1List');
+        if(arg(1) !='add'){
+		  $breadcrumb[] = l('Edit Interest Subsidy', 'node/'.arg(1).'/edit');	
+		}else{
+         $breadcrumb[] = l('Add Interest Subsidy', 'node/add/interestsubsidy1');
+	}
+drupal_set_breadcrumb($breadcrumb);
+	if($form->status_subsidy == 'released'){
+	   if($form->bank_name == ''){
+	      form_set_error('bank_name','Please select Bank Name.');
+	   }
+	   if($form->cheque_no == ''){
+	     form_set_error('cheque_no','Please enter Cheque No.');
+	   }
+	   if($form->date1 == ''){
+	     form_set_error('date1','Please enter Issued date');
+	   }
+	}
+
+
+   $values = $form_state['values'];
+   $array = explode('/',$_GET['q']);
+   
+  
+  fononlyn('interestsubsidy1_no',$form->interestsubsidy1_no,'Serial No.');
+	alphanumericwithdot('Loanee_details',$form->Loanee_details,'Name of Loanee');
+	alphanumericwithdot('corp_reg_no',$form->corp_reg_no,'Corporation Registration No.');
+
+	};
+
+		
+	function interestsubsidy1_insert($node){
+   global $user;
+   
+    $nodeid = $node->nid;
+	
+	$versionid = $node->vid;
+	$interestsubsidy1_no = $node->interestsubsidy1_no;
+	$Loanee_details = $node->Loanee_details;
+	$corp_reg_no = $node->corp_reg_no;
+	$bank_acc_no = $node->bank_acc_no;
+	$tot_adv_loan = $node->tot_adv_loan;
+	$dis_date = $node->dis_date;
+	$d_interest = $node->d_interest;
+	$d_Principle = $node->d_Principle;
+	$d_total = $node->d_total;
+	$p_principle = $node->p_principle;
+	$p_interest = $node->p_interest;
+	$p_total = $node->p_total;
+	
+	$interest_sub_due = $node->interest_sub_due;
+	$status = $node->status;
+	
+	$bank_name = $node->bank_name;
+	$cheque_no = $node->cheque_no;
+	$date1 = $node->date1;
+	
+	
+   
+    db_query("insert into tbl_interestsubsidy1 (nid,vid,interestsubsidy1_no,Loanee_details,corp_reg_no,bank_acc_no,tot_adv_loan,dis_date,d_interest,d_Principle,d_total,p_principle,p_interest,p_total,interest_sub_due,status,bank_name,cheque_no,date1) values ('".$nodeid."','".$versionid."','".$interestsubsidy1_no."','".$Loanee_details."','".$corp_reg_no."','".$bank_acc_no."','".$tot_adv_loan."','".$dis_date."','".$d_interest."','".$d_Principle."','".$d_total."','".$p_principle."','".$p_interest."','".$p_total."','".$interest_sub_due."','".$status."','".$bank_name."','".$cheque_no."','".$date1."')");
+   
+  
+ db_query("UPDATE tbl_loan_detail SET interest_subsidy='".$interest_sub_due."' where tbl_loan_detail.reg_number=$corp_reg_no" );
+   drupal_goto("list/interestsubsidy1List");
+  
+		}
+
+function interestsubsidy1_theme() {
+	
+	return array(
+				 
+		'interestsubsidy1_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'interestsubsidy1_node_form',
+                                 ),
+       
+
+				 );
+}
+
+
+function interestsubsidy1_form_alter(&$form, &$form_state, $form_id){
+	
+
+	if($form_id == 'interestsubsidy1_node_form'){
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['author']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	  $form['menu']['#type'] = hidden;
+	 $form['path']['#type'] = hidden;
+		 $form['attachments']['#type'] = hidden;
+	}
+}
+
+function view_interestsubsidy1($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Interest Subsidy', 'list/interestsubsidy1List');
+   if($array[0] == 'viewinterestsubsidy1'){
+     $breadcrumb[] = l('View Interest Subsidy', 'viewinterestsubsidy1/'.$array[1].'');
+	 
+  }
+  
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from tbl_interestsubsidy1 where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ 
+ if($rs->status =='0'){
+  $status ='Disabled';
+}else{
+  $status ='Enabled';
+}
+
+
+
+$output .='<div id="form-container"><table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+$output .='<tr class="evenrow"><td colspan="2" align="center"><h2>Interest Subsidy Details</h2></td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">Serial No.:</td><td class="normal"> '.$rs->interestsubsidy1_no.'</td></tr>';
+
+
+$output .='<tr class="oddrow"><td width="50%">Corp.Reg.No:</td><td class="normal"> '.$rs->corp_reg_no.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Name of Loanee:</td><td class="normal"> '.$rs->Loanee_details.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Bank A/C No:</td><td class="normal"> '.$rs->bank_acc_no.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Total Loan Advance:</td><td class="normal"> '.$rs->tot_adv_loan.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Disbursement Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->dis_date)).'</td></tr>';
+$output .='<tr class="evenrow"><td colspan="2" align="center">Amoun Due During Half Year </td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Interest:</td><td class="normal">'.$rs->d_principle.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Principal:</td><td class="normal">'.$rs->d_interest.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Total Amount:</td><td class="normal">'.$rs->d_total.'</td></tr>';
+
+$output .='<tr class="evenrow"><td colspan="2" align="center">Amount Deposit During Half Year </td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Principal:</td><td class="normal">'.$rs->p_principle.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Interest:</td><td class="normal">'.$rs->p_interest.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Total Amount:</td><td class="normal">'.$rs->p_total.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Interest Subsidy Due From Corporation</td><td class="normal">'.$rs->interest_sub_due.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Bank Name:</td><td class="normal">'.$rs->bank_name.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Cheque No:</td><td class="normal">'.$rs->cheque_no.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Issue Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->dis_date)).'</td></tr>';
+$output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'list/interestsubsidy1List').'</td></tr>';
+$output .='</table></div>';
+return $output ;
+};

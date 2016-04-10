@@ -1,0 +1,6 @@
+;$id 16/11/2011 
+name = "TICKET Received by Dispatch Section from Account"
+description ="TICKET Received by Dispatch Section from Account report"
+core = 6.x
+version =6.x-1
+package="SC and St Reports"

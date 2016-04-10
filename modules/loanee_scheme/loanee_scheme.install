@@ -1,0 +1,8 @@
+<?php
+function loanee_scheme_install() {
+	drupal_install_schema('loanee_scheme');
+}
+
+function loanee_scheme_uninstall() {
+	drupal_uninstall_schema('loanee_scheme');
+}

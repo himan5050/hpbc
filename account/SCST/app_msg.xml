@@ -1,0 +1,1747 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<message>
+  <recFaculty>
+	<NodeId id ="code01" value="Add Faculty"/>	
+	<NodeId id ="code02" value="List of Faculties"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+  </recFaculty>
+
+   <listofalr>
+	<NodeId id ="code01" value="Create ALR"/>	
+	<NodeId id ="code02" value="List of ALR"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code09" value="ALR send successfully for Account No. {0}."/> 
+	<NodeId id ="code10" value="Query has been send for {0}."/> 
+	<NodeId id ="code11" value="ALR has been rejected for Account No. {1} by {0}."/> 
+	<NodeId id ="code12" value="ALR has been forwarded for Account No. {2} by {0} to {1}."/>
+	<NodeId id ="code13" value="ALR has been approved for Account No. {1} by {0}."/>
+	<NodeId id ="code14" value="{0} has been send for Account No. {1}."/>
+	<NodeId id ="code15" value="SALE has been send for Account No. {0}."/>
+	<NodeId id ="code15" value="SALE has been send for Account No. {0}."/>
+	<NodeId id ="code16" value="WARRANT has been send for Account No. {0}."/>
+	<NodeId id ="code17" value="Property has been transferred for Account No. {0}."/>
+	<NodeId id ="code18" value="Property has been transferred for Account No. {0}."/>
+	<NodeId id ="code04" value="10" /> 
+  </listofalr>
+
+   <listpworkflow>
+	<NodeId id ="code01" value="Create "/>	
+	<NodeId id ="code02" value="List of Pending Workflow"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+  </listpworkflow>
+    <recLink>
+	<NodeId id ="code01" value="Add Bottom Link Title"/>	
+	<NodeId id ="code02" value="List of Bottom Link Title"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/>
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Bottom Link Title Name  {0}  already exists."/>
+	<NodeId id ="code07" value="The  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code07" value="The  {0}  has been enabled successfully."/>
+  </recLink>
+  
+    <recContent>
+	<NodeId id ="code01" value="Add Content"/>	
+	<NodeId id ="code02" value="List of Content"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/>
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Content   {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+  </recContent>
+   <recimportantlinkhindi>
+	<NodeId id ="code01" value="Add Hindi Important link"/>	
+	<NodeId id ="code02" value="List of Hindi Important link"/>	
+	<NodeId id ="code03" value=" {0} Record(s) found."/>
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Hindi Important link   {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+  </recimportantlinkhindi>
+  <recImportantlink>
+	<NodeId id ="code01" value="Add Important link"/>	
+	<NodeId id ="code02" value="List of Important link"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/>
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Important link   {0}  already exists."/>
+	<NodeId id ="code07" value="The  {0}  has been deisabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="The  {0}  has been enabled successfully."/>
+  </recImportantlink>
+   <reclinkshindi>
+	<NodeId id ="code01" value="Add Bottom Hindi Link Title"/>	
+	<NodeId id ="code02" value="List of Bottom Link Title"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/>
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Bottom Hindi Link Title Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+  </reclinkshindi>
+    <reccontenthindi>
+	<NodeId id ="code01" value="Add Hindi Content"/>	
+	<NodeId id ="code02" value="List of Hindi Content"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/>
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="HindiContent   {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+  </reccontenthindi>
+   <recChairmansdeskhindi>
+	<NodeId id ="code01" value="Add Chairmandesk Hindi Content"/>	
+	<NodeId id ="code02" value="List of Chairmandesk"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/>
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Chairman's Desk   {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+  </recChairmansdeskhindi>
+    <rechindinews>
+	<NodeId id ="code01" value="Add REC Hindi News"/>	
+	<NodeId id ="code02" value="List of REC Hindi News"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="REC Hindi News  {0}  already exists."/>
+	<NodeId id ="code07" value="REC Hindi News  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/> 
+	<NodeId id ="code09" value="REC Hindi News  {0}  has been enabled successfully."/>
+  </rechindinews>
+  <recChairmansdesk>
+	<NodeId id ="code01" value="Add Chairmandesk Content"/>	
+	<NodeId id ="code02" value="List of Chairmandesk"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/>
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Chairman's Desk   {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+  </recChairmansdesk>
+    <recNewsletter>
+	<NodeId id ="code01" value="Add Newsletter"/>	
+	<NodeId id ="code02" value="List of Newsletter"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/>
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Link  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Link  {0}  already exists. You Can Only Edit It"/>
+	<NodeId id ="code07" value="Link  {0}  soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+  </recNewsletter>
+
+  <recVenue>
+	<NodeId id ="code01" value="Add Venue"/>	
+	<NodeId id ="code02" value="List of Venues"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/>
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Venue Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+  </recVenue>
+
+
+   <recParticipant>
+	<NodeId id ="code01" value="Add Participant"/>	
+	<NodeId id ="code02" value="List of Participants"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+  </recParticipant>
+
+
+   <recNodal>
+	<NodeId id ="code01" value="Add Nodal Officer"/>	
+	<NodeId id ="code02" value="List of Nodal Officers"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+  </recNodal>
+
+     <recCourseDirector>
+	<NodeId id ="code01" value="Add Course Director"/>	
+	<NodeId id ="code02" value="List of Course Director"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+  </recCourseDirector>
+
+  <recProgram>
+	<NodeId id ="code01" value="Add Employee"/>	
+	<NodeId id ="code02" value="List of Employees"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+  </recProgram>
+
+<dsjetransferPromotion>
+	<NodeId id ="code01" value="Add Transfer or Promotion"/>	
+	<NodeId id ="code02" value="List of Transfers and Promotions"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of {0} has been saved successfully"/>
+	<NodeId id ="code06" value="Details of {0} has been updated successfully"/>
+	<NodeId id ="code07" value=" Details of	Employee {0} has been deleted successfully"/>
+ </dsjetransferPromotion>
+
+<dsjeitAssets>
+	<NodeId id ="code01" value="Add IT Asset"/>	
+	<NodeId id ="code02" value="List of IT Assets"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of asset type {0} has been saved successfully"/>
+	<NodeId id ="code06" value="Details of asset type {0} has been updated successfully"/>
+	<NodeId id ="code07" value="Details of asset type {0} has been deleted successfully"/>
+ </dsjeitAssets>
+
+<dsjefdrCheque>
+	<NodeId id ="code01" value="Add FDR Cheque"/>	
+	<NodeId id ="code02" value="List of FDR Cheques"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of cheque no. {0} has been saved successfully"/>
+	<NodeId id ="code06" value="Details of cheque no. {0} has been updated successfully"/>
+	<NodeId id ="code07" value="Details of cheque no. {0} has been deleted successfully"/>
+ </dsjefdrCheque>
+
+<dsjebudgetReceived>
+	<NodeId id ="code01" value="Add Budget Received"/>	
+	<NodeId id ="code02" value="List of Budgets Received"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of head {0} has been saved successfully"/>
+	<NodeId id ="code06" value="Details of head {0} has been updated successfully"/>
+	<NodeId id ="code07" value="Details of head {0} has been deleted successfully"/>
+ </dsjebudgetReceived>
+
+
+
+<dsjeheadMaster>
+	<NodeId id ="code01" value="Add Head Master"/>	
+	<NodeId id ="code02" value="List of Head Masters"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of code {0} has been saved successfully"/>
+	<NodeId id ="code06" value="Details of code {0} has been updated successfully"/>
+	<NodeId id ="code07" value="Details of code {0} has been deleted successfully"/>
+ </dsjeheadMaster>
+
+<dsjefdr>
+	<NodeId id ="code01" value="Add FDR"/>	
+	<NodeId id ="code02" value="List of FDR"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of FDR No. {0} has been saved successfully"/>
+	<NodeId id ="code06" value="Details of FDR No. {0} has been updated successfully"/>
+	<NodeId id ="code07" value="Details of FDR No. {0} has been deleted successfully"/>
+ </dsjefdr>
+ 
+ <editprofile>
+		<NodeId id ="code01" value="Profile {0} has been updated successfully"/>
+	
+ </editprofile>
+
+
+ <dsjeDispatch>
+	<NodeId id ="code01" value="Add Dispatch"/>	
+	<NodeId id ="code02" value="List of Dispatch"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Dispatch No. {0} has been Deleted successfully." />
+	<NodeId id ="code06" value="Dispatch No. {0} has been updated successfully." /> 	
+	<NodeId id ="code07" value="Dispatch No. {0} has been saved successfully." /> 		
+  </dsjeDispatch>
+
+
+   <recTInstitute>
+	<NodeId id ="code01" value="Add Institute"/>	
+	<NodeId id ="code02" value="List of Institutes"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Institute Name   {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+  </recTInstitute>
+
+  <recTMaterial>
+	<NodeId id ="code01" value="Add Material"/>	
+	<NodeId id ="code02" value="List of Training Material"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Category {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+  </recTMaterial>
+
+  <recTUtilityCat>
+	<NodeId id ="code01" value="Add New Utility"/>	
+	<NodeId id ="code02" value="List of Utilities"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Utility Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+  </recTUtilityCat>
+
+   <recRoffice>
+	<NodeId id ="code01" value="Add REC Office"/>	
+	<NodeId id ="code02" value="List of REC Office"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+  </recRoffice>
+
+    <recTCharge>
+	<NodeId id ="code01" value="Add Course fee/Course Kit"/>	
+	<NodeId id ="code02" value="List of Course fee/Course Kit"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Fee For  {0}  already exists."/>
+	<NodeId id ="code07" value="Fee For  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Fee For  {0}  has been enabled successfully."/>
+  </recTCharge>
+
+
+ <recTCategory>
+	<NodeId id ="code01" value="Add Training Type"/>	
+	<NodeId id ="code02" value="List of Training Types"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Training Type {0}  already exists."/>
+	<NodeId id ="code07" value="Training Type  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Training Type  {0}  has been enabled successfully."/>
+
+ </recTCategory>
+
+ <recUtility>
+	<NodeId id ="code01" value="Add Utility Category"/>	
+	<NodeId id ="code02" value="List of Utility Categories"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Utility Category  {0}  already exists."/>
+	<NodeId id ="code07" value="Utility Category  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Utility Category  {0}  has been enabled successfully."/>
+ </recUtility>
+
+
+ <recNametitle>
+	<NodeId id ="code01" value="Add Saluation Title"/>	
+	<NodeId id ="code02" value="List of Saluation Titles"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Title  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Title  {0}  already exists."/>
+	<NodeId id ="code07" value="Title  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Title  {0}  has been enabled successfully."/>
+ </recNametitle>
+
+ <recState>
+	<NodeId id ="code01" value="Add State/UT"/>	
+	<NodeId id ="code02" value="List of State/UT"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of State Name {0} has been saved successfully."/>
+	<NodeId id ="code06" value="The State  {0} already exists."/>
+	<NodeId id ="code07" value="The State  {0} has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="The State  {0} has been enabled successfully."/>
+	<NodeId id ="code10" value="The State  {0} has been updated successfully."/>
+
+		
+ </recState>
+
+ <recOrganization>
+	<NodeId id ="code01" value="Add Organization Type"/>	
+	<NodeId id ="code02" value="List of Organization Types"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Organization Type Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Organization Type Name  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Organization Type Name  {0}  has been enabled successfully."/>
+ </recOrganization>
+
+ <recMouType>
+	<NodeId id ="code01" value="Add MoU Type"/>	
+	<NodeId id ="code02" value="List of MOU Types"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="MOU Type  {0}  already exists."/>
+	<NodeId id ="code07" value="MOU Type  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="MOU Type  {0}  has been enabled successfully."/>
+	<NodeId id ="code10" value="Date of Amendment: should be between MOU Signing Date and MOU Valid upto."/>
+	<NodeId id ="code11" value="Please select a file Amendment file."/>
+ </recMouType>
+
+ <recMou>
+	<NodeId id ="code01" value="Add MoU"/>	
+	<NodeId id ="code02" value="List of MOU(s)"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="MOU  {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+ </recMou>
+
+ <recLanguage>
+	<NodeId id ="code01" value="Add Language"/>	
+	<NodeId id ="code02" value="List of Languages"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Language Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Language Name  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Language Name  {0}  has been enabled successfully."/>
+ </recLanguage>
+
+
+
+ <recTDS>
+	<NodeId id ="code01" value="Add TDS"/>	
+	<NodeId id ="code02" value="List of TDS"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="TDS  {0}  already exists."/>
+	<NodeId id ="code07" value="TDS  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="TDS  {0}  has been enabled successfully."/>
+ </recTDS>
+
+
+ <recBank>
+	<NodeId id ="code01" value="Add Bank"/>	
+	<NodeId id ="code02" value="List of Bank"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Bank Name {0} has been saved successfully."/>
+	<NodeId id ="code06" value="Bank  {0}  already exists."/>
+	<NodeId id ="code07" value="Bank  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Bank  {0}  has been enabled successfully."/>
+	<NodeId id ="code10" value="Bank  {0}  has been updated successfully."/>
+ </recBank>
+
+<dsjeEmployee>
+	<NodeId id ="code01" value="Add Employee"/>	
+	<NodeId id ="code02" value="List of Employees"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Employee  {0}  already exists."/>
+	<NodeId id ="code07" value="Employee  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Details of  {0}  has been updated successfully."/>
+	<NodeId id ="code09" value="Employee  {0}  has been enabled successfully."/>
+ </dsjeEmployee>
+  <recBankbranch>
+	<NodeId id ="code01" value="Add Bank Branch"/>	
+	<NodeId id ="code02" value="List of Bank Branch"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Bank Branch  {0}  already exists."/>
+	<NodeId id ="code07" value="Bank Branch {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Bank Branch  {0}  has been enabled successfully."/>
+	<NodeId id ="code10" value="Details of Bank Branch {0}  has been updated successfully."/>
+ </recBankbranch>
+
+
+ <recEquipment>
+	<NodeId id ="code01" value="Add Equipment"/>	
+	<NodeId id ="code02" value="List of Equipments"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Equipment Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Equipment Name  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/> 
+	<NodeId id ="code09" value="Equipment Name  {0}  has been enabled successfully."/>
+ </recEquipment>
+
+ <recDesignation>
+	<NodeId id ="code01" value="Add Designation"/>	
+	<NodeId id ="code02" value="List of Designations"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Designation Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Designation Name  {0}  has been disabled successfully.."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/> 
+	<NodeId id ="code09" value="Designation Name  {0}  has been enabled successfully."/>
+ </recDesignation>
+
+<reccurrency>
+	<NodeId id ="code01" value="Add Currency"/>	
+	<NodeId id ="code02" value="List of Currency"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Currency Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Currency Name  {0}  has been disabled successfully.."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/> 
+	<NodeId id ="code09" value="Currency Name  {0}  has been enabled successfully."/>
+ </reccurrency>
+
+
+
+ <recDepartment>
+	<NodeId id ="code01" value="Add Department"/>	
+	<NodeId id ="code02" value="List of Departments"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Department Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Department Name  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Department Name  {0}  has been enabled successfully."/>
+ </recDepartment>
+
+ <recCourse>
+	<NodeId id ="code01" value="Add Variant"/>	
+	<NodeId id ="code02" value="List of Variants"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Variant Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Variant Name  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Duration should be greater than zero."/>
+	<NodeId id ="code10" value="Variant Name  {0}  has been enabled successfully."/>
+	<NodeId id ="code11" value="Only .doc, .docx, .pdf file Extentions are allowed"/>
+ </recCourse>
+
+ <recConnection>
+	<NodeId id ="code01" value="Add Internet Service Provider"/>	
+	<NodeId id ="code02" value="List of Internet Service Providers"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Internet Service Provider  {0}  already exists."/>
+	<NodeId id ="code07" value="Internet Service Provider  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Internet Service Provider  {0}  has been enabled successfully."/>
+ </recConnection>
+
+
+ <recRegInst>
+	<NodeId id ="code01" value=""/>	
+	<NodeId id ="code02" value="List of Registered Institute"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+ </recRegInst>
+
+ <recComplainList>
+	<NodeId id ="code01" value="Add Complaint"/>	
+	<NodeId id ="code02" value="List of Complaints"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Complaint Detail  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Complaint Detail  {0}  already exists."/>
+	<NodeId id ="code07" value="Complaint Detail  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/> 
+	<NodeId id ="code09" value="Complaint Detail  {0}  has been enabled successfully."/>
+	
+ </recComplainList>
+
+ <recComplainCategory>
+	<NodeId id ="code01" value="Add Complaint Category"/>	
+	<NodeId id ="code02" value="List of Complaint Categories"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of Complaint Category  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Complaint Category  {0}  already exists."/>
+	<NodeId id ="code07" value="Complaint Category  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Complaint Category  {0}  has been enabled successfully."/>
+
+	
+ </recComplainCategory>
+
+ <recCity>
+	<NodeId id ="code01" value="Add City"/>	
+	<NodeId id ="code02" value="List of Cities"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="City  {0}  already exists."/>
+	<NodeId id ="code07" value="The City  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The City  {0}  has been enabled successfully."/>
+	
+ </recCity>
+ 
+ <dsjecourtstatus>
+	<NodeId id ="code01" value="Add Court Case Status"/>	
+	<NodeId id ="code02" value="List of Court Case Status"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Court Case Status  {0}  already exists."/>
+	<NodeId id ="code07" value="The Court Case Status  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Court Case Status  {0}  has been enabled successfully."/>
+	
+ </dsjecourtstatus>
+ 
+ <dsjetestModule>
+	<NodeId id ="code01" value="Add test"/>	
+	<NodeId id ="code02" value="List of test"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="test Status  {0}  already exists."/>
+	<NodeId id ="code07" value="The Court Case Status  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The test Status  {0}  has been enabled successfully."/>
+	
+ </dsjetestModule>
+ 
+ 
+  <dsjeloanDoc>
+	<NodeId id ="code01" value="Add Loan Document"/>	
+	<NodeId id ="code02" value="List of Loan Documents"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of Loan Document Name {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Loan Document  {0}  already exists."/>
+	<NodeId id ="code07" value="The Loan Document  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Loan Document  {0}  has been enabled successfully."/>
+    <NodeId id ="code11" value="The Loan Document  {0}  has been updated successfully."/>	
+	
+ </dsjeloanDoc>
+ 
+ 
+  <dsjestatusDebtRepayment>
+	<NodeId id ="code01" value="Add Debt Repayment Status"/>	
+	<NodeId id ="code02" value="List of Debt Repayment Status"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Debt Repayment Status  {0}  already exists."/>
+	<NodeId id ="code07" value="The Debt Repayment Status  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Debt Repayment Status  {0}  has been enabled successfully."/>
+	
+ </dsjestatusDebtRepayment>
+ 
+ 
+ 
+ 
+  <dsjestatusFixedAsset>
+	<NodeId id ="code01" value="Add Fixed asset status on sale"/>	
+	<NodeId id ="code02" value="List of Fixed asset status on sale"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Fixed asset status on sale  {0}  already exists."/>
+	<NodeId id ="code07" value="The Fixed asset status on sale  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Fixed asset status on sale  {0}  has been enabled successfully."/>
+	
+ </dsjestatusFixedAsset>
+ 
+ 
+ 
+ <dsjecorporation>
+	<NodeId id ="code01" value="Add Office"/>	
+	<NodeId id ="code02" value="List of Office"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  Office Name {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Office  {0}  already exists."/>
+	<NodeId id ="code07" value="The Office  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Office  {0}  has been enabled successfully."/>
+	<NodeId id ="code11" value="Details of  {0}  has been updated successfully."/>	
+ </dsjecorporation>
+
+
+
+ <dsjevehicle>
+	<NodeId id ="code01" value="Add Vehicle"/>	
+	<NodeId id ="code02" value="List of Vehicles"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of Reg. No.  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Reg. No.  {0}  already exists."/>
+	<NodeId id ="code07" value=" Vehicle  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="Vehicle  {0}  has been enabled successfully."/>
+	<NodeId id ="code11" value="Details of Reg. No.  {0}  has been updated successfully."/>
+	
+ </dsjevehicle>
+
+
+
+<dsjetehsil>
+	<NodeId id ="code01" value="Add Tehsil"/>	
+	<NodeId id ="code02" value="List of Tehsil"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of Tehsil {0} has been saved successfully."/>
+	<NodeId id ="code06" value="Tehsil  {0}  already exists."/>
+	<NodeId id ="code07" value="The Tehsil {0} has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Tehsil {0} has been enabled successfully."/>
+    <NodeId id ="code11" value="The Tehsil {0} has been updated successfully."/>	
+	
+ </dsjetehsil>
+ 
+<dsjepanchayt>
+	<NodeId id ="code01" value="Add Panchayat"/>	
+	<NodeId id ="code02" value="List of Panchayat"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of Panchayat {0} has been saved successfully."/>
+	<NodeId id ="code06" value="Panchayat  {0}  already exists."/>
+	<NodeId id ="code07" value="The Panchayat {0} has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Panchayat {0} has been enabled successfully."/>
+    <NodeId id ="code11" value="The Panchayat {0} has been updated successfully."/>	
+ </dsjepanchayt> 
+ 
+ 
+ 
+<dsjestatus>
+	<NodeId id ="code01" value="Add Status"/>	
+	<NodeId id ="code02" value="List of Status"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Status  {0}  already exists."/>
+	<NodeId id ="code07" value="The Status  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Status  {0}  has been enabled successfully."/>
+	
+ </dsjestatus>
+
+ <dsjeemployee_type>
+	<NodeId id ="code01" value="Add Employee Type"/>	
+	<NodeId id ="code02" value="List of Employee Type"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Employee Type  {0}  already exists."/>
+	<NodeId id ="code07" value="The Employee Type  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Employee Type  {0}  has been enabled successfully."/>
+	
+ </dsjeemployee_type>
+
+
+<dsjeemployeeGrade>
+	<NodeId id ="code01" value="Add Employee Grade"/>	
+	<NodeId id ="code02" value="List of Employee Grade"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of Employee Grade {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Employee Grade  {0}  already exists."/>
+	<NodeId id ="code07" value="The Employee Grade  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Employee Grade  {0}  has been enabled successfully."/>
+	<NodeId id ="code11" value="Details of Employee Grade {0}  has been updated successfully."/>
+	
+ </dsjeemployeeGrade>
+
+<dsjeemployeeCategory>
+	<NodeId id ="code01" value="Add Employee Category"/>	
+	<NodeId id ="code02" value="List of Employee Category"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Employee Category  {0}  already exists."/>
+	<NodeId id ="code07" value="The Employee Category  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Employee Category  {0}  has been enabled successfully."/>
+	
+ </dsjeemployeeCategory>
+
+ <dsjecategory>
+	<NodeId id ="code01" value="Add Lawyer Category"/>	
+	<NodeId id ="code02" value="List of Lawyer Category "/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of Lawyer Category{0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Lawyer Category {0}  already exists."/>
+	<NodeId id ="code07" value="Lawyer Category {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="Lawyer Category  {0}  has been enabled successfully."/>
+	 <NodeId id ="code11" value="Lawyer Category  {0}  has been updated successfully."/>
+	
+ </dsjecategory>
+
+<dsjegrading>
+	<NodeId id ="code01" value="Add Grade Type"/>	
+	<NodeId id ="code02" value="List of Grade Types"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Grade Type  {0}  already exists."/>
+	<NodeId id ="code07" value="The Grade Type  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Grade Type  {0}  has been enabled successfully."/>
+	
+ </dsjegrading>
+
+<dsjesector>
+	<NodeId id ="code01" value="Add Sector Type"/>	
+	<NodeId id ="code02" value="List of Sectors"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  Sector Type {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Sector Type  {0}  already exists."/>
+	<NodeId id ="code07" value="The Sector Type  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="No Record(s) found."/> 
+    <NodeId id ="code10" value="The Sector Type  {0}  has been enabled successfully."/>
+    <NodeId id ="code11" value="The Sector Type  {0}  has been updated successfully."/>	
+	
+ </dsjesector>
+
+ <recChecklist>
+	<NodeId id ="code01" value="Add Checklist"/>	
+	<NodeId id ="code02" value="List of CheckList"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of 	Checklist Item Name  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Checklist Item Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Checklist Item Name  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Checklist Item Name  {0}  has been enabled successfully."/>
+
+
+
+ </recChecklist>
+
+ <recCountry>
+	<NodeId id ="code01" value="Add Country"/>	
+	<NodeId id ="code02" value="List of Countries"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of Country  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Country  {0}  already exists."/>
+	<NodeId id ="code07" value="The Country  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="The Country  {0}  has been enabled successfully."/>
+ </recCountry>
+
+ <recZone>
+	<NodeId id ="code01" value="Add Zone"/>	
+	<NodeId id ="code02" value="List of Zones"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Zone  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="The Zone  {0}  already exists."/>
+	<NodeId id ="code07" value="The Zone  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/> 
+	<NodeId id ="code09" value="The Zone  {0}  has been enabled successfully."/>
+  </recZone>
+
+  <recCastCategory>
+	<NodeId id ="code01" value="Add Caste Category"/>	
+	<NodeId id ="code02" value="List of Caste Categories"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Caste Category  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Caste Category Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Caste Category  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Caste Category  {0}  has been enabled successfully."/>
+  </recCastCategory>
+  
+   <recgender>
+	<NodeId id ="code01" value="Add gender"/>	
+	<NodeId id ="code02" value="List of genders"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of gender  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="gender Name  {0}  already exists."/>
+	<NodeId id ="code07" value="gender  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="gender  {0}  has been enabled successfully."/>
+  </recgender>
+  
+  
+  <dsjemonth>
+	<NodeId id ="code01" value="Add month"/>	
+	<NodeId id ="code02" value="List of months"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of month  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Month Name  {0}  already exists."/>
+	<NodeId id ="code07" value="month  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Month  {0}  has been enabled successfully."/>
+  </dsjemonth>
+  
+  
+  <dsjesection>
+	<NodeId id ="code01" value="Add section"/>	
+	<NodeId id ="code02" value="List of sections"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of section  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Section Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Section  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Section  {0}  has been enabled successfully."/>
+  </dsjesection>
+  
+  <dsjedisability>
+	<NodeId id ="code01" value="Add disability"/>	
+	<NodeId id ="code02" value="List of disability"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of disability  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Disability Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Disability  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Disability  {0}  has been enabled successfully."/>
+  </dsjedisability>
+  
+  <dsjeadvance>
+	<NodeId id ="code01" value="Add Type of Advance"/>	
+	<NodeId id ="code02" value="List of Type of Advance"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Type of Advance  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Type of Advance  {0}  already exists."/>
+	<NodeId id ="code07" value="Type of Advance  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Type of Advance  {0}  has been enabled successfully."/>
+  </dsjeadvance>
+  
+  
+  <dsjepension>
+	<NodeId id ="code01" value="Add Type of Pension"/>	
+	<NodeId id ="code02" value="List of Type of Pension"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Type ofPension  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Type of Pension  {0}  already exists."/>
+	<NodeId id ="code07" value="Type of Pension  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Type of Pension  {0}  has been enabled successfully."/>
+  </dsjepension>
+  
+  
+  <dsjepost>
+	<NodeId id ="code01" value="Add Type of Post"/>	
+	<NodeId id ="code02" value="List of Post Types"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Post Type  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Post Type  {0}  already exists."/>
+	<NodeId id ="code07" value="Post Type  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Post Type  {0}  has been enabled successfully."/>
+  </dsjepost>
+   
+  <dsjeremittanceMode>
+	<NodeId id ="code01" value="Add Mode of Remittance"/>	
+	<NodeId id ="code02" value="List of Mode of Remittance"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Mode of Remittance  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Mode of Remittance  {0}  already exists."/>
+	<NodeId id ="code07" value="Mode of Remittance  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Mode of Remittance  {0}  has been enabled successfully."/>
+  </dsjeremittanceMode>
+  
+  <dsjepayType>
+	<NodeId id ="code01" value="Add Pay Type"/>	
+	<NodeId id ="code02" value="List of Pay Types"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Pay Type  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Pay Type Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Pay Type  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Pay Type  {0}  has been enabled successfully."/>
+  </dsjepayType>
+  
+  <dsjecourt_name>
+	<NodeId id ="code01" value="Add Court Name"/>	
+	<NodeId id ="code02" value="List of Court Names"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Court Name  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Court Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Court Name  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Court Name  {0}  has been enabled successfully."/>
+	 <NodeId id ="code10" value="Court Name  {0}  has been Updated successfully."/>
+  </dsjecourt_name>
+  
+  
+  <dsjeschemeName>
+	<NodeId id ="code01" value="Add Scheme"/>	
+	<NodeId id ="code02" value="List of Schemes"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Scheme  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Scheme Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Scheme  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Scheme  {0}  has been enabled successfully."/>
+    <NodeId id ="code10" value="Scheme  {0}  has been updated successfully."/>	
+	
+  </dsjeschemeName>
+  
+     <dsjecitizenship>
+	<NodeId id ="code01" value="Add citizenship"/>	
+	<NodeId id ="code02" value="List of citizenships"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of citizenship  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="citizenship Name  {0}  already exists."/>
+	<NodeId id ="code07" value="citizenship  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="citizenship  {0}  has been enabled successfully."/>
+  </dsjecitizenship>
+  
+   <dsjedistrict>
+	<NodeId id ="code01" value="Add District"/>	
+	<NodeId id ="code02" value="List of District"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of District  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="District Name  {0}  already exists."/>
+	<NodeId id ="code07" value="District  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="District  {0}  has been enabled successfully."/>
+    <NodeId id ="code10" value="District  {0}  has been updated successfully."/>
+	
+  </dsjedistrict>
+  
+  
+  
+   <dsjenationality>
+	<NodeId id ="code01" value="Add nationality"/>	
+	<NodeId id ="code02" value="List of nationalities"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of nationality  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Nationality Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Nationality  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Nationality  {0}  has been enabled successfully."/>
+  </dsjenationality>
+  
+  <dsjeDispatch>
+  <NodeId id="code01" value="Add Dispatch" /> 
+  <NodeId id="code02" value="List of Dispatch" /> 
+  <NodeId id="code03" value="{0} Record(s) found." /> 
+  <NodeId id="code04" value="10" /> 
+  </dsjeDispatch>
+  
+  
+  <dsjeinboundMail>
+  <NodeId id="code01" value="Add Inbound Mail" /> 
+  <NodeId id="code02" value="List of Inbound Mails" /> 
+  <NodeId id="code03" value="{0} Record(s) found." /> 
+  <NodeId id="code04" value="10" />
+  <NodeId id="code05" value="Diary No. {0} has been saved successfully." /> 
+  <NodeId id="code06" value="Diary No. {0} has been deleted successfully." /> 
+  
+  
+  </dsjeinboundMail>
+  
+   <dsjevehicleAMC>
+  <NodeId id="code01" value="Add AMC" /> 
+  <NodeId id="code02" value="List of AMC" /> 
+  <NodeId id="code03" value="{0} Record(s) found." /> 
+  <NodeId id="code04" value="10" /> 
+  <NodeId id="code05" value="AMC details of vendor {0} has been saved successfully." /> 
+  <NodeId id="code06" value="AMC details of vendor {0} has been updated successfully." /> 
+    <NodeId id="code07" value="AMC details of reg. no. {0} has been deleted successfully." /> 
+  </dsjevehicleAMC>
+  
+   <dsjehelpdeskApplication>
+  <NodeId id="code01" value="Add Helpdesk Application" /> 
+  <NodeId id="code02" value="List of Helpdesk Application Details" /> 
+  <NodeId id="code03" value="{0} Record(s) found." /> 
+  <NodeId id="code04" value="10" /> 
+  </dsjehelpdeskApplication>
+   <dsjehelpdeskChangeComplaint>
+  <NodeId id="code01" value="Add Changes required" /> 
+  <NodeId id="code02" value="List of Changes required by users" /> 
+  <NodeId id="code03" value="{0} Record(s) found." /> 
+  <NodeId id="code04" value="10" /> 
+  </dsjehelpdeskChangeComplaint>
+  
+  <dsjehelpdeskLogComplaint>
+  <NodeId id="code01" value="Add Helpdesk Complaint" /> 
+  <NodeId id="code02" value="List of Helpdesk Complaint Details" /> 
+  <NodeId id="code03" value="{0} Record(s) found." /> 
+  <NodeId id="code04" value="10" /> 
+   <NodeId id="code05" value="Details of the logged complaint has been saved successfully." /> 
+  <NodeId id="code06" value="Details of the logged complaint has been updated successfully." /> 
+    <NodeId id="code07" value="Details of the logged complaint has been deleted successfully." /> 
+  </dsjehelpdeskLogComplaint>
+  
+     <dsjevehiclePollution>
+  <NodeId id="code01" value="Add Vehicle Pollution Certificate" /> 
+  <NodeId id="code02" value="List of Vehicle Pollution Certificates" /> 
+  <NodeId id="code03" value="{0} Record(s) found." /> 
+  <NodeId id="code04" value="10" /> 
+  <NodeId id="code05" value="Details of Vehicle Reg. No. {0} has been saved successfully." /> 
+  <NodeId id="code06" value="Details of Vehicle Reg. No. {0} has been updated successfully." /> 
+    <NodeId id="code07" value="Details of Vehicle Reg. No. {0} has been deleted successfully." /> 
+  </dsjevehiclePollution>
+  
+  
+  
+  <dsjevehicleInsurance>
+  <NodeId id="code01" value="Add Vehicle Insurance Details" /> 
+  <NodeId id="code02" value="List of Vehicle Insurance Details" /> 
+  <NodeId id="code03" value="{0} Record(s) found." /> 
+  <NodeId id="code04" value="10" /> 
+  <NodeId id="code05" value="Details of Vehicle Reg. No. {0} has been saved successfully." /> 
+  <NodeId id="code06" value="Details of Vehicle Reg. No. {0} has been updated successfully." /> 
+    <NodeId id="code07" value="Details of Vehicle Reg. No. {0} has been deleted successfully." /> 
+  </dsjevehicleInsurance>
+  
+    <dsjeinboundDeputation>
+  <NodeId id="code01" value="Add Vacancies " /> 
+  <NodeId id="code02" value="List of Vacancies" /> 
+  <NodeId id="code03" value="{0} Record(s) found." /> 
+  <NodeId id="code04" value="10" /> 
+  <NodeId id ="code05" value="Details of Order No. {0} has been saved successfully"/>
+	<NodeId id ="code06" value="Details of Order No. {0} has been updated successfully"/>
+	<NodeId id ="code07" value=" Details of Order No. {0} has been deleted successfully"/>
+  </dsjeinboundDeputation>
+  
+   <dsjeoutboundDeputation>
+  <NodeId id="code01" value="Add Outbound Deputation " /> 
+  <NodeId id="code02" value="List of Outbound Deputation" /> 
+  <NodeId id="code03" value="{0} Record(s) found." /> 
+  <NodeId id="code04" value="10" /> 
+  <NodeId id ="code05" value="Details of employee id {0} has been saved successfully"/>
+	<NodeId id ="code06" value="Details of employee id {0} has been updated successfully"/>
+	<NodeId id ="code07" value=" Details of employee id {0} has been deleted successfully"/>
+  </dsjeoutboundDeputation>
+  
+  
+  
+  
+     <dsjedispatchAccount>
+	<NodeId id ="code01" value="Add Cash Received by Dispatch Department from Account"/>	
+	<NodeId id ="code02" value="List of Dispatch Accounts"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+<NodeId id ="code05" value="Details of Cash Received by Dispatch Department from Account  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Entry  {0}  already exists."/>
+	<NodeId id ="code07" value="Dispatch Account  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Dispatch Account {0}  has been enabled successfully."/>
+	<NodeId id ="code10" value="Details of Cash Received by Dispatch Department from Account  {0}  has been updated successfully."/>
+	<NodeId id ="code11" value="Dispatch Account has been deleted successfully."/>
+  </dsjedispatchAccount>
+  
+   <dsjemarital_status>
+	<NodeId id ="code01" value="Add marital status"/>	
+	<NodeId id ="code02" value="List of marital status"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of marital status  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="marital status Name  {0}  already exists."/>
+	<NodeId id ="code07" value="marital status  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="marital status  {0}  has been enabled successfully."/>
+  </dsjemarital_status>
+  
+   <dsjestate>
+	<NodeId id ="code01" value="Add State"/>	
+	<NodeId id ="code02" value="List of State"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of State {0} has been saved successfully."/>
+	<NodeId id ="code06" value="State Name  {0}  already exists."/>
+	<NodeId id ="code07" value="State {0} has been disabled successfully."/>	
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="State {0} has been enabled successfully."/>
+    <NodeId id ="code10" value="State {0} has been updated successfully."/>	
+	<NodeId id ="code11" value="State {0} has been disabled successfully."/>
+  </dsjestate>
+  
+  <dsjeblock>
+	<NodeId id ="code01" value="Add Block"/>	
+	<NodeId id ="code02" value="List of Block"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Block {0} has been saved successfully."/>
+	<NodeId id ="code06" value="Block Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Block {0} has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Block {0} has been enabled successfully."/>
+    <NodeId id ="code10" value="Block {0} has been updated successfully."/>	
+  </dsjeblock>
+ 
+   <dsjelookupType>
+	<NodeId id ="code01" value="Add Lookup Type"/>	
+	<NodeId id ="code02" value="List of Lookup Types"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Lookup Type  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Lookup Type Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Lookup Type  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Lookup Type  {0}  has been enabled successfully."/>
+	<NodeId id ="code10" value="Lookup Type  {0}  has been updated successfully."/>
+  </dsjelookupType>
+ 
+  <dsjelookup>
+	<NodeId id ="code01" value="Add Lookup "/>	
+	<NodeId id ="code02" value="List of Lookups "/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Lookup  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Lookup Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Lookup Name {0} has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Lookup Name  {0}  has been enabled successfully."/>
+	<NodeId id ="code10" value="Lookup Name  {0}  has been updated successfully."/>
+  </dsjelookup>
+ 
+ 
+ <dsjelanguage>
+	<NodeId id ="code01" value="Add language"/>	
+	<NodeId id ="code02" value="List of language"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of language  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="language Name  {0}  already exists."/>
+	<NodeId id ="code07" value="language  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="language  {0}  has been enabled successfully."/>
+  </dsjelanguage>
+ 
+  <dsjereligion>
+	<NodeId id ="code01" value="Add religion"/>	
+	<NodeId id ="code02" value="List of religion"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of religion  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="religion Name  {0}  already exists."/>
+	<NodeId id ="code07" value="religion  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="religion  {0}  has been enabled successfully."/>
+  </dsjereligion>
+ 
+  <recEmployeeStatus>
+	<NodeId id ="code01" value="Add Employee Status"/>	
+	<NodeId id ="code02" value="List of Employee Status"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Employee Status  {0}  already exists."/>
+	<NodeId id ="code07" value="Employee Status  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/> 
+	<NodeId id ="code09" value="Employee Status  {0}  has been enabled successfully."/>
+  </recEmployeeStatus>
+
+  <recNews>
+	<NodeId id ="code01" value="Add REC News"/>	
+	<NodeId id ="code02" value="List of REC News"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="REC News  {0}  already exists."/>
+	<NodeId id ="code07" value="REC News  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/> 
+	<NodeId id ="code09" value="REC News  {0}  has been enabled successfully."/>
+  </recNews>
+
+  <recOfficeMaster>
+	<NodeId id ="code01" value="Add REC Office"/>	
+	<NodeId id ="code02" value="List of REC Offices"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+  </recOfficeMaster>
+  
+    <recTrainingDetails>
+	<NodeId id ="code01" value="Add Training Details"/>	
+	<NodeId id ="code02" value="List of Training Details"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Start Date should not be greater than End Date."/>
+	<NodeId id ="code06" value="No of participants should be accepted numeric only."/>
+	<NodeId id ="code07" value="Maximum allowed No of participants is 25."/>
+	<NodeId id ="code08" value="Details of Training ID  {0}  has been saved successfully"/> 
+	<NodeId id ="code09" value="Selected participants should not be greater than Maximum Participant."/>
+	<NodeId id ="code10" value="Session record has been saved successfully."/>
+	<NodeId id ="code11" value="Number of Sessions for day-{0} field is required."/>
+	<NodeId id ="code12" value="Number of Sessions for day-{0} accept number only."/>
+	<NodeId id ="code13" value="For Day{0} and Session{1}: Sessions Start Time should not be greater than Sessions End Time."/>
+	<NodeId id ="code14" value="All day can not be set as holiday."/>
+	<NodeId id ="code15" value="Start Date should not be greater current End Date."/>
+	<NodeId id ="code16" value="Venue filed is required."/>
+	<NodeId id ="code17" value="Training Program  filed is required."/>
+	<NodeId id ="code18" value="Participant filed is required."/>
+	<NodeId id ="code19" value="Number of Sessions should be a numeric value."/>
+	<NodeId id ="code20" value="Error: Transaction failed."/>
+	<NodeId id ="code21" value="No days between start date and end date should not be greater than 10 days."/>
+	<NodeId id ="code22" value="Day-{0} and Session-{1}: Session start time should be greater than session end time."/>
+	<NodeId id ="code23" value="Sorry! You can not create more than No. of Training Program specified in MoU."/>
+	<NodeId id ="code24" value="Number of training program is not specified in MoU, You need to contact to Superadmin."/>
+  </recTrainingDetails>	
+
+	
+  <workflowMatrix>
+	<NodeId id ="code01" value="Add Workflow(Matrix)"/>	
+	<NodeId id ="code02" value="List of Workflow(Matrix)"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+  </workflowMatrix>
+
+ <recAlbum>
+	<NodeId id ="code01" value="Create Album"/>	
+	<NodeId id ="code02" value="List of albums"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+  </recAlbum>
+  
+   <recAccountHead>
+	<NodeId id ="code01" value="Add A/C Head"/>	
+	<NodeId id ="code02" value="List of A/C Head"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of A/C Head  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="A/C Head Name  {0}  already exists."/>
+	<NodeId id ="code07" value="A/C Head  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="A/C Head  {0}  has been enabled successfully."/>
+  </recAccountHead>
+  
+   <recTrainingProgramTitle>
+	<NodeId id ="code01" value="Add Training Program"/>	
+	<NodeId id ="code02" value="List of Training Programs"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Training Program  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Training Program  {0}  already exists."/>
+	<NodeId id ="code07" value="Training Program  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Training Program  {0}  has been enabled successfully."/>
+  </recTrainingProgramTitle>
+
+ <recStaffCategory>
+	<NodeId id ="code01" value="Add Staff Category"/>	
+	<NodeId id ="code02" value="List of Staff Category"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" /> 
+	<NodeId id ="code05" value="Details of  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Staff Category  {0}  already exists."/>
+	<NodeId id ="code07" value="Staff Category  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>
+	<NodeId id ="code09" value="Staff Category  {0}  has been enabled successfully."/>
+ 	</recStaffCategory>
+	<recEmailContent>
+	<NodeId id ="code01" value="Add A/C Head"/>	
+	<NodeId id ="code02" value="List of Email Contents"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Email Contents  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Email Contents  {0}  already exists."/>
+	<NodeId id ="code07" value="Email Contents  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Email Contents  {0}  has been enabled successfully."/>
+  </recEmailContent>
+  <recInvoice>
+	<NodeId id ="code01" value=""/>	
+	<NodeId id ="code02" value="List of Training Programs"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Generate Checklist" />
+	<NodeId id ="code06" value="View" />
+	<NodeId id ="code07" value="Details of Invoice Type  {0}  has been saved successfully." />
+	<NodeId id ="code08" value="Submit Report" />
+	<NodeId id ="code09" value="View Other Versions" />
+	<NodeId id ="code10" value="Sorry! Details of Invoice Type  {0}  already exists." />
+	<NodeId id ="maxParticipant" value="25" />
+  </recInvoice>
+  
+  <resetPassword>
+	<NodeId id ="code01" value="Dear {0} your login password has been reset successfully."/>	
+	<NodeId id ="code02" value="Sorry! Current password did not matched."/>	
+	<NodeId id ="code03" value="Confirm password did not matched."/>	
+  </resetPassword>
+  
+<MonthlyCalendar>
+	<NodeId id ="code01" value="Add A/C Head"/>	
+	<NodeId id ="code02" value="List of Email Contents"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Email Contents  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Email Contents  {0}  already exists."/>
+	<NodeId id ="code07" value="Email Contents  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Email Contents  {0}  has been enabled successfully."/>
+  </MonthlyCalendar>
+  <recParticipantUnicode>
+	<NodeId id ="code01" value=""/>	
+	<NodeId id ="code02" value="Participant Details of Training Program"/>	
+	<NodeId id ="code03" value=""/> 
+	<NodeId id ="code04" value="10" />
+  </recParticipantUnicode>
+  <recEmailBroadCasting>
+  <NodeId id="code01" value="Broadcast a Mail" /> 
+  <NodeId id="code02" value="List of Broadcasting Mails" /> 
+  <NodeId id="code03" value="{0} Record(s) found." /> 
+  <NodeId id="code04" value="10" /> 
+  <NodeId id="code05" value="Mail has been broadcasted successfully to selected members." /> 
+  </recEmailBroadCasting>
+
+
+<dsjelawyer>
+	<NodeId id ="code01" value="Add Lawyer"/>	
+	<NodeId id ="code02" value="List of Lawyer"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Lawyer  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Lawyer Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Lawyer  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Lawyer  {0}  has been enabled successfully."/>
+	<NodeId id ="code10" value="Lawyer  {0}  has been updated successfully."/>
+	 </dsjelawyer>
+  
+<dsjegrievance>
+	<NodeId id ="code01" value="Add Grievance"/>	
+	<NodeId id ="code02" value="List of Grievance"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Applicant {0} Grievance has been closed."/>
+	<NodeId id ="code06" value="Grievance  {0}  already exists."/>
+	<NodeId id ="code07" value="Grievance  {0}  has been Closed successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Grievance  {0}  has been enabled successfully."/>
+    <NodeId id ="code10" value="Your Application No {0} has been registered."/>	
+	
+</dsjegrievance>  
+
+<dsjerti_management>
+	<NodeId id ="code01" value="Add RTI"/>	
+	<NodeId id ="code02" value="Pending RTI"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of {0}  has been saved successfully."/>
+	<NodeId id ="code06" value=" {0}  already exists."/>
+	<NodeId id ="code07" value="{0}  has been closed successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="RTI {0}  has been enabled successfully."/>
+    <NodeId id ="code10" value="Your Application No. {0} has been registered."/>	
+</dsjerti_management>  
+  
+  <dsjecourtcase>
+	<NodeId id ="code01" value="Add Court Case"/>	
+	<NodeId id ="code02" value="List of Court Case"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Court Case  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Court Case  {0}  already exists."/>
+	<NodeId id ="code07" value="Court Case  {0}  has been Delete successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Court Case  {0}  has been enabled successfully."/>
+	<NodeId id ="code10" value="Court Case  {0}  has been Updated successfully."/>
+	<NodeId id ="code11" value="Court Case  {0}  has been Deleted successfully."/>
+  </dsjecourtcase>
+  
+  <dsjehearingcourtcase>
+	<NodeId id ="code01" value="Add Court Case Hearing"/>	
+	<NodeId id ="code02" value="List of Court Case Hearing"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Court Case Hearing  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Court Case Hearing  {0}  already exists."/>
+	<NodeId id ="code07" value="Court Case Hearing  {0}  has been Delete successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Court Case Hearing  {0}  has been enabled successfully."/>
+	<NodeId id ="code10" value="Details of Court Case Hearing  {0}  has been Updated successfully."/>
+  </dsjehearingcourtcase>
+  
+  <dsjerti>
+	<NodeId id ="code01" value="Add RTI"/>	
+	<NodeId id ="code02" value="Pending RTI"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of {0}  has been closed successfully."/>
+	<NodeId id ="code06" value="{0}  already exists."/>
+	<NodeId id ="code07" value="{0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="RTI Management  {0}  has been enabled successfully."/>
+  </dsjerti>
+  
+  <emailnode>
+	<NodeId id ="subject" value="Email From Shimla"/>	
+	<NodeId id ="body" value="body"/>	
+	<NodeId id ="from" value="mohit.verma@claritusconsulting.com"/> 
+	<NodeId id ="to" value="to" />
+	<NodeId id ="cc" value="cc"/>
+	<NodeId id ="bcc" value="bcc"/>
+	<NodeId id ="attactment" value="attactment"/>
+	<NodeId id ="from_name" value="from_name"/>
+	<NodeId id ="to_name" value="to_name"/>
+	<NodeId id ="attempt" value="0"/>
+	<NodeId id ="priority" value="1"/>  
+    <NodeId id ="status" value="0"/>
+    <NodeId id ="guestsubject" value="Email From Shimla"/>	
+	<NodeId id ="body" value="body"/>	
+	<NodeId id ="from" value="mohit.verma@claritusconsulting.com"/> 
+	<NodeId id ="cc" value="cc"/>
+	<NodeId id ="bcc" value="bcc"/>
+	<NodeId id ="attactment" value="attactment"/>
+	<NodeId id ="from_name" value="from_name"/>
+	<NodeId id ="attempt" value="0"/>
+	<NodeId id ="priority" value="1"/>  
+    <NodeId id ="status" value="0"/>
+  </emailnode>
+
+
+  <recGuestuser>
+	<NodeId id ="code01" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code03" value="List of Guest User(s)"/>	
+  </recGuestuser>
+  
+  
+  <recvendor>
+	<NodeId id ="code01" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code02" value="Add Vendor"/> 
+	<NodeId id ="code03" value="List of Vendor(s)"/>	
+	<NodeId id ="code05" value="Vendor {0} has been saved successfully."/>	
+	<NodeId id ="code06" value="Vendor {0} has been updated successfully."/>	
+  </recvendor>
+  
+  <reclokmitra>
+	<NodeId id ="code01" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code02" value="Add Lokmitra"/> 
+	<NodeId id ="code03" value="List of Lokmitra(s)"/>	
+	<NodeId id ="code05" value="Lokmitra {0} has been registered successfully."/>	
+	<NodeId id ="code06" value="Lokmitra {0} has been updated successfully."/>
+	
+  </reclokmitra>
+  
+  
+  <loanrepayment>
+	<NodeId id ="code01" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code02" value="Add Lokmitra"/> 
+	<NodeId id ="code03" value="List of Lokmitra(s)"/>	
+	<NodeId id ="code05" value="LokMitra - Loan Re-payment of loanee {0} has been saved successfully."/>	
+	<NodeId id ="code06" value="Lokmitra {0} has been updated successfully."/>
+	
+  </loanrepayment>
+  
+    <loanaddscheme>
+		<NodeId id ="code01" value="Loan scheme {0} has been saved successfully."/>	
+		<NodeId id ="code02" value="Loan scheme {0} has been updated successfully ."/>	
+		<NodeId id ="code03" value="{0} Record(s) found."/> 
+		<NodeId id ="code04" value="10" />
+		<NodeId id ="code05" value="Details of RTI Management  {0}  has been saved successfully."/>
+		<NodeId id ="code06" value="Loan scheme  {0}  already exists."/>
+		<NodeId id ="code07" value="Loan scheme  {0}  has been disabled successfully."/>
+		<NodeId id ="code08" value="Error deleting. Please try again."/>  
+		<NodeId id ="code09" value="RTI Management  {0}  has been enabled successfully."/>
+		<NodeId id ="code10" value="Add Loan Scheme"/>
+		<NodeId id ="code11" value="List of Loan Schemes"/>
+	</loanaddscheme>
+    <loans>
+		<NodeId id ="code01" value="Loan application successfully submitted."/>	
+		<NodeId id ="code02" value="Loan application for loan registration number {0} has been updated successfully."/>	
+		<NodeId id ="code03" value="{0} Record(s) found."/> 
+		<NodeId id ="code04" value="10" />
+		<NodeId id ="code05" value="Details of RTI Management  {0}  has been saved successfully."/>
+		<NodeId id ="code06" value="Loan scheme  {0}  already exists."/>
+		<NodeId id ="code07" value="Loan scheme  {0}  has been disabled successfully."/>
+		<NodeId id ="code08" value="Error deleting. Please try again."/>  
+		<NodeId id ="code09" value=""/>
+		<NodeId id ="code10" value="Apply Loan"/>
+		<NodeId id ="code11" value="List of Loan Applications"/>
+		<NodeId id ="code12" value="Your transaction will be processed only after submission of physical document"/>
+		<NodeId id ="code13" value="Disbursement details for loan registration number {0} has been saved successfully."/>
+		<NodeId id ="code14" value="Disbursement detail successfully updated"/>
+		<NodeId id ="code15" value="Sorry ! There is some error in processing data.Please try again."/>
+		<NodeId id ="code16" value="Repayment detail successfully captured."/>
+		<NodeId id ="code17" value="Repayment detail successfully updated."/>
+		<NodeId id ="dueday" value="05"/>
+		<NodeId id ="alertbeforeday" value="7"/>
+		<NodeId id ="DM_approval_loan_amount" value="50000"/>
+		<NodeId id ="loan_collection" value="Your Loan has been sactined of Amount{0} and payment order Released.Please collect your payment from office."/>
+		<NodeId id ="loan_due_alert" value="Your EMI  of Amount{0} is due on date {1}. Please ignore if you have already paid."/>
+	</loans>
+  
+    <corporation>
+		<NodeId id ="scstname" value="Himachal Pradesh SCST Finance And Developement corporation Shimla"/>
+		<NodeId id ="scstaddress" value="Ist Floor Block No. 38, SDA Complex, Kasumpti, Shimla-9"/>	
+		<NodeId id ="scstfor" value="H.P. Minorities Finance and Development Corporation"/>	
+		<NodeId id ="scstphone" value="0177-2621669"/> 
+	</corporation>
+  <dsjecast>
+	<NodeId id ="code01" value="Add Cast"/>	
+	<NodeId id ="code02" value="List of Cast"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Cast {0}  has been saved successfully."/>
+	<NodeId id ="code10" value="Details of Cast {0}  has been updated successfully."/>
+	<NodeId id ="code06" value="Cast Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Cast  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Cast  {0}  has been enabled successfully."/>
+  </dsjecast>
+
+  <documentupload>
+	<NodeId id ="code01" value="Add Documents"/>	
+	<NodeId id ="code02" value="List of Documents"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Document {0}  has been saved successfully."/>
+	<NodeId id ="code10" value="Document  {0}  has been updated successfully."/>
+	<NodeId id ="code06" value="File No. {0}  already exists."/>
+	<NodeId id ="code07" value="Document  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Document  {0}  has been enabled successfully."/>
+	<NodeId id ="code11" value="Document {0}  has been approved successfully."/>
+  </documentupload>
+
+<resignation>
+	<NodeId id ="code01" value="Add Resignation "/>	
+	<NodeId id ="code02" value="List of Resignation"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Resignation form of Employe ID {0} has been submitted successfully."/>
+	<NodeId id ="code10" value="{0}'s resignation form has been rejected successfully."/>
+	<NodeId id ="code06" value="Query has been send to {0} successfully."/>
+	<NodeId id ="code07" value="Reply has been send to {0} successfully."/>
+	<NodeId id ="code08" value="{0}'s resignation form has been approved successfully."/>  
+    <NodeId id ="code09" value="Resignation form has been canceled successfully."/>
+	<NodeId id ="code11" value="List of Comments"/>	
+	<NodeId id ="code12" value="Comment has been sent to {0} successfully."/>	
+  </resignation>
+
+  <separationlist>
+	<NodeId id ="code01" value="Add Content"/>	
+	<NodeId id ="code02" value="List of Content"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/>
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Separation Name {0} has been saved successfully."/>
+	<NodeId id ="code06" value="Content   {0}  already exists."/>
+	<NodeId id ="code07" value="Entry of S. No '#{0}' soft deleted successfully."/>
+	<NodeId id ="code08" value="NOC details on Name {0} has been saved successfully."/>
+	<NodeId id ="code09" value="Due Amount {0} has been saved successfully."/>
+  </separationlist>
+<appraisal>
+	<NodeId id ="code01" value="Add Appraisal "/>	
+	<NodeId id ="code02" value="List of Appraisal"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Appraisal form {0} has been saved successfully."/>
+	
+  </appraisal>
+
+ <dsjeleave>
+	<NodeId id ="code01" value="Add Leave"/>	
+	<NodeId id ="code02" value="List of Leave"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Leave {0} has been saved successfully."/>
+	<NodeId id ="code06" value="Leave Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Leave {0} has been disabled successfully."/>	
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Leave {0} has been enabled successfully."/>
+    <NodeId id ="code10" value="Leave {0} has been updated successfully."/>	
+	<NodeId id ="code11" value="Leave {0} has been disabled successfully."/>
+  </dsjeleave>
+
+<leavemanagement>
+	<NodeId id ="code01" value="Add Leave"/>	
+	<NodeId id ="code02" value="List of Leaves"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Leave form Employe Name {0} has been submitted successfully."/>
+	
+  </leavemanagement>
+
+
+  <dsjeinterestsubsidy1>
+	<NodeId id ="code01" value="Add Interest Subsidy"/>	
+	<NodeId id ="code02" value="List of Interest Subsidy"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Interest Subsidy of Bank Account no.  {0}  has been saved successfully."/>
+	<NodeId id ="code06" value="Lawyer Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Interest Subsidy of Bank Account no. {0} has been Deleted successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Lawyer  {0}  has been enabled successfully."/>
+	<NodeId id ="code10" value="Details of Interest Subsidy of Corporation Registration No. {0}  has been updated successfully."/>
+	 </dsjeinterestsubsidy1>
+
+
+<dsjeleaveallocation>
+	<NodeId id ="code01" value="Add Leave Allocation"/>	
+	<NodeId id ="code02" value="List of Leave Allocation"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Leave Allocation {0}  has been saved successfully."/>
+	<NodeId id ="code10" value="Details of Leave Allocation {0}  has been updated successfully."/>
+	<NodeId id ="code06" value="Leave Allocation Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Leave Allocation  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Leave Allocation  {0}  has been enabled successfully."/>
+  </dsjeleaveallocation>
+  
+  <dsjeholidays>
+	<NodeId id ="code01" value="Add Holidays"/>	
+	<NodeId id ="code02" value="List of Holidays"/>	
+	<NodeId id ="code03" value="{0} Record(s) found."/> 
+	<NodeId id ="code04" value="10" />
+	<NodeId id ="code05" value="Details of Holidays {0}  has been saved successfully."/>
+	<NodeId id ="code10" value="Details of Holidays {0}  has been updated successfully."/>
+	<NodeId id ="code06" value="Holiday Name  {0}  already exists."/>
+	<NodeId id ="code07" value="Holiday  {0}  has been disabled successfully."/>
+	<NodeId id ="code08" value="Error deleting. Please try again."/>  
+    <NodeId id ="code09" value="Holiday  {0}  has been enabled successfully."/>
+  </dsjeholidays>
+
+
+</message>
+

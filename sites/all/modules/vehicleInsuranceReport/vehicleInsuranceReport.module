@@ -1,0 +1,132 @@
+<?php
+global $base_url;
+
+/**
+ *hook_perm
+ */
+ 
+function vehicleInsuranceReport_perm() {
+	return array('edit vehicleInsuranceReport','administer vehicleInsuranceReport', 'create vehicleInsuranceReport', 'view vehicleInsuranceReport');
+}
+
+function vehicleInsuranceReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit vehicleInsuranceReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create vehicleInsuranceReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view vehicleInsuranceReport', $account);
+	}
+	
+}
+
+
+function vehicleInsuranceReport_menu(){
+
+  $items['vehicleInsuranceReport_vehicle'] = array(
+										'title' => t('Vehicle Insurance Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'vehicleInsuranceReport_vehicle',
+										'access arguments' => array('administer vehicleInsuranceReport_vehicle'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function vehicleInsuranceReport_vehicle(){
+  return drupal_get_form('vehicleInsuranceReport_vehicle_form');
+}
+
+function vehicleInsuranceReport_vehicle_form(){
+ 
+  global $base_url;
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Vehicle Insurance Report', 'vehicleAMCReport_vehicle');
+  drupal_set_breadcrumb($breadcrumb);
+ 
+ $form['reg_no'] = array(
+                                '#type' => 'textfield',
+								
+								'#size' => '30',
+ );
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+			
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+function vehicleInsuranceReport_vehicle_form_validate($form, &$form_state){
+	
+	$values = $form_state['values'];
+	
+	$from_date = $values['from_date'];
+	$to_date = $values['to_date'];
+	
+	if($from_date>$to_date){
+	
+	form_set_error(to_date,'To Date should be greater than From Date');
+	}
+	
+	if($from_date == '' && $to_date!=''){
+		
+	form_set_error('from_date','Form Date is required.');	
+		
+	}
+	
+	if($to_date == '' && $from_date!=''){
+		
+	form_set_error('to_date','To Date is required.');	
+		
+	}
+	
+}
+
+
+ function vehicleInsuranceReport_theme() {
+	
+	return array(
+		
+		'vehicleInsuranceReport_vehicle_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'vehicleInsuranceReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

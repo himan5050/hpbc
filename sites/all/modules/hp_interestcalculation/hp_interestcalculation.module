@@ -1,0 +1,111 @@
+<?php
+global $user;
+
+/**
+*@hook_menu
+*/
+
+function hp_interestcalculation_menu(){
+   
+  
+   $items['hp_interestcalculation'] = array(
+              'title' => 'Interset Calculation',
+	      'page callback' => 'hp_interestcalculation',
+	      'type' => MENU_NORMAL_ITEM,
+	      'access arguments' => array('access content'),
+  );
+  
+  return $items;
+}
+
+function hp_interestcalculation(){
+  return drupal_get_form('hp_interestcalculation_form');
+}
+
+function hp_interestcalculation_form(){
+        $breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('Control Panel', 'node/211');
+	$breadcrumb[] = l('Interest Calculation', 'hp_interestcalculation');
+    //$breacrumb = array('<front>','home','node/211'=>'Control Panel','hp_interestcalculation'=>'Interest Calculation');
+        drupal_set_breadcrumb($breadcrumb);
+  
+    $form['corporation'] = array(
+			               '#type' => 'select',
+			               '#required' => FALSE,
+		                       '#options' => GetCorporation(),);
+     
+	$form['scheme'] = array(
+			          '#type' => 'select',
+	       	                  '#required' => FALSE,
+		                  '#options' => GetScheme(),);	 
+	 
+    $form['account_number'] = array(
+			                 '#type' => 'textfield',
+			                 '#required' => FALSE,
+			                 '#size' => '10',);
+
+    $form['date_to'] = array(
+			           '#type' => 'date_popup',
+			           '#date_format' => 'd-m-Y',
+			           '#required' => FALSE,
+			           '#size' => '10',);
+
+	$form['submit'] = array(
+                      '#type' =>'button',
+	                  '#default_value' =>'Calculate Interest',); 
+    return $form;
+}
+
+
+function hp_interestcalculation_form_validate($form,&$form_state){
+ 
+  if($form_state['values']['scheme'] == ''){
+    form_set_error('scheme', 'Scheme is Required');
+  }
+  
+  if($form_state['values']['date_to'] == ''){
+    form_set_error('date_to', 'Calculate up to Date is Required');
+  }
+   
+  if($form_state['values']['corporation'] ==''){
+    form_set_error('corporation', 'Corporation is Required');
+  }
+ 
+}
+
+/**
+ *@ hook_theme 
+*/
+function hp_interestcalculation_theme() {
+	return array(
+		'hp_interestcalculation_form' => array(
+				                 'arguments' => array('form' => NULL),
+					         'template' => 'hp_interestcalculation_form',),);
+
+}
+
+/**
+  get corporation
+  */
+function GetCorporation(){
+     $sql = "select corporation_id,corporation_name from tbl_corporations where status=1 ORDER BY corporation_name ASC";
+	 $res = db_query($sql);
+	 $cop = array(''=>'--Select--');
+	 while($rs = db_fetch_object($res)){
+	   $cop[$rs->corporation_id] = ucwords($rs->corporation_name);
+	 }
+	 return $cop;
+  }
+
+/**
+  get Scheme
+  */
+function GetScheme(){
+     $sql = "select scheme_name,loan_scheme_id from tbl_scheme_master where status=167 ORDER BY scheme_name ASC";
+	 $res = db_query($sql);
+	 $scheme_name = array(''=>'--Select--');
+	 while($rs = db_fetch_object($res)){
+	  $scheme_name[$rs->loan_scheme_id] = ucwords($rs->scheme_name);
+	 }
+	 return $scheme_name;
+}

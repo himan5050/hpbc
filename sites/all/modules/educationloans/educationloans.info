@@ -1,0 +1,6 @@
+;$id:
+name = "Education Loans"
+description = "Education Loan Scheme Reports"
+core = 6.x
+version = 6.x-1
+package = "Education Loans Module"

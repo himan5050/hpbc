@@ -1,0 +1,6 @@
+;$id 17/11/2011 Varun Rai
+name = "Margin Money Loan Report	"
+description ="Margin Money Loan Report"
+core = 6.x
+version =6.x-1
+package="SC and St Reports"

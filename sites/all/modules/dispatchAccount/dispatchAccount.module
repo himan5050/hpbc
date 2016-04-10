@@ -1,0 +1,596 @@
+<?php
+function dispatchAccount_init() {
+	//drupal_add_css(drupal_get_path('module', 'dsje_language') .'/dsje_language.css');
+	
+}
+
+
+function dispatchAccount_perm() {
+	return array('edit dispatchAccount','administer dispatchAccount', 'create dispatchAccount', 'view dispatchAccount');
+}
+
+function dispatchAccount_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dispatchAccount', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dispatchAccount', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dispatchAccount', $account);
+	}
+	
+}
+
+function dispatchAccount_menu() {
+	
+	
+	$items['admin/dsje/listdispatchAccount'] = array(
+										'title' => t('List of Dispatch Accounts'),
+										'description' => 'Allow user to View Dispatch Accounts',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewdispatchAccount',
+										'access arguments' => array('administer dispatchAccount'),
+													 
+									  );
+	
+	$items['admin/dsje/listdispatchAccount/adddispatchAccount'] = array(
+										'title' => t('Create Dispatch Account Entry'),
+										'description' => 'Allow user to add Dispatch Account Entry',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dispatchAccount',
+										'access arguments' => array('administer dispatchAccount'),
+													 
+									  );
+   	$items['admin/dsje/listdispatchAccount/edit/dispatchAccount/%'] = array(
+								
+										'title' => t('Edit Dispatch Account Entry'),
+										'description' => 'Allow user to edit Dispatch Account Entry',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_adddispatchAccountedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dispatchAccount'),
+													 
+									  );
+   $items['admin/dsje/listdispatchAccount/view/dispatchAccount/%'] = array(
+								
+										'title' => t('View Dispatch Accounts'),
+										'description' => 'Allow user to view Dispatch Account Entry',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_adddispatchAccountview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dispatchAccount'),
+													 
+									  );
+     $items['admin/dsje/del/dispatchAccount/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dispatchAccount_delete',
+		                                'page arguments' => array(4),
+		                                'access arguments' => array('administer dispatchAccount'),
+													 
+									  );
+    $items['admin/dsje/enable/dispatchAccount/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dispatchAccount_enable',
+		                                'page arguments' => array(4),
+		                                'access arguments' => array('administer dispatchAccount'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing dispatchAccount
+ */
+
+function viewdispatchAccount(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjedispatchAccount', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Date'), 'field' => 'date', 'sort' => 'asc'),
+		array('data' => t('Amount'),'field' => 'amount','sort'=>'asc'),
+		//array('data' => t('Quantity'),'field'=>'qty','sort' =>'asc'),
+		//array('data' => t('Remarks'),'field'=>'remarks','sort' => 'asc'),
+		//array('data' => t('Status')),
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Dispatch Accounts', 'admin/dsje/listdispatchAccount/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	
+	$datewa=date('Y-m-d',strtotime($_REQUEST['searchtext']));
+	//$amt=number_format($_REQUEST['searchtext'],2,'.','');
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 $query = "SELECT dispatchAccount_id, date,  amount FROM {tbl_dispatchaccounts} where  status LIKE '".$val."' OR date LIKE '".$datewa."' or round(amount,2) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM {tbl_dispatchaccounts} where  status LIKE '".$val."' OR date LIKE '".$datewa."' or round(amount,2) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	   //$_REQUEST['page']=0;
+ }else{
+    $query = "SELECT dispatchAccount_id, date, amount,remarks, status FROM {tbl_dispatchaccounts} ".tablesort_sql($header);
+ }
+ global $base_url;
+$action = $base_url.'/admin/dsje/listdispatchAccount';
+ 
+ $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	';
+	
+	$addurl = l(getMessage( 'dsjedispatchAccount', 'code01', NULL),"admin/dsje/listdispatchAccount/adddispatchAccount");
+   	$lising = getMessage( 'dsjedispatchAccount', 'code02', NULL);
+		
+	$output .='<tr ><td colspan="3"><div  class="searchrecord">';	
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjedispatchAccount', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listdispatchAccount');
+	}
+	
+	$output .='</div></td><tr>
+	        <td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	
+	<td class="tblHeaderRight">
+	
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	
+	</tr>
+	
+	</table></form>';
+
+	$result = pager_query($query, 10);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listdispatchAccount/edit/dispatchAccount/".$row->dispatchAccount_id);
+		$viewurl = l("View","admin/dsje/listdispatchAccount/view/dispatchAccount/".$row->dispatchAccount_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Delete","admin/dsje/del/dispatchAccount/$row->dispatchAccount_id");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/dispatchAccount/$row->dispatchAccount_id");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+			
+			
+	
+
+
+			
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => date('d-m-Y',strtotime($row->date))),
+			array('data' => round($row->amount)),
+		//	array('data' => ucwords($row->qty)),
+		//	array('data' => ucwords($row->remarks)),
+			//array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+		
+	}
+	if($rows== NULL)
+	$header=NULL;
+	
+	//if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){}else{
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dispatchAccount(){
+ return drupal_get_form('dispatchAccount_form');
+}
+
+function dispatchAccount_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Dispatch Accounts', 'admin/dsje/listdispatchAccount');
+  if($array[3] == 'adddispatchAccount'){
+     $breadcrumb[] = l('Add Dispatch Accounts', 'admin/dsje/listdispatchAccount/adddispatchAccount');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+  
+  
+  
+	
+	$form['date'] = array(
+	  '#type' =>'date_popup',
+	  '#date_format' => 'd-m-Y',
+	  '#title' =>'Date',
+	  '#required' => TRUE,
+	  '#default_value' =>'',	
+	);
+	
+	    $form['amount'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Amount'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>11,
+	 '#default_value' => '',
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+	$form['total'] = array(
+	'#type' =>'hidden',
+	);
+	
+	
+	
+	/*  $form['qty'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Quantity'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 	 '#default_value' => '',
+	 '#attributes' => array('onkeypress' => 'return  fononlyn(event)'),	
+  );*/
+	
+	$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),		
+		'#size'=> 200,
+		'#maxlength'=>200,
+		'#rows' =>5,
+		'#cols' =>30,    
+		'#attributes' => array('onkeypress' =>'return  textonlywithdotnemax(event,"edit-remarks",200)'),
+	); 
+	//
+
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listdispatchAccount'),
+);
+
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dispatchAccount_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+  //  $dispatchAccount_name = trim($values['dispatchAccount_name']);
+	$date = $values ['date'];
+	
+	$amount=$values['amount'];
+	//$qty = $values['qty'];
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   $uid=$user->uid;
+	
+	$s =paypay('amount',$amount,'Amount');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+//	$s2= fononlyn('qty',$qty,'Quantity');
+	
+	$tot= "select total from {tbl_dispatchaccounts} where tbl_dispatchaccounts.account_uid=$uid";
+	$sos= db_query($tot);
+	$total1= db_fetch_object($sos);
+	$total= $total1->total + $amount;
+	//db_query("UPDATE `tbl_dispatchaccounts` set `total` = '".$total."' ");
+	
+	if($s == 0 && $s1 == 0 ){
+	
+	
+		db_query("INSERT INTO {tbl_dispatchaccounts} (`account_uid`,`date`,`amount`,`total`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$uid."','".$date."','".$amount."','".$total."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+		db_query("update {tbl_dispatchaccounts} set `total`='".$total."'");
+		$sto= db_query("select balance from {tbl_dispatchforms}");
+		$ssp= db_fetch_object($sto);
+		$ost= $ssp->balance;
+		$sum=$ost + $amount;
+		db_query("update {tbl_dispatchforms} set balance='".$sum."' ");
+		
+	   
+		$message = getMessage('dsjedispatchAccount', 'code05', array("0"=>$user->name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listdispatchAccount');
+	}
+}
+
+function dispatchAccount_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	//$dispatchAccount_name = trim($values['dispatchAccount_name']);
+	$remarks = parseData(trim($values['remarks']));
+	$date = $values ['date'];
+	$amount=$values['amount'];
+	$s =paypay('amount',$amount,'Amount');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	//$s2= fononlyn('qty',$qty,'Quantity');
+	
+/*if($s == 0 && $s1 == 0 ){
+	
+		$sql = "SELECT * FROM {tbl_dispatchaccounts} where UCASE(dispatchAccount_name)= '".$date."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjedispatchAccount', 'code06', array("0"=>$user->name));
+			form_set_error('dispatchAccount_name', $message);
+		}
+	}*/	
+	
+	$time=time();
+	$currDate= strtotime($date);
+	
+	if($time<$currDate){ form_set_error($currDate,t('Date should not be greater than the present date'));}
+	
+	
+}
+
+function dsje_adddispatchAccountedit($dispatchAccount_id){
+ return drupal_get_form('dispatchAccount_form_edit',$dispatchAccount_id);
+}
+
+function dispatchAccount_form_edit(&$form_states,$dispatchAccount_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Dispatch Accounts', 'admin/dsje/listdispatchAccount');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Dispatch Accounts', 'admin/dsje/listdispatchAccount/edit/dispatchAccount/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqldispatchAccount = "select * from {tbl_dispatchaccounts} where dispatchAccount_id=$dispatchAccount_id";
+	$resdispatchAccount = db_query($sqldispatchAccount);
+	$rsdispatchAccount = db_fetch_object($resdispatchAccount);
+	
+	$form['dispatchAccount_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsdispatchAccount->dispatchAccount_id,
+	);
+	
+	$form['date'] = array(
+	  '#type' =>'date_popup',
+	 '#date_format' => 'd-m-Y',
+	  '#title' =>'Date',
+	  '#required' => TRUE,
+	 '#default_value' =>$rsdispatchAccount->date,	
+	);
+	
+	    $form['amount'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Amount'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>10,
+	 '#default_value' =>$rsdispatchAccount->amount,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+	
+	
+	/*  $form['qty'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Quantity'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 	 '#default_value' => '',
+	 '#attributes' => array('onkeypress' => 'return  fononlyn(event)'),	
+  );*/
+	
+	$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		 '#default_value' =>$rsdispatchAccount->remarks,
+		'#size'=> 200,
+		'#maxlength'=>200,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotnemax(event,"edit-remarks",200)'),
+	); 
+
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listdispatchAccount'),
+);
+
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dispatchAccount_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$dispatchAccount_id = $values['dispatchAccount_id'];
+	//$dispatchAccount_name = ParseData($values['dispatchAccount_name']);
+	//$prev_dispatchAccount_name = ParseData($values['prev_dispatchAccount_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	$date = $values ['date'];
+	$amount=$values['amount'];
+	$s =paypay('amount',$amount,'Amount');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	$total1=db_query("select total from {tbl_dispatchaccounts} where dispatchAccount_id='".$dispatchAccount_id."'");
+		
+	$total2= db_fetch_object($total1);
+	$total=$total2->total;
+	$old1=db_query("select * from {tbl_dispatchaccounts} where dispatchAccount_id='".$dispatchAccount_id."'");
+	$old2=db_fetch_object($old1);
+	$old=$old2->amount;
+	$sub=$amount-$old;
+	$total=$total+$sub;
+	
+	//db_query("update {tbl_dispatchforms} set `balance`='".$total."'");
+	if($s == 0 && $s1 == 0){
+	
+		/*$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_dispatchaccounts} where dispatchAccount_id= '".strtolower($dispatchAccount_name)."' GROUP BY dispatchAccount_id"));
+		$count = $countObj->count;*/
+		
+			
+			
+			
+			
+			
+			
+			db_query("UPDATE `tbl_dispatchaccounts` set `date` = '".$date."' ,`amount` = '".$amount."',`total`='".$total."',`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where dispatchAccount_id='".$dispatchAccount_id."'");
+			
+			db_query("update {tbl_dispatchforms} set `balance`='".$total."'");
+		
+	   db_query("update {tbl_dispatchaccounts} set `total`='".$total."'");
+			
+			
+			$message = getMessage('dsjedispatchAccount', 'code10', array("0"=>$user->name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listdispatchAccount");	
+			
+		
+			}
+	}
+
+
+function dispatchAccount_theme() {
+	
+	return array(
+				 
+		'dispatchAccount_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dispatchAccount_form',
+                                 ),
+        'dispatchAccount_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dispatchAccount_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dispatchAccount_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dispatchAccount_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dispatchAccount_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function dispatchAccount_delete($sid){
+  $dispatchAccount_id =  $sid;
+  //db_query("UPDATE {tbl_dispatchaccounts} SET status=0 WHERE dispatchAccount_id ='".$dispatchAccount_id."'");
+  $rr=db_query("select amount from {tbl_dispatchaccounts} WHERE dispatchAccount_id ='".$dispatchAccount_id."' ");
+  $rs=db_fetch_object($rr);
+  $rk=$rs->amount;
+ // $kko= db_query("select max(dispatchAccount_id) as dispatchAccount_id from {tbl_dispatchaccounts} where dispatchAccount_id 
+ //<(select max(dispatchAccount_id) from {tbl_dispatchaccounts})");
+   //$gg=db_fetch_object($kko);
+// $rr= $gg->dispatchAccount_id;
+ // db_query("update {tbl_dispatchaccounts} set row=1 where dispatchAccount_id= '".$rr."'");
+  $do=db_query("select balance from {tbl_dispatchforms}");
+  
+  $ds=db_fetch_object($do);
+  $dj=$ds->balance;
+  $sub= $dj - $rk;
+  db_query("UPDATE {tbl_dispatchforms} SET balance='".$sub."'");
+   db_query("UPDATE {tbl_dispatchaccounts} SET 	total ='".$sub."'");
+   db_query("DELETE from {tbl_dispatchaccounts} WHERE dispatchAccount_id ='".$dispatchAccount_id."'");
+  
+  $message = getMessage('dsjedispatchAccount', 'code11', array("0"=>$user->name));
+			drupal_set_message($message);
+	drupal_goto("admin/dsje/listdispatchAccount");
+ }
+
+
+  function dispatchAccount_enable($sid){
+    $dispatchAccount_id =  $sid;
+    db_query("UPDATE {tbl_dispatchaccounts} SET status=1 WHERE dispatchAccount_id ='".$dispatchAccount_id."'");
+  
+    $message = 'Entry has been fd';
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listdispatchAccount");
+  }
+
+  function dsje_adddispatchAccountview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Dispatch Accounts', 'admin/dsje/listdispatchAccount');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Dispatch Accounts', 'admin/dsje/listdispatchAccount/view/dispatchAccount/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from {tbl_dispatchaccounts} where dispatchAccount_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+
+
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="form-conatiner">';
+ $output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Dispatch Account Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td width="50%">Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date)).'</td></tr>';
+   $output .='<tr class="oddrow"><td width="50%">Amount:</td><td class="normal">'.round($rs->amount).'</td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Remarks:</td><td class="normal">'.$remarks.'</td></tr>';
+ //$output .='<tr class="oddrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='<tr class="oddrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'admin/dsje/listdispatchAccount').'</td></tr>';
+ $output .='</table>';
+ return $output;
+  }
+	
+	

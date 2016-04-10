@@ -1,0 +1,1091 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/fdrCheque.inc');
+function fdrCheque_init() {
+	drupal_add_js(drupal_get_path('module', 'fdrCheque') .'/fdrcheque.js');
+	drupal_add_js(drupal_get_path('module', 'fdr') .'/rec_program.js');
+	
+}
+function fdrCheque_node_info() {
+	return array (
+					'fdrCheque' => array (
+										'name' => t('List of FDR Cheque Details'),
+										'module' => 'fdrCheque',
+										'description' => "Creates FDR Cheque Details",
+										'has_title' => TRUE,
+										'title_label' => t('FDR Cheque Details'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function fdrCheque_perm() {
+	return array('edit fdrCheque','administer fdrCheque', 'create fdrCheque', 'view fdrCheque');
+}
+
+function fdrCheque_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit fdrCheque', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create fdrCheque', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view fdrCheque', $account);
+	}
+}
+ 
+ function fdrCheque_menu(){
+	 $items['list/fdrChequeList'] = array(
+		   'title' => 'List of FDR Cheque Details',
+		   'page callback' => 'fdrCheque_list',
+		   'access arguments' => array('administer fdrCheque'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewfdrCheque/%'] = array(
+								'title' => t('view FDR Cheque Details'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_fdrCheque',
+								'page arguments' => array(1),
+								'access arguments' => array('administer fdrCheque'),
+		                        
+						);
+  
+  $items['admin/dsje/del/fdrCheque/%'] =  array(
+	               						 'title' => t('Delete FDR Cheque Details'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'fdrCheque_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer fdrCheque'),
+													 
+	);
+ $items['admin/dsje/enable/fdrCheque/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'fdrCheque_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer fdrCheque'),
+														 
+	);	
+	
+	$items['dsje/headloan2'] = array(
+										'page callback' => 'myheadloan2',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+									
+	
+	$items['dsje/principal1'] = array(
+										'page callback' => 'myprincipal1',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+										
+     $items['dsje/bankbranchitem'] = array(
+										'page callback' => 'mybankbranch',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+									
+									
+	 $items['dsje/notificationlink'] = array(
+										'page callback' => 'sendNotification',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+									
+
+
+
+					
+   return $items;
+ }
+  
+  
+  
+
+  
+function fdrCheque_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjefdrCheque', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	//array('data' => t('Due Date'), 'field' => 'tbl_fdrcheque.date_due', 'sort' => 'asc'),
+	array('data' => t('Registration No.'), 'field' => 'account_no', 'sort' => 'asc'),
+	array('data' => t('Cheque No.'), 'field' => 'cheque_no', 'sort' => 'asc'),
+	array('data' => t('Issued To'), 'field' => 'tbl_fdrcheque.bank_name', 'sort' => 'asc'),
+	//array('data' => t('Status')),
+	array('data' => t('Action'),'class'=>'addeditview'),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of FDR Cheque', 'list/fdrChequeList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid,  tbl_fdrcheque.account_no,tbl_fdrcheque.cheque_no,tbl_fdrcheque.bank_name,tbl_fdrcheque.fdr_status FROM {node}
+	 INNER JOIN tbl_fdrcheque ON (node.nid=tbl_fdrcheque.nid)
+	 INNER JOIN tbl_bank ON (tbl_bank.bank_id=tbl_fdrcheque.bank_name)
+	 INNER JOIN tbl_loanee_detail ON(tbl_loanee_detail.loanee_id = tbl_fdrcheque.account_no)
+	
+	  WHERE  ( UPPER(tbl_fdrcheque.account_no) LIKE '".$val."' OR UPPER(tbl_fdrcheque.cheque_no) LIKE '".$val."' OR UPPER(tbl_bank.bank_name) LIKE '".$val."' OR UPPER(tbl_loanee_detail.reg_number) LIKE '".$val."') ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_fdrcheque ON (node.nid=tbl_fdrcheque.nid)
+	 inner join tbl_bank on (tbl_bank.bank_id=tbl_fdrcheque.bank_name)
+	 INNER JOIN tbl_loanee_detail ON(tbl_loanee_detail.loanee_id = tbl_fdrcheque.account_no)
+
+	 WHERE (  UPPER(tbl_fdrcheque.account_no) LIKE '".$val."' OR UPPER(tbl_fdrcheque.cheque_no) LIKE '".$val."' OR UPPER(tbl_bank.bank_name) LIKE '".$val."' OR UPPER(tbl_loanee_detail.reg_number) LIKE '".$val."')".tablesort_sql($header);
+	 //echo $sqlcount;exit;
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	    $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid, tbl_fdrcheque.account_no,tbl_fdrcheque.cheque_no, bank_name,tbl_fdrcheque.fdr_status FROM {node}
+	 INNER JOIN tbl_fdrcheque ON (node.nid=tbl_fdrcheque.nid)".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/fdrChequeList';
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjefdrCheque', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/fdrChequeList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage('dsjefdrCheque', 'code01', NULL),"node/add/fdrCheque");
+   	$lising = getMessage('dsjefdrCheque', 'code02', NULL);
+	$sendnotify= l(getMessage('dsjefdrCheque', 'code08', NULL),"dsje/notificationlink");
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.''.$sendnotify.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	
+	
+	
+	
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = '';
+		if($rs->fdr_status != 225)
+			$editurl = ' | '.l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewfdrCheque/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/fdrCheque/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = ' | '.l("Delete","admin/dsje/enable/fdrCheque/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  $rko=$rs->account_no;
+if($rko ==''){$rko ='N/A';} else {$rko=getRegNumberByLonee($rs->account_no);}
+		$rows[] = array(
+			array('data' => $counter),
+			//array('data' => date('d-m-Y',strtotime($rs->date_due)),
+			array('data' => $rko),
+			array('data' => $rs->cheque_no),
+            array('data' => ucwords(getBankName($rs->bank_name))),
+         // 	array('data' => $st),
+			array('data' => $viewurl.$editurl.$deleteurl),
+		);
+		
+	  }
+	  
+	}
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	return $output .=theme('pager', NULL, 20,0 );
+  }
+
+function fdrCheque_delete($nid){
+   $node = node_load($nid);
+   $res = db_query("SELECT cheque_no FROM {tbl_fdrcheque} WHERE nid ='".$node->nid."'");
+  $c = db_fetch_object($res);
+  //echo $c->cheque_no;exit;
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("Delete FROM {tbl_fdrcheque} WHERE courtcase_id ='".$courtcase_id."'");
+  db_query("DELETE FROM {tbl_fdrcheque} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  $message=getMessage('dsjefdrCheque','code07',array("0"=>$c->cheque_no));
+  drupal_set_message($message);
+  
+  drupal_goto("list/fdrChequeList");
+ }
+
+function fdrCheque_enable($nid){
+  
+  $node = node_load($nid);
+  $res = db_query("SELECT cheque_no FROM {tbl_fdrcheque} WHERE nid ='".$node->nid."'");
+  $c = db_fetch_object($res);
+ // db_query("UPDATE {tbl_fdrcheque} SET 	statusnodal =1 WHERE nid ='".$node->nid."'");
+  //drupal_set_message('Vehicle Insurance has been enabled successfully.');
+  //drupal_goto("list/fdrChequeList");
+ //echo $c->cheque_no;exit;
+ db_query("DELETE FROM {tbl_fdrcheque} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  
+  $message=getMessage('dsjefdrCheque','code07',array("0"=>$c->cheque_no));
+  drupal_set_message($message);
+  
+  drupal_goto("list/fdrChequeList");
+ }
+
+ 
+ 
+ 
+ function sendNotification(){
+ 
+
+
+ 
+ 
+ $naughtyfication=db_query("select bank_name,bankbranch,cheque_no FROM {tbl_fdrcheque} where notificationstatus='0' ");
+
+///$testing=db_fetch_object($naughtyfication);
+///echo $testing->bank_name;exit;
+ 
+ while($noti=db_fetch_object($naughtyfication)){
+ 
+ $emailification=db_query("select email from {tbl_bankbranch} where bank_id='".$noti->bank_name."' and bankbranch_id='".$noti->bankbranch."'");
+ $emaili=db_fetch_object($emailification);
+ 
+
+ 
+ $parameter = '';
+//$to = $u->mail;
+
+$parameter = json_encode(array(0=>"$noti->cheque_no"));
+
+
+createMail('dsje_fdrbanknotification', $emaili->email,'',$parameter,'');
+ db_query("update {tbl_fdrcheque} set `notificationstatus`='1'");
+ }
+ 	drupal_goto("list/fdrChequeList");
+ 
+ }
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+function mybankbranch() {
+    $bankname= $_POST['bank_name'];
+	
+$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('fdrCheque_form', $form, $form_state);
+
+	
+	
+
+	$form['bankbranch_name'] = array(
+	  '#type' =>'select',
+	  '#title' =>'Bank Branch Address',
+	  '#required' =>TRUE,
+	'#name' => 'bankbranch_name',
+	'#id'=>'edit-bankbranch-name',
+	 '#options'=>selectbankbranchaddress($bankname),
+	);
+	
+
+	$output = drupal_render($form['bankbranch_name']);
+
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+
+function myheadloan2() {
+    $fdr_type= $_POST['fdr_type'];
+	
+$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('fdr_form', $form, $form_state);
+
+if($fdr_type== 227){
+
+$form['prev_account_no']=array(
+		'#type'=>'hidden',
+		'#required'=>FALSE,
+		'#value'=> $found->account_no,
+	'#id'=>'edit-prev_account_no',
+	'#name'=>'prev_account_no',
+		);
+
+$form['account_no'] = array(
+	'#type' => 'textfield',
+	'#title' => t('Registration No.'),
+	'#required' => FALSE,
+//	'#id'=>'edit-account_no',
+//	'#name'=>'account_no',
+	'#value' =>'N/A',
+	'#attributes' => array('readonly' => 'readonly'), 
+	);
+
+}else{
+
+$form['prev_account_no']=array(
+		'#type'=>'hidden',
+		'#required'=>FALSE,
+		'#value'=> $form->account_no,
+	'#id'=>'edit-prev_account_no',
+	'#name'=>'prev_account_no',
+		);
+
+$form['account_no'] = array(
+	'#type' => 'select',
+	'#title' => t('Registration No.'),
+	'#required' => FALSE,
+	'#id'=>'edit-account_no',
+	'#name'=>'account_no',
+	'#value' =>'',
+	'#options' => SelectLoanAccount(), 
+	'#ahah' => array(
+				  'path' => 'dsje/principal1',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'principal1',
+				  ),
+	);
+
+}
+
+	$output = drupal_render($form['account_no']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+function myprincipal1() {
+    $account_no= $_POST['account_no'];
+	
+$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('fdr_form', $form, $form_state);
+
+	$val3=db_query("select reg_number from {tbl_loanee_detail} where loanee_id='".$account_no."'");
+	$val4=db_fetch_object($val3);
+
+$val2=db_query("select loan_requirement,scheme_name from {tbl_loan_detail} where reg_number='".$val4->reg_number."'");
+$val0=db_fetch_object($val2);
+
+$val5=db_query("select MMD_FDR from {tbl_scheme_master} where loan_scheme_id='".$val0->scheme_name."'");
+
+/*$val1=db_query("select loan_requirement,MMD_FDR from {tbl_loanee_detail},tbl_loan_detail,tbl_scheme_master 
+inner join tbl_loanee_detail on (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+inner join tbl_scheme_master on (tbl_scheme_master.loan_scheme_id=tbl_loan_detail.scheme_name)
+where loanee_id='".$account_no."'");
+*/
+$value=db_fetch_object($val5);
+if(!empty($value->MMD_FDR)){
+
+$princi= ($val0->loan_requirement)*(($value->MMD_FDR)/100);
+}else{$princi=0;}
+$form['amount'] = array(
+	'#type' => 'textfield',
+	'#title' => t('Principal Amount'),
+	'#required' => FALSE,
+	'#value' =>round($princi,2),
+	'#id'=>'edit-amount',
+	'#maxlength'=>11,
+	'#attributes'=>array('readonly'=>'readonly'),
+	'#name'=>'amount',
+	);
+
+
+
+
+	$output = drupal_render($form['amount']);
+	
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+
+
+
+
+
+function fdrCheque_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of FDR Cheque', 'list/fdrChequeList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit FDR Cheque ', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add FDR Cheque ', 'node/add/fdrCheque'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  
+	if(is_numeric(arg(1))){
+	$sql = "SELECT * FROM {node} INNER JOIN tbl_fdrcheque ON (node.nid=tbl_fdrcheque.nid) WHERE node.nid=".arg(1);
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+		if($rs->fdr_status == 225)
+		{
+			form_set_error('fdr_type','You are not authorised to access this page.');
+			drupal_goto('list/fdrChequeList');
+		}
+	}
+		
+	////////////////////////////////////
+	if(($rs->fdr_type)=='227'){
+	$form['account_no'] = array(
+	'#type' => 'select',
+	'#title' => t('Registration No.'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->account_no,
+		//'#id'=>'edit-account_no',
+		);
+		}
+	
+	$form['fdr_type'] = array(
+	'#type' => 'select',
+	'#title' => t('FDR Type'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->fdr_type,
+	'#options' => SelectfdrType(), 
+	'#attributes' => array('onchange'=> 'return showbank(this.value,"'.$base_url.'")'),
+		'#ahah' => array(
+				  'path' => 'dsje/headloan2',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'headloan2',
+				  ),
+	);
+	
+	$acc=db_query("select account_no from {tbl_fdr} where nid='".$rs->nid."'");
+$acc1=db_fetch_object($acc);
+
+	
+
+$form['prev_account_no']=array(
+		'#type'=>'hidden',
+		'#required'=>FALSE,
+		'#default_value'=> $rs->account_no,
+		);
+	 
+
+if(($rs->fdr_type)!='227'){
+	$form['account_no'] = array(
+	'#type' => 'select',
+	'#title' => t('Registration No.'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->account_no,
+		'#id'=>'edit-account_no',
+	'#options' => SelectLoanAccount(), 
+	'#ahah' => array(
+				  'path' => 'dsje/principal1',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'principal1',
+				  ),	
+	);
+	}
+	$form['prev_cheque_no']=array(
+		'#type'=>'hidden',
+		'#required'=>FALSE,
+		'#default_value'=> $rs->cheque_no,
+		);
+	 
+	 $form['cheque_no'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Cheque No.'),
+	 '#required' =>FALSE,
+	 '#size' =>6,
+	 '#maxlength'=>6,
+	 //'#minlenght'=>6,
+	 '#default_value' => $rs->cheque_no,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );	
+		
+	$form['bank_name'] = array(
+	'#type' => 'select',
+	'#title' => t('Issued to (Bank)'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->bank_name,
+	'#options' =>selectbank(), 
+	'#ahah' => array(
+				  'path' => 'dsje/bankbranchitem',
+				  'method' => 'replace',
+				  'effect' => 'fade',
+				  'wrapper' =>'bankbranchchange',
+	),
+	);
+	
+if($node->nid){
+	$options = selectbankbranchaddresses($rs->bank_name);
+}else{
+	$options = array(''=>'--Select--');	;
+}
+
+
+
+	$form['bankbranch_name'] = array(
+	  '#type' =>'select',
+	  '#title' =>'Bank Branch Address',
+	  '#default_value'=> $rs->bankbranch,
+	  '#id'=>'edit-bankbranch-name',
+	  '#required' => TRUE,
+	  ///'#options'=>selectbankbranchaddresses($rs->bank_name),
+	  //'#required' =>TRUE,
+		
+	'#options'=>$options,	
+		
+		
+	);
+	
+	
+ $form['amount'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Amount'),
+	 '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $rs->amount,
+	 '#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"edit-amount",11)'),	
+  );
+
+
+$form['cheque_status'] = array(
+	'#type' => 'select',
+	'#title' => t('Cheque Status'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->cheque_status,
+	'#options' => SelectChequeStatus(), 
+	);
+
+$form['fdr_status'] = array(
+	'#type' => 'select',
+	'#title' => t('FDR Status'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->fdr_status,
+	'#options' => SelectFDRStatus(), 
+	);
+
+
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/fdrChequeList'),	
+);
+
+
+return $form;
+} 
+
+
+function getchequeNo($cheque_no){
+  $sql = "select * FROM {tbl_fdrcheque} where cheque_no='".$cheque_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->cheque_no=='' )
+  return 0;
+  else 
+  return $rs;
+   
+}
+
+function getchequeNo_edit($cheque_no,$prev_cheque_no){
+  $sql = "select * FROM {tbl_fdrcheque} where cheque_no='".$cheque_no."' AND cheque_no != '".$prev_cheque_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->cheque_no=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+
+
+
+
+function getregNo($cheque_no){
+  $sql = "select * FROM {tbl_fdrcheque} where account_no='".$cheque_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->account_no=='' )
+  return 0;
+  else 
+  return $rs;
+   
+}
+
+function getregNo_edit($cheque_no,$prev_cheque_no){
+  $sql = "select * FROM {tbl_fdrcheque} where account_no='".$cheque_no."' AND reg_no != '".$prev_reg_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->account_no=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+
+function getgetregno($loanee_id){
+
+$koi=db_query("select reg_number from {tbl_loanee_detail} where loanee_id='".$loanee_id."'");
+$ko=db_fetch_object($koi);
+
+return ($ko->reg_number);
+
+}
+
+
+function fdrCheque_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of FDR', 'list/fdrChequeList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit FDR Cheque ', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add FDR Cheque ', 'node/add/fdrCheque');
+	}
+	if($array[1] == 'add'){
+	$breadcrumb[] = l('Add FDR Cheque ', 'node/add/fdrCheque');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+	
+$prev_cheque_no=$form->prev_cheque_no;
+	$cheque_no=$form->cheque_no;
+$regno=$form->account_no;
+$fdrtype=$form->fdr_type; 
+	if($regno=='' && $fdrtype !=227){form_set_error('account_no',t('Registration No. should not be empty.'));}
+
+$banknamee=$node->bank_name;
+//selectbankbranchaddress($banknamee);
+
+
+	
+$reg_no=$form->account_no;
+$prev_reg_no=$form->prev_account_no;
+
+
+
+
+if($prev_reg_no == ''){
+	 $statusid = getregNo($reg_no); 
+		if($statusid){
+		form_set_error('account_no','For Reg. No. '.getgetregno($reg_no).' FDR is already done.');
+		
+		}
+		}
+		else {
+	 $statusid = getregNo_edit($reg_no,$prev_reg_no); 
+		if($statusid){
+		form_set_error('account_no',' Reg. No. '.getgetregno($reg_no).' already exist.');
+		
+		}
+		
+		}
+//echo '<pre>';
+//print_r($form);exit;
+if($prev_cheque_no == ''){
+
+	if(strlen($cheque_no) < 6 && $form->fdr_type != '227')
+	{
+		form_set_error('cheque_no',t('Cheque Number field is mandatory and should be 6 digits long .'));
+	}
+	 $statusid = getchequeNo($cheque_no); 
+		if($statusid){
+		form_set_error('cheque_no',$cheque_no.t(' Cheque Number already exist.'));
+		
+		}
+		}
+		else {
+	 $statusid = getchequeNo_edit($cheque_no,$prev_cheque_no); 
+		if($statusid){
+		form_set_error('cheque_no',$cheque_no.t(' Cheque Number already exist.'));
+		
+		}
+		
+		}
+	fononlyn('cheque_no',$form->cheque_no,'Cheque No.');
+	paypay('amount',$form->amount,'Amount');
+	
+	
+
+
+	
+	 
+}
+
+/**
+ *hook_form_alter
+ */
+function fdrCheque_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='fdrCheque_node_form'){
+	 
+	 $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	 
+	 
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function fdrCheque_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+  $account_no= $node->account_no;
+  $cheque_no = $node->cheque_no;
+	$bank_name = $node->bank_name;
+
+    $amount = $node->amount;
+    $cheque_status = $node->cheque_status;
+   $fdr_status = $node->fdr_status;
+	
+    $bankbranch=$node->bankbranch_name;
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   
+   $fdr_type=$node->fdr_type;
+
+db_query ("INSERT INTO {tbl_fdrcheque} (`notificationstatus`,`bankbranch`,`vid`, `nid`,`account_no`,`cheque_no`,`fdr_type`, `bank_name`,`amount`,`cheque_status`,`fdr_status`) VALUES ('0','".$bankbranch."','".$vid."','".$nid."','".$account_no."','".$cheque_no."','".$fdr_type."','".$bank_name."','".$amount."','".$cheque_status."','".$fdr_status."')");
+
+
+	
+  //  drupal_set_message('Vehicle Insurance Entry has been saved successfully.');
+	$message=getMessage('dsjefdrCheque','code05',array("0"=>$node->cheque_no));
+  drupal_set_message($message);
+	drupal_goto("list/fdrChequeList");
+
+ 
+ 
+ }
+
+function fdrCheque_update($node){
+	
+	
+	    $account_no= $node->account_no;
+  $cheque_no = $node->cheque_no;
+	$bank_name = $node->bank_name;
+
+    $amount = $node->amount;
+    $cheque_status = $node->cheque_status;
+   $fdr_status = $node->fdr_status;
+	
+ $bankbranch=$node->bankbranch_name;
+    
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+     $fdr_type=$node->fdr_type;
+	
+	
+	db_query("update {tbl_fdrcheque} SET `bankbranch`='".$bankbranch."',`account_no`='".$account_no."',`cheque_no`='".$cheque_no."',`bank_name`='".$bank_name."',`amount`='".$amount."',`cheque_status`='".$cheque_status."',`fdr_status`='".$fdr_status."',`fdr_type`='$fdr_type' WHERE nid='".$nid."'");
+	
+	
+	//drupal_set_message('FDR Cheque Details have been updated successfully.');
+	
+	$message=getMessage('dsjefdrCheque','code06',array("0"=>$node->cheque_no));
+  drupal_set_message($message);
+	drupal_goto("list/fdrChequeList");
+	
+	
+}
+
+
+function fdrCheque_theme() {
+	
+	return array(
+				 
+		'fdrCheque_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'fdrCheque_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+
+
+/*function fdrCheque_cron(){
+
+//$curr_date=date();
+$start=date('Y-m-d');
+
+$selDate=db_query("select * FROM {tbl_fdrcheque} ");
+
+while($rs=db_fetch_object($selDate)){
+
+$date_diff=dateDiffByDays($start,$rs->date_to);
+
+if($date_diff==15 && $rs->remind_mail==0 && $rs->notification==84){
+
+
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+//$to = $u->mail;
+	$finduid=db_query("select * from {users_roles} where rid=13");
+$reg_no=db_fetch_object($reg);
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from users where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+if(createMail('fdrCheque', $ms->mail,'',$parameter,''))
+{
+$reminder= $rs->remind_mail + 1;
+db_query("update {tbl_fdrcheque} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+
+}
+}
+}
+
+else if($date_diff==3 && $rs->remind_mail==1 && $rs->notification==84){
+
+
+
+
+//$to = $u->mail;
+	
+	$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+	$reg_no=db_fetch_object($reg);
+	$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from users where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('fdrCheque', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->remind_mail + 1;
+db_query("update {tbl_fdrcheque} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+}}
+
+}
+
+
+else if($date_diff==0 && $rs->remind_mail <= 3 && $rs->notification==84){
+
+
+
+
+
+
+//$to = $u->mail;
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+$reg_no=db_fetch_object($reg);
+$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from users where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('fdrCheque_today', $ms->mail,'',$parameter,'')){
+$reminder= $rs->remind_mail + 1;
+db_query("update {tbl_fdrcheque} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+} 
+
+}
+}}
+
+
+}
+
+
+
+
+
+function fdrCheque_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_fdrcheque ON (node.nid=tbl_fdrcheque.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+ */ 
+function view_fdrCheque($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of FDR Cheque', 'list/fdrChequeList');
+   if($array[0] == 'viewfdrCheque'){
+     $breadcrumb[] = l('View FDR Cheque Details', 'viewfdrCheque/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * FROM {tbl_fdrcheque} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from users where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+//$add_type=getLookupName($rs->add_type);
+//$regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+//$regno= db_fetch_object($regnowa);
+//$notification=getLookupName($rs->notification);
+
+$bankadd=db_query("select bankbranch_name from tbl_bankbranch where bankbranch_id='".$rs->bankbranch."'");
+$addbank=db_fetch_object($bankadd);
+//echo $addbank->bankbranch_name;exit;
+
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-conatiner">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>FDR Cheque Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">FDR Type:</td><td class="normal"> '.ucwords(getLookupName($rs->fdr_type)).'</td></tr>';
+if(!empty($rs->account_no)){
+$output .='<tr class="oddrow"><td width="50%">Registration No.:</td><td class="normal"> '.getRegNumberByLonee($rs->account_no).'</td></tr>';
+}else{
+$output .='<tr class="oddrow"><td width="50%">Registration No.:</td><td class="normal"> N/A</td></tr>';
+
+}
+
+$output .='<tr class="evenrow"><td width="50%">Cheque No.:</td><td class="normal">'.$rs->cheque_no.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Issued To(Bank):</td><td class="normal"> '.ucwords(getBankName($rs->bank_name)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Bank Branch Address:</td><td class="normal"> '.ucwords($addbank->bankbranch_name).'</td></tr>';
+//$output .='<tr class="oddrow" colspan="2"><td>PERIOD</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Amount:</td><td class="normal"> '.round($rs->amount).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Cheque Status:</td><td class="normal">'.ucwords(getLookupName($rs->cheque_status)).'</td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">Due Date:</td><td class="normal">'.$rs->date_due.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">FDR Status:</td><td class="normal">'.ucwords(getLookupName($rs->fdr_status)).'</td></tr>';
+
+$output .='<tr class="evenrow"><td align="center" class="back" colspan="2">'.l(t('Back'), 'list/fdrChequeList').'</td></tr>'; 
+ $output .='</table>';
+return $output ;
+}

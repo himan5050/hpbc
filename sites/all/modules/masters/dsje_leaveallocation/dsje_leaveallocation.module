@@ -1,0 +1,581 @@
+
+
+<?php
+session_start();
+function dsje_leaveallocation_init() {
+	drupal_add_css(drupal_get_path('module', 'dsje_leaveallocation') .'/dsje_leaveallocation.css');
+
+	
+}
+
+function dsje_leaveallocation_perm() {
+	return array('edit dsje_leaveallocation','administer dsje_leaveallocation', 'create dsje_leaveallocation', 'view dsje_leaveallocation');
+}
+
+function dsje_leaveallocation_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_leaveallocation', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_leaveallocation', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_leaveallocation', $account);
+	}
+}
+
+function dsje_leaveallocation_menu() {
+	
+	
+	$items['dsje/list-leaveallocation'] = array(
+										'title' => t('List of Leave Allocation'),
+										'description' => 'Allow user to View Holidays',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewleaveallocation',
+										'access arguments' => array('administer dsje_leaveallocation'),
+													 
+									  );
+	
+	$items['dsje/list-leaveallocation/addleaveallocation'] = array(
+										'title' => t('Add Leave Allocation'),
+										'description' => 'Allow user to add Leave Allocation',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addleaveallocation',
+										'access arguments' => array('administer dsje_leaveallocation'),
+													 
+									  );
+   	$items['dsje/list-leaveallocation/edit/leaveallocation/%'] = array(
+								
+	                                    'title' => t('Edit Leave Allocation'),
+										'description' => 'Allow user to edit Leave Allocation',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_editleaveallocation',
+                                        'page arguments' => array(4),  
+		                                'access arguments' => array('administer dsje_leaveallocation'),
+													 
+									  );
+ $items['dsje/list-leaveallocation/view/leaveallocation/%'] = array(
+								
+	                                    'title' => t('View Leave Allocation'),
+										'description' => 'Allow user to view Leave Allocation',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_viewleaveallocation',
+                                        'page arguments' => array(4), 
+		                                'access arguments' => array('administer dsje_leaveallocation'),
+													 
+									  );
+
+      $items['dsje/del/leaveallocation/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'leaveallocation_delete',
+		                                'page arguments' => array(3),
+		                                'access arguments' => array('administer dsje_leaveallocation'),
+													 
+									  );
+      $items['dsje/enable/leaveallocation/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'leaveallocation_enable',
+		                                'page arguments' => array(3),
+		                                'access arguments' => array('administer dsje_leaveallocation'),
+													 
+									  );
+	  $items['search-leaveallocation-list'] = array(
+										'title' => '',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'search_leaveallocation',
+										//'page arguments' => array(1),
+										'access arguments' => array('administer dsje_leaveallocation'),
+									);
+
+	return $items;
+}
+
+
+/** listing states */
+//function viewcast(){
+	
+	
+	
+function leaveallocation_search_form(){
+	//session_start();
+$form['status']=array(
+'#type'=>'select',
+'#title'=>t('Status'),
+'#required'=>FALSE,
+'#default_value'=>$_SESSION['status'],
+'#options'=>array(''=>'--Select--','0'=>'Disabled','1'=>'Enabled'),
+
+);
+
+$form['search_box']=array(
+	'#type' => 'textfield',
+	'#title' => '',
+	'#required' => FALSE,
+	'#size' => 55,
+	'#default_value'=>$_SESSION['search_box'],
+	//'#prefix' => '<div class="listsearchie7_leave">',
+//'#attributes' =>array('onkeypress' => 'return onlychar(event)'),
+);
+
+$form['search'] = array(
+	'#type' => 'submit',
+	'#value' =>t('Search'),
+	//'#suffix' => '</div>'	
+);
+return $form;
+}
+
+
+
+function leaveallocation_search_form_validate($form,&$form_state){
+ /*if(is_numeric($form_state['values']['search_box'])){
+	// form_set_error('search_box', 'Please enter Alphabetic value only.');
+ 
+ }*/
+
+}
+function leaveallocation_search_form_submit($form, &$form_state){
+
+//echo '<pre>';
+//print_r($form_state);
+//exit;
+
+$status = $form_state['values']['status'];
+$keydata = $form_state['values']['search_box'];
+$_SESSION['status']=$status;
+$_SESSION['search_box']=$keydata;
+
+drupal_goto('search-leaveallocation-list');
+
+
+
+}
+function viewleaveallocation(){
+unset($_SESSION['status']);
+unset($_SESSION['search_box']);
+
+$sql = "select tbl_leaveallocation.leavetype_id as leavetype_id,tbl_leaveallocation.leavetype_name as leavetype_name,tbl_leaveallocation.status as status,tbl_leaveallocation.no_of_leave as no_of_leave,tbl_leavetype.leave_name from {tbl_leaveallocation} INNER JOIN tbl_leavetype ON(tbl_leaveallocation.leavetype_name=tbl_leavetype.leave_id)";
+$output = listleaveallocation($sql);
+return $output;
+}
+
+function search_leaveallocation(){
+$status=$_SESSION['status'];
+ $keydata=$_SESSION['search_box'];
+//echo 'status'.$status;
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);	
+if((($status == 0 || $status == 1) && $status != '') && $keydata==''){
+   $sql = "select tbl_leaveallocation.leavetype_id as leavetype_id, tbl_leaveallocation.leavetype_name as leavetype_name,tbl_leaveallocation.status as status,tbl_leaveallocation.no_of_leave as no_of_leave,tbl_leavetype.leave_name from {tbl_leaveallocation} INNER JOIN tbl_leavetype ON(tbl_leaveallocation.leavetype_name=tbl_leavetype.leave_id) WHERE tbl_leaveallocation.status='".$status."' GROUP BY tbl_leaveallocation.leavetype_id";
+}
+else if((($status == 0 || $status == 1) && $status != '') && $keydata){
+   $sql = "select tbl_leaveallocation.leavetype_id as leavetype_id, tbl_leaveallocation.leavetype_name as leavetype_name,tbl_leaveallocation.status as status,tbl_leaveallocation.no_of_leave as no_of_leave,tbl_leavetype.leave_name from {tbl_leaveallocation} INNER JOIN tbl_leavetype ON(tbl_leaveallocation.leavetype_name=tbl_leavetype.leave_id) WHERE (tbl_leavetype.leave_name LIKE '".$val."' OR tbl_leaveallocation.no_of_leave LIKE '".$val."') AND tbl_leaveallocation.status='".$status."' GROUP BY tbl_leaveallocation.leavetype_id ";
+
+}
+ else if($keydata && $status==''){
+    $sql = "select tbl_leaveallocation.leavetype_id as leavetype_id,tbl_leaveallocation.leavetype_name as leavetype_name,tbl_leaveallocation.status as status,tbl_leaveallocation.no_of_leave as no_of_leave,tbl_leavetype.leave_name as leave_name from {tbl_leaveallocation} INNER JOIN tbl_leavetype ON(tbl_leaveallocation.leavetype_name=tbl_leavetype.leave_id) WHERE (tbl_leavetype.leave_name LIKE '".$val."' OR tbl_leaveallocation.no_of_leave LIKE '".$val."') GROUP BY tbl_leaveallocation.leavetype_id";
+ 
+}
+ 
+
+$output =listleaveallocation($sql);
+return $output;
+//echo $keydata;
+}
+
+function listleaveallocation($sqlquery){
+
+//$_SESSION['status']=$status;
+//$_SESSION['search_box']=$keydata;
+
+$header = array(
+	array('data' => t('S. No')),
+	array('data' => t('Leave Type Name'), 'field' => 'tbl_leaveallocation.leavetype_name', 'sort' => 'asc'),
+	array('data' => t('Total No. of Leaves'), 'field' => 'tbl_leaveallocation.no_of_leave', 'sort' => 'asc'),
+	//array('data' => t('End Date') ,'field' => 'tbl_leaveallocation.end_date', 'sort' => 'asc'),
+	array('data' => t('Status'),'field' => 'tbl_leaveallocation.status', 'sort' => 'asc'),
+	array('data' => t('Actions'), 'class' => 'addeditview'),
+		
+	);
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+   if($array[0] == '' ) {
+   $breadcrumb[] = l('List of Leave Allocation', 'dsje/list-leaveallocation');
+	}  
+drupal_set_breadcrumb($breadcrumb);
+
+$sql = $sqlquery.tablesort_sql($header);
+
+$limit =(int)getMessage('dsjeleaveallocation', 'code04', NULL);
+$count_query = "SELECT COUNT(*) as mycount FROM (" . $sql . ") AS count_query ";
+$cres = db_query($count_query);
+$crs = db_fetch_object($cres);
+$totalcount = $crs->mycount;
+$result = pager_query($sql,$limit, 0, $count_query);
+//$result = pager_query($sql, 10, 0, $count_query);
+
+if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+
+if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	  
+		
+		$counter++;
+
+		if($rs->status==1){
+		  $deleteurl = l("Disable","dsje/del/leaveallocation/".$rs->leavetype_id);
+        }else{
+		  $deleteurl = l("Enable","dsje/enable/leaveallocation/".$rs->leavetype_id);
+		
+		}
+
+		if($rs->status ==1){
+	$status ='Enabled';
+	}else{
+	$status ='Disabled';
+	}
+		
+		$viewlink = l('View','dsje/list-leaveallocation/view/leaveallocation/'.$rs->leavetype_id);
+		$editlink = l('Edit','dsje/list-leaveallocation/edit/leaveallocation/'.$rs->leavetype_id);
+		//$newdate = date("d-m-Y" ,$rs->dateofupload);
+		$rows[] = array(
+			array('data' => $counter),
+			//array('data' => ucwords(getleavename($rs->leavetype_name))),
+		array('data' => ucwords($rs->leave_name)),
+			array('data' => $rs->no_of_leave),
+           // array('data' => date("d-m-Y",strtotime($rs->end_date))),
+            array('data' => $status),
+			array('data' => $viewlink.' | '.$editlink.' | '.$deleteurl),
+          
+		);
+	  }
+}
+
+
+
+
+ if($rows== NULL)
+	$header=NULL;
+      $title = t(getMessage('dsjeleaveallocation', 'code02',NULL));
+	  $records = t(getMessage('dsjeleaveallocation', 'code03', array("0"=>$totalcount)));
+
+	 if(arg(0)=='search-leaveallocation-list'){
+	 $output .='<table  id="wrapper" class="searchrecord"><tr><td>'.$records.' | '.l('View All','dsje/list-leaveallocation').'</td></tr></table>';
+	 }
+	 $output .='<table id="wrapper"><tr><td class="tblHeaderLeft">'.$title.'<span class="addrecord">'.l('Add Leave Allocation','dsje/list-leaveallocation/addleaveallocation').'</span></td><td align="right" class="tblHeaderRight leaveallocation">'.drupal_get_form('leaveallocation_search_form').'</td></tr></table>';
+	$output .=theme_table($header,$rows);	
+	$output .=theme('pager', NULL, 1,0);
+
+
+   //$output .= $rscounter->countno;
+	return $output;
+  }
+
+function leavelist2(){
+global $user;
+ //$use="select leave_id, leave_name FROM {tbl_leavetype} where status=1 AND leave_id IN(select leavetype_name from {tbl_leaveallocation} where status=1)  ORDER BY leave_name ASC";
+ $use="select leave_id, leave_name FROM {tbl_leavetype} where status=1 ORDER BY leave_name ASC";
+$usq = db_query($use);
+$leave = array(''=>'--Select--');
+ while($usre = db_fetch_array($usq)){
+ $leave_id=$usre['leave_id'];
+   $leave[$leave_id] = ucfirst($usre['leave_name']);
+  }
+ 
+  return $leave;
+}
+ 
+function dsje_addleaveallocation(){
+ return drupal_get_form('dsje_leaveallocation_form');
+}
+
+/**
+ *form creation
+ */
+
+function dsje_leaveallocation_form() {
+  $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Leave Allocation', 'dsje/list-leaveallocation');
+  $breadcrumb[] = l('Add Leave Allocation', 'dsje/list-leaveallocation/addleaveallocation');
+  
+
+  drupal_set_breadcrumb($breadcrumb);
+
+	/*$form['leavetype_name'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('Leave Type Name'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);*/
+
+$form['leavetype_name'] = array(
+	'#type'=>'select',
+	'#title'=>t('Leave Type Name'),
+	'#default_value'=>'',
+	'#required'=>TRUE,
+	'#options'=>leavelist2(),
+
+	);
+
+	$form['no_of_leave'] = array(
+	'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('Total no. of Leaves'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#maxlength'=>3,
+		'#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	);
+	
+	
+	
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/list-leaveallocation'),
+	
+);
+
+$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+/**
+ *submit handler
+ */
+
+function dsje_leaveallocation_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $leavetype_name =$values['leavetype_name'];
+    $no_of_leave = $values['no_of_leave'];
+    $timestamp = time();
+	$status = 1;
+	
+   db_query("INSERT INTO {tbl_leaveallocation} (leavetype_name,no_of_leave,status,timestamp) VALUES('".$leavetype_name."','".$no_of_leave."', '".$status."','".$timestamp."') ");
+	$message = getMessage('dsjeleaveallocation', 'code05', array("0"=>ucwords(getleavename($leavetype_name))));
+	drupal_set_message($message);
+	drupal_goto('dsje/list-leaveallocation');
+	
+}
+
+function dsje_leaveallocation_form_validate($form, &$form_state) {
+global $user;
+	$values = $form_state['values'];
+    $leavetype_name =$values['leavetype_name'];
+	 $no_of_leave = $values['no_of_leave'];
+	$sql="select * from {tbl_leaveallocation} where leavetype_name= '".$leavetype_name."' ";
+	$res=db_query($sql);
+	
+	if($rs=db_fetch_object($res)){
+		form_set_error('leavetype_name','Leave Type Name '.ucwords(getleavename($leavetype_name)).' already exist');
+	}
+
+  if(($no_of_leave == 0) && $no_of_leave!='')
+  {
+	  form_set_error('no_of_leave','No of leave Should Be Greater Than 0');
+  }
+
+	
+}
+
+
+
+function dsje_editleaveallocation($id){
+ return drupal_get_form('dsje_leaveallocation_form_edit',$id);
+}
+
+function dsje_leaveallocation_form_edit($form_state,$id) {
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Leave Allocation', 'dsje/list-leaveallocation');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Leave Allocation', 'dsje/list-leaveallocation/edit/leaveallocation/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+	
+$sql = "select * from {tbl_leaveallocation} where leavetype_id ='".$id."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+	
+
+	$form['leavetype_name'] = array(
+	'#type'=>'select',
+	'#title'=>t('Leave Type Name'),
+	'#default_value' =>$rs->leavetype_name,
+	'#required'=>TRUE,
+	'#options'=>leavelist(),
+
+	);
+
+	$form['no_of_leave'] = array(
+	'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('Total no. of Leaves'),
+		'#required' => TRUE,
+		'#default_value' =>$rs->no_of_leave,
+		'#maxlength'=>3,
+		'#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	);
+		
+	$form['leavetype_id'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $id,
+		
+	);
+
+
+$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/list-leaveallocation'),
+	
+);
+	
+	$form['submit'] = array(
+	'#type' => 'submit',
+	'#default_value' => t('Save')
+	);
+	return $form;
+}
+function dsje_leaveallocation_form_edit_validate($form, &$form_state) { 
+  global $user;
+	$values = $form_state['values'];
+    $leavetype_name =$values['leavetype_name'];
+	 $no_of_leave =$values['no_of_leave'];
+	$leavetype_id = $values['leavetype_id'];
+	
+	$sql="select * from {tbl_leaveallocation} where leavetype_name= '".$leavetype_name."' AND leavetype_id !='".$leavetype_id."' ";
+	$res=db_query($sql);
+	
+	if($rs=db_fetch_object($res)){
+		form_set_error('leavetype_name','Leave Type Name '.ucwords(getleavename($leavetype_name)).' already exist');
+	}
+  if(($no_of_leave == 0) && $no_of_leave!='')
+  {
+	  form_set_error('no_of_leave','No of leave Should Be Greater Than 0');
+  }
+
+
+} 
+
+function dsje_leaveallocation_form_edit_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $leavetype_name =$values['leavetype_name'];
+    $no_of_leave = $values['no_of_leave'];
+	 $leavetype_id = $values['leavetype_id'];
+	 $timestamp =time();
+	$status = 1;
+// db_query("INSERT INTO {tbl_leaveallocation} (holidays_name,start_date,end_date,status) VALUES('".$holidays_name."','".$start_date."','".$end_date."', '".$status."') ");
+    db_query("UPDATE {tbl_leaveallocation} SET timestamp='".$timestamp."', leavetype_name='".$leavetype_name."', no_of_leave='".$no_of_leave."',status=1 where leavetype_id='".$leavetype_id."'");
+	$message = getMessage('dsjeleaveallocation', 'code10', array("0"=>ucwords(getleavename($leavetype_name))));
+	drupal_set_message($message);
+	drupal_goto('dsje/list-leaveallocation');
+	
+}
+
+/**
+ *hook_theme
+ */
+function dsje_leaveallocation_theme() {
+	
+	return array(
+				 
+		'dsje_leaveallocation_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_leaveallocation_form',
+                                 ),
+        'dsje_leaveallocation_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_leaveallocation_form_edit',
+                                 ),
+
+				 );
+}
+
+
+
+
+ function leaveallocation_delete($id){
+	$leavetype_id =  $id;
+	
+	db_query("UPDATE {tbl_leaveallocation} SET status=0 WHERE leavetype_id ='".$leavetype_id."'");
+	$sql = "select leavetype_name from {tbl_leaveallocation} where leavetype_id='".$leavetype_id."'";
+	$res = db_query($sql);
+	$rs= db_fetch_object($res);
+
+	$message = getMessage('dsjeleaveallocation', 'code07', array("0"=>ucwords(getleavename($rs->leavetype_name))));
+	drupal_set_message($message);
+   
+	drupal_goto("dsje/list-leaveallocation");
+ }
+
+  function leaveallocation_enable($id){
+	$leavetype_id =  $id;
+	db_query("UPDATE {tbl_leaveallocation} SET status=1 WHERE leavetype_id ='".$leavetype_id."'");
+	$sql = "select leavetype_name from {tbl_leaveallocation} where leavetype_id='".$leavetype_id."'";
+	$res = db_query($sql);
+	$rs= db_fetch_object($res);
+	$message = getMessage('dsjeleaveallocation', 'code09', array("0"=>ucwords(getleavename($rs->leavetype_name))));
+	drupal_set_message($message);
+	drupal_goto("dsje/list-leaveallocation");
+ }
+
+
+ 
+
+  
+
+
+function dsje_viewleaveallocation($id){
+	
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Leave Allocation', 'dsje/list-leaveallocation');
+  if($array[2] == 'view'){
+     $breadcrumb[] = l('View Leave Allocation', 'dsje/list-leaveallocation/view/leaveallocation/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from {tbl_leaveallocation} where leavetype_id = $id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+	$status ='Enabled';
+	}else{
+	$status ='Disabled';
+	}
+	 
+
+	$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+	$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Leave Allocation Details</h2></td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">Leave Type Name:</td><td class="normal">'.ucwords(getleavename($rs->leavetype_name)).'</td></tr>';	
+	$output .='<tr class="oddrow"><td width="50%">No. of Leave:</td><td class="normal">'.$rs->no_of_leave.'</td></tr>';
+	//$output .='<tr class="evenrow"><td width="50%">End Date:</td><td class="normal">'.date("d-m-Y",strtotime($rs->end_date)).'</td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+	$output .='<tr class="oddrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'dsje/list-leaveallocation').'</td></tr>';
+	$output .='</table>';
+
+	return $output;
+}	
+
+
+

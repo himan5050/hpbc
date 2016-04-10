@@ -1,0 +1,326 @@
+<?php
+
+function rec_nametitle_init() {
+	//drupal_add_css(drupal_get_path('module', 'rec_utility') .'/rec_utility.css');
+	
+}
+
+
+function rec_nametitle_perm() {
+	return array('edit rec_nametitle','administer rec_nametitle', 'create rec_nametitle', 'view rec_nametitle');
+}
+
+function rec_nametitle_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit rec_nametitle', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create rec_nametitle', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view rec_nametitle', $account);
+	}
+	
+}
+
+function rec_nametitle_menu() {
+	
+	
+	$items['admin/rec/listnametitle'] = array(
+										'title' => t('Saluation Title'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewnametitle',
+										'access arguments' => array('administer rec_nametitle'),
+													 
+									  );
+	
+	$items['admin/rec/listnametitle/addnametitle'] = array(
+										'title' => t('Saluation Title'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_nametitle',
+										'access arguments' => array('administer rec_nametitle'),
+													 
+									  );
+   	$items['admin/rec/listnametitle/edit/nametitle/%'] = array(
+								
+										'title' => t('Edit Saluation Title'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addnametitleedit',
+                                        'page arguments' =>array(5),
+		                                'access arguments' => array('administer rec_nametitle'), 
+									  );
+   $items['admin/rec/listnametitle/view/nametitle/%'] = array(
+								
+										'title' => t('View Saluation Title'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addnametitleview',
+                                        'page arguments' =>array(5),
+		                                'access arguments' => array('administer rec_nametitle'), 
+									  );
+
+										  
+	return $items;
+}
+
+
+/**
+ listing nametitle
+ */
+ function viewnametitle(){
+ 	global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage( 'recNametitle', 'code04', NULL);
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('Title'), 'field' => 'nametitle_name', 'sort' => 'asc'),
+		array('data' => t('Action')),
+	);
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	 $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT nametitle_id, nametitle_name FROM tbl_nametitle where UPPER(nametitle_name) LIKE '".$val."'".tablesort_sql($header);
+	 $sqlcount = "SELECT COUNT(*) AS count FROM tbl_nametitle where UPPER(nametitle_name) LIKE '".$val."'".tablesort_sql($header);
+	 $rscount = db_query($sqlcount);
+	 $rscounter = db_fetch_object($rscount);
+	}else{
+	  $query = "SELECT nametitle_id, nametitle_name FROM tbl_nametitle ".tablesort_sql($header);
+	}
+	$output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'recNametitle', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/rec/listnametitle');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'recNametitle', 'code01', NULL),"admin/rec/listnametitle/addnametitle");
+   	$lising = getMessage( 'recNametitle', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query,$limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+	
+		$counter++;
+		$editurl = l("Edit","admin/rec/listnametitle/edit/nametitle/".$row->nametitle_id);
+		$viewurl = l("View","admin/rec/listnametitle/view/nametitle/".$row->nametitle_id);
+		
+		
+	
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->nametitle_name)),
+			array('data' => $viewurl."|".$editurl),
+		);
+	}
+
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function rec_addnametitleedit($nametitle_id){
+ return drupal_get_form('rec_nametitle_form_edit',$nametitle_id);
+}
+
+function rec_nametitle_form_edit($form_state,$nametitle_id) {
+	$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of Salutation Title', 'admin/rec/listnametitle');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Salutation Title', 'admin/rec/listnametitle/edit/nametitle');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+   
+	$sqlnametitle = "select * from tbl_nametitle where nametitle_id=$nametitle_id";
+	$resnametitle = db_query($sqlnametitle);
+	$rsnametitle = db_fetch_object($resnametitle);
+	$form['id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsnametitle->nametitle_id,
+	);
+	
+	$form['nametitle_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Title'),
+		'#required' => TRUE,
+		'#default_value' =>$rsnametitle->nametitle_name,
+		'#size' =>30,
+	);
+	$form['prev_nametitle_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsnametitle->nametitle_name,
+	);
+	
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+function rec_nametitle_form_edit_submit($form, &$form_state) {
+	global $user;
+
+	
+	$values = $form_state['values'];
+    $id = $values['id'];
+	$nametitle_name = parseData(trim($values['nametitle_name']));
+	$prev_nametitle_name = $values['prev_nametitle_name'];
+	$createdon = time();
+
+	$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_nametitle} where LOWER(nametitle_name)= '".strtolower($nametitle_name)."' GROUP BY nametitle_id"));
+	$count = $countObj->count;
+	if( strcmp(strtolower($prev_nametitle_name), strtolower($nametitle_name))==0){
+			db_query("UPDATE `tbl_nametitle` set `nametitle_name` = '".$nametitle_name."' where nametitle_id='".$id."'");
+			
+			$message = getMessage('recNametitle', 'code05', array("0"=>$nametitle_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listnametitle");	
+			}else{
+			if($count==0){
+				db_query("UPDATE `tbl_nametitle` set `nametitle_name` = '".$nametitle_name."' where nametitle_id='".$id."'");
+				$message = getMessage('recNametitle', 'code05', array('0'=>$nametitle_name));
+				drupal_set_message($message);
+				
+			
+				}else{
+
+			 }	
+		}
+   drupal_goto("admin/rec/listnametitle");	
+
+}
+	
+
+
+function rec_nametitle(){
+ return drupal_get_form('rec_nametitle_form');
+}
+function rec_nametitle_form() {
+		$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of Salutation Title', 'admin/rec/listnametitle');
+  if($array[3] == 'addnametitle'){
+     $breadcrumb[] = l('Create Salutation Title', 'admin/rec/listnametitle/addnametitle');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	
+   $form['nametitle_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Title'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	   );
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+function rec_nametitle_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $utility_name = parseData(trim($values['nametitle_name']));
+ 
+  
+	  $sql = "SELECT * FROM {tbl_nametitle} where UCASE(nametitle_name)= '".strtoupper($nametitle_name)."'";
+	   $res = db_query($sql);
+	  
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('recNametitle', 'code06', array("0"=>$nametitle_name));
+			form_set_error('nametitle_name', $message);
+	   }
+  
+	
+}
+function rec_nametitle_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $nametitle_name = parseData($values['nametitle_name']);
+	
+	db_query("INSERT INTO `tbl_nametitle` (`nametitle_name`) VALUES('".$nametitle_name."') ");
+	$message = getMessage('recNametitle', 'code05', array("0"=>$nametitle_name));
+	drupal_set_message($message);
+	drupal_goto('admin/rec/listnametitle');
+
+}
+
+
+function rec_nametitle_theme() {
+	
+	return array(
+				 
+		'rec_nametitle_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_nametitle_form',
+                                 ),
+        'rec_nametitle_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_nametitle_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function rec_nametitle_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='rec_nametitle_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='rec_nametitle_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+ function rec_addnametitleview($id){
+   $sql = "select * from tbl_nametitle where nametitle_id=$id";
+   $res = db_query($sql);
+   $rs = db_fetch_object($res);
+
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="evenrow"><td colspan="2"><h2>Saluation Title Details</h2></td></tr>';
+ $output .='<tr class="oddrow"><td>Title:</td><td>'.ucwords($rs->nametitle_name).'</td></tr>';
+ $output .='</table></div>';
+ return $output;
+ }
+
+
+
+
+  
+  
+	
+	

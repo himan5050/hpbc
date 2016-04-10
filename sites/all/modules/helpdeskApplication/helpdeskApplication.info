@@ -1,0 +1,7 @@
+;$id 
+name="Helpdesk Applicatoin Master"
+description="An application master will be used in the system so that users can log their complaints against
+any of the application registered in helpdesk system."
+core =6.x
+version = 6.x-1
+package="Dsje"

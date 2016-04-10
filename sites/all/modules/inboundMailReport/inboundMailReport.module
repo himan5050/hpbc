@@ -1,0 +1,147 @@
+<?php
+
+
+/**
+ *hook_perm
+ */
+ 
+ function inboundMailReport_init() {
+	drupal_add_css(drupal_get_path('module', 'inboundMailReport') .'/report_style.css');
+	
+}
+
+function inboundMailReport_perm() {
+	return array('edit inboundMailReport','administer inboundMailReport', 'create inboundMailReport', 'view inboundMailReport');
+}
+
+function inboundMailReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit inboundMailReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create inboundMailReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view inboundMailReport', $account);
+	}
+	
+}
+
+
+function inboundMailReport_menu(){
+
+  $items['inboundMailReport'] = array(
+										'title' => t('Inbound Mail Report'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'inboundMailReport',
+										'access arguments' => array('administer inboundMailReport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function inboundMailReport(){
+  return drupal_get_form('inboundMailReport_form');
+}
+
+function inboundMailReport_form(){
+ global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Inbound Mail Report', 'inboundMailReport');
+  drupal_set_breadcrumb($breadcrumb);
+ $form['diary_no'] = array(
+                                '#type' => 'textfield',
+							
+								'#size' => '30',
+ );
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+				
+						   '#required' => FALSE,
+						   '#size' => '15',
+						   
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						
+						   '#required' => FALSE,
+						   '#size' => '15',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+
+
+
+function inboundMailReport_form_validate($form, &$form_state){
+	
+	$values = $form_state['values'];
+	
+	$from_date = $values['from_date'];
+	$to_date = $values['to_date'];
+	$diary_no = $values['diary_no'];
+	if($from_date == '' && $to_date == '' && $diary_no == ''){
+  form_set_error('form','Please enter any one of search field..');
+}else if($from_date != '' && ($to_date) == ''){
+  form_set_error('to_date','Please enter To Date');
+}
+else if($to_date != '' && ($from_date) == ''){
+  form_set_error('from_date','Please enter From Date');
+}
+else if($to_date != '' && $from_date != '' &&($to_date < $from_date)){
+
+  form_set_error('to_date','To Date should be greater than the From Date');
+
+
+}
+	
+}
+
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function inboundMailReport_theme() {
+	
+	return array(
+		
+		'inboundMailReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'inboundMailReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}
+
+
+/*function inboundMailReport_cron(){
+	
+	
+	
+	
+	
+}	*/

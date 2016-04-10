@@ -1,0 +1,529 @@
+<?php
+function dsje_leavetype_init() {
+}
+
+
+function dsje_leavetype_perm() {
+	return array('edit dsje_leavetype','administer dsje_leavetype', 'create dsje_leavetype', 'view dsje_leavetype');
+}
+
+function dsje_leavetype_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_leavetype', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_leavetype', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_leavetype', $account);
+	}
+	
+}
+
+function dsje_leavetype_menu() {
+	
+	
+	$items['admin/dsje/listleave'] = array(
+										'title' => t('List of Leave Type'),
+										'description' => 'Allow user to View Leave',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewdsjeleave',
+										'access arguments' => array('administer dsje_leavetype'),
+													 
+									  );
+	
+	$items['admin/dsje/listleave/addleave'] = array(
+										'title' => t('Add Leave'),
+										'description' => 'Allow user to add Leave',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addleave',
+										'access arguments' => array('administer dsje_leavetype'),
+													 
+									  );
+									  
+   	$items['admin/dsje/listleave/edit/leave/%'] = array(
+								
+										'title' => t('Edit Leave'),
+										'description' => 'Allow user to Edit Leave',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addleaveedit',
+		                                'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_leavetype'),
+													 
+									  );
+		 $items['admin/dsje/listleave/view/leave/%'] = array(
+								
+										'title' => t('view Leave'),
+										'description' => 'Allow user to view Leave',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_viewleave',
+		                                'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_leavetype'),
+													 
+									  );
+    $items['admin/dsje/del/leave/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsjeleave_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_leavetype'),
+													 
+									  );
+  $items['admin/dsje/enable/leave/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsjeleave_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_leavetype'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing designation
+ */
+ function viewdsjeleave(){
+ global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage('dsjeleave', 'code04', NULL);
+
+   
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Leave Name'), 'field' => 'leave_name', 'sort' => 'asc'),
+		//array('data' => t('Remarks')),
+	    array('data' => t('Status'), 'field' => 'status', 'sort' => 'asc'),
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Leave Type', 'admin/dsje/listleave/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+		$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);
+		
+		$status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "UPPER(leave_name) LIKE '".$val."'";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(leave_name) LIKE '".$val."' AND status='".$status."')";
+	 }
+		
+			 
+		$query = "SELECT leave_id, leave_name, remarks, status FROM {tbl_leavetype} where  ".$searchquery."".tablesort_sql($header);
+        $sqlcount = "SELECT COUNT(*) AS count FROM {tbl_leavetype} where  ".$searchquery."".tablesort_sql($header);
+		$rscount = db_query($sqlcount);
+		$rscounter = db_fetch_object($rscount);
+			$_REQUEST['page']=0;
+	}else{
+	  	$query = "SELECT leave_id, leave_name, remarks, status FROM {tbl_leavetype}".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/admin/dsje/listleave';
+
+$t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+
+	$output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage('dsjeleave', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listleave');
+	}
+	
+	$output .='</td><td colspan="3"></td></tr>';
+	
+	$addurl = l(getMessage('dsjeleave', 'code01', NULL),"admin/dsje/listleave/addleave");
+   	$lising = getMessage('dsjeleave', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query,10);
+	
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listleave/edit/leave/".$row->leave_id);
+		$viewurl = l("View","admin/dsje/listleave/view/leave/".$row->leave_id);
+     if($row->status=='1'){
+		$deleteurl = l("Disable","admin/dsje/del/leave/".$row->leave_id."/".$row->leave_name);
+     }else{
+		$deleteurl = l("Enable","admin/dsje/enable/leave/".$row->leave_id."/".$row->leave_name);
+     }
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->leave_name)),
+			//array('data' => ucfirst($row->remarks)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+	}
+	
+	if($rows== NULL)
+	$header=NULL;
+	
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function dsje_addleaveedit($leave_id){
+ return drupal_get_form('dsje_leavetype_form_edit',$leave_id);
+}
+
+function dsje_leavetype_form_edit(&$form_states,$leave_id) {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Leave Type', 'admin/dsje/listleave');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Leave Type', 'admin/dsje/listleave/edit/leave/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+	$sqldesignation = "select * FROM {tbl_leavetype} where leave_id='$leave_id'";
+	$resdesignation = db_query($sqldesignation);
+	$rsdesignation = db_fetch_object($resdesignation);
+	
+	$form['leave_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsdesignation->leave_id,
+	);
+	
+	$form['leave_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Leave Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsdesignation->leave_name,
+		'#size' =>45,
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+
+	$form['prev_leave_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsdesignation->leave_name,
+	);
+
+
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listleave'),
+);
+
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dsje_leavetype_form_edit_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $leave_name = parseData(trim($values['leave_name']));
+  $remarks = parseData(trim($values['remarks']));
+  $leave_id = $values['leave_id'];
+$s = textonlyn('leave_name',$leave_name,'Leave Name');
+$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+if($s == 0 && $s1 == 0){
+  $sql = "SELECT * FROM {tbl_leavetype} where UCASE(leave_name)= '".strtoupper($leave_name)."'  and leave_id !='".$leave_id."'";
+   $res = db_query($sql);
+  
+  if($rs = db_fetch_object($res)){
+		$message = getMessage('dsjeleave', 'code06', array("0"=>$leave_name));
+		form_set_error('leave_name', $message);
+   }
+}
+	
+}
+function dsje_leavetype_form_edit_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+	
+    $remarks = trim($values['remarks']);
+    $status = $values['status'];
+	$createdby = $user->uid;
+	$leave_id = $values['leave_id'];
+	$leave_name = parseData(trim($values['leave_name']));
+	$prev_leave_name = parseData($values['prev_leave_name']);
+	$createdon = time();
+	$s = textonlyn('leave_name',$leave_name,'leave Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_leavetype} where LOWER(leave_name)= '".strtolower($leave_name)."' GROUP BY leave_id"));
+$count = $countObj->count;
+
+if( strcmp(strtolower($prev_leave_name), strtolower($leave_name))==0){
+		db_query("UPDATE {tbl_leavetype} set `leave_name` = '".$leave_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."'  ,`remarks`='".$remarks."' where leave_id='".$leave_id."'");
+		$message = getMessage('dsjeleave', 'code05', array("0"=>$leave_name));
+		drupal_set_message($message);
+		drupal_goto("admin/dsje/listleave");	
+		}
+		else
+		{
+		if($count==0){
+			db_query("UPDATE {tbl_leavetype} set `leave_name` = '".$leave_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`remarks`='".$remarks."' where leave_id='".$leave_id."'");
+			$message = getMessage('dsjeleave', 'code10', array('0'=>$leave_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listleave");	
+		
+			}else{
+			db_query("UPDATE {tbl_leavetype} set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."'  ,`remarks`='".$remarks."' where leave_id='".$leave_id."'");
+			$message = getMessage('dsjeleave', 'code06', array("0"=>$leave_name));
+			form_set_error('leave_name', $message);
+		 }	
+	}
+	}
+
+}
+function dsje_addleave(){
+ return drupal_get_form('dsje_leavetype_form');
+}
+function dsje_leavetype_form() {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Leave Type', 'admin/dsje/listleave');
+  if($array[3] == 'addleave'){
+     $breadcrumb[] = l('Add Leave Type', 'admin/dsje/listleave/addleave');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['leave_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Leave Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+		'#maxlength'=>45,
+        '#attributes' => array('onkeypress' => 'return alphanumeric(event)'), 
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>'',
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listleave'),
+);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dsje_leavetype_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $leave_name = parseData(trim($values['leave_name']));
+  $remarks = parseData(trim($values['remarks']));
+  
+	$s = textonlyn('leave_name',$state_name,'Leave Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	  $sql = "SELECT * FROM {tbl_leavetype} where UCASE(leave_name)= '".strtoupper($leave_name)."' AND status =1";
+	   $res = db_query($sql);
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjeleave', 'code06', array("0"=>$leave_name));
+			form_set_error('leave_name', $message);
+	   }
+ }	
+}
+
+
+function dsje_leavetype_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $leave_name = parseData(trim($values['leave_name']));
+    $remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+    $sql = "SELECT * FROM {tbl_leavetype} where UCASE(leave_name)= '".strtoupper($leave_name)."' AND status !=1";
+    $res = db_query($sql);
+  
+    if($rs = db_fetch_object($res)){
+      db_query("UPDATE {tbl_leavetype} SET status=1 where leave_id=$rs->leave_id");
+    }else{
+	  db_query("INSERT INTO {tbl_leavetype} (`leave_name` ,`remarks`,`status` ,`createdby` ,`createdon`) VALUES('".$leave_name."','".$remarks."','".$status."','".$createdby."','".$createdon."') ");
+     }
+	  $message = getMessage('dsjeleave', 'code05', array('0'=>$leave_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listleave");	
+
+}
+
+
+function dsje_leavetype_theme() {
+	
+	return array(
+				 
+		'dsje_leavetype_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_leavetype_form',
+                                 ),
+        'dsje_leavetype_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_leavetype_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_leavetype_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_leavetype_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_leavetype_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+  function dsjeleave_delete($sid,$name){
+	  $leave_id = $sid;
+   db_query("UPDATE {tbl_leavetype} set `status`=0 where leave_id='".$leave_id."'");
+ $message = getMessage('dsjeleave', 'code11', array("0"=>$name));
+ drupal_set_message($message);
+ drupal_goto('admin/dsje/listleave');
+ }
+
+   function dsjeleave_enable($sid,$name){
+	  $leave_id = $sid;
+   db_query("UPDATE {tbl_leavetype} set `status`=1 where leave_id='".$leave_id."'");
+ $message = getMessage('dsjeleave', 'code09', array("0"=>$name));
+ drupal_set_message($message);
+ drupal_goto('admin/dsje/listleave');
+ }
+
+function dsje_viewleave($leave_id){
+	
+		$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Leave Type', 'admin/dsje/listleave');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Leave Type', 'admin/dsje/listleave/view/leave/');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	
+	
+	
+	$sql = "select * FROM {tbl_leavetype} where leave_id = '$leave_id' ORDER BY leave_name ASC";
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+ if($rs->status =='0'){
+  $status ='Disabled';
+}else{
+  $status ='Enabled';
+}
+
+
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+
+
+
+$output ='<div id="form-container">';
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="wrapper2">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Leave Type Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Leave Name:</td><td class="normal">'.ucwords($rs->leave_name).'</td></tr>';
+////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+$output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'admin/dsje/listleave').'</td></tr>';
+ $output .='</table></div>';
+return $output;
+  }
+
+
+
+  
+  
+	
+	

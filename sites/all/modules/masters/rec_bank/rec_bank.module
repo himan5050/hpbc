@@ -1,0 +1,1264 @@
+<?php
+
+
+function rec_bank_perm() {
+	return array('edit rec_bank','administer rec_bank', 'create rec_bank', 'view rec_bank');
+}
+
+function rec_bank_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit rec_bank', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create rec_bank', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view rec_bank', $account);
+	}
+	
+}
+
+function rec_bank_menu() {
+
+
+	
+	
+	$items['admin/dsje/listbank'] = array(
+										'title' => t('List of Bank'),
+										'description' => 'Allow user to View Bank',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewbank',
+										'access arguments' => array('administer rec_bank'),
+													 
+									  );
+	
+	$items['admin/dsje/listbank/addbank'] = array(
+										'title' => t('Create Bank'),
+										'description' => 'Allow user to add Bank',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_bank',
+										'access arguments' => array('administer rec_bank'),
+													 
+									  );
+   	$items['admin/dsje/listbank/edit/bank/%'] = array(
+										'title' => t('Edit Bank'),
+										'description' => 'Allow user to add Bank',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addbankedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer rec_bank'),
+													 
+									  );
+  	$items['admin/dsje/listbank/view/bank/%'] = array(
+										'title' => t('View Bank'),
+										'description' => 'Allow user to add Bank',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addbankview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer rec_bank'),
+													 
+									  );
+   $items['admin/dsje/del/bank/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'bank_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_bank'),
+													 
+									  );
+   $items['admin/dsje/enable/bank/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'bank_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_bank'),
+													 
+									  );
+
+//bank branch Details Menu
+
+  $items['admin/dsje/listbankbranch'] = array(
+										'title' => t('List of Bank Branch'),
+										'description' => 'Allow user to View Bank Branch',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewbankbranch',
+										'access arguments' => array('administer rec_bank'),
+													 
+									  );
+	
+	$items['admin/dsje/listbankbranch/addbankbranch'] = array(
+										'title' => t('Create Bank Branch'),
+										'description' => 'Allow user to add Bank Branch',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_bankbranch',
+										'access arguments' => array('administer rec_bank'),
+													 
+									  );
+   	$items['admin/dsje/listbankbranch/edit/bankbranch/%'] = array(
+										'title' => t('Edit Bank Branch'),
+										'description' => 'Allow user to add Bank Branch',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addbankbranchedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer rec_bank'),
+													 
+									  );
+  	$items['admin/dsje/listbankbranch/view/bankbranch/%'] = array(
+										'title' => t('View Bank Branch'),
+										'description' => 'Allow user to add Bank Branch',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addbankbranchview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer rec_bank'),
+													 
+									  );
+   $items['admin/dsje/del/bankbranch/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'bankbranch_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_bank'),
+													 
+									  );
+   $items['admin/dsje/enable/bankbranch/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'bankbranch_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_bank'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing bank
+ */
+ function viewbank(){
+    global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage( 'recBank', 'code04', NULL);
+  
+ $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Bank Name'), 'field' => 'bank_name', 'sort' => 'asc'),
+		array('data' => t('Status'), 'field' => 'status', 'sort' => 'asc'),
+		array('data' => t('Action'),'class'=>'addeditview'),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Bank', 'admin/dsje/listbank/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	
+	 $status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "UPPER(bank_name) LIKE '".$val."' ";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = " status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(bank_name) LIKE '".$val."' AND status='".$status."')";
+	 }
+	
+	
+	$query = "SELECT bank_id, bank_name,status FROM {tbl_bank}  where ".$searchquery." ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count FROM  tbl_bank where ".$searchquery." ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ //$_REQUEST['page']=0;
+ }else{
+    $query = "SELECT bank_id, bank_name,status FROM {tbl_bank} ".tablesort_sql($header);
+
+
+	  
+   
+ }
+ 
+ global $base_url;
+$action = $base_url.'/admin/dsje/listbank';
+
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+
+ $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="2" class="tblHeaderLeft"><div class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'recBank', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listbank');
+	}
+	$addurl = l(getMessage( 'recBank', 'code01', NULL),"admin/dsje/listbank/addbank");
+	$output .='</div></td><td colspan="2" class="tblHeaderRight"></td></tr>';
+	 
+   	$lising = getMessage( 'recBank', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="2" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="2" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" /> <input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query,$limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listbank/edit/bank/".$row->bank_id);
+		$viewurl = l("View","admin/dsje/listbank/view/bank/".$row->bank_id);
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/bank/".$row->bank_id."/".$row->bank_name);
+		}else{
+		  $deleteurl = l("Enable","admin/dsje/enable/bank/".$row->bank_id."/".$row->bank_name);
+		}
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->bank_name)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+			//array('data' => $editurl),
+			
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function rec_addbankedit($bank_id){
+ return drupal_get_form('rec_bank_form_edit',$bank_id);
+}
+
+function rec_bank_form_edit(&$form_states,$bank_id) {
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Bank', 'admin/dsje/listbank');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Bank', 'admin/dsje/listbank/edit/bank/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlbank = "select * FROM {tbl_bank} where bank_id=$bank_id";
+	$resbank = db_query($sqlbank);
+	$rsbank = db_fetch_object($resbank);
+	
+	$form['bank_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Bank Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsbank->bank_name,
+		'#size' =>41,
+		'#maxlength'=>45, 
+		'#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	);
+
+	$form['prev_bank_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' => $rsbank->bank_name,
+	);
+	$form['id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsbank->bank_id,
+	);
+    
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsbank->remarks,
+		'#rows' =>5,
+		'#cols' =>30,
+		
+	);
+	*/
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listbank'),
+);	
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	
+	return $form;
+}
+function rec_bank_form_edit_submit($form, &$form_state) {
+	global $user;
+
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$createdby = $user->uid;
+	$id = $values['id'];
+	$bank_name = parseData(trim($values['bank_name']));
+	$prev_bank_name = parseData($values['prev_bank_name']);
+	$remarks = parseData(trim($values['remarks']));
+	$createdon = time();
+   
+    $remarks = trim($values['remarks']);
+	
+		////  Function to validate the duplicate  value while editing//
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_bank} where LOWER(bank_name)= '".strtolower($bank_name)."' GROUP BY bank_id"));
+		$count = $countObj->count;
+		if( strcmp(strtolower($prev_bank_name), strtolower($bank_name))==0){
+			db_query("UPDATE {tbl_bank} set `bank_name` = '".$bank_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`remarks`='".$remarks."' where bank_id='".$id."'");
+			
+			$message = getMessage('recBank', 'code10', array("0"=>$bank_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listbank");	
+			}else{
+			if($count==0){
+				db_query("UPDATE {tbl_bank} set `bank_name` = '".$bank_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`remarks`='".$remarks."' where bank_id='".$id."'");
+				$message = getMessage('recBank', 'code10', array('0'=>$bank_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listbank");	
+			
+				}else{
+				db_query("UPDATE {tbl_bank} set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`remarks`='".$remarks."' where bank_id='".$id."'");
+				
+				$message = getMessage('recBank', 'code10', array("0"=>$bank_name));
+				form_set_error('bank_name', $message);
+			 }	
+		
+	}
+
+}
+function rec_bank(){
+ return drupal_get_form('rec_bank_form');
+}
+function rec_bank_form() {
+			$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Bank', 'admin/dsje/listbank');
+  if($array[3] == 'addbank'){
+     $breadcrumb[] = l('Add Bank', 'admin/dsje/listbank/addbank');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  
+  
+  
+   $form['bank_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Bank Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#maxlength'=>45,
+		'#size' =>45,
+		'#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	);
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,
+	);
+	*/
+
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listbank'),
+);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	
+	return $form;
+}
+//Amit : Function to validate the duplicate  value while addition//
+function rec_bank_form_validate($form, &$form_state) {
+	
+$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Bank', 'admin/dsje/listbank');
+  if($array[3] == 'addbank'){
+     $breadcrumb[] = l('Add Bank', 'admin/dsje/listbank/addbank');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  	
+	
+	
+  $values = $form_state['values'];
+  $bank_name = parseData(trim($values['bank_name']));
+  $remarks = parseData(trim($values['remarks']));
+
+ 
+	  $sql = "SELECT * FROM {tbl_bank} where UCASE(bank_name)= '".strtoupper($bank_name)."' AND status =1 ORDER BY bank_name ASC";
+	   $res = db_query($sql);
+	  
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('recBank', 'code06', array("0"=>$bank_name));
+			form_set_error('bank_name', $message);
+	   }
+ 
+	
+}
+
+function rec_bank_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $bank_name = parseData(trim($values['bank_name']));
+	$remarks = parseData(trim($values['remarks']));
+    //$status =parseData(trim($values['status']));
+	$status=1;
+	$createdby = $user->uid;
+	$createdon = time();
+    
+	$sql = "SELECT * FROM {tbl_bank} where UCASE(bank_name)= '".strtoupper($bank_name)."' AND status !=1";
+   $res = db_query($sql);
+  
+   if($rs = db_fetch_object($res)){
+      db_query("UPDATE {tbl_bank} SET status=1 where bank_id=$rs->bank_id");
+   }else{
+
+	db_query("INSERT INTO {tbl_bank} (`bank_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$bank_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+   }
+   $message = getMessage('recBank', 'code05', array("0"=>$bank_name));
+	drupal_set_message($message);
+	drupal_goto('admin/dsje/listbank');
+
+}
+
+
+function rec_bank_theme() {
+	
+	return array(
+				 
+		'rec_bank_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_bank_form',
+                                 ),
+        'rec_bank_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_bank_form_edit',
+                                 ),
+		'rec_bankbranch_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_bankbranch_form',
+                                 ),
+        'rec_bankbranchedit_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_bankbranch_form_edit',
+                                 ),
+
+				 );
+}
+
+
+
+function bank_delete($sid,$name){
+	 $bank_id = $sid;
+	 db_query("UPDATE {tbl_bank} set status=0 where bank_id='".$bank_id."'");
+	 $message = getMessage('recBank', 'code07', array("0"=>$name));
+	 drupal_set_message($message);
+	 drupal_goto('admin/dsje/listbank');
+ }
+
+ function bank_enable($sid,$name){
+	 $bank_id = $sid;
+	 db_query("UPDATE {tbl_bank} set status=1 where bank_id='".$bank_id."'");
+	 $message = getMessage('recBank', 'code09', array("0"=>$name));
+	 drupal_set_message($message);
+	 drupal_goto('admin/dsje/listbank');
+ }
+
+function rec_addbankview($id){
+
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Bank', 'admin/dsje/listbank');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Bank', 'admin/dsje/listbank/view/bank/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  	
+  $sql = "select * FROM {tbl_bank} where bank_id=$id";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+
+
+   
+if($rs->status ==1){
+   $status ='Enabled';
+ }else{
+   $status ='Disabled';
+ }
+ 
+ 
+ $output .='<table cellpadding="2" cellspacing="1" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>Bank Name</h2></td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Bank Name:</td><td class="normal">'.$rs->bank_name.'</td></tr>';
+// $output .='<tr class="evenrow"><td>Remarks:</td><td class="normal">'.$rs->remarks.'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+  $output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'admin/dsje/listbank').'</td></tr>';
+ $output .='</table>'; 
+ return $output;
+}
+  
+  
+	
+
+	
+	//detials entru of bank here
+
+
+	/**
+ listing bankbranch
+ */
+ function viewbankbranch(){
+    global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage( 'recBankbranch', 'code04', NULL);
+  
+ $header = array(
+		array('data' => t('S. No.')),
+	     array('data' => t('Bank Name'), 'field'=> 'b.bank_name','sort'=> 'asc'),
+        array('data' => t('Bank Branch Address'), 'field' => 'br.bankbranch_name', 'sort' => 'asc'),
+		array('data' => t('Status'), 'field' => 'br.status', 'sort' => 'asc'),
+		array('data' => t('Action'), 'class' => 'addeditview',),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Bank Branch', 'admin/dsje/listbankbranch/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+	
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext'] || $_REQUEST['searchtextstatus']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	
+	
+	$status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "UPPER(br.bankbranch_name) LIKE '".$val."' OR UPPER(b.bank_name) LIKE '".$val."' ";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "br.status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(br.bankbranch_name) LIKE '".$val."' OR UPPER(b.bank_name) LIKE '".$val."')  AND br.status='".$status."'";
+	 }
+	 
+	$query = "SELECT br.bankbranch_id, br.bankbranch_name,b.bank_name ,br.status FROM {tbl_bankbranch} br INNER JOIN tbl_bank b ON (b.bank_id=br.bank_id) where ".$searchquery."".tablesort_sql($header);
+
+	$sqlcount = "SELECT COUNT(*) AS count FROM {tbl_bankbranch} br INNER JOIN tbl_bank b ON (b.bank_id=br.bank_id) where ".$searchquery."".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+  //$_REQUEST['page']=0;
+ }else{
+    $query = "SELECT br.bankbranch_id, br.bankbranch_name,b.bank_name,br.status FROM {tbl_bankbranch} br INNER JOIN tbl_bank b ON (b.bank_id=br.bank_id) ".tablesort_sql($header);
+ }
+ 
+ global $base_url;
+$action = $base_url.'/admin/dsje/listbankbranch';
+
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+
+ $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'recBankbranch', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listbankbranch');
+	}
+	$addurl = l(getMessage( 'recBankbranch', 'code01', NULL),"admin/dsje/listbankbranch/addbankbranch");
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	 
+   	$lising = getMessage( 'recBankbranch', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query,$limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listbankbranch/edit/bankbranch/".$row->bankbranch_id);
+		$viewurl = l("View","admin/dsje/listbankbranch/view/bankbranch/".$row->bankbranch_id);
+		
+		
+	
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/bankbranch/".$row->bankbranch_id."/".$row->bankbranch_name);
+		}else{
+		  $deleteurl = l("Enable","admin/dsje/enable/bankbranch/".$row->bankbranch_id."/".$row->bankbranch_name);
+		}
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => $row->bank_name),
+			array('data' => ucwords($row->bankbranch_name)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+			//array('data' => $viewurl."|".$editurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function rec_bankbranch(){
+ return drupal_get_form('rec_bankbranch_form');
+}
+function rec_bankbranch_form() {
+			$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Bank Branch', 'admin/dsje/listbankbranch');
+  if($array[3] == 'addbankbranch'){
+     $breadcrumb[] = l('Add Bank Branch', 'admin/dsje/listbankbranch/addbankbranch');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+   $form['bank_name'] = array(
+	    '#type' =>'select',
+		'#title' => t('Bank Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		 '#maxlength'=>45, 
+		'#options' => selectbank(), '#attributed'=> array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	
+	
+	$sqlcountry = "select * from {tbl_dsjestate} WHERE status='1' ORDER BY state_name ASC";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--Select--'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->state_id] = ucfirst($rscountry->state_name);
+	  }
+	}
+	$form['state_id'] = array(
+		'#type' => 'select',
+		'#title' => t('State'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		'#ahah' => array(
+					  'path' => 'rec/district',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'zone',
+					  ),
+	);
+	
+	
+	
+    $zonearray[''] = '--Select--';
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' =>$zonearray,
+		'#ahah' => array(
+					  'path' => 'rec/tehsil',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'state',
+					  ), 
+	);
+    
+    $statearray[''] = '--Select--';
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => '',
+			'#options' => $statearray,
+		);
+
+	
+	$form['bankbranch_name'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Bank Branch Address',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#maxlength'=>100,
+	  
+	  '#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-bankbranch-name",100)'),	
+	);
+
+	$form['ifsc'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'IFSC Code',
+	  '#requires' =>TRUE,
+	  '#size' => 41,
+	  '#maxlength'=>12,
+	  '#attributes' => array('onkeypress' => 'return alphanumeric_custom(event,"edit-ifsc",12)'),		
+	);
+	
+	
+	
+	
+ $form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	 '#required' =>FALSE,
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $rs->email,
+	 '#attributes' => array('onkeypress' => 'return emailvali(event)'),		
+  );
+  
+	
+	
+	
+	
+	/*$form['status'] = array(
+		'#type' => 'hidden',
+	
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); 
+    */
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,
+	);
+	*/
+
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listbankbranch'),
+);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+//Amit : Function to validate the duplicate  value while addition//
+function rec_bankbranch_form_validate($form, &$form_state) {
+	
+	$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Bank Branch', 'admin/dsje/listbankbranch');
+  if($array[3] == 'addbankbranch'){
+     $breadcrumb[] = l('Add Bank Branch', 'admin/dsje/listbankbranch/addbankbranch');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  $values = $form_state['values'];
+
+$email=$values['email'];
+  $bankbranch_name = parseData(trim($values['bankbranch_name']));
+  $remarks = parseData(trim($values['remarks']));
+ if($email !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (eregi($pattern, $email)){
+
+          return true;
+       }
+       else {
+          form_set_error('email', t('You must enter valid Email Id.'));
+       }    
+	}
+ 
+	  $sql = "SELECT * FROM {tbl_bankbranch} where UCASE(bankbranch_name)= '".strtoupper($bankbranch_name)."' AND status =1";
+	   $res = db_query($sql);
+	  
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('recBankbranch', 'code06', array("0"=>$bankbranch_name));
+			form_set_error('bank_name', $message);
+	   }
+ 
+	
+}
+
+function rec_bankbranch_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    
+	
+	$createdby = $user->uid;
+	$createdon = time();
+
+	
+	$bank_name = $values['bank_name'];
+    $state_id = $values['state_id'];
+    $district_id = $values['district_id'];
+	
+    $tehsil_id = $values['tehsil_id'];
+    //$city_id = $values['city_id'];
+    $bankbranch_name = parseData($values['bankbranch_name']);
+    $ifsc = parseData($values['ifsc']);
+  $status = 1;
+	 $values = $form_state['values'];
+
+$email=$values['email'];
+  $bankbranch_name = parseData(trim($values['bankbranch_name']));
+  $remarks = parseData(trim($values['remarks']));
+
+ 
+	  $sql = "SELECT * FROM {tbl_bankbranch} where UCASE(bankbranch_name)= '".strtoupper($bankbranch_name)."' AND status =1";
+	   $res = db_query($sql);
+	  
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('recBankbranch', 'code06', array("0"=>$bankbranch_name));
+			form_set_error('bank_name', $message);
+	   }
+    $remarks = parseData($values['remarks']);
+
+	$sql = "INSERT INTO {tbl_bankbranch} (`email`,`bank_id` ,`ifsc` ,`bankbranch_name` ,`state_id` ,`district_id` ,`tehsil_id` ,`remarks` ,`status` ,`createdby` ,`createdon` ,`updatedby` ,`updatedon`) values('".$email."','".$bank_name."','".$ifsc."','".$bankbranch_name."','".$state_id."','".$district_id."','".$tehsil_id."','".$remarks."', '" .$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."')";
+	db_query($sql);
+	$message = getMessage('recBank', 'code05', array("0"=>$bankbranch_name));
+	drupal_set_message($message);
+	drupal_goto('admin/dsje/listbankbranch');
+
+}
+
+function bankbranch_delete($sid,$name){
+
+	 $bankbranch_id = $sid;
+db_query("UPDATE {tbl_bankbranch} set `status`=0 where bankbranch_id='".$bankbranch_id."'");
+	 $message = getMessage('recBankbranch', 'code07', array("0"=>$name));
+	 drupal_set_message($message);
+	 drupal_goto('admin/dsje/listbankbranch');
+}
+function bankbranch_enable($sid,$name){
+	 $bankbranch_id = $sid;
+db_query("UPDATE {tbl_bankbranch} set `status`=1 where bankbranch_id='".$bankbranch_id."'");
+	 $message = getMessage('recBankbranch', 'code09', array("0"=>$name));
+	 drupal_set_message($message);
+	 drupal_goto('admin/dsje/listbankbranch'); 
+	 
+	
+}
+
+function rec_addbankbranchview($id){
+				$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Bank Branch', 'admin/dsje/listbankbranch');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Bank Branch', 'admin/dsje/listbankbranch/view/bankbranch/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  $sql = "select * FROM {tbl_bankbranch} where bankbranch_id=$id";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+
+  if($rs->status ==1){
+   $status ='Enabled';
+ }else{
+   $status ='Disabled';
+ }
+
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+$IFSCcode = ucwords(getBankIFSCcode($id));
+if( $IFSCcode=='' ){$IFSCcode = 'N/A';}
+
+if($rs->email){
+$emailid=$rs->email;	
+}else{
+$emailid='N/A';	
+}
+
+ $output .='<table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+ $output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Bank Details</h2></td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Bank Name:</td><td class="normal">'.ucwords(getBankName($rs->bank_id)).'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">State:</td><td class="normal">'.ucwords(getState($rs->state_id)).'</td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">District:</td><td class="normal">'.ucwords(getdistrict($rs->district_id)).'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Tehsil:</td><td class="normal">'.ucwords(gettehsil($rs->tehsil_id)).'</td></tr>';
+ 
+ $output .='<tr class="evenrow"><td width="50%">Branch:</td><td class="normal">'.ucwords($rs->bankbranch_name).'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">IFSC Code:</td><td class="normal">'.$IFSCcode.'</td></tr>';
+ 
+  $output .='<tr class="evenrow"><td width="50%">Email:</td><td class="normal">'.$emailid.'</td></tr>';
+ 
+ //$output .='<tr class="oddrow"><td width="50%">Remarks:</td><td class="normal">'.$remarks.'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+  $output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t(' Back '), 'admin/dsje/listbankbranch').'</td></tr>';
+ $output .='</table>';
+ return $output;
+
+}
+
+
+//edit section 
+
+
+function rec_addbankbranchedit($branch_id){
+ return drupal_get_form('rec_bankbranchedit_form',$branch_id);
+}
+function rec_bankbranchedit_form(&$form_state,$branch_id) {
+			$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Bank Branch', 'admin/dsje/listbankbranch');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Bank Branch', 'admin/dsje/listbankbranch/edit/bankbranch/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  
+  
+$sql = "select * FROM {tbl_bankbranch} where bankbranch_id='".$branch_id."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+
+$form['bank_name'] = array(
+	    '#type' =>'select',
+		'#title' => t('Bank Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rs->bank_id,
+		'#options' => selectbank(),
+		'#maxlength'=>45,
+	);
+	
+	$form['bankbranch_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rs->bankbranch_id,
+	
+	);
+	
+	//location details
+  
+	$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->state_id,
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	  $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $rs->district_id,
+		'#options' =>GetDistrictStateWise($rs->state_id),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $rs->tehsil_id,
+			'#options' =>GetTehsilDistrictWise($rs->dsitrict_id,$rs->state_id),
+		   
+		);
+	//end
+
+	
+	$form['bankbranch_name'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Bank Branch Address',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#maxlength'=>100,
+	  '#default_value' => $rs->bankbranch_name,	
+	   '#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-bankbranch-name",100)'),
+	);
+
+	$form['ifsc'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'IFSC Code',
+	  '#requires' =>TRUE,
+	  '#size' => 41,
+	  '#maxlength'=>12,
+	  '#default_value' => $rs->ifsc,
+	  '#attributes' => array('onkeypress' => 'return alphanumeric_custom(event,"edit-ifsc",12)'),	
+	  	
+	);
+	
+	
+ $form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	 '#required' =>FALSE,
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $rs->email,
+	 '#attributes' => array('onkeypress' => 'return emailvali(event)'),		
+  );
+  
+	
+	$form['bankbranch'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rs->bank_id,
+	
+	);
+	
+	$form['state'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rs->state_id,
+	
+	);
+	
+	$form['district'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rs->dsitrict_id,
+	
+	);
+	
+	
+	$form['tehsil'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rs->tehsil_id,
+	
+	);
+	
+	$form['bankbranchnameadd'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rs->bankbranch_name,
+	
+	);
+	
+	/*$form['status'] = array(
+		'#type' => 'hidden',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,
+		'#default_value' => $rs->remarks,
+	);*/
+
+$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listbankbranch'),
+);
+
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;	
+}
+function rec_bankbranchedit_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+			$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Bank Branch', 'admin/dsje/listbankbranch');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Bank Branch', 'admin/dsje/listbankbranch/edit/bankbranch/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+
+  $bankbranch_name = parseData(trim($values['bankbranch_name']));
+  $remarks = parseData(trim($values['remarks']));
+ 
+  $state_id = $values['state_id'];
+    $district_id = $values['district_id'];
+    //$tehsil_id = $values['tehsil_id'];
+	 $bankbranch_name = $values['bankbranch_name'];
+	
+	$tehsil_id = $values['tehsil_id'];
+	$bankbranch = $values['bankbranch'];
+	 $bankbranchnameadd = $values['bankbranchnameadd'];
+	 $tehsil = $values['tehsil'];
+	 $district = $values['district'];
+	$email=$values['email'];
+	
+	
+	
+	if($tehsil_id == '0')
+	{
+		
+	form_set_error('tehsil_id','Tehsil field is Required');	
+		
+	}
+	
+	if($district_id == '0')
+	{
+		
+	form_set_error('district_id','District field is Required');	
+		
+	}
+	
+	if($email !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (eregi($pattern, $email)){
+
+          return true;
+       }
+       else {
+          form_set_error('email', t('You must enter valid Email Id.'));
+       }    
+	}
+	
+	if($bankbranch_name == $bankbranchnameadd)
+	{
+	}
+	else{
+ 
+	  $sql = "SELECT * FROM {tbl_bankbranch} where UCASE(bankbranch_name)= '".strtoupper($bankbranch_name)."' AND status =1";
+	   $res = db_query($sql);
+	  
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('recBankbranch', 'code06', array("0"=>$bankbranch_name));
+			form_set_error('bankbranch_name', $message);
+	   }
+	}
+	
+}
+
+
+function rec_bankbranchedit_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+  
+	$updatedby = $user->uid;
+	$updatedon = time();
+
+	$email=$values['email'];
+	
+	$bank_name = $values['bank_name'];
+    $state_id = $values['state_id'];
+    $district_id = $values['district_id'];
+    $tehsil_id = $values['tehsil_id'];
+    //$city_id = $values['city_id'];
+    $bankbranch_name = parseData($values['bankbranch_name']);
+    $ifsc = parseData($values['ifsc']);
+    $status = $values['status'];
+	$bankbranch_id = $values['bankbranch_id'];
+    $remarks = parseData($values['remarks']);
+	
+	$values = $form_state['values'];
+
+
+  $bankbranch_name = parseData(trim($values['bankbranch_name']));
+  $remarks = parseData(trim($values['remarks']));
+
+ 
+	  /*$sql = "SELECT * FROM {tbl_bankbranch} where UCASE(bankbranch_name)= '".strtoupper($bankbranch_name)."' AND status =1";
+	   $res = db_query($sql);
+	  
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('recBankbranch', 'code06', array("0"=>$bankbranch_name));
+			form_set_error('bank_name', $message);
+	   }*/
+
+	$sql = "UPDATE {tbl_bankbranch} set `email`='".$email."',`bank_id` ='".$bank_name."',`ifsc`='".$ifsc."' ,`bankbranch_name`='".$bankbranch_name."' ,`state_id`='".$state_id."' ,`district_id` ='".$district_id."',`tehsil_id`='".$tehsil_id."' ,`remarks`='".$remarks."',`updatedby` ='".$updatedby."',`updatedon`='".$updatedon."' where 	bankbranch_id='".$bankbranch_id."'"; 	
+    db_query($sql);
+	
+	$message = getMessage('recBankbranch', 'code10', array("0"=>$bankbranch_name));
+		drupal_set_message($message);
+	drupal_goto('admin/dsje/listbankbranch');
+
+}
+
+

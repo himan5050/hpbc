@@ -1,0 +1,1000 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/vehicleInsurance.inc');
+
+function vehicleInsurance_node_info() {
+	return array (
+					'vehicleInsurance' => array (
+										'name' => t('List of Vehicle Insurance Details'),
+										'module' => 'vehicleInsurance',
+										'description' => "Creates Vehicle Insurance Details",
+										'has_title' => TRUE,
+										'title_label' => t('Vehicle Insurance Details'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function vehicleInsurance_perm() {
+	return array('edit vehicleInsurance','administer vehicleInsurance', 'create vehicleInsurance', 'view vehicleInsurance');
+}
+
+function vehicleInsurance_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit vehicleInsurance', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create vehicleInsurance', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view vehicleInsurance', $account);
+	}
+}
+ 
+ function vehicleInsurance_menu(){
+	 $items['list/vehicleInsuranceList'] = array(
+		   'title' => 'List of Vehicle Insurance Details',
+		   'page callback' => 'vehicleInsurance_list',
+		   'access arguments' => array('administer vehicleInsurance'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewvehicleInsurance/%'] = array(
+								'title' => t('view Vehicle Insurance Details'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_vehicleInsurance',
+								'page arguments' => array(1),
+								'access arguments' => array('administer vehicleInsurance'),
+		                        
+						);
+  
+  $items['admin/dsje/del/vehicleInsurance/%'] =  array(
+	               						 'title' => t('Delete Vehicle Insurance Details'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'vehicleInsurance_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer vehicleInsurance'),
+													 
+	);
+ $items['admin/dsje/enable/vehicleInsurance/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'vehicleInsurance_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer vehicleInsurance'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function vehicleInsurance_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjevehicleInsurance', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	//array('data' => t('Due Date'), 'field' => 'tbl_vehicleinsurance.date_due', 'sort' => 'asc'),
+	array('data' => t('Reg No.'), 'field' => 'tbl_vehicles.reg_no', 'sort' => 'asc'),
+	array('data' => t('Policy No.'), 'field' => 'tbl_vehicleinsurance.policy_no', 'sort' => 'asc'),
+	array('data' => t('Sum Insured'), 'field' => 'tbl_vehicleinsurance.sum_insured', 'sort' => 'asc'),
+	//array('data' => t('Status')),
+	array('data' => t('Action'),'class'=>'addeditview'),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Vehicle Insurance Details', 'list/vehicleInsuranceList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid,  tbl_vehicles.reg_no,tbl_vehicleinsurance.policy_no, tbl_vehicleinsurance.sum_insured,tbl_vehicleinsurance.statusnodal FROM {node}
+	 INNER JOIN tbl_vehicleinsurance ON (node.nid=tbl_vehicleinsurance.nid)
+	  INNER JOIN tbl_vehicles ON (tbl_vehicles.vehicle_id=tbl_vehicleinsurance.reg_no)
+	 WHERE node.uid='".$user->uid."' AND(  tbl_vehicles.reg_no LIKE '".$val."' OR tbl_vehicleinsurance.policy_no LIKE '".$val."' OR tbl_vehicleinsurance.sum_insured LIKE '".$val."' OR tbl_vehicleinsurance.statusnodal LIKE '".$val."') ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_vehicleinsurance ON (node.nid=tbl_vehicleinsurance.nid)
+	 INNER JOIN tbl_vehicles ON (tbl_vehicles.vehicle_id=tbl_vehicleinsurance.reg_no)
+	 WHERE node.uid='".$user->uid."' AND(  tbl_vehicles.reg_no LIKE '".$val."' OR tbl_vehicleinsurance.policy_no LIKE '".$val."' OR tbl_vehicleinsurance.sum_insured LIKE '".$val."' OR tbl_vehicleinsurance.statusnodal LIKE '".$val."') ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	    $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid, tbl_vehicles.reg_no,tbl_vehicleinsurance.policy_no, tbl_vehicleinsurance.sum_insured,tbl_vehicleinsurance.statusnodal FROM {node}
+	 INNER JOIN tbl_vehicleinsurance ON (node.nid=tbl_vehicleinsurance.nid)
+	 INNER JOIN tbl_vehicles ON (tbl_vehicles.vehicle_id=tbl_vehicleinsurance.reg_no)
+	 WHERE node.uid='".$user->uid."'".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/vehicleInsuranceList';
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjevehicleInsurance', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/vehicleInsuranceList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage('dsjevehicleInsurance', 'code01', NULL),"node/add/vehicleInsurance");
+   	$lising = getMessage('dsjevehicleInsurance', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewvehicleInsurance/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/vehicleInsurance/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/vehicleInsurance/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			//array('data' => date('d-m-Y',strtotime($rs->date_due)),
+			array('data' => $rs->reg_no),
+			array('data' => $rs->policy_no),
+            array('data' => round($rs->sum_insured)),
+         // 	array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	return $output .=theme('pager', NULL, 20,0 );
+  }
+
+function vehicleInsurance_delete($nid){
+   $node = node_load($nid);
+ 
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("Delete from {tbl_vehicleinsurance} WHERE courtcase_id ='".$courtcase_id."'");
+  $kilo=db_query("select reg_no from {tbl_vehicleinsurance} where nid='".$nid."'");
+  $kilo2=db_fetch_object($kilo);
+  $regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$kilo2->reg_no."'");
+$regno= db_fetch_object($regnowa);
+  db_query("DELETE from {tbl_vehicleinsurance} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+
+
+
+  $message=getMessage('dsjevehicleInsurance','code07',array("0"=>$regno->reg_no));
+  drupal_set_message($message);
+  
+  drupal_goto("list/vehicleInsuranceList");
+ }
+
+function vehicleInsurance_enable($nid){
+  
+  $node = node_load($nid);
+ 
+   $kilo=db_query("select reg_no from {tbl_vehicleinsurance} where nid='".$nid."'");
+  $kilo2=db_fetch_object($kilo);
+  
+  
+   $regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$kilo2->reg_no."'");
+$regno= db_fetch_object($regnowa);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("UPDATE {tbl_vehicleinsurance} SET 	statusnodal =1 WHERE nid ='".$node->nid."'");
+  //drupal_set_message('Vehicle Insurance has been enabled successfully.');
+  //drupal_goto("list/vehicleInsuranceList");
+ 
+ db_query("DELETE from {tbl_vehicleinsurance} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+ 
+  $message=getMessage('dsjevehicleInsurance','code07',array("0"=>$regno->reg_no));
+  drupal_set_message($message);
+  
+  drupal_goto("list/vehicleInsuranceList");
+ }
+
+
+function vehicleInsurance_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Vehicle Insurance Details', 'list/vehicleInsuranceList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Vehicle Insurance', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Vehicle Insurance', 'node/add/vehicleInsurance'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  if(is_numeric(arg(1))){
+	$sql = "SELECT * FROM {node} INNER JOIN tbl_vehicleinsurance ON (node.nid=tbl_vehicleinsurance.nid) WHERE node.nid=".arg(1);
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+  }
+	////////////////////////////////////
+	
+	
+	
+	$form['notification'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Do you want to block email notification'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rs->notification,
+		 '#options' => Notification(),
+
+);
+	
+$selectreg1= db_query("select reg_no,vehicle_id from {tbl_vehicles}  where status =1 ORDER BY reg_no ASC");
+	
+	$selectregarray = array(''=>'--Select--');
+	while($selectreg = db_fetch_object($selectreg1)){
+	$selectregarray[$selectreg->vehicle_id] = $selectreg->reg_no;
+	}
+	
+
+	$form['edit_reg_no'] = array(
+	'#type' =>'hidden',
+	'#default_value'=> $rs->reg_no,
+	);
+	$form['reg_no'] = array(
+	'#type' =>'select',
+	'#title' => t('Vehicle Reg. No.'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->reg_no,
+	'#options'=> $selectregarray,
+	);
+	
+	$form['prev_date_insurance'] = array(
+	'#type' =>'hidden',
+	'#default_value'=> $rs->date_insurance,
+	);
+	
+	$form['date_insurance'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Insurance',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->date_insurance,
+	
+	);
+$form['prev_date_from'] = array(
+	'#type' => 'hidden',
+	
+	'#default_value' => $rs->date_from,
+	);
+	
+
+	$form['date_from'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'From Date',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->date_from,
+	);
+	
+	$form['date_to'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'To Date',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->date_to,
+	);
+	
+	/*$form['date_due'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Due Date',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $node->mfd,
+	);*/
+	
+	$form['policy_no'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Policy No. '),
+	'#required' => TRUE,
+	'#default_value' =>$rs->policy_no,
+	 '#maxlength'=>15,
+	'#size' =>25,
+	'#attributes' => array('onkeypress' => 'return alphanumeric2(event);'),
+	);
+	
+	$form['sum_insured'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Sum Insured'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->sum_insured,
+	 '#maxlength'=>11,
+	'#size' =>25,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+	
+	);
+		$form['person_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Person Name'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->person_name,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' => 'return alphabet(event);'),
+	);
+	$form['add_type'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Address Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rs->add_type,
+		 '#options' => AddressType(),
+		 
+
+);
+
+
+
+
+  $form['add_line1'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 1'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->add_line1,
+	'#size' =>100,
+	'#maxlength' =>100,
+	'#attributes' => array('onkeypress' => 'return addressvalidation(event);'),
+	);
+	
+  $form['add_line2'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 2'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->add_line2,
+	'#size' =>100,
+	'#maxlength' =>100,
+	'#attributes' => array('onkeypress' => 'return addressvalidation(event);'),
+	);
+	
+$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->state_id,
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	
+	
+
+	  $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $rs->district_id,
+		'#options' =>GetDistrictStateWise($rs->state_id),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $rs->tehsil_id,
+			'#options' =>GetTehsilDistrictWise($rs->dsitrict_id,$rs->state_id),
+		   
+		);
+	//end;
+	
+
+		
+  $form['block'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Block'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->block,
+	'#size' =>45,
+	'#maxlength'=>45,
+	'#attributes' => array('onkeypress' => 'return alphanumeric2(event);'),
+	);
+	
+		
+  $form['panchayat'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Panchayat'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->panchayat,
+	'#size' =>45,
+	'#maxlength'=>45,
+	'#attributes' => array('onkeypress' => 'return alphanumeric2(event);'),
+	
+	);
+	
+	
+ $form['pincode'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('PIN Code'),
+	 '#required' =>FALSE,
+	 '#size' =>15, 
+	 '#maxlength'=>6,
+	 '#default_value' => $rs->pincode,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/vehicleInsuranceList'),	
+);
+
+
+return $form;
+} 
+
+function vehicleInsurance_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	$array = explode('/',$_GET['q']);
+	/*$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Vehicle Insurance Details', 'list/vehicleInsuranceList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Vehicle Insurance', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add Vehicle Insurance', 'node/add/vehicleInsurance');
+	}*/
+	
+	 $breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Vehicle Insurance Details', 'list/vehicleInsuranceList');
+        if(arg(1) !='add'){
+		  $breadcrumb[] = l('Edit Vehicle Insurance', 'node/'.arg(1).'/edit');	
+		}else{
+         $breadcrumb[] = l('Add Vehicle Insurance', 'node/add/vehicleInsurance');
+      
+		}
+	drupal_set_breadcrumb($breadcrumb);
+	
+	fononlyn('pincode',$form->pincode,'Pin Code');
+  alphanumeric('block',$block,'Block');
+  alphabet('panchayat',$panchayat,'Panchayat');
+	alphanumeric ('add_line1',$add_line1,'Address Line 1');
+		alphanumeric ('add_line2',$add_line2,'Address Line 2');
+		alphabet('person_name',$form->person_name,'Person Name');
+	alphanumeric('reg_no',$form->reg_no,'Reg. No.');
+	alphanumeric('policy_no',$form->policy_no,'Policy No.');
+	
+	paypay('sum_insured',$form->sum_insured,'Sum Insured');
+$pincode=$form->pincode;
+
+pincodelength($pincode,'pincode');
+
+$prev_date_from=$form->prev_date_from;
+
+$uul=db_query("select mfd from {tbl_vehicles} where vehicle_id='".$form->reg_no."'");
+$uk=db_fetch_object($uul);
+//echo $form->reg_no;exit;
+if($uk->mfd>$form->date_insurance){
+      form_set_error(date_insurance, t('Date of Insurance should be greater than the manufacturing date of the vehicle'));
+
+
+}
+
+	
+	 if($form->date_insurance >= $form->date_from && (!empty($from->date_insurance)) && (!empty($form->date_from)) )
+   {
+      form_set_error($form->date_insurance, t('Date of Insurance should be less than the starting period'));
+   }
+  
+	 if($form->date_from >= $form->date_to && (!empty($form->date_from)) && (!empty($form->date_to)))
+   {
+      form_set_error(date_from, t('Starting period of insurance policy should be less than the end date'));
+   }
+   
+   
+   $from_date = $form->date_from;
+   $to_date = $form->date_to;
+    $reg_no = $form->reg_no;
+	$prev_date_insurance= $form->prev_date_insurance;
+	$date_insurance=$form->date_insurance;
+	
+	$tehsilwa=$form->tehsil;
+
+	if($tehsilwa==''){form_set_error($form->tehsil,'Tehsil field is required');}
+	
+	
+$districtwa=$form->district;
+
+	if($districtwa==''){form_set_error($form->district,'District field is required');}
+
+	//////////////////////////////////////
+	
+	
+	/* if($values['edit_reg_no'] == $reg_no){
+   
+   $prev=db_query("select max(nid) as nid from {tbl_vehicleinsurance} where reg_no='".$reg_no."' and nid < (select max(nid) as nid from {tbl_vehicleinsurance} where reg_no='".$reg_no."')");
+     $pp=db_fetch_object($prev);
+	 
+   $ppo=db_query("select * from {tbl_vehicleinsurance} where nid='".$pp->nid."'");
+   $prev_datewa=db_fetch_object($ppo);
+   
+      // $sql = "select * from {tbl_vehicleinsurance} where  date_to >= '".$from_date ."'  and  reg_no='".$reg_no."' and //'".$from_date."' >= '".$prev_from_date."'";
+	//   $res = db_query($sql);
+	   //if($rs = db_fetch_object($res)){
+		 if($from_date<=$prev_datewa->date_insurance && (!empty($from_date)) && (!empty($prev_datewa->date_insurance)) ){
+		 form_set_error('$from_date','From date should be greater than the previous insurance expiry date');
+		
+	   } //exit;
+   }else{
+       
+	   $sql = "select * from {tbl_vehicleinsurance} where  date_to >= '".$from_date ."'  and  reg_no='".$reg_no."'";
+	   $res = db_query($sql);
+	   if($rs = db_fetch_object($res)){
+		 form_set_error('$from_date','From Date should be greater than previous insurance expiry date');
+		// echo "test";
+	   } //exit;
+  }
+
+  */
+  
+  
+	
+   
+  /////////////////////
+  
+
+  
+  if($form->edit_reg_no == $reg_no ){
+ 
+   $prev=db_query("select max(nid) as nid from {tbl_vehicleinsurance} where reg_no='".$reg_no."' and (nid < (select max(nid) as nid from {tbl_vehicleinsurance} where reg_no='".$reg_no."'))");
+     $pp=db_fetch_object($prev);
+   $ppo=db_query("select * from {tbl_vehicleinsurance} where nid='".$pp->nid."'");
+   $prev_datewa=db_fetch_object($ppo);
+   
+      // $sql = "select * from {tbl_vehicleinsurance} where  date_to >= '".$from_date ."'  and  reg_no='".$reg_no."' and //'".$from_date."' >= '".$prev_from_date."'";
+	//   $res = db_query($sql);
+	   //if($rs = db_fetch_object($res)){
+		   if($prev_date_from != $date_from){
+		 if($from_date<=$prev_date_from && (!empty($form->date_from)) ){
+		 form_set_error('date_from','From Date should be greater than the previous insurance expiry date');
+		 }
+	   } //exit;
+   }else{
+       
+	   $sql = "select * from {tbl_vehicleinsurance} where  date_to >= '".$from_date ."'  and  reg_no='".$reg_no."'";
+	   $res = db_query($sql);
+	   if($rs = db_fetch_object($res)){
+		 form_set_error('date_from','From Date should be greater than the previous Insurance expiry date');
+		// echo "test";
+	   } //exit;
+  }
+
+  
+  
+  
+
+  
+  //////////////////////
+	 
+}
+
+/**
+ *hook_form_alter
+ */
+function vehicleInsurance_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='vehicleInsurance_node_form'){
+	 
+	 $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	 
+	 
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function vehicleInsurance_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+  $add_type= $node->add_type;
+  $add_line1 = $node->add_line1;
+	$add_line2 = $node->add_line2;
+ $sum_insured=$node->sum_insured;
+    $district_id = $node->district_id;
+    $state_id = $node->state_id;
+   $tehsil_id = $node->tehsil_id;
+	$block= $node->block;
+	$panchayat = $node->panchayat;
+    $pincode = $node->pincode;
+  $date_due =$node->date_due;
+  $date_from =$node->date_from;
+  $date_to =$node->date_to;
+  $date_insurance =$node->date_insurance;
+  $person_name= $node-> person_name;
+  $reg_no= $node->reg_no;
+  $policy_no= $node->policy_no;
+  ///////////
+ 
+  $notification= $node->notification;
+  $entry_by= $user->name;
+
+    
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   
+
+db_query ("INSERT INTO {tbl_vehicleinsurance} (`vid`, `nid`,`notification`,`reg_no`, `date_insurance`,`date_from`,`date_to`,`policy_no`,`sum_insured`,`person_name`,`add_type`,`add_line1`,`add_line2`,`district_id`,`tehsil_id`,`state_id`,`block`,`panchayat`,`pincode`, `statusnodal`) VALUES ('".$vid."','".$nid."','".$notification."','".$reg_no."','".$date_insurance."','".$date_from."','".$date_to."','".$policy_no."','".$sum_insured."','".$person_name."','".$add_type."','".$add_line1."','".$add_line2."','".$district_id."','".$tehsil_id."','".$state_id."','".$block."','".$panchayat."','".$pincode."','".$statusnodal."')");
+
+
+	
+  //  drupal_set_message('Vehicle Insurance Entry has been saved successfully.');
+  $regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$node->reg_no."'");
+$regno= db_fetch_object($regnowa);
+	$message=getMessage('dsjevehicleInsurance','code05',array("0"=>$regno->reg_no));
+  drupal_set_message($message);
+	drupal_goto("list/vehicleInsuranceList");
+
+ 
+ 
+ }
+
+function vehicleInsurance_update($node){
+	
+	
+	 $add_type= $node->add_type;
+  $add_line1 = $node->add_line1;
+	$add_line2 = $node->add_line2;
+ 
+    $district_id = $node->district_id;
+    $state_id = $node->state_id;
+   $tehsil_id = $node->tehsil_id;
+	$block= $node->block;
+	$panchayat = $node->panchayat;
+    $pincode = $node->pincode;
+  $date_due =$node->date_due;
+  $date_from =$node->date_from;
+  $date_to =$node->date_to;
+  $date_insurance =$node->date_insurance;
+  $person_name= $node-> person_name;
+  $reg_no= $node->reg_no;
+  $policy_no= $node->policy_no;
+  ///////////
+  $sum_insured=$node->sum_insured;
+ 
+  $entry_by= $user->name;
+ $notification= $node->notification;
+  
+	$statusnodal = $node->statusnodal;
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$uid=$node->uid;
+	
+	
+	
+	db_query("UPDATE {tbl_vehicleinsurance} SET `notification`='".$notification."',`reg_no`='".$reg_no."',`date_insurance`='".$date_insurance."',`date_to`='".$date_to."',`date_from`='".$date_from."',`policy_no`='".$policy_no."',`sum_insured`='".$sum_insured."',`person_name`='".$person_name."',`add_type`='".$add_type."',`add_line1`='".$add_line1."',`add_line2`='".$add_line2."',`district_id`='".$district_id."',`tehsil_id`='".$tehsil_id."',`state_id`='".$state_id."',`block`='".$block."',`panchayat`='".$panchayat."',`pincode`='".$pincode."',`statusnodal`='".$statusnodal."' WHERE nid='".$nid."'");
+	
+	
+	//drupal_set_message('Vehicle Insurance Details have been updated successfully.');
+	$regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$node->reg_no."'");
+$regno= db_fetch_object($regnowa);
+	$message=getMessage('dsjevehicleInsurance','code06',array("0"=>$regno->reg_no));
+  drupal_set_message($message);
+	drupal_goto("list/vehicleInsuranceList");
+	
+	
+}
+
+
+function vehicleInsurance_theme() {
+	
+	return array(
+				 
+		'vehicleInsurance_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'vehicleInsurance_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+
+
+function vehicleInsurance_cron(){
+
+//$curr_date=date();
+$start=date('Y-m-d');
+
+$selDate=db_query("select * from {tbl_vehicleinsurance} ");
+
+while($rs=db_fetch_object($selDate)){
+
+$date_diff=dateDiffByDays($start,$rs->date_to);
+
+if($date_diff==15 && $rs->remind_mail==0 && $rs->notification==84){
+
+
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+//$to = $u->mail;
+	$finduid=db_query("select * from {users_roles} where rid=13");
+$reg_no=db_fetch_object($reg);
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+if(createMail('vehicleInsurance', $ms->mail,'',$parameter,''))
+{
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_vehicleinsurance} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+
+}
+}
+}
+
+else if($date_diff==3 && $rs->remind_mail==1 && $rs->notification==84){
+
+
+
+
+//$to = $u->mail;
+	
+	$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+	$reg_no=db_fetch_object($reg);
+	$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('vehicleInsurance', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_vehicleinsurance} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+}}
+
+}
+
+
+else if($date_diff==0 && $rs->remind_mail <= 3 && $rs->notification==84){
+
+
+
+
+
+
+//$to = $u->mail;
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+$reg_no=db_fetch_object($reg);
+$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('vehicleInsurance_today', $ms->mail,'',$parameter,'')){
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_vehicleinsurance} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+} 
+
+}
+}}
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+ /*
+function vehicleInsurance_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_vehicleinsurance ON (node.nid=tbl_vehicleinsurance.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+  */
+function view_vehicleInsurance($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Vehicle Insurance Details', 'list/vehicleInsuranceList');
+   if($array[0] == 'viewvehicleInsurance'){
+     $breadcrumb[] = l('View Vehicle Insurance', 'viewvehicleInsurance/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from {tbl_vehicleinsurance} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from {users} where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+
+$add_type=getLookupName($rs->add_type);
+$regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+$regno= db_fetch_object($regnowa);
+$notification=getLookupName($rs->notification);
+
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-conatiner">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Vehicle Insurance Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Do you want to block email notification:</td><td class="normal"> '.$notification.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Reg No.:</td><td class="normal">'.$regno->reg_no.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Date of Insurance:</td><td class="normal"> '.date('d-m-Y',strtotime($rs->date_insurance)).'</td></tr>';
+//$output .='<tr class="oddrow" colspan="2"><td>PERIOD</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">From Date:</td><td class="normal"> '.date('d-m-Y',strtotime($rs->date_from)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">To Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date_to)).'</td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">Due Date:</td><td class="normal">'.$rs->date_due.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Policy No.:</td><td class="normal">'.$rs->policy_no.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Sum Insured:</td><td class="normal">'.round($rs->sum_insured).'</td></tr>';
+$output .='<tr class="oddrow" ><td colspan="2">INSURER DETAILS</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Name:</td><td class="normal">'.ucwords($rs->person_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Address Type:</td><td class="normal">'.ucwords($add_type).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Addresss Line 1:</td><td class="normal">'.ucwords($rs->add_line1).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Addresss Line 2:</td><td class="normal">'.ucwords($rs->add_line2).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">State:</td><td class="normal">'.ucwords(getState($rs->state_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">District:</td><td class="normal">'.ucwords(getdistrict($rs->district_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Tehsil:</td><td class="normal">'.ucwords(gettehsil($rs->tehsil_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Block:</td><td class="normal">'.$rs->block.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Panchayat:</td><td class="normal">'.$rs->panchayat.'</td></tr>';
+$pinni=$rs->pincode;
+if($pinni==''){$pinni='N/A';}
+
+$output .='<tr class="oddrow"><td width="50%">Pin code:</td><td class="normal">'.$pinni.'</td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.$rs->status.'</td></tr>';
+$output .='<tr class="evenrow"><td align="center" class="back" colspan="2">'.l(t('Back'), 'list/vehicleInsuranceList').'</td></tr>'; 
+ $output .='</table>';
+return $output ;
+}

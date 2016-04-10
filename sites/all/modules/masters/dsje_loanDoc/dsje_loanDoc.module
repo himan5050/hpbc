@@ -1,0 +1,511 @@
+<?php
+function dsje_loanDoc_init() {
+	//drupal_add_css(drupal_get_path('module', 'dsje_language') .'/dsje_language.css');
+	
+}
+
+
+function dsje_loanDoc_perm() {
+	return array('edit dsje_loanDoc','administer dsje_loanDoc', 'create dsje_loanDoc', 'view dsje_loanDoc');
+}
+
+function dsje_loanDoc_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_loanDoc', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_loanDoc', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_loanDoc', $account);
+	}
+	
+}
+
+function dsje_loanDoc_menu() {
+	
+	
+	$items['admin/dsje/listloanDoc'] = array(
+										'title' => t('List of Loan Documents'),
+										'description' => 'Allow user to View loan documents',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewloanDoc',
+										'access arguments' => array('administer dsje_loanDoc'),
+													 
+									  );
+	
+	$items['admin/dsje/listloanDoc/addloanDoc'] = array(
+										'title' => t('Create Loan Document'),
+										'description' => 'Allow user to add loanDoc',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_loanDoc',
+										'access arguments' => array('administer dsje_loanDoc'),
+													 
+									  );
+   	$items['admin/dsje/listloanDoc/edit/loanDoc/%'] = array(
+								
+										'title' => t('Edit Loan Document'),
+										'description' => 'Allow user to add Loan Document',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addloanDocedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_loanDoc'),
+													 
+									  );
+   $items['admin/dsje/listloanDoc/view/loanDoc/%'] = array(
+								
+										'title' => t('View Loan Documents'),
+										'description' => 'Allow user to add Loan Documents',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addloanDocview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_loanDoc'),
+													 
+									  );
+     $items['admin/dsje/del/loanDoc/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'loanDoc_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_loanDoc'),
+													 
+									  );
+    $items['admin/dsje/enable/loanDoc/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'loanDoc_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_loanDoc'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing loanDoc
+ */
+
+function viewloanDoc(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjeloanDoc', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Loan Document(s)'), 'field' => 'loanDoc_name', 'sort' => 'asc'),
+		array('data' => t('Status'), 'field' => 'status', 'sort' => 'asc'),
+		array('data' => t('Action'), 'class' => 'addeditview',),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Loan Document(s)', 'admin/dsje/listloanDoc/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+    $val = '%'.strtoupper(ParseData($_REQUEST['searchtext'])).'%';	
+	
+	$status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "UPPER(loanDoc_name) LIKE '".$val."' ";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(loanDoc_name) LIKE '".$val."' AND status='".$status."')";
+	 }
+	 
+	 $query = "SELECT loanDoc_id, loanDoc_name, status FROM {tbl_loandocs} where ".$searchquery." ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM {tbl_loandocs} where ".$searchquery." ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	$_REQUEST['page']=0;
+ }else{
+    $query = "SELECT loanDoc_id, loanDoc_name, status FROM {tbl_loandocs} ".tablesort_sql($header);
+ }
+ 
+ $t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+ 
+ 
+ $output = '<form method="post" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'dsjeloanDoc', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listloanDoc');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjeloanDoc', 'code01', NULL),"admin/dsje/listloanDoc/addloanDoc");
+   	$lising = getMessage( 'dsjeloanDoc', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listloanDoc/edit/loanDoc/".$row->loanDoc_id);
+		$viewurl = l("View","admin/dsje/listloanDoc/view/loanDoc/".$row->loanDoc_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/loanDoc/$row->loanDoc_id/$row->loanDoc_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/loanDoc/$row->loanDoc_id/$row->loanDoc_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->loanDoc_name)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+	}
+	if($counter > 0){
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	}
+	$output .= theme('pager', NULL, $limit,0 );
+	
+	return $output;
+ }
+
+function dsje_loanDoc(){
+ return drupal_get_form('dsje_loanDoc_form');
+}
+
+function dsje_loanDoc_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Loan Document(s)', 'admin/dsje/listloanDoc');
+  if($array[3] == 'addloanDoc'){
+     $breadcrumb[] = l('Add Loan Document(s)', 'admin/dsje/listloanDoc/addloanDoc');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['loanDoc_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Loan Document Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+		'#maxlength' =>45,
+	    '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+   	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listloanDoc'),
+);
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	
+	return $form;
+}
+
+function dsje_loanDoc_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $loanDoc_name = trim($values['loanDoc_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('loanDoc_name',$loanDoc_name,'loanDoc');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO {tbl_loandocs} (`loanDoc_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$loanDoc_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjeloanDoc', 'code05', array("0"=>$loanDoc_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listloanDoc');
+	}
+}
+
+function dsje_loanDoc_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$loanDoc_name = trim($values['loanDoc_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('loanDoc_name',$loanDoc_name,'loanDoc');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_loandocs} where UCASE(loanDoc_name)= '".strtoupper($loanDoc_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjeloanDoc', 'code06', array("0"=>$loanDoc_name));
+			form_set_error('loanDoc_name', $message);
+		}
+	}	
+}
+
+function dsje_addloanDocedit($loanDoc_id){
+ return drupal_get_form('dsje_loanDoc_form_edit',$loanDoc_id);
+}
+
+function dsje_loanDoc_form_edit(&$form_states,$loanDoc_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Loan Document(s)', 'admin/dsje/listloanDoc');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Loan Document(s)', 'admin/dsje/listloanDoc/edit/loanDoc/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlloanDoc = "select * FROM {tbl_loandocs} where loanDoc_id=$loanDoc_id";
+	$resloanDoc = db_query($sqlloanDoc);
+	$rsloanDoc = db_fetch_object($resloanDoc);
+	
+	$form['loanDoc_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsloanDoc->loanDoc_id,
+	);
+	
+	$form['loanDoc_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Loan Document Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsloanDoc->loanDoc_name,
+		'#size' =>41,
+		'#maxlength' =>45,
+	    '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	$form['prev_loanDoc_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsloanDoc->loanDoc_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsloanDoc->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listloanDoc'),
+);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	
+	return $form;
+}
+
+function dsje_loanDoc_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$loanDoc_id = $values['loanDoc_id'];
+	$loanDoc_name = ParseData($values['loanDoc_name']);
+	$prev_loanDoc_name = ParseData($values['prev_loanDoc_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('loanDoc_name',$loanDoc_name,'loanDoc');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_loandocs} where LOWER(loanDoc_name)= '".strtolower($loanDoc_name)."' GROUP BY loanDoc_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_loanDoc_name), strtolower($loanDoc_name))==0){
+			db_query("UPDATE {tbl_loandocs} set `loanDoc_name` = '".$loanDoc_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where loanDoc_id='".$loanDoc_id."'");
+			
+			$message = getMessage('dsjeloanDoc', 'code11', array("0"=>$loanDoc_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listloanDoc");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE {tbl_loandocs} set `loanDoc_name` = '".$loanDoc_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where loanDoc_id='".$loanDoc_id."'");
+				
+				$message = getMessage('dsjeloanDoc', 'code11', array("0"=>$loanDoc_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listloanDoc");	
+			
+			}else{
+				db_query("UPDATE {tbl_loandocs} set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where loanDoc_id='".$loanDoc_id."'");
+				
+				$message = getMessage('dsjeloanDoc', 'code06', array("0"=>$loanDoc_name));
+				form_set_error('loanDoc_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_loanDoc_theme() {
+	
+	return array(
+				 
+		'dsje_loanDoc_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_loanDoc_form',
+                                 ),
+        'dsje_loanDoc_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_loanDoc_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_loanDoc_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_loanDoc_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_loanDoc_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function loanDoc_delete($sid, $sno){
+  $loanDoc_id =  $sid;
+  db_query("UPDATE {tbl_loandocs} SET status=0 WHERE loanDoc_id ='".$loanDoc_id."'");
+  $message = getMessage('dsjeloanDoc', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listloanDoc");
+ }
+
+
+  function loanDoc_enable($sid, $sno){
+    $loanDoc_id =  $sid;
+    db_query("UPDATE {tbl_loandocs} SET status=1 WHERE loanDoc_id ='".$loanDoc_id."'");
+  
+    $message = getMessage('dsjeloanDoc', 'code10', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listloanDoc");
+  }
+
+  function dsje_addloanDocview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Loan Document(s)', 'admin/dsje/listloanDoc');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Loan Document(s)', 'admin/dsje/listloanDoc/view/loanDoc/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * FROM {tbl_loandocs} where loanDoc_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="form-container">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>Loan Document Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td width="50%">Loan Document:</td><td class="normal">'.ucwords($rs->loanDoc_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+  $output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'admin/dsje/listloanDoc').'</td></tr>';
+ $output .='</table>';
+ return $output;
+  }
+	
+	

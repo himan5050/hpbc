@@ -1,0 +1,6 @@
+;$id 12/22/2011 jeetendra Kumar
+name = "Holidays List"
+description ="Holidays master"
+core = 6.x
+version =6.x-1
+package="Dsje Masters"

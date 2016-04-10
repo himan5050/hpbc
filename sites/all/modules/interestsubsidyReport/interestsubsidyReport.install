@@ -1,0 +1,108 @@
+<?php
+function interestsubsidyReport_schema() {
+
+  //nodal table
+   $schema['tbl_interestsubsidyReport'] = array(
+							 'fields' => array(
+											   
+                                               'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                         
+										   'scheme_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										 
+										  'Account_no' => array(
+															  'type' => 'varchar',
+															  'length' => '6',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										   'Loanee_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'Dis_amt' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ), 
+										 'amount_isub' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+
+											'loan_iss_bank' => array(
+															  'type' => 'varchar',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											'bank_branch' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+											
+					
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+                                             
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('vid'),
+							 );
+	return $schema;
+}
+function interestsubsidyReport_install() {
+	drupal_install_schema('interestsubsidyReport');
+}
+
+function interestsubsidyReport_uninstall() {
+	drupal_uninstall_schema('interestsubsidyReport');
+}

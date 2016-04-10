@@ -1,0 +1,6 @@
+;$id 12/21/2010 Neshat Khan
+name="Dsje Vendor"
+description="Vendor master"
+core =6.x
+version = 6.x-1
+package="Guest"

@@ -1,0 +1,2894 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/dsje_joinings.inc');
+
+function dsje_joinings_init(){
+drupal_add_js(drupal_get_path('module','dsje_joinings').'/rec_program.js');
+
+}
+
+function dsje_joinings_node_info() {
+	return array (
+					'dsje_joinings' => array (
+										'name' => t('List of Dsje Employee'),
+										'module' => 'dsje_joinings',
+										'description' => "Creates New Employee",
+										'has_title' => TRUE,
+										'title_label' => t('Employee'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function dsje_joinings_perm() {
+	return array('edit dsje_joinings','administer dsje_joinings', 'create dsje_joinings', 'view dsje_joinings');
+}
+
+function dsje_joinings_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_joinings', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_joinings', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_joinings', $account);
+	}
+}
+ 
+ function dsje_joinings_menu(){
+	 $items['list/employeeList'] = array(
+		   'title' => 'List of Dsje Employees',
+		   'page callback' => 'program_manager_list',
+		   'access arguments' => array('administer dsje_joinings'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewemployee/%'] = array(
+								'title' => t('view Employee'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_program',
+								'page arguments' => array(1),
+								'access arguments' => array('administer dsje_joinings'),
+		                        
+						);
+  
+  $items['admin/dsje/del/program/%/%'] =  array(
+	               						 'title' => t('Delete Employee'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'program_delete',
+		           			             'page arguments' => array(4,5),
+		               			         'access arguments' => array('administer dsje_joinings'),
+													 
+	);
+ $items['admin/dsje/enable/program/%/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'program_enable',
+		            			            'page arguments' => array(4,5),
+		                  				    'access arguments' => array('administer dsje_joinings'),
+														 
+	);	
+	
+	$items['setpoworkingzone'] = array(
+										'page callback' => 'setpoworkingzone',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+							);
+	
+	$items['dsje/religion'] = array(
+										'page callback' => 'myreligion',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+									
+										
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function program_manager_list(){
+	global $user, $base_url;
+	  $rid=getRole($user->uid);
+	
+	$limit =(int)getMessage('recProgram', 'code04', NULL);
+    $action = $base_url.'/list/employeeList';
+
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Employee Name'), 'field' => 'tbl_joinings.employee_name', 'sort' => 'asc'),
+	array('data' => t('Corporation Office'), 'field' => 'tbl_corporations.corporation_name', 'sort' => 'asc'),
+	array('data' => t('User Name'),'field'=> 'tbl_joinings.username','sort'=>'asc'),
+	array('data' => t('Status')),
+	array('data' => t('Action'), 'class' => 'addeditview'),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Employees', 'list/employeeList'.$array[2]);
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!='' || $_REQUEST['searchtextstatus']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	
+	
+	$status = $_REQUEST['searchtextstatus'];
+	
+	if( $val && $status ==''){
+	 $searchquery = " tbl_joinings.username LIKE '".$val."' OR tbl_joinings.employee_name LIKE '".$val."' OR tbl_corporations.corporation_name LIKE '".$val."' ";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = " tbl_joinings.statusnodal='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(tbl_joinings.username LIKE '".$val."' OR tbl_joinings.employee_name LIKE '".$val."' OR tbl_corporations.corporation_name LIKE '".$val."' ) AND tbl_joinings.statusnodal='".$status."'";
+	 }
+	
+	
+	 
+	 	
+	/* $sql = "SELECT  node.nid,node.uid, employee_name,employee_id, tbl_corporations.corporation_name, username,statusnodal FROM {node}
+	 INNER JOIN tbl_joinings ON (node.nid=tbl_joinings.nid)
+	 INNER JOIN tbl_corporations ON (tbl_corporations.corporation_id=tbl_joinings.current_officeid)
+	 WHERE node.uid='".$user->uid."' AND( tbl_joinings.employee_name LIKE '".$val."'  OR tbl_corporations.corporation_name LIKE '".$val."' OR tbl_joinings.username LIKE '".$val."' OR tbl_joinings.statusnodal LIKE '".$val."') ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_joinings ON (node.nid=tbl_joinings.nid)
+	INNER JOIN tbl_corporations ON (tbl_corporations.corporation_id=tbl_joinings.current_officeid)
+	 WHERE node.uid='".$user->uid."' AND(  tbl_joinings.employee_name LIKE '".$val."' OR tbl_corporations.corporation_name LIKE '".$val."' OR tbl_joinings.username LIKE '".$val."' OR tbl_joinings.statusnodal LIKE '".$val."') ".tablesort_sql($header);
+	 */
+	 
+	 
+	 $sql = "SELECT  node.nid,node.uid, employee_name,employee_id, tbl_corporations.corporation_name, username,statusnodal FROM {node}
+	 INNER JOIN tbl_joinings ON (node.nid=tbl_joinings.nid)
+	 INNER JOIN tbl_corporations ON (tbl_corporations.corporation_id=tbl_joinings.current_officeid)
+	 WHERE ".$searchquery." ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_joinings ON (node.nid=tbl_joinings.nid)
+	INNER JOIN tbl_corporations ON (tbl_corporations.corporation_id=tbl_joinings.current_officeid)
+	 WHERE ".$searchquery." ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	  // $_REQUEST['page']=0;
+	}else{
+	$uid=$user->uid;
+	if($rid==13 || $uid==1){
+	  $sql = "SELECT  node.nid,node.uid, tbl_joinings.employee_name,tbl_joinings.employee_id, tbl_joinings.username, tbl_corporations.corporation_name,tbl_joinings.statusnodal FROM {node}
+	 INNER JOIN tbl_joinings ON (node.nid=tbl_joinings.nid)
+	 INNER JOIN tbl_corporations ON (tbl_corporations.corporation_id=tbl_joinings.current_officeid)".tablesort_sql($header);
+	}
+
+else{
+$uid=$user->uid;
+$sql = "SELECT  node.nid,node.uid, tbl_joinings.employee_name,tbl_joinings.employee_id, tbl_joinings.username,tbl_joinings.program_uid, tbl_corporations.corporation_name,tbl_joinings.statusnodal FROM {node}
+	 INNER JOIN tbl_joinings ON (node.nid=tbl_joinings.nid)
+	 INNER JOIN tbl_corporations ON (tbl_corporations.corporation_id=tbl_joinings.current_officeid)
+	 WHERE node.uid='".$user->uid."' or tbl_joinings.program_uid='".$uid."' ".tablesort_sql($header);
+
+
+}
+
+
+}
+
+
+
+
+
+
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+	
+
+
+	 $output = '<form method="post" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper"><tr><td  class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!='' || $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage('recProgram', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/employeeList');
+	}
+	
+	$output .='</td></tr>';
+	$uid=$user->uid;
+	if($rid==13 || $uid==1){
+	$addurl = l(getMessage('recProgram', 'code01', NULL),"node/add/dsje-joinings");
+   	}
+	$lising = getMessage('recProgram', 'code02', NULL);
+		
+	$output .='<tr><td  class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td><td colspan="3" class="tblHeaderRight">
+	
+	Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;
+	
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" /><input type="submit" name="search" value="Search" /></td></tr></table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	global $base_url;
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewemployee/".$rs->nid);
+		
+		if($rs->statusnodal==1){
+		       $st ='Enabled';
+		       $deleteurl = l("Disable","admin/dsje/del/program/".$rs->nid."/".$rs->employee_name);
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Enable","admin/dsje/enable/program/".$rs->nid."/".$rs->employee_name);
+		}
+
+  $cnode = node_load($rs->nid);
+  //echo '<pre>';
+ // print_r($cnode->field_photo_upload[0]['filepath']);exit;
+ // $user_pic = $cnode->field_photo_upload[0]['filepath'];
+
+     // drupal_set_message($rs->employee_id);
+ $serviceurl= l("Service Book",$base_url."/serviceBookpdf.php?op=serviceBook_report&employee_id=".$rs->employee_id,array('attributes' => array('target'=>'_blank')));
+  $uid=$user->uid;
+  
+  if($rid==13 || $uid==1){
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($rs->employee_name)),
+			array('data' => ucwords($rs->corporation_name)),
+            array('data' => $rs->username),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl." | ".$serviceurl),
+		);
+		}
+		
+		else{
+		
+		drupal_goto($viewurl);
+		
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($rs->employee_name)),
+			array('data' => ucwords($rs->corporation_name)),
+            array('data' => $rs->username),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$serviceurl),
+		);
+		
+		
+		}
+		
+	  }
+	  
+	}
+
+ if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, 20,0 );
+	
+		return $output ;
+  }
+
+function program_delete($nid,$name){
+  
+  $node = node_load($nid);
+  db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->program_uid."'");
+  db_query("UPDATE {tbl_joinings} SET 	statusnodal =0 WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Employee '.$name.' has been disabled successfully.');
+   $message=getMessage('dsjeEmployee','code07',array("0"=>$node->employee_name));
+  drupal_set_message($message);
+  drupal_goto("list/employeeList");
+ }
+
+
+//////////////ahah for religion and caste
+
+
+function myreligion() {
+    $religion_id = $_POST['religion'];
+	
+	$query = "SELECT tbl_cast.cast_id, tbl_cast.cast_name FROM {tbl_cast} WHERE tbl_cast.religion_id = '".$religion_id."' AND status='1' ORDER BY cast_name";
+	$result = db_query($query);
+	$castarray = array();
+	$castarray[''] = "--Select--";
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$castarray[$row->cast_id] = $row->cast_name;
+		$counter++;
+	}
+	if($counter==0) {
+		$castarray[''] = "--Select--";
+	}
+	$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('dsje_joinings_form', $form, $form_state);
+
+
+	
+	 $form['caste'] = array(
+	'#type' => 'select',
+	'#title' => t('Caste'),
+	'#required' => TRUE,
+	'#options' => $castarray, 
+	'#id' => 'edit-cast-id',
+	'#name' => 'caste',
+	);
+
+	$output = drupal_render($form['caste']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+
+///////////
+
+
+
+function program_enable($nid,$name){
+  
+  $node = node_load($nid);
+  db_query("UPDATE {users} SET status=1 WHERE uid ='".$node->program_uid."'");
+  db_query("UPDATE {tbl_joinings} SET 	statusnodal =1 WHERE nid ='".$node->nid."'");
+  //drupal_set_message('Employee '.$name.' has been enabled successfully.');
+  $message=getMessage('dsjeEmployee','code09',array("0"=>$node->employee_name));
+  drupal_set_message($message);
+  drupal_goto("list/employeeList");
+ }
+
+
+function dsje_joinings_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Employees', 'list/employeeList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Employee', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Employees', 'node/add/dsje-joinings'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+ 
+ if(is_numeric(arg(1)))
+	 {
+ $sql = "SELECT * FROM {node} INNER JOIN tbl_joinings ON (node.nid=tbl_joinings.nid) WHERE node.nid='".arg(1)."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+}
+ $form['prev_employee_id']=array(
+ '#type'=>'hidden',
+  '#default_value' =>$rs->employee_id, 
+  );
+  
+  	$form['employee_id'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Employee ID'),
+	'#required' =>TRUE,
+	'#size' =>15, 
+	 '#maxlength'=>15, 
+	'#default_value' =>$rs->employee_id, 
+	'#attributes' => array('onkeypress' =>'return  alphanumericspace(event)'),
+	);
+	
+    $form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Employee Name'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->employee_name,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+       $form['father_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Father/Husband Name'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->father_name,
+	'#maxlength'=>45,
+	'#size' =>45,'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+
+   $form['nationality'] = array(
+	'#type' => 'select',
+	'#title' => t('Nationality'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->nationality,
+	'#options' => SelectNationality(), 
+	);
+	
+	$form['dob'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Birth',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->dob,
+	);
+	
+
+	$form['doj'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Date of Joining'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->doj,
+	);
+	
+	  $form['basic_pay'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Basic Pay'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>11,
+	 '#default_value' => $rs->basic_pay,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+  
+    $form['grade_pay'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Grade Pay'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>11,
+	 '#default_value' => $rs->grade_pay,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+	
+	$form['employee_type'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Employee Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rs->employee_type,
+		 '#options' => EmployeeType(),
+
+);
+	
+	
+	 $form['religion'] = array(
+	'#type' => 'select',
+	'#title' => t('Religion'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->religion,
+	'#options' => SelectReligion(), 
+	'#ahah' => array(
+				  'path' => 'dsje/religion',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'religion',
+				  ),
+	);
+	
+	$query = "SELECT tbl_cast.cast_id, tbl_cast.cast_name FROM {tbl_cast} WHERE tbl_cast.religion_id = '".$rs->religion."' AND status='1' ORDER BY cast_name";
+	$result = db_query($query);
+	$castarray = array();
+	$castarray[''] = "--Select--";
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$castarray[$row->cast_id] = $row->cast_name;
+		$counter++;
+	}
+	if($counter==0) {
+		$castarray[''] = "--Select--";
+	}
+	
+	$hh=db_query("select religion from {tbl_joinings} where nid='".$rs->nid."'");
+	$hhh=db_fetch_object($hh);
+	if(!empty($hhh)){
+	 $form['caste'] = array(
+	'#type' => 'select',
+	'#title' => t('Caste'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->caste,
+	'#options' => $castarray, 
+	);
+	}
+	
+	else{
+	$castarray['']="--Select--";
+	 $form['caste'] = array(
+	'#type' => 'select',
+	'#title' => t('Caste'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->caste,
+	'#options' => $castarray, 
+	);
+	
+	
+	}
+	
+	$form['officeid'] = array(
+	'#type' => 'select',
+	'#title' => t('Corporation Office'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->officeid,
+	'#options' => SelectOffices(), 
+	);
+	
+	
+	
+	
+	
+	
+	
+	  $form['edu_qual'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Educational Qualification'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->edu_qual,
+	'#size' =>200,
+	 '#maxlength'=>200,	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	 
+	 
+	);
+	
+	
+	 $form['prof_qual'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Professional Qualification'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->prof_qual,
+	'#size' =>200,
+	 '#maxlength'=>200,	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	 $form['mark'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Personal Mark of Identity'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->mark,
+	'#size' =>45,
+	 '#maxlength'=>45,	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	$form['height'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Height (in feet)'),
+	'#required' => TRUE,
+	 '#maxlength'=>5,
+	'#default_value' =>$rs->height,
+	'#size' =>5, 	'#attributes' => array('onkeypress' =>'return  paypay(event)'),
+	);
+	
+	
+
+	
+	$form['designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Designation'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	
+		
+	
+	$form['Departmentid'] = array(
+	'#type' => 'select',
+	'#title' => t('Department'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->Departmentid,
+	'#options' => SelectDepartment(), 
+	);
+	
+	if($node->status2!=''){
+	
+	//$rsss=db_query("select status2 from {tbl_joinings} where nid='".$node->nid."'");
+	//$ks=db_fetch_object($rsss);
+	$stat=getLookupName($rs->status2);
+	
+	
+	
+	$form['status2'] = array(
+//	'#type' => 'select',
+	'#type' =>'textfield',
+	'#title' => t('Employee Status'),
+	'#required' => TRUE,
+	//'#default_value' =>$ks->status2,
+	'#default_value' => $stat,
+	//'#options' => employeeStatus(), 
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	}
+	
+	$form['gender'] = array(
+	'#type' => 'select',
+	'#title' => t('Gender'),
+	'#required' => TRUE,
+	'#default_value' => $rs->gender,
+	'#options' => selectGender(),
+	);
+	
+	$form['employeegrade2'] = array(
+	'#type' => 'select',
+	'#title' => t('Employee Grade'),
+	'#required' => TRUE,
+	'#default_value' => $rs->employeegrade2,
+	'#options' => employeegrade2(),
+	);
+	
+	
+	$form['adhar'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Adhar Card'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->adhar,
+	'#size' =>30,
+	 '#maxlength'=>30,
+	 '#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	 
+	 
+	);
+	
+
+	
+	
+
+ 
+
+
+ $form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	 '#required' =>TRUE,
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $rs->email,
+	 '#attributes' => array('onkeypress' => 'return emailvali(event)'),		
+  );
+  
+
+  $form['mobile'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Mobile No.'),
+	 '#required' =>FALSE,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $rs->mobile,
+	 '#attributes' => array('onkeypress' => 'return  fononlyn(event)'),	
+  );
+
+  $form['phone'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Phone No.'),
+	 '#required' =>FALSE,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $rs->phone,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+ 
+
+
+$form['add_type'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Address Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rs->add_type,
+		 '#options' => AddressType(),
+
+);
+
+
+
+
+  $form['add_line1'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 1'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->add_line1,
+	'#size' =>100,
+	 '#maxlength'=>100, '#attributes' => array('onkeypress' => 'return textonlywithdotne(event)'),
+	);
+	
+  $form['add_line2'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 2'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->add_line2,
+	'#size' =>100,
+	 '#maxlength'=>100, '#attributes' => array('onkeypress' => 'return textonlywithdotne(event)'),
+	);
+	
+$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->state_id,
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	
+	
+
+	 	
+	if($node->nid){
+
+	  $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $rs->district_id,
+		'#options' =>GetDistrictStateWise($rs->state_id),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $rs->tehsil_id,
+			'#options' =>GetTehsilDistrictWise($node->dsitrict_id,$rs->state_id),
+		   
+		);
+	//end;
+	
+	}
+	else {
+	
+	 $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $rs->district_id,
+		'#options' =>array(''=>'--Select--'),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $rs->tehsil_id,
+			'#options' =>array(''=>'--Select--'),
+		   
+		);
+	//end;
+	
+	}
+		
+	
+	
+  $form['block'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Block'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->block,
+	 '#maxlength'=>20,
+	'#size' =>20, '#attributes' => array('onkeypress' => 'return alphanumeric2(event)'),
+	);
+	
+		
+  $form['panchayat'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Panchayat'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->panchayat,
+	'#size' =>20,
+	 '#maxlength'=>20, '#attributes' => array('onkeypress' => 'return alphabet(event)'),
+	);
+	
+	
+ $form['pincode'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('PIN Code'),
+	 '#required' =>FALSE,
+	 '#size' =>15, 
+	 '#maxlength'=>6,
+	 '#default_value' => $rs->pincode,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+  /////----------fields added for service book 
+  
+  ///----medical
+  
+   $form['medical_by'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Examined By'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->medical_by,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),	
+	);
+	
+		$form['medical_on'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Examined On'),
+	'#required' =>FALSE,
+	'#size' => '10',
+	'#default_value' => $rs->medical_on,
+	);
+	
+		$form['medical_sno'] = array(
+	'#type' =>'textfield',
+	'#title' => t('S. No.'),
+	'#required' =>FALSE,
+	'#size' =>15, 
+	 '#maxlength'=>15, 
+	'#default_value' =>$rs->medical_sno, 
+	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	
+	 $form['medical_certified_by'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Certified By'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->medical_certified_by,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+	$form['medical_designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Designation'),
+	'#required' =>FALSE,
+	'#default_value' =>$rs->medical_designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	///--character
+	
+	
+	$form['character_sno'] = array(
+	'#type' =>'textfield',
+	'#title' => t('S. No.'),
+	'#required' =>FALSE,
+	'#size' =>15, 
+	 '#maxlength'=>15, 
+	'#default_value' =>$rs->character_sno, 
+	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	
+	 $form['character_certified_by'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Certified By'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->character_certified_by,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+	$form['character_designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Designation'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->character_designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	////----allegiance
+	
+	$form['allegiance_sno'] = array(
+	'#type' =>'textfield',
+	'#title' => t('S. No.'),
+	'#required' =>FALSE,
+	'#size' =>15, 
+	 '#maxlength'=>15, 
+	'#default_value' =>$rs->allegiance_sno, 
+	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	
+	 $form['allegiance_certified_by'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Certified By'),
+	'#required' =>FALSE,
+	'#default_value' =>$rs->allegiance_certified_by,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+	$form['allegiance_designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Designation'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->allegiance_designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	//-----oath
+	
+	
+	$form['oath_sno'] = array(
+	'#type' =>'textfield',
+	'#title' => t('S. No.'),
+	'#required' =>FALSE,
+	'#size' =>15, 
+	 '#maxlength'=>15, 
+	'#default_value' =>$rs->oath_sno, 
+	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	
+	 $form['oath_certified_by'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Certified By'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->oath_certified_by,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+	$form['oath_designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Designation'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->oath_designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	///---- Marital Status
+	
+	$form['marital_sno'] = array(
+	'#type' =>'textfield',
+	'#title' => t('S. No.'),
+	'#required' =>FALSE,
+	'#size' =>15, 
+	 '#maxlength'=>15, 
+	'#default_value' =>$rs->marital_sno, 
+	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	
+	 $form['marital_certified_by'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Certified By'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->marital_certified_by,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+	$form['marital_designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Designation'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->marital_designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	//---declaration
+	
+		$form['declaration_sno'] = array(
+	'#type' =>'textfield',
+	'#title' => t('S. No.'),
+	'#required' =>FALSE,
+	'#size' =>15, 
+	 '#maxlength'=>15, 
+	'#default_value' =>$rs->declaration_sno, 
+	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	
+	 $form['declaration_certified_by'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Certified By'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->declaration_certified_by,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+	$form['declaration_designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Designation'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->declaration_designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	//---verification entries in part1
+	
+			$form['verification_sno'] = array(
+	'#type' =>'textfield',
+	'#title' => t('S. No.'),
+	'#required' =>FALSE,
+	'#size' =>15, 
+	 '#maxlength'=>15, 
+	'#default_value' =>$rs->verification_sno, 
+	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	
+	 $form['verification_certified_by'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Certified By'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->verification_certified_by,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+	$form['verification_designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Designation'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->verification_designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	//---gpf
+	
+	$form['gpf_sno'] = array(
+	'#type' =>'textfield',
+	'#title' => t('G.P.F No.'),
+	'#required' =>FALSE,
+	'#size' =>15, 
+	 '#maxlength'=>15, 
+	'#default_value' =>$rs->gpf_sno, 
+	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	 $form['gpf_certified_by'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Certified By'),
+	'#required' =>FALSE,
+	'#default_value' =>$rs->gpf_certified_by,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+	$form['gpf_designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Designation'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->gpf_designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	$form['gpf_nomination'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Nomination for G.P.F'),
+	'#required' =>FALSE,
+	'#default_value' =>$rs->gpf_nomination,
+	'#maxlength'=>200,
+	'#size' =>200,
+	'#attributes' => array('onkeypress' =>'return  textonlywithdotnemax(event ,"edit-gpf-nomination",199)'),
+	);
+
+	//
+	
+	//--Family particulars
+	
+	
+	$form['family_sno'] = array(
+	'#type' =>'textfield',
+	'#title' => t('S. No.'),
+	'#required' =>FALSE,
+	'#size' =>15, 
+	'#maxlength'=>15, 
+	'#default_value' =>$rs->family_sno, 
+	'#attributes' => array('onkeypress' =>'return  alphanumeric(event)'),
+	);
+	
+	
+	 $form['family_certified_by'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Certified By'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->family_certified_by,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+	$form['family_designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Designation'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->family_designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	//
+	//---dcr
+	
+	
+	
+	 $form['dcr_certified_by'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Certified By'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->dcr_certified_by,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+	
+	
+	$form['dcr_designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Designation'),
+	'#required' =>FALSE,
+	'#default_value' =>$rs->dcr_designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	$form['dcr_nomination'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Nomination for D.C.R gratuity and family pension'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->dcr_nomination,
+	'#maxlength' => 200,
+	'#attributes' => array('onkeypress' =>'return  textonlywithdotnemax(event ,"edit-dcr-nomination",199)'),
+	
+	
+	);
+	
+	//
+	
+	///////////////Adding Nominee Details Field
+	
+	$rrr=db_query("select NomineeName,NomineePhone,NomineeAddress,NomineeRelation from {tbl_joinings} where nid='".$node->nid."'");
+	$rrs=db_fetch_object($rrr);
+	
+	//echo "select NomineeName,NomineePhone,NomineeAddress,NomineeRelation from {tbl_joinings} where nid='".$node->nid."'";exit;
+	$form['nomineedetails'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('<b>Nominee Details</b>'),
+		'#tree' => TRUE,
+		);
+		$form['nomineedetails']['name2'] = array(
+		'#type' =>'textfield',
+		'#title' => t('Name'),
+		'#required' =>TRUE,
+    	'#default_value' =>$rrs->NomineeName,
+	    '#maxlength'=>45,
+	    '#size' =>45,
+	    '#attributes' => array('onkeypress' =>'return  alphabet(event)'),
+	);
+		
+		
+		
+		$form['nomineedetails']['address2'] = array(
+		'#type' =>'textfield',
+		'#title' => t('Address'),
+		'#required' =>TRUE,
+		'#size' =>200, 
+		 '#maxlength'=>200,
+		'#default_value' =>$rrs->NomineeAddress,
+		 '#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-nomineedetails-address2",200)'),	
+		
+		);
+		
+		$form['nomineedetails']['phone2'] = array(
+		'#type' =>'textfield',
+		'#title' => t('Phone'),
+		'#required' =>TRUE,
+		
+    	'#size' =>15,
+	    '#maxlength'=>15,
+	   '#minlenght'=>10,
+	   '#default_value' =>$rrs->NomineePhone,
+	   '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+		
+		
+		
+		
+	
+	
+	$form['nomineedetails']['relationship2'] = array(
+		'#type' =>'select',
+		'#title' => t('Relation'),
+		'#required' =>TRUE,
+	
+	'#default_value' =>$rrs->NomineeRelation, 
+		'#options'=>relationships(),
+	);
+	
+	
+	
+	///////////////
+	
+		$form['biometricfield'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Biometric'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->biometricfield,
+	'#maxlength' => 200,
+	'#size'=>200,
+	   '#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-biometricfield",200)'),
+	
+	);
+	
+	
+	
+	
+	//////////
+  
+  
+ $form['program_uid'] = array(
+     '#type' =>'hidden',
+	 '#default_value' => $rs->program_uid,  
+  );
+ 
+
+	if($node->nid){
+		$form['logindetails'] = array(
+		'#type' => 'hidden',
+		'#title' => t('<b>Login Info</b>'),
+		'#tree' => TRUE,
+		);
+		$form['logindetails']['username'] = array(
+		'#type' =>'hidden',
+		'#title' => t('User Name'),
+		'#required' =>TRUE,
+		'#size' =>41,
+		 '#maxlength'=>25,
+		'#default_value' => $rs->statusnodal,
+		'#attributes' => array('onkeypress' => 'return addressvalidation(event)'),	
+		);
+		
+		$form['logindetails']['password'] = array(
+		'#type' =>'hidden',
+		'#title' => t('Password'),
+		'#required' =>TRUE,
+		'#size' =>41, 
+		 '#maxlength'=>25,
+		'#default_value' => $rs->statusnodal, 
+		);
+		
+		$form['logindetails']['cpassword'] = array(
+		'#type' =>'hidden',
+		'#title' => t('Confirm Password'),
+		'#required' =>TRUE,
+		'#size' =>41,
+		 '#maxlength'=>25,
+		'#default_value' =>1,
+			 '#description' =>'The Password contains, Must be at least 8 characters,
+     Must contain at least one lower case letter, one upper case letter, one digit and one special character,
+    Valid special characters are -   @#$%^&+=',	
+		); 
+		$form['statusnodal'] = array(
+		'#type' => 'hidden',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rs->statusnodal,
+		'#options' => array('1'=>'Enable','0'=>'Disable'),
+		);
+	}else{
+    $form['logindetails'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('<b>Login Info</b>'),
+		'#tree' => TRUE,
+		);
+		$form['logindetails']['username'] = array(
+		'#type' =>'textfield',
+		'#title' => t('User Name'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		 '#maxlength'=>60,
+		'#default_value' => '',
+		'#attributes' => array('onkeypress' =>'return addressvalidation(event)'),
+		);
+		
+		$form['logindetails']['password'] = array(
+		'#type' =>'password',
+		'#title' => t('Password'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		 '#maxlength'=>60,
+		'#id' => 'da_password', 
+		'#attributes' => array('onkeyup' => 'checkPassword()'), 
+	    '#description' =>'<div id="test"></div>',	
+		);
+		
+		$form['logindetails']['cpassword'] = array(
+		'#type' =>'password',
+		'#title' => t('Confirm Password'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		'#maxlength'=>60,
+		'#description' =>'The Password contains, Must be at least 8 characters,
+     Must contain at least one lower case letter, one upper case letter, one digit and one special character,
+    Valid special characters are -   @#$%^&+=',	
+	'#attributes' => array('onkeypress' => 'if (event.keyCode == 13) getElementById("joining").submit();'),
+		);
+ 	}
+	
+			$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/employeeList'),
+);
+return $form;
+} 
+
+function dsje_joinings_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+	/**
+	*@when validation fire custom breadcrumb fail
+	*@here we will add code for breadcrumb 
+	*@code start below 4/7/2011 Neshat Khan Claritus consulting mang.
+	*/
+	
+	
+	
+	$array = explode('/',$_GET['q']);
+	
+	 
+	
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Employees', 'list/employeeList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Employee', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'dsje-joinings'){
+	$breadcrumb[] = l('Add Employees', 'node/add/dsje-joinings');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+	
+	//$employee_type = $form->employee_type;
+	$working_zone_id = $form->working_zone_id;
+	$working_zone_id1 = $form->working_zone_id1;
+	$program_uid = $form->program_uid;
+
+	
+	/*	if($program_uid !='' && $working_zone_id1==''){
+			form_set_error('working_zone_id1', t('Working Zone field is required.'));
+		}
+		
+		if($program_uid !='' && $employee_type =='Program Officer' && $working_zone_id==''){
+			form_set_error('working_zone_id', t('Working Zone field is required.'));
+		}
+		*/
+		
+ /////////////////////////////////////////////////////////////
+// InsertGLAccount();
+ 
+ $username =  $form->logindetails['username'];
+ $employee_name = $form->employee_name;
+ $employee_id = $form->employee_id;
+ $father_name = $form->father_name;
+ $edu_qual= $form->edu_qual;
+ $prof_qual = $form->prof_qual;
+$block = $form->block;
+$panchayat = $form -> panchayat;
+$doj = $form->doj;
+$mobile= $form->mobile;
+$phone=$form->phone;
+ 
+ 
+ $nomineephone=$form->nomineedetails['phone2'];
+ $nomineerelation=$form->nomineedetails['relationship2'];
+ $nomineeaddress=$form->nomineedetails['address2'];
+ $nomineename=$form->nomineedetails['name2'];
+ 
+ alphabet('name2',$nomineename,'Nominee Name');
+ textonlywithdotne ('address2',$nomineeaddress,'Nominee Address');
+ fononlyn('phone2',$nomineephone,'Nominee Phone No.');
+ phonelength($nomineephone,'nomineedetails'); 
+ 
+ //echo '<pre>';
+// print_r($form);exit;
+ 
+ //form_set_error(phone2,t(''));
+ $pincode=$form->pincode;
+ pincodelength($pincode,'pincode');
+ 
+ $nid=$form->nid;
+ 
+ 
+ $curry=date('Y-m-d');
+if($form->medical_on>$curry){form_set_error(medical_on,t('Examined On (medical examination) field should be less than the current date'));} 
+	
+alphanumeric('block',$block,'Block');
+  alphabet('panchayat',$panchayat,'Panchayat');
+  //textonlyn('block',$block,'Block');
+  //textonlyn('panchayat',$panchayat,'Panchayat');
+	alphabet('employee_name',$employee_name,'Employee Name');
+		alphabet('father_name',$father_name,'Father Name');
+		alphanumeric ('employee_id',$employee_id,'Employee Id');
+		textonlywithdotne ('add_line1',$add_line1,'Address Line 1');
+		textonlywithdotne('add_line2',$add_line2,'Address Line 2');
+			alphanumeric ('mark',$mark,'Personal Mark of Identity');
+			alphanumeric('edu_qual',$edu_qual,'Education Qualificatin');
+				alphanumeric('prof_qual',$prof_qual,'Professional Qualification');
+				
+//document fields
+ 
+ $medical_by= $form->medical_by;
+ $medical_certified_by= $form->medical_certified_by;
+ $character_certified_by = $form->character_certified_by;
+ $allegiance_certified_by= $form->allegiance_certified_by;
+ $oath_certified_by= $form->oath_certified_by;
+ $marital_certified_by= $form->marital_certified_by;
+ $declaration_certified_by= $form->declaration_certified_by;
+ $verification_certified_by= $form->verification_certified_by;
+ $family_certified_by= $form->family_certified_by;
+ $dcr_certified_by= $form->dcr_certified_by;
+ $gpf_certified_by=$form->gpf_certified_by;
+ 
+ $medical_sno= $form->medical_sno;
+ $character_sno= $form->character_sno;
+ $allegiance_sno= $form->allegiance_sno;
+ $oath_sno= $form->oath_sno;
+ $marital_sno= $form->marital_sno;
+ $declaration_sno= $form->declaration_sno;
+  $verification_sno= $form->verification_sno;
+ $family_sno= $form->family_sno;
+ $gpf_sno = $form->gpf_sno;
+ $dcr_nomination=$form->dcr_nomination;
+ $gpf_nomination=$form->gpf_nomination;
+//////////
+
+ $medical_designationid= $form->medical_designationid;
+ $character_designationid = $form->character_designationid;
+ $allegiance_designationid= $form->allegiance_designationid;
+ $oath_designationid= $form->oath_certified_by;
+ $marital_designationid= $form->marital_designationid;
+ $declaration_designationid= $form->declaration_designationid;
+ $verification_designationid= $form->verification_designationid;
+ $family_designationid= $form->family_designationid;
+ $dcr_designationid= $form->dcr_designationid;
+$gpf_designationid=$form->gpf_designationid;
+
+
+
+ 
+				////validations for documents and certificates
+				alphabet('medical_by',$medical_by,'Examined By');
+				alphabet('medical_certified_by',$medical_certified_by,'Certified By');
+				alphabet('character_certified_by',$character_certified_by,'Certified By');
+				alphabet('allegiance_certified_by',$allegiance_certified_by,'Certified By');
+				alphabet('oath_certified_by',$oath_certified_by,'Certified By');
+				alphabet('marital_certified_by',$marital_certified_by,'Certified By');
+				alphabet('declaration_certified_by',$declaration_certified_by,'Certified By');
+				alphabet('verification_certified_by',$verification_certified_by,'Certified By');
+				alphabet('gpf_certified_by',$gpf_certified_by,'Certified By');
+				alphabet('family_certified_by',$family_certified_by,'Certified By');
+				alphabet('dcr_certified_by',$dcr_certified_by,'Certified By');
+				
+				alphanumeric('medical_sno',$medical_sno,'S. No.');
+				alphanumeric('character_sno',$character_sno,'S. No.');
+				alphanumeric('allegiance_sno',$allegiance_sno,'S. No.');
+				alphanumeric('oath_sno',$oath_sno,'S. No.');
+				alphanumeric('marital_sno',$marital_sno,'S. No.');
+				alphanumeric('declaration_sno',$declaration_sno,'S. No.');
+				alphanumeric('verification_sno',$verification_sno,'S. No.');
+				alphanumeric('family_sno',$family_sno,'S. No.');
+				alphanumeric('gpf_sno',$gpf_sno,'G.P.F. No.');
+				
+				textonlywithdotne('dcr_nomination',$dcr_nomination,'D.C.R. Nomination');
+				textonlywithdotne('gpf_nomination',$gpf_nomination,'G.P.F. Nomination');
+				/////
+				$field_medical_examination=$form->field_medical_examination[0][value];
+				$field_character_certificate= $form->field_character_certificate[0][value];
+				$field_allegiance= $form->field_allegiance[0][value];
+			    $field_oath= $form->field_oath[0][value];
+				$field_declaration= $form->field_declaration[0][value];
+				$field_gpf= $form->field_gpf[0][value];
+				$field_family= $form->field_family[0][value];
+				$field_dcr= $form->field_dcr[0][value];
+				$field_training= $form->field_training[0][value];
+				$field_marital=$form->field_marital[0][value];
+				$field_verification=$form->field_verification[0][value];
+				
+				$medical_on=$form->medical_on;
+				
+				
+				
+				
+				if($field_medical_examination==0){
+				
+					if($medical_by==''){form_set_error('medical_by',t('Examined By(medical examination) field is required'));}
+				
+					if($medical_on==''){form_set_error('medical_on',t('Examined On(medical examination) field is required'));}
+				
+					if($medical_sno==''){form_set_error('medical_sno',t('S. No.(medical examination)  field is required'));}
+				
+					if($medical_certified_by==''){form_set_error('medical_certified_by',t('Certified By(medical examination) field is required'));}
+				
+					if($medical_designationid==''){form_set_error('medical_designationid',t('Designation(medical examination) field is required'));}
+				
+				 $medon= date('d-m-Y',strtotime($form->medical_on));
+    $dob=$form->dob;
+	
+  $dob= date('d-m-Y',strtotime($dob));
+  //echo strtotime($medon).' '.strtotime($dob);echo $medon-$dob;exit;
+	if(strtotime($medon)-strtotime($dob)<0){form_set_error('medical_on',t('Examined On(medical examination) date should be greater than the DOB'));}
+	
+				
+				
+				}
+				
+				if($field_character_certificate==0){
+				
+			if($character_sno==''){form_set_error('character_sno',t('S. No.(character certificate)  field is required'));}
+				
+					if($character_certified_by==''){form_set_error('character_certified_by',t('Certified By(character certificate) field is required'));}
+				
+					if($character_designationid==''){form_set_error('character_designationid',t('Designation(character certificate) field is required'));}	
+				
+				
+				
+				}
+				
+				
+		if($field_allegiance==0){
+		
+		
+		if($allegiance_sno==''){form_set_error('allegiance_sno',t('S. No.(allegiance)  field is required'));}
+				
+					if($allegiance_certified_by==''){form_set_error('allegiance_certified_by',t('Certified By(allegiance) field is required'));}
+				
+					if($allegiance_designationid==''){form_set_error('allegiance_designationid',t('Designation(allegiance) field is required'));}	
+		
+		
+		}
+		
+		
+		if($field_oath==0){
+		
+		
+		if($oath_sno==''){form_set_error('oath_sno',t('S. No.(oath)  field is required'));}
+				
+					if($oath_certified_by==''){form_set_error('oath_certified_by',t('Certified By(oath) field is required'));}
+				
+					if($oath_designationid==''){form_set_error('oath_designationid',t('Designation(oath) field is required'));}	
+		
+		
+		}
+		
+			
+			
+				if($field_declaration==0){
+		
+		
+		if($declaration_sno==''){form_set_error('declaration_sno',t('S. No.(declaration)  field is required'));}
+				
+					if($declaration_certified_by==''){form_set_error('declaration_certified_by',t('Certified By(declaration) field is required'));}
+				
+					if($declaration_designationid==''){form_set_error('declaration_designationid',t('Designation(declaration) field is required'));}	
+		
+		
+		}
+		
+			
+				if($field_marital==0){
+		
+		
+		if($marital_sno==''){form_set_error('marital_sno',t('S. No.(marital)  field is required'));}
+				
+					if($marital_certified_by==''){form_set_error('marital_certified_by',t('Certified By(marital) field is required'));}
+				
+					if($marital_designationid==''){form_set_error('marital_designationid',t('Designation(marital) field is required'));}	
+		
+		
+		}
+			
+			
+			if($field_verification==0){
+		
+		
+		if($verification_sno==''){form_set_error('verification_sno',t('S. No.(verification entries)  field is required'));}
+				
+					if($verification_certified_by==''){form_set_error('verification_certified_by',t('Certified By(verification entries) field is required'));}
+				
+					if($verification_designationid==''){form_set_error('verification_designationid',t('Designation(verification entries) field is required'));}	
+		
+		
+		}
+			
+			
+			if($field_family==0){
+		
+		
+		if($family_sno==''){form_set_error('family_sno',t('S. No.(family particulars)  field is required'));}
+				
+					if($family_certified_by==''){form_set_error('family_certified_by',t('Certified By(family particulars) field is required'));}
+				
+					if($family_designationid==''){form_set_error('family_designationid',t('Designation(family particulars) field is required'));}	
+		
+		
+		}
+			
+					if($field_dcr==0){
+		
+		
+		if($dcr_nomination==''){form_set_error('dcr_nomination',t('Nomination for dcr field is required'));}
+				
+					if($dcr_certified_by==''){form_set_error('dcr_certified_by',t('Certified By(dcr) field is required'));}
+				
+					if($dcr_designationid==''){form_set_error('dcr_designationid',t('Designation(dcr) field is required'));}	
+		
+		
+		}
+			
+			if($field_gpf==0){
+		
+		if($gpf_sno==''){form_set_error('gpf_sno',t('Gpf No. field is required'));}
+		if($gpf_nomination==''){form_set_error('gpf_nomination',t('Nomination for gpf field is required'));}
+				
+					if($gpf_certified_by==''){form_set_error('gpf_certified_by',t('Certified By(gpf) field is required'));}
+				
+					if($gpf_designationid==''){form_set_error('gpf_designationid',t('Designation(gpf) field is required'));}	
+		
+		
+		}
+			
+				
+	$date2 =  substr($form->dob,0,10);
+	date('d-m-Y');
+	$year = dateDiff($date2,date('Y-m-d'), $precision = 6);
+	 $curr_datewa=date('Y-m-d');
+	$dobwa=$form->dob;
+	//echo $curr_datewa-$dobwa;exit;
+	$datedifference= $curr_datewa-$form->dob;
+	if($datedifference < 18){
+	  form_set_error('dob','DOB Can not be less than 18 Years.');
+	}
+	//textonlywithdotne('address',$form->address,'Address');
+	
+	$doj=$form->doj;
+	
+	if($doj<$form->dob){form_set_error('doj',t('Date of joining should be greater than date of birth'));}
+	/*
+	 $medon= date('d-m-Y',strtotime($form->medical_on));
+    $dob=$form->dob;
+	
+  $dob= date('d-m-Y',strtotime($dob));
+  //echo strtotime($medon).' '.strtotime($dob);echo $medon-$dob;exit;
+	if(strtotime($medon)-strtotime($dob)<0){form_set_error('medical_on',t('Examined On(medical examination) date should be greater than the DOB'));}
+	*/
+	
+	paypay('basic_pay',$form->basic_pay,'Basic Pay');
+	paypay('grade_pay',$form->grade_pay,'Grade Pay');
+	paypay('height',$form->height,'Height');
+	fononlyn('pincode',$form->pincode,'Pin Code');
+  	fononlyn('mobile',$form->mobile,'Mobile No.');
+	//fononlyn('phone',$form->phone,'Phone No.')
+	mobilelength($form->mobile,'mobile');
+	phonelength($form->phone,'phone');
+	//fononlyn('std',$form->std,'STD Code');
+	fononlyn('phone',$form->phone,'Phone No.');
+ //	fononlyn('extn',$form->extn,'Extn.');
+	/*if($form->fax !=''){
+		isValidfax('fax',$form->fax);
+	}*/
+	
+	
+	if($form->prev_employee_id == ''){
+	 $statusid = getemployeeId($employee_id); 
+		if($statusid){
+		form_set_error('employee_id',$employee_id.t(' Employee Id already exist.'));
+		
+		}
+		}
+		else {
+	 $statusid = getemployeeId_edit($employee_id,$form->prev_employee_id); 
+		if($statusid){
+		form_set_error('employee_id',$employee_id.t(' Employee Id already exist.'));
+		
+		}
+		
+		}
+	
+	//fononlyn('fax_stdcode',$form->fax_stdcode,'STD Code');
+	//fononlyn('fax',$form->fax,'Fax No.');
+  if($phone=='' && $mobile=='')
+  {
+  form_set_error('phone',t('Please enter Phone Number OR Mobile Number'));
+   
+  }
+ 
+ /* $statusid = getemployeeId($employee_id); 
+		if($statusid){
+		form_set_error('employee_id',$employee_id.t(' Employee Id already exist.'));
+		}
+  
+  */
+  if($form->logindetails['cpassword'] != 1){
+   custom_user_validate_name($form->logindetails['username'],'username');
+   custom_Password_validate_name( $form->logindetails['password'],'password');
+      $password = $form->logindetails['password'];
+   $cpassword = $form->logindetails['cpassword'];
+  if($password != $cpassword){
+    form_set_error(logindetails, t('Password Missmatch.'));
+  }
+  }
+  $email = $form->email;
+  if($form->program_uid){
+  }else{
+		$statusemail = getEmail($email); 
+		if($statusemail){
+		form_set_error('email',$email.t(' Email address already exist.'));
+		}
+		
+		$statususername = getUsername($form->logindetails['username']);
+		if($statususername){
+		if($form->logindetails['username'] !=''){
+		form_set_error('username',$form->logindetails['username'].t(' already exist.'));
+		}}
+  }
+
+ if($form->dob > $form->doj && (!empty($from->dob)) && (!empty($form->doj)))
+   {
+      form_set_error($form->dob, t('Date of birth should be less than the date of joining'));
+   }
+
+
+  if($email !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (eregi($pattern, $email)){
+
+          return true;
+       }
+       else {
+          form_set_error('email', t('You must enter valid Email Id.'));
+       }    
+	}
+}
+
+/**
+ *hook_form_alter
+ */
+function dsje_joinings_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 /* $state_id = $values['state_id'];
+    $district_id = $values['district_id'];
+    $tehsil_id = $values['tehsil_id'];*/
+	
+	if($form_id =='dsje_joinings_node_form'){
+		
+		$form['#id'] = 'joining';
+	
+	$form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	
+	/* $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	*/}
+	
+ }
+
+
+function dsje_joinings_insert($node){
+   global $user;
+   
+  //all values
+  //echo '';
+  
+    $employee_name = parseData($node->employee_name);
+	$father_name = parseData($node->father_name);
+	$edu_qual = parseData($node->edu_qual);
+	$prof_qual = parseData($node->prof_qual);
+	$mark= $node-> mark;
+	$height= $node->height;
+	$employee_type=$node->employee_type;
+	$add_type= $node->add_type;
+	$working_zone_id = $node->working_zone_id;
+	$nametitle = $node->nametitle;
+	$officeid = $node->officeid;
+    $gender = $node->gender;
+	$nationality = $node->nationality;
+	$religion= $node->religion;
+	$caste= $node->caste;
+	$adhar = $node->adhar;
+    $dob = $node->dob;
+	$doj = $node->doj;
+    $designationid = $node->designationid;
+    $employee_id = parseData($node->employee_id);
+    $Departmentid = $node->Departmentid;
+    $Employee_Status = $node->Employee_Status;
+    $add_line1 = $node->add_line1;
+	$add_line2 = $node->add_line2;
+  //  $country_id = $node->country_id;
+    $district_id = $node->district_id;
+    $state_id = $node->state_id;
+   $tehsil_id = $node->tehsil_id;
+	$block= $node->block;
+	$panchayat = $node->panchayat;
+    $pincode = $node->pincode;
+    $basic_pay=$node->basic_pay;
+	$grade_pay=$node->grade_pay;
+	$mobile = $node->mobile;
+    $std = $node->std;
+    $phone = $node->phone;
+    $extn = $node->extn;
+    $email = $node->email;
+	$fax_stdcode =$node->fax_stdcode;
+    $fax =$node->fax;
+    $username  =$node->logindetails['username'];
+    $password = $node->logindetails['password'];
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$statuswa=db_query("select lookup_name from {tbl_lookups} where lookup_id=111");
+	$status22=db_fetch_object($statuswa);
+	$status2=$status22->lookup_name;
+	
+	$employeegrade2=$node->employeegrade2;
+	
+	$field_medical_examination= $node->field_medical_examination[0]['value'];
+	$field_character_certificate=$node->field_character_certificate[0]['value'];
+	$field_allegiance=$node->field_allegiance[0]['value'];
+	$field_oath=$node->field_oath[0]['value'];
+	$field_declaration=$node->field_declaration[0]['value'];
+	$field_gpf=$node->field_gpf[0]['value'];
+	$field_family=$node->field_family[0]['value'];
+	$field_dcr=$node->field_dcr[0]['value'];
+	$field_training=$node->field_training[0]['value'];
+	$field_verification=$node->field_verification[0]['value'];
+	$field_marital=$node->field_marital[0]['value'];
+	
+	$field_medical_upload= $node->field_medical_upload[0]['filepath'];
+	
+    $field_character_upload= $node->field_character_upload[0]['filepath'];
+	$field_allegiance_upload= $node->field_allegiance_upload[0]['filepath'];
+	$field_oath_upload= $node->field_oath_upload[0]['filepath'];
+	
+	$field_resume_upload=$node->field_resume_upload[0]['filepath'];
+	$field_photo_upload=$node->field_photo_upload[0]['filepath'];
+	
+	$field_declaration_upload= $node->field_declaration_upload[0]['filepath'];
+	$field_gpf_upload= $node->field_gpf_upload[0]['filepath'];
+	$field_family_upload= $node->field_family_upload[0]['filepath'];
+	$field_dcr_upload= $node->field_dcr_upload[0]['filepath'];
+	$field_training_upload= $node->field_training_upload[0]['filepath'];
+	$field_verification_upload= $node->field_verification_upload[0]['filepath'];
+	$field_marital_upload= $node->field_marital_upload[0]['filepath'];
+	//echo '<pre>';
+   //print_r($node);exit;
+	
+	//fields added in documents
+	
+	$medical_by= $node->medical_by;
+	 $medical_on= $node->medical_on;
+	$medical_certified_by= $node->medical_certified_by;
+	$character_certified_by= $node->character_certified_by;
+	$allegiance_certified_by= $node->allegiance_certified_by;
+	$oath_certified_by= $node->oath_certified_by;
+	$marital_certified_by= $node->marital_certified_by;
+	$declaration_certified_by= $node->declaration_certified_by;
+	$verification_certified_by= $node->verification_certified_by;
+	$gpf_certified_by= $node->gpf_certified_by;
+	$family_certified_by= $node->family_certified_by;
+	$dcr_certified_by= $node->dcr_certified_by;
+	
+	$medical_sno= $node->medical_sno;
+	$character_sno= $node->character_sno;
+	$allegiance_sno= $node->allegiance_sno;
+	$oath_sno= $node->oath_sno;
+	$marital_sno= $node->marital_sno;
+	$declaration_sno= $node->declaration_sno;
+	$verification_sno= $node->verification_sno;
+	$gpf_sno= $node->gpf_sno;
+	$family_sno= $node->family_sno;
+	//$dcr_sno= $node->dcr_sno;
+	
+	$nomineephone=$node->nomineedetails['phone2'];
+ $nomineerelation=$node->nomineedetails['relationship2'];
+ $nomineeaddress=$node->nomineedetails['address2'];
+ $nomineename=$node->nomineedetails['name2'];
+	
+	$bio=parseData($node->biometricfield);
+	
+	$medical_designationid= $node->medical_designationid;
+	$character_designationid= $node->character_designationid;
+	$allegiance_designationid= $node->allegiance_designationid;
+	$oath_designationid= $node->oath_designationid;
+	$marital_designationid= $node->marital_designationid;
+	$declaration_designationid= $node->declaration_designationid;
+	$verification_designationid= $node->verification_designationid;
+	$gpf_designationid= $node->gpf_designationid;
+	$family_designationid= $node->family_designationid;
+	$dcr_designationid= $node->dcr_designationid;
+	
+	$gpf_nomination=$node->gpf_nomination;
+	$dcr_nomination= $node->dcr_nomination;
+	//
+	
+	if($field_marital==1){
+	$maritalstatus='S';
+	}else{
+	$maritalstatus='M';
+	}
+	
+	
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+	if($gender==226){$gender2='F';}else{$gender2='M';}
+	
+	
+
+	{
+	db_query("INSERT INTO {tbl_joinings} (biometricfield,employeegrade2,NomineeAddress,NomineePhone,NomineeName,NomineeRelation,nid,vid,employee_name,father_name,nationality,doj,basic_pay,grade_pay,employee_type,religion,caste,edu_qual,prof_qual,mark,height,adhar,officeid,current_officeid,gender,dob,designationid,current_designationid,Departmentid,current_Departmentid,add_type,add_line1,add_line2,district_id,tehsil_id,state_id,block,panchayat,pincode,phone,mobile,email,username,password,statusnodal,employee_id,status2,field_medical_examination,field_character_certificate,field_allegiance,field_oath,field_declaration,field_gpf,field_family,field_dcr,field_training,field_medical_upload,field_character_upload,field_allegiance_upload,field_oath_upload,field_declaration_upload,field_gpf_upload,field_family_upload,field_dcr_upload,field_training_upload,field_verification_upload,field_marital_upload,field_verification,field_marital,medical_by,medical_on,gpf_nomination,dcr_nomination,medical_sno,medical_certified_by,medical_designationid,character_sno,character_certified_by,character_designationid,allegiance_sno,allegiance_certified_by,allegiance_designationid,oath_sno,oath_certified_by,oath_designationid,marital_sno,marital_certified_by,marital_designationid,declaration_sno,declaration_certified_by,declaration_designationid,verification_sno,verification_certified_by,verification_designationid,gpf_sno,gpf_certified_by,gpf_designationid,family_sno,family_certified_by,family_designationid,dcr_certified_by,dcr_designationid,field_photo_upload,field_resume_upload) VALUES ('".$bio."','".$employeegrade2."','".$nomineeaddress."','".$nomineephone."','".$nomineename."','".$nomineerelation."','".$nid."','".$vid."','".$employee_name."','".$father_name."','".$nationality."','".$doj."','".$basic_pay."','".$grade_pay."','".$employee_type."','".$religion."','".$caste."','".$edu_qual."','".$prof_qual."','".$mark."','".$height."','".$adhar."','".$officeid."','".$officeid."','".$gender."','".$dob."','".$designationid."','".$designationid."','".$Departmentid."','".$Departmentid."','".$add_type."','".$add_line1."','".$add_line2."','".$district_id."','".$tehsil_id."','".$state_id."','".$block."','".$panchayat."','".$pincode."','".$phone."','".$mobile."','".$email."','".$username."','".md5($password)."','".$statusnodal."','".$employee_id."','111','".$field_medical_examination."','".$field_character_certificate."','".$field_allegiance."','".$field_oath."','".$field_declaration."','".$field_gpf."','".$field_family."','".$field_dcr."','".$field_training."','".$field_medical_upload."','".$field_character_upload."','".$field_allegiance_upload."','".$field_oath_upload."','".$field_declaration_upload."','".$field_gpf_upload."','".$field_family_upload."','".$field_dcr_upload."','".$field_training_upload."','".$field_verification_upload."','".$field_marital_upload."','".$field_verification."','".$field_marital."','".$medical_by."','".$medical_on."','".$gpf_nomination."','".$dcr_nomination."','".$medical_sno."','".$medical_certified_by."','".$medical_designationid."','".$character_sno."','".$character_certified_by."','".$character_designationid."','".$allegiance_sno."','".$allegiance_certified_by."','".$allegiance_designationid."','".$oath_sno."','".$oath_certified_by."','".$oath_designationid."','".$marital_sno."','".$marital_certified_by."','".$marital_designationid."','".$declaration_sno."','".$declaration_certified_by."','".$declaration_designationid."','".$verification_sno."','".$verification_certified_by."','".$verification_designationid."','".$gpf_sno."','".$gpf_certified_by."','".$gpf_designationid."','".$family_sno."','".$family_certified_by."','".$family_designationid."','".$dcr_certified_by."','".$dcr_designationid."','".$field_photo_upload."','".$field_resume_upload."')");
+//echo "INSERT INTO {empmas} (CadreCode,LocCode,DOL,EmpCode,EmpName,FatherName,DOB,Gender,Address1,Address2,Phone,DeptCode,DesigCode,DOJ,EmpPicture,emailaddress,EmpCodeNew) VALUES  ('1','1','0000-00-00','".$employee_id."','".$employee_name."','".$father_name."','".$dob."','".$gender."','".$add_line1."','".$add_line2."','".$phone."','".$Departmentid."','".$designationid."','".$doj."','".$field_photo_upload."','".$email."','".$employee_id."')";exit;
+	
+	//$gradepay2=number_format($grade_pay, 2, '.', '');
+	//$basicpay2=number_format($basic_pay, 2, '.', '');
+	$gradepay2=$grade_pay;
+	$basicpay2=$basic_pay;
+	db_query("INSERT INTO {empmas} (Marital,basicpay,gradepay,Nominee,CadreCode,LocCode,DOL,EmpCode,EmpName,FatherName,DOB,Gender,Address1,Address2,Phone,DeptCode,DesigCode,DOJ,EmpPicture,emailaddress,EmpCodeNew) VALUES  ('".$maritalstatus."','".$basicpay2."','".$gradepay2."','".$nomineename."','".$employeegrade2."','1','0000-00-00','".$employee_id."','".$employee_name."','".$father_name."','".$dob."','".$gender2."','".$add_line1."','".$add_line2."','".$phone."','".$Departmentid."','".$designationid."','".$doj."','".$field_photo_upload."','".$email."','".$employee_id."')");
+	
+	
+	
+	$sms='91'.$mobile;
+	
+	$message='Your account has been created. Below are your login details : Login id - '.$username.' Password - '.$password;
+	customsendsms($sms,$message);
+	
+	//cadrecode=1, loccode=1,leavingdate=”0000-00-00”
+	
+$parameter = '';
+//$to = $u->mail;
+
+$parameter = json_encode(array(0=>"$employee_name",1=>"$employee_id",2=>"$employee_name"));
+
+
+createMail('dsje_joinings', $email,'',$parameter,'');
+
+$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail FROM {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto))
+{
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$employee_id,2=>$employee_name)); 
+
+//$to = $u->mail;
+	
+createMail('dsje_joinings', $ms->mail,'',$parameter,'');
+}
+
+}
+
+
+
+
+	//user table
+	db_query("INSERT into {users} (name,pass,mail,status,force_password_change) VALUES('".$username."','".md5($password)."','".$email."','".$statusnodal."','1')");
+	 $lastuid=db_last_insert_id('users', 'uid');
+
+	 db_query("insert into {users_roles} (uid,rid) values ('".$lastuid."','25')"); 
+	//mailing system
+	
+	//custom_mail($user->uid,$username,$password,$email,$employee_name);
+
+	$sql ="SELECT MAX(uid) as uid FROM {users}";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	$uid = $rs->uid;
+
+	//roles table
+	//'Program Officer'=>'Program Officer','Training Coordinator'=>'Training Coordinator','Finance User'=>'Finance User'
+
+	//Senior Program officer REC Management
+    // if($node->employee_type == 'Program Officer'){
+	//   db_query("INSERT into {users_roles} (rid,uid) VALUES (3,'".$uid."')");
+// } 
+	
+	// if($node->employee_type == 'Senior Program officer'){
+	//   db_query("INSERT into {users_roles} (rid,uid) VALUES (14,'".$uid."')");
+//	 }
+ 
+  ///   if($node->employee_type == 'REC Management'){
+	//   db_query("INSERT into {users_roles} (rid,uid) VALUES (15,'".$uid."')");
+	// }
+
+	// if($node->employee_type == 'Training Coordinator'){
+	//   db_query("INSERT into {users_roles} (rid,uid) VALUES (12,'".$uid."')");
+//	 }
+//	// if($node->employee_type == 'Finance User'){
+	//   db_query("INSERT into {users_roles} (rid,uid) VALUES (9,'".$uid."')");
+	// }
+    // echo "UPDATE {node} set uid='".$user->uid."' where nid='".$node->nid."'";exit;
+	//node table
+	db_query("UPDATE {node} set uid='".$user->uid."' where nid='".$node->nid."'");
+	
+    db_query("UPDATE {tbl_joinings} set program_uid=$uid where nid=$node->nid");
+   //insertin force password
+	$created = time();
+	db_query("INSERT INTO force_password_change_users SET uid='".$uid."',last_force='".$created."'");
+    //drupal_set_message('Employee '.$employee_name.' has been saved successfully.');
+ $message=getMessage('dsjeEmployee','code05',array("0"=>$node->employee_name));
+  drupal_set_message($message);
+///
+ }}
+
+function dsje_joinings_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+   
+    case 'insert':
+	  if($node->type == 'dsje_joinings'){
+	    drupal_goto("list/employeeList");
+	  }	
+	break;
+    case 'update':
+	   if($node->type == 'dsje_joinings'){
+         drupal_goto("list/employeeList");	
+	   }
+      break;
+   }
+
+}
+
+function dsje_joinings_update($node){
+	
+	//echo '<pre>';
+   // print_r($node);exit;
+	$employee_name = parseData($node->employee_name);
+	$father_name = parseData($node->father_name);
+	$edu_qual = parseData($node->edu_qual);
+	$prof_qual = parseData($node->prof_qual);
+	$mark= $node->mark;
+	$height= $node->height;
+	$working_zone_id = $node->working_zone_id1;
+	$nametitle = $node->nametitle;
+	$officeid = $node->officeid;
+	$gender = $node->gender;
+	$nationality = $node->nationality;
+	$religion= parseData($node->religion);
+	$caste= $node->caste;
+	$adhar = $node->adhar;
+    $dob = $node->dob;
+	$doj = $node->doj;
+	$designationid = $node->designationid;
+	$Departmentid = $node->Departmentid;
+	$Employee_Status = $node->Employee_Status;
+	$add_type= $node->add_type;
+	$employee_type=$node->employee_type;
+	$add_line1 = $node->add_line1;
+	$add_line2 = $node->add_line2;
+  //  $country_id = $node->country_id;
+    $district_id = $node->district_id;
+    $state_id = $node->state_id;
+    $tehsil_id = $node->tehsil_id;
+	$block= $node->block;
+	$panchayat= $node->panchayat;
+	//$country_id = $node->country_id;
+	//$zone_id = $node->zone_id;
+	///$city_id = $node->city_id;
+	$pincode = $node->pincode;
+	$basic_pay=$node->basic_pay;
+	$grade_pay=$node->grade_pay;
+	$employee_id = parseData($node->employee_id);
+	
+	$prev_employee_id= $node->prev_employee_id;
+	
+	$mobile = $node->mobile;
+	$std = $node->std;
+	$phone = $node->phone;
+	$extn = $node->extn;
+	$email = $node->email;
+	$fax_stdcode =$node->fax_stdcode;
+	$fax =$node->fax;
+	$username  =$node->logindetails['username'];
+	$password = $node->logindetails['password'];
+	$statusnodal = $node->statusnodal;
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$status2=getLookupId($node->status2);
+	
+	$employeegrade2=$node->employeegrade2;
+	
+	$bio=parseData($node->biometricfield);
+	
+	$field_medical_examination= $node->field_medical_examination[0]['value'];
+	$field_character_certificate=$node->field_character_certificate[0]['value'];
+	$field_allegiance=$node->field_allegiance[0]['value'];
+	$field_oath=$node->field_oath[0]['value'];
+	$field_declaration=$node->field_declaration[0]['value'];
+	$field_gpf=$node->field_gpf[0]['value'];
+	$field_family=$node->field_family[0]['value'];
+	$field_dcr=$node->field_dcr[0]['value'];
+	$field_training=$node->field_training[0]['value'];
+	$field_verification=$node->field_verification[0]['value'];
+	$field_marital=$node->field_marital[0]['value'];
+	
+	
+	
+	
+	if($gender==226){$gender2='F';}else{$gender2='M';}
+	
+	$field_medical_upload= $node->field_medical_upload[0]['filepath'];
+	
+	//echo $field_medical_upload;exit;
+	
+    $field_character_upload= $node->field_character_upload[0]['filepath'];
+	$field_allegiance_upload= $node->field_allegiance_upload[0]['filepath'];
+	$field_oath_upload= $node->field_oath_upload[0]['filepath'];
+	$field_declaration_upload= $node->field_declaration_upload[0]['filepath'];
+	$field_gpf_upload= $node->field_gpf_upload[0]['filepath'];
+	$field_family_upload= $node->field_family_upload[0]['filepath'];
+	$field_dcr_upload= $node->field_dcr_upload[0]['filepath'];
+	$field_training_upload= $node->field_training_upload[0]['filepath'];
+	$field_verification_upload= $node->field_verification_upload[0]['filepath'];
+	$field_marital_upload= $node->field_marital_upload[0]['filepath'];
+	$field_resume_upload=$node->field_resume_upload[0]['filepath'];
+	//fields added in documents
+	
+	//fields added in documents
+	
+	$medical_by= $node->medical_by;
+	$medical_on= $node->medical_on;
+	$medical_certified_by= $node->medical_certified_by;
+	$character_certified_by= $node->character_certified_by;
+	$allegiance_certified_by= $node->allegiance_certified_by;
+	$oath_certified_by= $node->oath_certified_by;
+	$marital_certified_by= $node->marital_certified_by;
+	$declaration_certified_by= $node->declaration_certified_by;
+	$verification_certified_by= $node->verification_certified_by;
+	$gpf_certified_by= $node->gpf_certified_by;
+	$family_certified_by= $node->family_certified_by;
+	$dcr_certified_by= $node->dcr_certified_by;
+	
+	$medical_sno= $node->medical_sno;
+	$character_sno= $node->character_sno;
+	$allegiance_sno= $node->allegiance_sno;
+	$oath_sno= $node->oath_sno;
+	$marital_sno= $node->marital_sno;
+	$declaration_sno= $node->declaration_sno;
+	$verification_sno= $node->verification_sno;
+	$gpf_sno= $node->gpf_sno;
+	$family_sno= $node->family_sno;
+	//$dcr_sno= $node->dcr_sno;
+	
+	$medical_designationid= $node->medical_designationid;
+	$character_designationid= $node->character_designationid;
+	$allegiance_designationid= $node->allegiance_designationid;
+	$oath_designationid= $node->oath_designationid;
+	$marital_designationid= $node->marital_designationid;
+	$declaration_designationid= $node->declaration_designationid;
+	$verification_designationid= $node->verification_designationid;
+	$gpf_designationid= $node->gpf_designationid;
+	$family_designationid= $node->family_designationid;
+	$dcr_designationid= $node->dcr_designationid;
+	//$field_photo_upload=$node->field_photo_upload;
+
+	$gpf_nomination=$node->gpf_nomination;
+	$dcr_nomination= $node->dcr_nomination;
+	$field_photo_upload=$node->field_photo_upload[0]['filepath'];
+ $statusid = getemployeeId($employee_id); 
+ 
+ 
+ 	$nomineephone=$node->nomineedetails['phone2'];
+ $nomineerelation=$node->nomineedetails['relationship2'];
+ $nomineeaddress=$node->nomineedetails['address2'];
+ $nomineename=$node->nomineedetails['name2'];
+	
+	if($field_marital==1){
+	$maritalstatus='S';
+	}else{
+	$maritalstatus='M';
+	}
+	
+	
+	//	echo $field_medical_upload;exit;
+	db_query("UPDATE {tbl_joinings} SET `biometricfield`='".$bio."',`employeegrade2`='".$employeegrade2."',`NomineeAddress`='".$nomineeaddress."',`NomineePhone`='".$nomineephone."',`NomineeName`='".$nomineename."',`NomineeRelation`='".$nomineerelation."',`employee_name`='".$employee_name."',`father_name`='".$father_name."',`nationality`='".$nationality."',`doj`='".$doj."',`basic_pay`='".$basic_pay."',`grade_pay`='".$grade_pay."',`employee_type`='".$employee_type."',`religion`='".$religion."',`caste`='".$caste."',`edu_qual`='".$edu_qual."',`prof_qual`='".$prof_qual."',`mark`='".$mark."',`height`='".$height."',`adhar`='".$adhar."',`officeid`='".$officeid."',`current_officeid`='".$officeid."',`gender`='".$gender."',`dob`='".$dob."',`designationid`='".$designationid."',`current_designationid`='".$designationid."',`Departmentid`='".$Departmentid."',`current_Departmentid`='".$Departmentid."',`add_type`='".$add_type."',`add_line1`='".$add_line1."',`add_line2`='".$add_line2."',`district_id`='".$district_id."',`tehsil_id`='".$tehsil_id."',`state_id`='".$state_id."',`block`='".$block."',`panchayat`='".$panchayat."',`pincode`='".$pincode."',`mobile`='".$mobile."',`phone`='".$phone."',`email`='".$email."',`employee_id`='".$employee_id."',`status2`='".$status2."',`field_medical_examination`='".$field_medical_examination."',`field_character_certificate`='".$field_character_certificate."',`field_allegiance`='".$field_allegiance."',`field_oath`='".$field_oath."',`field_declaration`='".$field_declaration."',`field_gpf`='".$field_gpf."',`field_family`='".$field_family."',`field_dcr`='".$field_dcr."',`field_training`='".$field_training."',`field_medical_upload`='".$field_medical_upload."',`field_character_upload`='".$field_character_upload."',`field_allegiance_upload`='".$field_allegiance_upload."',`field_oath_upload`='".$field_oath_upload."',`field_declaration_upload`='".$field_declaration_upload."',`field_gpf_upload`='".$field_gpf_upload."',`field_family_upload`='".$field_family_upload."',`field_dcr_upload`='".$field_dcr_upload."',`field_training_upload`='".$field_training_upload."',`field_verification_upload`='".$field_verification_upload."',`field_marital_upload`='".$field_marital_upload."',`field_verification`='".$field_verification."',`field_marital`='".$field_marital."',`medical_by`='".$medical_by."',`medical_on`='".$medical_on."',`gpf_nomination`='".$gpf_nomination."',`dcr_nomination`='".$dcr_nomination."',`medical_sno`='".$medical_sno."',`medical_certified_by`='".$medical_certified_by."',`medical_designationid`='".$medical_designationid."',`character_sno`='".$character_sno."',`character_certified_by`='".$character_certified_by."',`character_designationid`='".$character_designationid."',`allegiance_sno`='".$allegiance_sno."',`allegiance_certified_by`='".$allegiance_certified_by."',`allegiance_designationid`='".$allegiance_designationid."',`oath_sno`='".$oath_sno."',`oath_certified_by`='".$oath_certified_by."',`oath_designationid`='".$oath_designationid."',`marital_sno`='".$marital_sno."',`marital_certified_by`='".$marital_certified_by."',`marital_designationid`='".$marital_designationid."',`declaration_sno`='".$declaration_sno."',`declaration_certified_by`='".$declaration_certified_by."',`declaration_designationid`='".$declaration_designationid."',`verification_sno`='".$verification_sno."',`verification_certified_by`='".$verification_certified_by."',`verification_designationid`='".$verification_designationid."',`gpf_sno`='".$gpf_sno."',`gpf_certified_by`='".$gpf_certified_by."',`gpf_designationid`='".$gpf_designationid."',`family_sno`='".$family_sno."',`family_certified_by`='".$family_certified_by."',`family_designationid`='".$family_designationid."',`dcr_certified_by`='".$dcr_certified_by."',`dcr_designationid`='".$dcr_designationid."',field_photo_upload='".$field_photo_upload."',field_resume_upload='".$field_resume_upload."' WHERE nid='".$nid."'");
+	
+//$gradepay2=number_format($grade_pay, 2, '.', '');
+	//$basicpay2=number_format($basic_pay, 2, '.', '');
+	$gradepay2=$grade_pay;
+	$basicpay2=$basic_pay;
+	db_query("UPDATE {empmas} SET `Marital`='".$maritalstatus."',`basicpay`='".$basicpay2."',`gradepay`='".$gradepay2."',`Nominee`='".$nomineename."',`CadreCode`='".$employeegrade2."',`EmpCode`='".$employee_id."',`EmpName`='".$employee_name."',`FatherName`='".$father_name."',`DOB`='".$dob."',`Gender`='".$gender2."',`Address1`='".$add_line1."',`Address2`='".$add_line2."',`Phone`='".$phone."',`DeptCode`='".$Departmentid."',`DesigCode`='".$designationid."',`DOJ`='".$doj."',`EmpPicture`='".$field_photo_upload."',`emailaddress`='".$email."',`EmpCodeNew`='".$employee_id."' where EmpCode='".$prev_employee_id."'");
+	
+	
+	db_query("UPDATE {users} set mail='".$email."',status='".$statusnodal."' where uid=$node->program_uid"); 
+	//drupal_set_message('Employee '.$employee_name.' has been updated successfully.');
+	$message=getMessage('dsjeEmployee','code08',array("0"=>$node->employee_name));
+  drupal_set_message($message);
+	
+	//drupal_goto("list/employeeList");
+}
+
+
+function dsje_joinings_theme() {
+	
+	return array(
+				 
+		'dsje_joinings_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_joinings_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+function getEmail($email){
+  $sql = "select * FROM {users} where mail='".$email."'";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  if ($rs->mail=='')
+  return 0;
+  else
+  return $rs;
+   
+}
+
+function getemployeeId($employee_id){
+  $sql = "select * from {tbl_joinings} where employee_id='".$employee_id."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->employee_id=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+function getemployeeId_edit($employee_id,$prev_employee_id){
+  $sql = "select * from {tbl_joinings} where employee_id='".$employee_id."' AND employee_id != '".$prev_employee_id."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->employee_id=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+function getUsername($user){
+  $sql = "select * FROM {users} where name='".$user."'";
+  $res = db_query($sql);
+  return $rs = db_fetch_object($res);
+}
+ /*
+function dsje_joinings_load($node){
+
+
+
+
+$sql = "SELECT * FROM {node} INNER JOIN tbl_joinings ON (node.nid=tbl_joinings.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+
+return $rs;
+
+}
+  */
+function view_program($officeid){
+ 
+  global $user,$base_url;
+  $uid=$user->uid;
+  $rid=getRole($uid);
+ 
+  
+  
+  
+  
+  $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Employees', 'list/employeeList');
+   if($array[0] == 'viewemployee'){
+     $breadcrumb[] = l('View Employee', 'viewemployee/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from {tbl_joinings} where nid = $officeid";
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ if($rs->gender =='f'){
+  $gender ='Female';
+ }else{
+  $gender ='Male';
+}
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+
+
+$nationality=getLookupName($rs->nationality);
+$religion=getLookupName($rs->religion);
+$cast=db_query("select cast_name FROM {tbl_cast} where cast_id='".$rs->caste."'");
+
+$caste=db_fetch_object($cast);
+
+
+$nomineephone=$rs->NomineePhone;
+ $nomineerelation=$rs->NomineeRelation;
+ $nomineeaddress=$rs->NomineeAddress;
+ $nomineename=$rs->NomineeName;
+	$employeegrade2=getemployeegrade2($rs->employeegrade2);
+//echo $rs->employeegrade2;exit;
+$employee_type=getLookupName($rs->employee_type);
+$designationid=getLookupName($rs->current_designationid);
+$Departmentid=getLookupName($rs->current_Departmentid);
+$gender=getLookupName($rs->gender);
+$add_type=getLookupName($rs->add_type);
+if($rs->status2){
+  $status2=getLookupName($rs->status2);
+}
+
+
+
+
+$sqlo = "SELECT corporation_name  FROM {tbl_corporations} WHERE corporation_id='".$rs->current_officeid."'";
+$reso = db_query($sqlo);
+$rso = db_fetch_object($reso);
+
+$basic_pay= $rs->basic_pay;
+$grade_pay= $rs->grade_pay;
+if($rs->mobile == ''){
+  $mobile ='NA';
+}else{
+  $mobile = $rs->mobile;
+}
+if($rs->extn == ''){
+  $exten = 'NA';
+}else{
+  $exten = $rs->extn;
+}
+if($rs->pincode ==''){
+  $pincode = 'NA';
+}else{
+  $pincode = $rs->pincode;
+}
+if($rs->employee_id ==''){
+  $unique = 'NA';
+}else{
+  $unique = $rs->employee_id;
+}
+
+if($rs->field_medical_examination==0){
+	$field_medical_examination= 'Yes';
+		$field_medical_upload= $rs->field_medical_upload;
+	}else{
+	$field_medical_examination= 'No';
+		$field_medical_upload= 'N/A';
+	}
+	
+	
+
+if($rs->field_character_certificate==0){
+	$field_character= 'Yes';
+	    $field_character_upload= $rs->field_character_upload;
+	}else{
+	$field_character= 'No';
+	    $field_character_upload= 'N/A';
+	}
+	
+	if($rs->field_allegiance==0){
+	$field_allegiance= 'Yes';
+	$field_allegiance_upload= $rs->field_allegiance_upload;
+	}else{
+	$field_allegiance= 'No';
+	$field_allegiance_upload= 'N/A';
+	}
+	
+	if($rs->field_oath==0){
+	$field_oath= 'Yes';
+		$field_oath_upload= $rs->field_oath_upload;
+	
+	}else{
+	$field_oath= 'No';
+		$field_oath_upload= 'N/A';
+	
+	}
+	
+
+if($rs->field_verification==0){
+	$field_verification= 'Yes';
+	$field_verification_upload= $rs->field_allegiance_upload;
+	}else{
+	$field_verification= 'No';
+	$field_verification_upload= 'N/A';
+	}
+	if($rs->field_marital==0){
+	$field_marital= 'Yes';
+	$field_marital_upload= $rs->field_allegiance_upload;
+	}else{
+	$field_marital= 'No';
+	$field_marital_upload= 'N/A';
+	}
+	
+	
+
+	if($rs->field_declaration==0){
+	$field_declaration= 'Yes';
+	$field_declaration_upload= $rs->field_declaration_upload;
+	}else{
+	$field_declaration= 'No';
+	$field_declaration_upload= 'N/A';
+	}
+	
+	
+	if($rs->field_gpf==0){
+	$field_gpf= 'Yes';
+	$field_gpf_upload= $rs->field_gpf_upload;
+	}else{
+	$field_gpf= 'No';
+	$field_gpf_upload= 'N/A';
+	}
+	if($rs->field_family==0){
+	$field_family= 'Yes';
+	$field_family_upload= $rs->field_family_upload;
+	}else{
+	$field_family= 'No';
+		$field_family_upload= 'N/A';
+}
+	
+	
+	if($rs->field_dcr==0){
+	$field_dcr= 'Yes';
+	$field_dcr_upload= $rs->field_dcr_upload;
+	}else{
+	$field_dcr= 'No';
+	$field_dcr_upload= 'N/A';
+	}
+	if($rs->field_training==0){
+	$field_training= 'Yes';
+		$field_training_upload= $rs->field_training_upload;
+	}else{
+	$field_training= 'No';
+	$field_training_upload='N/A';
+	}
+$field_resume_upload=$rs->field_resume_upload;
+
+	if($field_resume_upload==''){
+$field_resume_upload='N/A';
+
+	}
+
+	$cnode = node_load($officeid);
+  $user_pic = $cnode->field_photo_upload[0]['filepath'];
+$user_resume=$cnode->field_resume_upload[0]['filepath'];
+
+$output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="form-container">';
+$output .='<tr class="oddrow"><td colspan="3" align="center"><h2>Employee Details</h2></td></tr>';
+//$output .='<tr class="evenrow"><td >UID:</td><td class="normal" >'.$unique.'</td></tr>';
+//$rid = getRole($rs->program_uid);
+//$output .='<tr class="oddrow"><td colspan="2" rowspan="3"><div class="fright"><img src="'.$base_url.'/'.$user_pic.'" width="100" //height="100" /></div></td></tr>';
+
+
+if($user_pic==''){
+
+$user_pic='sites/default/files/defaultimage.jpg';
+
+}
+$status2=getLookupName($rs->status2);
+if($status2==''){$status2=$rs->status2;}
+$output .='<tr class="evenrow"><td>Employee Id:</td><td class="normal"  width="350"  >'.ucwords($rs->employee_id).'</td><td rowspan="5" colspan="2"><div class="fright"><img src="'.$base_url.'/'.$user_pic.'" width="100" height="100" alt="Employee Photo" /></div></td></tr>';
+
+//echo $base_url.'/'.$user_pic;exit;
+$output .='<tr class="oddrow"><td >Employee Name:</td><td class="normal" > '.ucwords($rs->employee_name).'</td></tr>';
+$output .='<tr class="evenrow"><td>Father Name:</td><td class="normal" > '.ucwords($rs->father_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Nationality:</td><td class="normal" width="350"> '.ucwords($nationality).'</td ></tr>';
+$output .='<tr class="evenrow"><td width="50%">Date of Birth:</td><td class="normal" >'.date('d-m-Y',strtotime(substr($rs->dob,0,10))).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date of Joining:</td><td class="normal" >'.date('d-m-Y',strtotime($rs->doj)).'</td><td align="center">PHOTOGRAPH</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Basic Pay:</td><td class="normal" colspan="2">'.round($basic_pay).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Grade Pay:</td><td class="normal" colspan="2">'.round($grade_pay).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Employee Type:</td><td class="normal" colspan="2">'.ucwords($employee_type).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Religion:</td><td class="normal" colspan="2"> '.ucwords($religion).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Caste:</td><td class="normal" colspan="2"> '.ucwords($caste->cast_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Corporation Office:</td><td class="normal" colspan="2">'.ucwords($rso->corporation_name).'</td></tr>';
+
+$output .='<tr class="evenrow"><td width="50%">Education Qualification:</td><td class="normal" colspan="2"> '.ucwords($rs->edu_qual).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Professional Qualification:</td><td class="normal" colspan="2"> '.ucwords($rs->prof_qual).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Personal Mark of Identity:</td><td class="normal" colspan="2"> '.ucwords($rs->mark).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Height (in feet):</td><td class="normal" colspan="2"> '.ucwords($rs->height).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Designation:</td><td class="normal" colspan="2">'.ucwords($designationid).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Department:</td><td class="normal" colspan="2">'.ucwords($Departmentid).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Employee Status:</td><td class="normal" colspan="2">'.ucwords($status2).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Gender:</td><td class="normal"  colspan="2">'.ucwords($gender).'</td></tr>';
+//$output .='<tr class="oddrow"><td width="50%">Address:</td><td>';
+$output .='<tr class="evenrow"><td width="50%">Address Type:</td><td class="normal"  colspan="2">'.ucwords($add_type).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Addresss Line 1:</td><td class="normal"  colspan="2">'.ucwords($rs->add_line1).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Addresss Line 2:</td><td class="normal"  colspan="2">'.ucwords($rs->add_line2).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">State:</td><td class="normal"  colspan="2">'.ucwords(getState($rs->state_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">District:</td><td class="normal"  colspan="2">'.ucwords(getdistrict($rs->district_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Tehsil:</td><td class="normal"  colspan="2">'.ucwords(gettehsil($rs->tehsil_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Block:</td><td class="normal"  colspan="2">'.$rs->block.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Panchayat:</td><td class="normal"  colspan="2" >'.$rs->panchayat.'</td></tr>';
+
+if($pincode==''){$output .='<tr class="evenrow"><td width="50%">Pin Code:</td><td class="normal"  colspan="2">N/A</td></tr>';
+}else{
+$output .='<tr class="evenrow"><td width="50%">Pin Code:</td><td class="normal"  colspan="2">'.$pincode.'</td></tr>';
+}
+if($rs->phone==''){$output .='<tr class="oddrow"><td width="50%">Phone No.:</td><td class="normal"  colspan="2">N/A</td></tr>';
+}else{
+$output .='<tr class="oddrow"><td width="50%">Phone No.:</td><td class="normal"  colspan="2">'.$rs->phone.'</td></tr>';
+}
+//$output .='<tr class="evenrow"><td width="50%">Extn:</td><td class="normal"  colspan="2">'.$exten.'</td></tr>';
+
+if($mobile==''){$output .='<tr class="evenrow"><td width="50%">Mobile No.:</td><td class="normal"  colspan="2">N/A</td></tr>';
+} else {
+$output .='<tr class="evenrow"><td width="50%">Mobile No.:</td><td class="normal"  colspan="2">'.$mobile.'</td></tr>';
+}
+$output .='<tr class="oddrow"><td width="50%">Email Id:</td><td class="normal"  colspan="2">'.$rs->email.'</td></tr>';
+//$output .='<tr class="oddrow"><td width="50%">Fax:</td><td class="normal"  colspan="2">'.$rs->fax.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal"  colspan="2">'.$statusnodal.'</td></tr>';
+// Documents  
+$output .='<tr class="oddrow"><td width="50%" class="normal">Employee Grade:</td><td class="normal"  colspan="2">'.$employeegrade2.'</td></tr>';
+$output .='<tr class="evenrow"><td colspan="4" >NOMINEE DETAILS</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal">Name:</td><td class="normal"  colspan="2">'.$nomineename.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal">Address:</td><td class="normal"  colspan="2">'.$nomineeaddress.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal">Phone:</td><td class="normal"  colspan="2">'.$nomineephone.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal">Relation:</td><td class="normal"  colspan="2">'.getLookupName($nomineerelation).'</td></tr>';
+
+
+$output .='<tr class="oddrow"><td colspan="4">DOCUMENTS</td></tr>';
+//$output .='<tr class="oddrow" ></tr>';
+
+///medical
+if($rs->field_medical_examination==0){
+//echo $rs->field_medical_upload;exit;
+	if($rs->field_medical_upload !=''){
+	$output .='<tr class="evenrow"><td width="50%">Medical Examination</td><td width="50%" colspan="2" class="normal underline">'.l('Download',$base_url.'/'.$field_medical_upload).'</td></tr>';
+		}else{
+			$output .='<tr class="evenrow"><td width="50%">Medical Examination</td><td width="50%" colspan="2" class="normal">File has not been uploaded</td></tr>';
+		}
+
+$output .='<tr class="oddrow"><td width="50%" class="normal" >Examined By:</td><td class="normal"  colspan="2">'.ucwords($rs->medical_by).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Examined On:</td><td class="normal"  colspan="2">'.date('d-m-Y',strtotime($rs->medical_on)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal" >S. No.:</td><td class="normal"  colspan="2">'.$rs->medical_sno.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Certified By:</td><td class="normal"  colspan="2">'.ucwords($rs->medical_certified_by).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal" >Designation:</td><td class="normal"  colspan="2">'.getLookupName($rs->medical_designationid).'</td></tr>';
+}
+else{
+
+$output .='<tr class="evenrow"><td width="50%">Medical Examination:</td><td width="50%" colspan="2" class="normal">N/A</td></tr>';
+}
+
+///character
+
+if($rs->field_character_certificate==0){
+
+	if($rs->field_character_upload !=''){
+		$output .='<tr class="evenrow"><td width="50%" >Character and Antecedents</td><td width="50%" colspan="2" class="normal underline">'.l('Download',$base_url.'/'.$field_character_upload).'</td></tr>';
+		}else{
+			$output .='<tr class="evenrow"><td width="50%">Character and Antecedents</td><td width="50%" colspan="2" class="normal">File has not been uploaded</td></tr>';
+		}
+
+$output .='<tr class="oddrow"><td width="50%" class="normal" >S. No.:</td><td class="normal"  colspan="2">'.$rs->character_sno.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Certified By:</td><td class="normal"  colspan="2">'.ucwords($rs->character_certified_by).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal" >Designation:</td><td class="normal"  colspan="2">'.getLookupName($rs->character_designationid).'</td></tr>';
+}
+else{
+
+$output .='<tr class="evenrow"><td width="50%">Character and Antecedents</td><td width="50%" colspan="2" class="normal">N/A</td></tr>';
+}
+
+
+
+///allegiance
+
+if($rs->field_allegiance==0){
+
+	if($rs->field_allegiance_upload !=''){
+		$output .='<tr class="evenrow"><td width="50%">Allegiance to the Constitution</td><td width="50%" colspan="2" class="normal underline">'.l('Download',$base_url.'/'.$field_allegiance_upload).'</td></tr>';
+		}else{
+			$output .='<tr class="evenrow"><td width="50%">Allegiance to the Constitution</td><td width="50%" colspan="2" class="normal">File has not been uploaded</td></tr>';
+		}
+
+$output .='<tr class="oddrow"><td width="50%" class="normal" >S. No.:</td><td class="normal"  colspan="2">'.$rs->allegiance_sno.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Certified By:</td><td class="normal"  colspan="2">'.ucwords($rs->allegiance_certified_by).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal" >Designation:</td><td class="normal"  colspan="2">'.getLookupName($rs->allegiance_designationid).'</td></tr>';
+}
+else{
+$output .='<tr class="evenrow"><td width="50%">Allegiance to the Constitution</td><td width="50%" colspan="2" class="normal">N/A</td></tr>';
+}
+
+///oath
+
+if($rs->field_oath==0){
+
+	if($rs->field_oath_upload !=''){
+		$output .='<tr class="evenrow"><td width="50%" >Oath of Secrecy</td><td width="50%" class="normal underline"  colspan="2">'.l('Download',$base_url.'/'.$field_oath_upload).'</td></tr>';
+		}else{
+			$output .='<tr class="evenrow"><td width="50%">Oath of Secrecy</td><td width="50%" colspan="2" class="normal">File has not been uploaded</td></tr>';
+		}
+
+$output .='<tr class="oddrow"><td width="50%" class="normal" >S. No.:</td><td class="normal"  colspan="2">'.$rs->oath_sno.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Certified By:</td><td class="normal"  colspan="2">'.ucwords($rs->oath_certified_by).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal" >Designation:</td><td class="normal"  colspan="2">'.getLookupName($rs->oath_designationid).'</td></tr>';
+}
+else{
+$output .='<tr class="oddrow"><td width="50%">Oath of Secrecy</td><td width="50%" colspan="2" class="normal">N/A</td></tr>';
+
+}
+
+
+
+
+///marital 
+
+if($rs->field_marital==0){
+
+	if($rs->field_marital_upload !=''){
+		$output .='<tr class="evenrow"><td width="50%" >Marital Status</td><td width="50%" colspan="2" class="normal underline">'.l('Download',$base_url.'/'.$field_marital_upload).'</td></tr>';
+		}else{
+			$output .='<tr class="evenrow"><td width="50%">Marital Status</td><td width="50%" colspan="2" class="normal">File has not been uploaded</div></td></tr>';
+		}
+
+$output .='<tr class="oddrow"><td width="50%" class="normal" >S. No.:</td><td class="normal"  colspan="2">'.$rs->marital_sno.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Certified By:</td><td class="normal"  colspan="2">'.ucwords($rs->marital_certified_by).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal" >Designation:</td><td class="normal"  colspan="2">'.getLookupName($rs->marital_designationid).'</td></tr>';
+}
+else{
+$output .='<tr class="evenrow"><td width="50%">Marital Status</td><td width="50%" colspan="2" class="normal">N/A</td></tr>';
+}
+
+
+
+/////declaration
+
+if($rs->field_declaration==0){
+
+	if($rs->field_declaration_upload !=''){
+		$output .='<tr class="evenrow"><td width="50%" >Declaration</td><td width="50%" colspan="2" class="normal underline">'.l('Download',$base_url.'/'.$field_declaration_upload).'</td></tr>';
+		}else{
+			$output .='<tr class="evenrow"><td width="50%" >Declaration</td><td width="50%" colspan="2" class="normal">File has not been uploaded</td></tr>';
+		}
+
+$output .='<tr class="oddrow"><td width="50%" class="normal" >S. No.:</td><td class="normal"  colspan="2">'.$rs->declaration_sno.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Certified By:</td><td class="normal"  colspan="2">'.ucwords($rs->declaration_certified_by).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal" >Designation:</td><td class="normal"  colspan="2">'.getLookupName($rs->declaration_designationid).'</td></tr>';
+}
+else{
+$output .='<tr class="oddrow"><td width="50%">Declaration</td><td width="50%" colspan="2" class="normal">N/A</td></tr>';
+}
+
+///verification
+
+if($rs->field_verification==0){
+
+	if($rs->field_verification_upload !=''){
+		$output .='<tr class="evenrow"><td width="50%">Verification entries in Part-I</td><td width="50%" colspan="2" class="normal underline">'.l('Download',$base_url.'/'.$field_verification_upload).'</td></tr>';
+		}else{
+			$output .='<tr class="evenrow"><td width="50%">Verification entries in Part-I</td><td width="50%" colspan="2" class="normal">File has not been uploaded</td></tr>';
+		}
+
+$output .='<tr class="oddrow"><td width="50%" class="normal" >S. No.:</td><td class="normal"  colspan="2">'.$rs->verification_sno.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Certified By:</td><td class="normal"  colspan="2">'.ucwords($rs->verification_certified_by).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal" >Designation:</td><td class="normal"  colspan="2">'.getLookupName($rs->verification_designationid).'</td></tr>';
+}
+else{
+$output .='<tr class="evenrow"><td width="50%">Verification entries in Part-I</td><td width="50%" colspan="2" class="normal">N/A</td></tr>';
+}
+
+
+
+
+///gpf
+
+if($rs->field_gpf==0){
+
+	if($rs->field_gpf_upload !=''){
+		$output .='<tr class="evenrow"><td width="50%">Nomination for G.P.F</td><td width="50%" colspan="2" class="normal underline">'.l('Download',$base_url.'/'.$field_gpf_upload).'</td></tr>';
+		}else{
+			$output .='<tr class="evenrow"><td width="50%" >Nomination for G.P.F</td><td width="50%" colspan="2" class="normal">File has not been uploaded</td></tr>';
+		}
+
+$output .='<tr class="oddrow"><td width="50%" class="normal" >G.P.F No.:</td><td class="normal"  colspan="2">'.$rs->gpf_sno.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Filed Nominations:</td><td class="normal"  colspan="2">'.ucwords($rs->gpf_nomination).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal" >Certified By:</td><td class="normal"  colspan="2">'.ucwords($rs->gpf_certified_by).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Designation:</td><td class="normal"  colspan="2">'.getLookupName($rs->gpf_designationid).'</td></tr>';
+}
+else{
+$output .='<tr class="evenrow"><td width="50%">Nomination for G.P.F</td><td width="50%" colspan="2" class="normal">N/A</td></tr>';
+}
+
+
+
+
+///family 
+
+if($rs->field_family==0){
+
+	if($rs->field_family_upload !=''){
+		$output .='<tr class="oddrow"><td width="50%" >Family Particulars<td width="50%" colspan="2" class="normal underline">'.l('Download',$base_url.'/'.$field_family_upload).'</div></tr>';
+		}else{
+			$output .='<tr class="oddrow"><td width="50%">Family Particulars</td><td width="50%" colspan="2" class="normal">File has not been uploaded</td></tr>';
+		}
+
+$output .='<tr class="evenrow"><td width="50%" class="normal" >S. No.:</td><td class="normal"  colspan="2">'.$rs->family_sno.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal" >Certified By:</td><td class="normal"  colspan="2">'.ucwords($rs->family_certified_by).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Designation:</td><td class="normal"  colspan="2">'.getLookupName($rs->family_designationid).'</td></tr>';
+}
+else{
+$output .='<tr class="evenrow"><td width="50%">Family Particulars</td><td width="50%" colspan="2" class="normal">N/A</td></tr>';
+}
+
+
+
+
+//dcr
+
+if($rs->field_dcr==0){
+
+	if($rs->field_dcr_upload !=''){
+		$output .='<tr class="oddrow"><td width="50%">D.C.R gratuity and family pension</td><td width="50%" colspan="2" class="normal underline">'.l('Download',$base_url.'/'.$field_dcr_upload).'</td></tr>';
+		}else{
+			$output .='<tr class="oddrow"><td width="50%">D.C.R gratuity and family pension</td><td width="50%" colspan="2" class="normal">File has not been uploaded</td></tr>';
+		}
+
+
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Filed Nominations:</td><td class="normal"  colspan="2">'.ucwords($rs->dcr_nomination).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%" class="normal" >Certified By:</td><td class="normal"  colspan="2">'.ucwords($rs->dcr_certified_by).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%" class="normal" >Designation:</td><td class="normal"  colspan="2">'.getLookupName($rs->dcr_designationid).'</td></tr>';
+}
+else{
+$output .='<tr class="oddrow"><td width="50%">D.C.R gratuity and family pension</td><td width="50%" colspan="2" class="normal">N/A</td></tr>';
+}
+
+
+
+
+//training
+
+if($rs->field_training==0){
+
+	if($rs->field_training_upload !=''){
+		$output .='<tr class="oddrow"><td width="50%">Training Details</td><td width="50%" colspan="2" class="normal underline">'.l('Download',$base_url.'/'.$field_training_upload).'</td></tr>';
+		}else{
+			$output .='<tr class="evenrow"><td width="50%" >Training Details</td><td width="50%" colspan="2" class="normal">File has not been uploaded</td></tr>';
+		}
+
+}else{
+$output .='<tr class="evenrow"><td width="50%">Training Details</td><td width="50%" colspan="2" class="normal">N/A</td></tr>';
+}
+
+if($rs->field_resume_upload !=''){
+		$output .='<tr class="evenrow"><td width="50%" >Resume</td><td width="50%" colspan="2" class="normal underline">'.l('Download',$base_url.'/'.$field_resume_upload).'</td></tr>';
+		}else{
+			$output .='<tr class="oddrow"><td width="50%">Resume</td><td width="50%" colspan="2" class="normal">File has not been uploaded</td></tr>';
+		}
+
+//
+$output .='<tr class="oddrow"><td width="50%" class="normal">Biometric:</td><td class="normal"  colspan="2">'.$rs->biometricfield.'</td></tr>';
+if($rid != 13)
+//if($uid != 1)
+{
+
+//$serviceurl= l("Service Book",$base_url."/serviceBookpdf.php?op=serviceBook_report&employee_id=".$rs->//employee_id,array('attributes' => array('target'=>'_blank')));
+ 
+$output .='<tr class="evenrow"><td colspan="3" align="center" class="back" >'.l('Back', 'list/employeeList').l('Service Book', $base_url."/serviceBookpdf.php?op=serviceBook_report&employee_id=".$rs->employee_id,array('attributes' => array('target'=>'_blank'))).'</td></tr>';
+
+
+}
+else
+{
+
+$output .='<tr class="evenrow"><td  align="center" class="back" class="normal" colspan="3">'.l('Back', 'list/employeeList').'</td></tr>';
+ }
+ 
+ 
+
+ 
+ $output .='</table>';
+return $output;
+}

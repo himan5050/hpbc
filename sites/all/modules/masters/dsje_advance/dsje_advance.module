@@ -1,0 +1,465 @@
+<?php
+function dsje_advance_init() {
+	//drupal_add_css(drupal_get_path('module', 'dsje_language') .'/dsje_language.css');
+	
+}
+
+
+function dsje_advance_perm() {
+	return array('edit dsje_advance','administer dsje_advance', 'create dsje_advance', 'view dsje_advance');
+}
+
+function dsje_advance_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_advance', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_advance', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_advance', $account);
+	}
+	
+}
+
+function dsje_advance_menu() {
+	
+	
+	$items['admin/dsje/listadvance'] = array(
+										'title' => t('List of advance'),
+										'description' => 'Allow user to View advance',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewadvance',
+										'access arguments' => array('administer dsje_advance'),
+													 
+									  );
+	
+	$items['admin/dsje/listadvance/addadvance'] = array(
+										'title' => t('Create advance'),
+										'description' => 'Allow user to add advance',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_advance',
+										'access arguments' => array('administer dsje_advance'),
+													 
+									  );
+   	$items['admin/dsje/listadvance/edit/advance/%'] = array(
+								
+										'title' => t('Edit advance'),
+										'description' => 'Allow user to add advance',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addadvanceedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_advance'),
+													 
+									  );
+   $items['admin/dsje/listadvance/view/advance/%'] = array(
+								
+										'title' => t('View advance'),
+										'description' => 'Allow user to add advance',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addadvanceview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_advance'),
+													 
+									  );
+     $items['admin/dsje/del/advance/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'advance_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_advance'),
+													 
+									  );
+    $items['admin/dsje/enable/advance/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'advance_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_advance'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing advance
+ */
+
+function viewadvance(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjeadvance', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('Type of Advance'), 'field' => 'advance_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List advance', 'admin/dsje/listadvance/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT advance_id, advance_name, status FROM tbl_advances where UPPER(advance_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_advances where UPPER(advance_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT advance_id, advance_name, status FROM tbl_advances ".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjeadvance', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listadvance');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjeadvance', 'code01', NULL),"admin/dsje/listadvance/addadvance");
+   	$lising = getMessage( 'dsjeadvance', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listadvance/edit/advance/".$row->advance_id,array('attributes'=>array('id'=>'edit-advance-id')));
+		$viewurl = l("View","admin/dsje/listadvance/view/advance/".$row->advance_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/advance/$row->advance_id/$row->advance_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/advance/$row->advance_id/$row->advance_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->advance_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_advance(){
+ return drupal_get_form('dsje_advance_form');
+}
+
+function dsje_advance_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of advance', 'admin/dsje/listadvance');
+  if($array[3] == 'addadvance'){
+     $breadcrumb[] = l('Add advance', 'admin/dsje/listadvance/addadvance');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['advance_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('advance Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listadvance'),
+);
+	return $form;
+}
+
+function dsje_advance_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $advance_name = trim($values['advance_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('advance_name',$advance_name,'advance');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_advances` (`advance_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$advance_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjeadvance', 'code05', array("0"=>$advance_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listadvance');
+	}
+}
+
+function dsje_advance_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$advance_name = trim($values['advance_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('advance_name',$advance_name,'advance');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_advances} where UCASE(advance_name)= '".strtoupper($advance_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjeadvance', 'code06', array("0"=>$advance_name));
+			form_set_error('advance_name', $message);
+		}
+	}	
+}
+
+function dsje_addadvanceedit($advance_id){
+ return drupal_get_form('dsje_advance_form_edit',$advance_id);
+}
+
+function dsje_advance_form_edit(&$form_states,$advance_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List advance', 'admin/dsje/listadvance');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit advance', 'admin/dsje/listadvance/edit/advance/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqladvance = "select * from tbl_advances where advance_id=$advance_id";
+	$resadvance = db_query($sqladvance);
+	$rsadvance = db_fetch_object($resadvance);
+	
+	$form['advance_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsadvance->advance_id,
+	);
+	
+	$form['advance_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('advance Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsadvance->advance_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['prev_advance_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsadvance->advance_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsadvance->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listadvance'),
+);
+	return $form;
+}
+
+function dsje_advance_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$advance_id = $values['advance_id'];
+	$advance_name = ParseData($values['advance_name']);
+	$prev_advance_name = ParseData($values['prev_advance_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('advance_name',$advance_name,'advance');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_advances} where LOWER(advance_name)= '".strtolower($advance_name)."' GROUP BY advance_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_advance_name), strtolower($advance_name))==0){
+			db_query("UPDATE `tbl_advances` set `advance_name` = '".$advance_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where advance_id='".$advance_id."'");
+			
+			$message = getMessage('dsjeadvance', 'code05', array("0"=>$advance_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listadvance");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_advances` set `advance_name` = '".$advance_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where advance_id='".$advance_id."'");
+				
+				$message = getMessage('dsjeadvance', 'code05', array("0"=>$advance_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listadvance");	
+			
+			}else{
+				db_query("UPDATE `tbl_advances` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where advance_id='".$advance_id."'");
+				
+				$message = getMessage('dsjeadvance', 'code06', array("0"=>$advance_name));
+				form_set_error('advance_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_advance_theme() {
+	
+	return array(
+				 
+		'dsje_advance_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_advance_form',
+                                 ),
+        'dsje_advance_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_advance_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_advance_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_advance_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_advance_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function advance_delete($sid, $sno){
+  $advance_id =  $sid;
+  db_query("UPDATE {tbl_advances} SET status=0 WHERE advance_id ='".$advance_id."'");
+  $message = getMessage('dsjeadvance', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listadvance");
+ }
+
+
+  function advance_enable($sid, $sno){
+    $advance_id =  $sid;
+    db_query("UPDATE {tbl_advances} SET status=1 WHERE advance_id ='".$advance_id."'");
+  
+    $message = getMessage('dsjeadvance', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listadvance");
+  }
+
+  function dsje_addadvanceview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List advance', 'admin/dsje/listadvance');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View advance', 'admin/dsje/listadvance/view/advance/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from tbl_advances where advance_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>advance Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td>advance:</td><td>'.ucwords($rs->advance_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='</table></div>';
+$output .=  l(t('Back'), 'admin/dsje/listadvance');
+ return $output;
+  }
+	
+	

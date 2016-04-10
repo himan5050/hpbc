@@ -1,0 +1,41 @@
+$(document).ready(function(){
+							var val2= $('#headtype_id').val();
+							
+							if(val2==248 || val2==249){
+							$('#complicated').css("display","block");
+								
+								}else{
+									$('#complicated').css("display","none");
+									}
+							});
+
+function selectedType(){
+	
+	var val1 = document.getElementById('headtype_id').value;
+	var val2 = document.getElementById('branch_id').value;
+	var val3 = document.getElementById('fin_year_id').value;
+	val = val1+'|'+val2+'|'+val3;
+	//alert(val);
+if(val1==248 || val1==249){
+	
+		 document.getElementById('complicated').style.display='block';
+		}else{
+		   document.getElementById('complicated').style.display='none';
+			}
+	if(val1=="" || val2=="" || val3==""){
+	
+	
+	document.getElementById("employee_id").value = "";
+	document.getElementById("office_id").value = "";
+	document.getElementById("designation_id").value = "";
+	document.getElementById("department_id").value = "";
+	document.getElementById("edit-phone").value = "";
+	document.getElementById("edit-mobile").value = "";
+	document.getElementById("edit-email").value = "";
+ // return;
+	
+	
+	
+	}
+	 
+	}

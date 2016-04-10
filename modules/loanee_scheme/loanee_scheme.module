@@ -1,0 +1,76 @@
+<?php 
+
+function loanee_scheme_init() {
+	drupal_add_css(drupal_get_path('module', 'loanee_scheme') .'/view.css');
+	
+}
+
+function loanee_scheme_node_info() {
+	return array (
+					'loanee_scheme' => array (
+										'name' => t('Loan Scheme'),
+										'module' => 'loanee_scheme',
+										'description' => "Creates Loan Scheme",
+										'has_title' => TRUE,
+										'title_label' => t('Loan Scheme'),
+										'has_body' => FALSE,
+										),
+				);
+}
+
+function loanee_scheme_perm() {
+	return array('edit loanee_scheme','administer loanee_scheme', 'create loanee_scheme', 'view loanee_scheme');
+}
+
+function loanee_scheme_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit loanee_scheme', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create loanee_scheme', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view loanee_scheme', $account);
+	}
+	
+}
+
+
+	
+
+function loanee_scheme_form(&$node) {
+	$type = node_get_types('type', $node);
+	return $form;
+	}
+	
+function loanee_scheme_theme() {
+	
+	return array(
+				 
+	'loanee_scheme_node_form' => array(
+        'arguments' => array('form' => NULL),
+        'template' => 'loanee_scheme_node_form',
+    ),
+	
+				 );
+}
+
+function loanee_scheme_form_alter(&$form, $form_state, $form_id) {
+	//drupal_set_message("Form ID: " . $form_id);
+	if($form_id == "loanee_scheme_node_form") {
+		$node = $form['#node'];
+		if($node->nid) {
+		//	$form['policy_name']['#disabled'] = TRUE;
+		//	$form['policy_no']['#disabled']= TRUE ;
+		//	$form['insurer']['#disabled']= TRUE ;
+			
+		}
+	}
+}
+
+
+	
+	

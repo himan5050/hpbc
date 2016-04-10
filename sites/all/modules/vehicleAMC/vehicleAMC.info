@@ -1,0 +1,6 @@
+;$id 
+name="Vehicle AMC"
+description="Vehicle AMC Module"
+core =6.x
+version = 6.x-1
+package="Dsje"

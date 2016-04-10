@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<emailmessage>
+ 
+	<module name="LoanSanction">
+		<NodeId id="Body">
+			<![CDATA[       <table>
+          <tr>
+		          <td>
+			          Dear <strong>{0}<br/> </strong>
+		          </td>
+	        </tr>
+	        <tr>
+		          <td>
+			               Thank you for choosing Flexiconnect VPN 
+			               service from Airtel. Your account has been created . 
+			               Below are your login details.
+			              
+		          </td>
+	        </tr>
+      </table>
+	  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Loan Sanctioned</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+
+
+<module name="grievance">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>
+					   Thank you for choosing Flexiconnect VPN 
+					   service from Airtel. Your account has been created . 
+					   Below are your login details.
+					  
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+</NodeId>
+<NodeId id="Subject">Grievance Sanctioned</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+<module name="grievance">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>
+					   Thank you for choosing Flexiconnect VPN 
+					   service from Airtel. Your account has been created . 
+					   Below are your login details.
+					  
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+</NodeId>
+<NodeId id="Subject">Grievance Sanctioned</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+<module name="grievanceclose">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>
+					   Your Grievance has beem closed
+					  
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+</NodeId>
+<NodeId id="Subject">Grievance Sanctioned</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+ <module name="courtcase">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>
+					   Thank you for choosing Flexiconnect VPN 
+					   service from Airtel. Your account has been created . 
+					   Below are your login details.
+					  
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+</NodeId>
+<NodeId id="Subject">Courtcase Sanctioned</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module> 
+
+<module name="emailnotification">
+		<NodeId id="Body">
+			<![CDATA[       <table>
+          <tr>
+		          <td>
+			          Dear <strong>{1}<br/> </strong>
+		          </td>
+	        </tr>
+	        <tr>
+		          <td>
+			              Pending task notification..
+			              
+		          </td>
+	        </tr>
+      </table>
+	  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Pending Task Notifaction</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+
+
+
+
+<module name="medicalclaim">
+		<NodeId id="Body">
+			<![CDATA[       <table>
+          <tr>
+		          <td>
+			         "Dear {0}
+Your Claim has been submitted successfully. Detail of the same is as:
+ 
+Claim Type  : {1}
+Claim Amount  : {2}
+
+This is an auto-generated. Please do not reply back.
+"
+
+		          </td>
+	        </tr>
+	        <tr>
+		          <td>
+			              Medical Claim
+			              
+		          </td>
+	        </tr>
+      </table>
+	  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Medical Claim</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+
+<module name="tourclaim">
+		<NodeId id="Body">
+			<![CDATA[       <table>
+          <tr>
+		          <td>
+			         "Dear {0}
+Your Claim has been submitted successfully. Detail of the same is as:
+ 
+Claim Type  : {1}
+Claim Amount  : {2}
+
+This is an auto-generated. Please do not reply back.
+"
+
+		          </td>
+	        </tr>
+	        <tr>
+		          <td>
+			              Tour Claim
+			              
+		          </td>
+	        </tr>
+      </table>
+	  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Tour Claim</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+
+<module name="caoaudit">
+		<NodeId id="Body">
+			<![CDATA[       <table>
+          <tr>
+		          <td>
+			          Dear {0}, Audit has been scheduled in your respective offices on following dates: 
+					  {1} {2}   
+					  This is an auto-generated. Please do not reply back.
+
+		          </td>
+	        </tr>
+	        <tr>
+		          <td>
+			              Cao Audit
+			              
+		          </td>
+	        </tr>
+      </table>
+	  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Cao Audit</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+
+<module name="auditreportsubmit">
+		<NodeId id="Body">
+			<![CDATA[       <table>
+          <tr>
+		          <td>
+			          Dear <strong>{0}<br/> </strong>,
+					  Audit has been carried out successfully. Brlow mentioned is the list of NCs found during audit:
+					  {1}                                   
+					  This is an auto-generated. Please do not reply back.
+
+		          </td>
+	        </tr>
+	        <tr>
+		          <td>
+			              Audit Report Submit
+			              
+		          </td>
+	        </tr>
+      </table>
+	  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Audit Report Submit</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+
+<module name="correctionreport">
+		<NodeId id="Body">
+			<![CDATA[       <table>
+          <tr>
+		          <td>
+			          Dear {0}, 
+					  We have taken necessary action against reported NCs, summary of the same is as: 
+					  Please find attached detail report for reference.    
+					  This is an auto-generated. Please do not reply back.
+
+		          </td>
+	        </tr>
+	        <tr>
+		          <td>
+			              Correction Report
+			              
+		          </td>
+	        </tr>
+      </table>
+	  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Correction Report</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+
+</emailmessage>

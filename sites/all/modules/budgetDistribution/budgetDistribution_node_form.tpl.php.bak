@@ -1,0 +1,104 @@
+<?php
+//$rid = getRole($form['program_uid']['#value']);
+
+$cnode=node_load($form['#parameters'][2]->nid);
+
+
+?>
+  <table width="100%" cellpadding="2" cellspacing="1" border="0" id="form-container">
+    
+      <?php if($form['#parameters'][2]->nid){
+	  ?>
+		<tr class="oddrow">
+		<td align="left" ><h2>Budget Distribution Edit Form</h2></td>
+		</tr>		
+      <?php
+		}else{ ?>
+		<tr class="oddrow">
+		<td align="left" ><h2>Budget Distribution Entry Form</h2></td>
+		</tr>
+		<?php } ?>
+       <tr class="evenrow">
+      <td align="left" ><?php print drupal_render($form['headtype']); ?>
+	  </td>
+    </tr>
+	<tr class="oddrow" >
+		<td align="left" >
+		<?php print drupal_render($form['branch']); ?>
+		</td>
+	</tr>
+		
+			<tr class="oddrow">
+			<td class="form-text3" ><?php print drupal_render($form['fin_year']); ?></td>
+         </tr>
+<tr class="evenrow" id="headchange" >
+		<td align="left" colspan="13" id="headchange"><?php print drupal_render($form['budget']); ?></td>
+		</tr>
+
+<tr id="complicated"><td>
+<table>
+
+
+ 
+
+<?php
+
+if($cnode->headtype==248){
+$no=db_query("select schemeName_name from tbl_schemeNames ");
+}else {
+//expenditure
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookupTypes WHERE lookupType_id=90";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$no= db_query($sqlsender);
+//$senderarray['']= '--Select--';
+
+
+}
+$i=-1; ?>
+
+<table id="headchange">
+<?php
+while($noo=db_fetch_object($no)){
+
+
+$i++;
+
+?>
+
+
+<tr class="evenrow" id="headchange">
+
+
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'getscheme']); ?></td>
+
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'apr']); ?></td>
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'may']); ?></td>
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'jun']); ?></td>
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'jul']); ?></td>
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'aug']); ?></td>
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'sept']); ?></td>
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'oct']); ?></td>
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'nov']); ?></td>
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'dec']); ?></td>
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'jan']); ?></td>
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'feb']); ?></td>
+<td class="form-text3" id="headchange"><?php print drupal_render($form[$i.'mar']); ?></td>
+
+
+
+</tr>
+		
+
+
+<?php } ?>
+</table>
+
+		<tr class="evenrow" >
+      <td align="center" class="back" colspan="13"><?php  print drupal_render($form); ?></td>
+    </tr>
+  </table>
+ 

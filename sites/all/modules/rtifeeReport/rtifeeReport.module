@@ -1,0 +1,128 @@
+<?php
+//global $base_url;
+
+/**
+ *hook_perm
+ 
+ 
+ */
+ 
+ function rtifeeReport_init() {
+	//drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+ 
+function rtifeeReport_perm() {
+	return array('edit rtifeeReport','administer rtifeeReport', 'create rtifeeReport', 'view rtifeeReport');
+}
+
+function rtifeeReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit rtifeeReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create rtifeeReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view rtifeeReport', $account);
+	}
+	
+}
+
+
+function rtifeeReport_menu(){
+
+  $items['report_rtifee'] = array(
+										'title' => t('RTI Fee Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'reportfee_rti',
+										'access arguments' => array('administer rtifeeReport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function reportfee_rti(){
+  return drupal_get_form('rtifeeReport_form');
+}
+
+function rtifeeReport_form(){
+	
+global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('RTI Fee Report', 'report_rtifee');
+  drupal_set_breadcrumb($breadcrumb);
+
+
+$form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+						   
+		);				   
+ 	
+$form['mode_paymentt'] = array(
+		 
+								 '#type' => 'select',
+								 '#title' => t(''),
+								 '#default_value' => $node->mode_payment,
+								 '#options' =>array('' => '--Select--', 'ipo'=>'IPO','mo'=>'MO','cash'=>'Cash'),
+								 '#attributes' => array('onchange' => 'return changeMenu1(this)'),
+								 
+								 
+								 );	
+
+ 
+ 
+
+ 
+ 
+						   
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function rtifeeReport_theme() {
+	
+	return array(
+		
+		'rtifeeReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rtifeeReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

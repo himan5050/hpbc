@@ -1,0 +1,103 @@
+<?php
+//global $base_url;
+
+/**
+ *hook_perm
+ 
+ 
+ */
+ 
+ function corloanledgerreport_init() {
+	//drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+ 
+function corloanledgerreport_perm() {
+	return array('edit corloanledgerreport','administer corloanledgerreport', 'create corloanledgerreport', 'view corloanledgerreport');
+}
+
+function corloanledgerreport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit corloanledgerreport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create corloanledgerreport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view corloanledgerreport', $account);
+	}
+	
+}
+
+
+function corloanledgerreport_menu(){
+
+  $items['corloanledgerreport'] = array(
+										'title' => t('Loan Ledger Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'corloanledgerreport',
+										'access callback' => TRUE
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function corloanledgerreport(){
+  return drupal_get_form('corloanledgerreport_form');
+}
+
+function corloanledgerreport_form(){
+	
+$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Loan Ledger Report', 'corloanledgerreport');
+  drupal_set_breadcrumb($breadcrumb);	
+		
+   $form['accountno'] = array(
+		 
+								 '#type' => 'textfield',
+								 '#title' => t(''),
+								 '#default_value' => '',		 
+								 );	
+
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate',
+  ); 
+  return $form;
+}
+
+
+function corloanledgerreport_form_validate($form,&$form_state){
+	$values = $form_state['values'];
+    $accountno = $values['accountno'];
+	if($accountno == '')
+	{
+		form_set_error('accountno','Account No field is required.');
+		
+	}
+}
+
+/**
+ *@ hook_theme 
+*/
+
+ function corloanledgerreport_theme() {
+	
+	return array(
+		
+		'corloanledgerreport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'corloanledgerreport_form',
+                                 ),
+								 
+ );
+        
+}

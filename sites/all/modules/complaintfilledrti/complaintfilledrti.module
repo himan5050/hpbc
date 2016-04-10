@@ -1,0 +1,188 @@
+<?php
+//global $base_url;
+
+/**
+ *hook_perm
+ 
+ 
+ */
+ 
+ function complaintfilledrti_init() {
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+ 
+function complaintfilledrti_perm() {
+	return array('edit complaintfilledrti','administer complaintfilledrti', 'create complaintfilledrti', 'view complaintfilledrti');
+}
+
+function complaintfilledrti_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit complaintfilledrti', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create complaintfilledrti', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view complaintfilledrti', $account);
+	}
+	
+}
+
+
+function complaintfilledrti_menu(){
+
+  $items['rticomplaint'] = array(
+										'title' => t('Complaints filed, section wise, Zone wise'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'rticomplaint',
+										'access arguments' => array('administer complaintfilledrti'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function rticomplaint(){
+  return drupal_get_form('complaintfilledrti_form');
+}
+
+function complaintfilledrti_form(){
+	
+	global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('RTI Filled, Section Wise, Zone Wise', 'rticomplaint');
+  drupal_set_breadcrumb($breadcrumb);
+
+
+
+$form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+						   
+		);				   
+ 	
+$sqlDepartmentsquery= "SELECT lookupType_id FROM tbl_lookuptypes WHERE lookupType_id='19'";
+
+$sqlDepartments= db_query($sqlDepartmentsquery);
+$rsDepartments=db_fetch_object($sqlDepartments);
+$sqlDepartmentslookquery = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rsDepartments->lookupType_id."' ORDER BY lookup_name ASC";
+
+$resDepartmentslookquery= db_query($sqlDepartmentslookquery);
+$Departmentslookquery['']= 'All';
+if($resDepartmentslookquery){
+
+while($rssender1 = db_fetch_object($resDepartmentslookquery)){
+
+$Departmentslookquery[$rssender1->lookup_id] = ucwords($rssender1->lookup_name);
+
+}
+
+}						   
+ 
+ $form['section'] = array (
+							 '#type' => 'select',
+							 '#title' => t(''),
+							 '#options' =>$Departmentslookquery,
+							 
+							 );
+							 
+							 
+$sqlcountry = "select * from tbl_district WHERE status='1' ORDER BY district_name";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = 'All'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->district_id] = ucfirst($rscountry->district_name);
+	  }
+	}
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => false,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		
+	);							 
+ 
+ 
+ $kkcompaint= "SELECT lookupType_id FROM tbl_lookuptypes WHERE lookupType_id='106'";
+
+$ttcompaint= db_query($kkcompaint);
+$rstcompaint=db_fetch_object($ttcompaint);
+$sqlcompaint = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rstcompaint->lookupType_id."' ORDER BY lookup_name ASC";
+
+$rescompaint= db_query($sqlcompaint);
+$compaintarray['']= 'All';
+if($rescompaint){
+
+while($rscompaint = db_fetch_object($rescompaint)){
+
+$compaintarray[$rscompaint->lookup_id] = ucwords($rscompaint->lookup_name);
+
+}
+
+}
+						   
+	   $form['type_complaint'] = array(
+								 '#type' => 'select',
+								 '#title' => t(''),
+								 '#required' => false,
+								 '#default_value' => $row->type_complaint,
+								 '#options' =>$compaintarray,
+								 ); 
+
+ 
+ 
+
+ 
+ 
+						   
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function complaintfilledrti_theme() {
+	
+	return array(
+		
+		'complaintfilledrti_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'complaintfilledrti_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

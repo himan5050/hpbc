@@ -1,0 +1,140 @@
+<?php
+//global $base_url;
+
+/**
+ *hook_perm
+ 
+ 
+ */
+ 
+ function loanledgerreport_init() {
+	//drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+ 
+function loanledgerreport_perm() {
+	return array('edit loanledgerreport','administer loanledgerreport', 'create loanledgerreport', 'view loanledgerreport');
+}
+
+function loanledgerreport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit loanledgerreport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create loanledgerreport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view loanledgerreport', $account);
+	}
+	
+}
+
+
+function loanledgerreport_menu(){
+
+  $items['loanledgerreport'] = array(
+										'title' => t('Loan Ledger Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'loanledger_report',
+										'access arguments' => array('administer loanledgerreport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function loanledger_report(){
+  return drupal_get_form('loanledgerreport_form');
+}
+
+function loanledgerreport_form(){
+	
+$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Loan Ledger Report', 'loanledgerreport');
+  drupal_set_breadcrumb($breadcrumb);	
+	
+
+
+
+$form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+						   
+		);	
+		
+
+$sqlscheme = "select * from tbl_scheme_master ORDER BY scheme_name ASC ";
+	$resscheme =db_query($sqlscheme);
+	$schemearray[''] = array();
+	$schemearray[''] = '--Select--'; 
+	if($resscheme){
+	  while($rsscheme = db_fetch_object($resscheme)){
+	    $schemearray[$rsscheme->loan_scheme_id] = ucwords($rsscheme->scheme_name);
+	  }
+	}
+
+
+					   
+ 	
+$form['scheme_name'] = array(
+		 
+								 '#type' => 'select',
+								 '#title' => t(''),
+								 '#default_value' => '',
+								 '#options' => $schemearray,
+								 
+								 
+								 );	
+
+ 
+ 
+
+ 
+ 
+						   
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function loanledgerreport_theme() {
+	
+	return array(
+		
+		'loanledgerreport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'loanledgerreport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

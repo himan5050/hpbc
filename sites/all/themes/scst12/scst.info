@@ -1,0 +1,30 @@
+name = SCST
+description = Tableless, recolorable, multi-column, fluid width theme (default).
+version = VERSION
+core = 6.x
+engine = phptemplate
+stylesheets[all][] = style.css
+stylesheets[all][] = scstReports/report_style.css
+;stylesheets[all][] = dsje_forms.css
+stylesheets[print][] = print.css
+
+; Information added by drupal.org packaging script on 2011-05-25
+version = "6.22"
+project = "drupal"
+datestamp = "1306357015"
+
+regions[applicationforms] =  applicationforms
+regions[newschemes] =  newschemes
+regions[casts] =  casts
+regions[listofscst] =  listofscst
+regions[login] =  login
+regions[search] =  search
+regions[welcome] =  welcome
+regions[scheduled] =  scheduled
+regions[latestnews] =  latestnews
+regions[left] =  left
+regions[lbox] =  Language Box
+regions[searchblock] =  Search Block
+
+
+

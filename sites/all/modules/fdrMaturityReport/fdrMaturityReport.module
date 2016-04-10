@@ -1,0 +1,132 @@
+<?php
+
+/**
+ *hook_perm
+ */
+ 
+ function fdrMaturityReport_init() {
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+function fdrMaturityReport_perm() {
+	return array('edit fdrMaturityReport','administer fdrMaturityReport', 'create fdrMaturityReport', 'view fdrMaturityReport');
+}
+
+function fdrMaturityReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit fdrMaturityReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create fdrMaturityReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view fdrMaturityReport', $account);
+	}
+	
+}
+
+
+function fdrMaturityReport_menu(){
+
+  $items['fdrMaturityReport_vehicle'] = array(
+										'title' => t('FDR Due For Maturity'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'fdrMaturityReport_vehicle',
+										'access arguments' => array('administer fdrMaturityReport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function fdrMaturityReport_vehicle(){
+  return drupal_get_form('fdrMaturityReport_vehicle_form');
+}
+
+function fdrMaturityReport_vehicle_form(){
+ global $base_url;
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('FDR Due For Maturity', 'fdrMaturityReport_vehicle');
+  drupal_set_breadcrumb($breadcrumb);
+ $form['bank_name'] = array(
+                                '#type' => 'select',
+								'#title' => t(''),
+							
+								 '#required'=>FALSE,
+	 '#options'=>selectbank(),
+ );
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+function fdrMaturityReport_vehicle_form_validate($form, &$form_state){
+	
+	$values = $form_state['values'];
+	
+	$from_date = $values['from_date'];
+	$to_date = $values['to_date'];
+	$bank_name = $values['bank_name'];
+	if($from_date == '' && $to_date == '' && $bank_name == ''){
+  form_set_error('form','Please enter any one of the search fields.');
+}else if($from_date != '' && $to_date == ''){
+  form_set_error('to_date','Please enter To Date');
+}
+else if($to_date != '' && $from_date == ''){
+  form_set_error('from_date','Please enter From Date');
+}
+else if($to_date != '' && $from_date != '' &&($to_date < $from_date)){
+
+  form_set_error('to_date','To Date should be greater than the From Date');
+
+
+}
+	
+}
+
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function fdrMaturityReport_theme() {
+	
+	return array(
+		
+		'fdrMaturityReport_vehicle_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'fdrMaturityReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

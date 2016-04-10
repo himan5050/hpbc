@@ -1,0 +1,71 @@
+<?php
+function dsje_statusDebtRepayment_schema() {
+
+  //language table
+   $schema['tbl_statusDebtRepayments'] = array(
+							 'fields' => array(
+											   'statusDebtRepayment_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'statusDebtRepayment_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                    	   	   'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'statusDebtRepayment_id' => array('statusDebtRepayment_id'),
+												),
+							 'primary key' => array('statusDebtRepayment_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_statusDebtRepayment_install() {
+	drupal_install_schema('dsje_statusDebtRepayment');
+}
+
+function dsje_statusDebtRepayment_uninstall() {
+	drupal_uninstall_schema('dsje_statusDebtRepayment');
+}

@@ -1,0 +1,233 @@
+<?php
+/*function csend_mail_node_info() {
+	return array (
+					'csend_mail' => array (
+										'name' => t('CSEND MAIL'),
+										'module' => 'csend_mail',
+										'description' => "Send Mail",
+										'has_title' => TRUE,
+										'title_label' => t('Send Mail Mod'),
+										'has_body' => FALSE,
+										),
+				);
+}*/
+
+
+function csend_mail_perm() {
+	return array('edit csend_mail','administer csend_mail', 'create csend_mail', 'view csend_mail');
+}
+
+function csend_mail_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit csend_mail', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create csend_mail', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view csend_mail', $account);
+	}
+}
+
+function selectemp(){
+global $user;
+ $use="select * from users";
+$usq = db_query($use);
+$scheme = array(''=>'--Select--');
+ while($usre = db_fetch_array($usq)){
+ $scheme_id=$usre['mail'];
+   $scheme[$scheme_id] = $usre[name];
+  }
+ 
+  return $scheme;
+}
+
+
+function csend_mail_menu(){
+	$items['sendmail'] = array(
+								'title' => 'Send Mail',
+								'page callback' => 'sendmail',
+								'access arguments' => array('administer csend_mail'),
+								'type' => MENU_CALLBACK,
+	);
+	
+	
+	return $items;
+
+}
+
+function sendmail(){
+  return drupal_get_form('csend_mail_form');
+}
+function csend_mail_form(&$node){
+	global $user;
+	$rid = getRole($user->uid);
+	//$array = explode('/',$_GET['q']);
+	  $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	//$breadcrumb[] = l('ALR List', 'alrcaseslist');
+	$breadcrumb[] = l('Send Mail', 'sendmail');
+	
+	drupal_set_breadcrumb($breadcrumb);
+
+	$form['emp'] = array(
+	'#type' =>'select',
+	'#title' => t('Employee'),
+	'#required' =>TRUE,
+	'#default_value' =>'', 
+	'#options' => selectemp(),
+	
+		
+	);
+	
+	
+	
+	$form['subject'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Subject'),
+	'#required' => TRUE,
+	'#size' => '41',
+	'#default_value' =>'',
+	);
+	
+	$form['message'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Message'),
+	'#required' => TRUE,
+	'#size' => '41',
+	'#default_value' =>'',
+	);
+	
+	$form['submit'] = array(
+	'#type' => 'submit',
+	'#default_value' => t('Save')
+	);
+	
+	
+return $form;
+} 
+
+
+function csend_mail_form_submit($form,&$form_state){
+  global $user;
+	$rid = getRole($user->uid);
+	//$array = explode('/',$_GET['q']);
+	  $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	//$breadcrumb[] = l('ALR List', 'alrcaseslist');
+	$breadcrumb[] = l('Send Mail', 'sendmail');
+	
+	drupal_set_breadcrumb($breadcrumb);
+   
+  //all values
+   $values = $form_state['values'];
+    $to = $values['emp'];
+	$subject = $values['subject'];
+	$message = $values['message'];
+    $from ="hpbc@hpbc.com";   
+	
+	$headers = "From:" . $from;
+     mail($to,$subject,$message,$headers);
+   
+	//drupal_goto("sendmail");
+	 drupal_set_message('Mail Sent successfully.');
+ }
+
+/*function csend_mail_insert($node){
+   global $user;
+   
+  //all values
+    $nid = $node->nid;
+	$vid = $node->vid;
+	$case_no= $node->case_no;
+    $name = parseData($node->namee);
+    $district = $node->district;
+   
+    $total_amount = $node->total_amount;
+    $talwana = $node->talwana;
+	$date = strtotime($node->datee);
+	$receipt_no = $node->receipt_no;
+	$amount = $node->amount;
+	$amount_deposited_tehs = $node->amount_deposited_tehs;
+	$amount_deposited_dm = $node->amount_deposited_dm;
+	$amount_recovered = $node->amount_recovered;
+	$balance = $node->balance;
+	$remarks = $node->remarks;
+	
+    
+	db_query("INSERT INTO alr(nid,vid,case_no,name,district,total_amount,talwana,date,receipt_no,amount,amount_deposited_tehs,amount_deposited_dm,amount_recovered,balance,remarks) VALUES ('".$nid."','".$vid."','".$case_no."','".$name."','".$district."','".$total_amount."','".$talwana."','".$date."','".$receipt_no."','".$amount."','".$amount_deposited_tehs."','".$amount_deposited_dm."','".$amount_recovered."','".$balance."','".$remarks."')");
+
+	
+   // drupal_set_message('REC Employee '.$program_name.' has been saved successfully.');
+	drupal_goto("alrcaseslist");
+ }*/
+
+/*function csend_mail_validate($node, &$form)
+	{
+	
+	
+	alphanumeric('namee',$node->namee,'Name');
+	alphanumeric('receipt_no',$node->receipt_no,'Receipt No');
+	fononlyn('total_amount',$node->total_amount,'Total Amount');
+	fononlyn('talwana',$node->talwana,'Talwana');
+	fononlyn('amount',$node->amount,'Amount');
+	fononlyn('amount_deposited_tehs',$node->amount_deposited_tehs,'Amount Deposited Tehsil');
+	fononlyn('amount_deposited_dm',$node->amount_deposited_dm,'Amount Deposited DM');
+	fononlyn('amount_recovered',$node->amount_recovered,'Amount Recovered');
+	fononlyn('balance',$node->balance,'Balance');
+	
+	  /* if (($node->namee!='') && (!eregi('^[0-9a-zA-Z ]+$' , $node->namee)))
+	     {
+		   $message = "Enter ";
+form_set_error('', "<b>$message</b>");
+drupal_goto("trainingdetails");
+		 }*/
+	//}
+	
+
+
+
+function csend_mail_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	
+	if($form_id =='csend_mail_node_form'){
+	 $form['revision_information']['#type'] = hidden;
+	 $form['authoring_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	}
+	
+	
+	
+	
+	
+	function csend_mail_theme() {
+	//drupal_set_message('hello');
+	
+	return array(
+				 
+		'csend_mail_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'csend_mail_form',
+                                 ),
+								 
+			 
+       			 );
+                         }
+
+

@@ -1,0 +1,6 @@
+;$id 
+name = "Sectors"
+description ="Sectors Master"
+core = 6.x
+version =6.x-1
+package="Dsje Masters"

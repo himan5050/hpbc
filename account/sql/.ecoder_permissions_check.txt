@@ -1,0 +1,1 @@
+this file was created on Wed. 01st June 2011 at 09:17:03, after ecoder checked the permissions of the folder /root/Web-Server/webERP/sql/.

@@ -1,0 +1,527 @@
+<?php
+
+
+
+function emicustom_menu(){
+
+  $items['emi_cal'] = array(
+							'title' => t('Calculate Karo EMI'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'emi_cal',
+										'access arguments' => array('access content'),			 
+									  );
+   
+   return $items;
+}
+
+
+
+function emi_cal(){
+
+$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Calculate EMI', 'emi_cal');
+	drupal_set_breadcrumb($breadcrumb);
+ global $base_url;
+
+//echo '<pre>';
+//  print_r($_POST);exit;
+
+$floan_amount = ($_POST['loan_amount'])?$_POST['loan_amount']:'';
+$fsubsidy = ($_POST['subsidy'])?$_POST['subsidy']:'';
+$finterest = ($_POST['interest'])?$_POST['interest']:'';
+if(isset($_POST['emi']) && $_POST['emi'] == 'Calculate EMI'){
+//echo '<pre>';
+ // print_r($_POST);exit;
+
+  /*
+   [loan_amount] => 120000
+    [interest] => 6
+    [tenuare] => 6
+    [subsidy] => 
+  */
+
+
+  $k=0;
+
+
+
+if($_POST['loan_amount'] == ''){
+  form_set_error('loan_amount','Please Enter Loan amount..');
+ 
+}
+
+if($_POST['interest'] == ''){
+  form_set_error('interest','Please Enter Interest Rate');
+  $k=1;
+}
+
+
+if($_POST['loan_amount'] > 4000000){
+  form_set_error('loan_amount','Loan Amount should not be greater than 4000000');
+ $k=1;
+}
+
+if($_POST['interest'] > 100){
+  form_set_error('interest','Interst rate should not be greater than 100%');
+  $k=1;
+ 
+}
+
+
+if($_POST['interest'] == 0){
+  form_set_error('interest','Interst rate should not be equal to 0');
+  $k=1;
+ 
+}
+
+if($_POST['subsidy']){
+  
+  if(!ereg("^[0-9]{1,10}$", $_POST['subsidy'])) {
+         form_set_error('subsidy','Please Enter valid Subsidy..');
+		 $k=1;
+    }
+}
+
+if($_POST['loan_amount']){
+  if(!ereg("^[0-9]{1,10}$", $_POST['loan_amount'])) {
+        form_set_error('loan_amount','Please Enter valid Loan amount..');
+		$k=1;
+    }
+}
+
+
+if($_POST['interest']){
+   if(!ereg("^([0-9]+(\.[0-9]+)?$)", $_POST['interest'])) {
+         form_set_error('interest','Please Enter valid Interest Rate..');
+		 $k=1;
+    }
+}
+
+if($_POST['loan_amount'] <= $_POST['subsidy']){
+  form_set_error('loan_amount','Subsidy Amount should not be greater than Loan Amount..');
+  $k=1;
+}
+
+if($_POST['loan_amount'] <= $_POST['interest']){
+  form_set_error('loan_amount','Loan Amount should be greater than Interest Rate..');
+  $k=1;
+}
+
+if($k == 0){
+  global $base_url;
+  $p = $_POST['loan_amount'];
+  $p_orgi = $_POST['loan_amount'];
+  //$sub = 10000;
+  
+  if($_POST['subsidy']){
+    $sub =$_POST['subsidy'];
+  }else{
+    $sub =0;
+  } 
+  
+   $psub_val = ($p-$sub);
+  $r = $_POST['interest'];
+  $rpayapay = $r/1200;
+  
+  $eminew = ($psub_val*$rpayapay)*pow((1+$rpayapay), $_POST['tenuare'])/(pow((1+$rpayapay),$_POST['tenuare'])-1);
+  
+ 
+
+  $n = $_POST['tenuare'];
+  $t = $n/12;
+  //$n = $t*12;
+  //$N = $n+1;
+  
+  //$N1 = $n*2;
+  //$rt = $r*$t;
+  //$round = round($N/$N1,2);
+ //$round = '.529';
+  //$rounda = round($rt/100,2);
+  //$round = $N/$N1;
+  //$rounda = $rt/100;
+  //$int = round(($p-$sub)*$round*$rounda,2);
+  
+  $int=round((($eminew * $n)- $psub_val ),2);
+  $interestfinal = $int;
+  $totalp = ($p_orgi-$sub)+$int;
+  //$int = ($p-$sub)*$round*$rounda;
+  //$year_int = ($p-$sub)+$int;
+  $year_int = ($p-$sub)+$int;
+  $year_int_val = $year_int/$n;
+  
+  //$emi_cal = round($year_int_val,2);
+// $emi_cal = $year_int_val;
+  
+
+  	
+  $emi_calcal = round($eminew,4);
+ 
+  $emi_cal =  round($eminew,2);
+  $nstatus=0;
+  for($k=1;$k<=$n;$k++){
+     
+   $nstatus=1;
+	     $p_rate = round($psub_val*$r,4);
+		 //$p_rate = $psub_val*$r;
+	    // $psub_div = 12*100;
+		 $psub_div = 12*100;
+	   $p_orval = round(($p_rate/$psub_div),4);
+	   $p_orvald = round(($p_rate/$psub_div),2);
+		// $p_orval = $p_rate/$psub_div;
+	 
+	
+	   $bachat_khata = round($emi_calcal-$p_orval,4);
+	   $bachat_khatad = round($emi_calcal-$p_orval,2);
+	 //$bachat_khata = $emi_cal-$p_orval;
+	 $p_new  = round($psub_val-$bachat_khata,4);
+	 // $p_new  = $psub_val-$bachat_khata;
+	  $p = $p_new;
+	 $psub_val = round($p_new,4);
+	 $psub_vald = round($p_new,2);
+	  //$psub_val = $p_new;
+	  if($k == $n){
+	    $psub_vald = 0.00;
+	 }
+
+	 $valout .='<tr><td>'.$k.'</td><td>'.$emi_cal.'</td><td>'.$p_orvald .'</td><td>'.$bachat_khatad .'</td><td>'.$psub_vald.'</td></tr>';
+  }
+  
+}
+
+
+
+  
+//}
+}
+
+$s6selectd = "";
+$s12selectd ="";
+$s18selectd ="";
+$s24selectd ="";
+$s30selectd ="";
+$s36selectd ="";
+$s42selectd ="";
+$s48selectd ="";
+$s54selectd ="";
+$s60selectd ="";
+
+
+$s66selectd = "";
+$s72selectd ="";
+$s78selectd ="";
+$s84selectd ="";
+$s90selectd ="";
+$s96selectd ="";
+$s102selectd ="";
+$s108selectd ="";
+$s114selectd ="";
+$s120selectd ="";
+
+
+if($_POST['tenuare'] == '6'){
+  $s6selectd = "selected";
+}
+if($_POST['tenuare'] == '12'){
+  $s12selectd = "selected";
+}
+if($_POST['tenuare'] == '18'){
+  $s18selectd = "selected";
+}
+if($_POST['tenuare'] == '24'){
+  $s24selectd = "selected";
+}
+if($_POST['tenuare'] == '30'){
+  $s30selectd = "selected";
+}
+if($_POST['tenuare'] == '36'){
+  $s36selectd = "selected";
+}
+
+if($_POST['tenuare'] == '42'){
+  $s42selectd = "selected";
+}
+if($_POST['tenuare'] == '48'){
+  $s40selectd = "selected";
+}
+if($_POST['tenuare'] == '54'){
+  $s54selectd = "selected";
+}
+if($_POST['tenuare'] == '60'){
+  $s60selectd = "selected";
+}
+
+
+if($_POST['tenuare'] == '66'){
+  $s66selectd = "selected";
+}
+if($_POST['tenuare'] == '72'){
+  $s72selectd = "selected";
+}
+if($_POST['tenuare'] == '78'){
+  $s78selectd = "selected";
+}
+if($_POST['tenuare'] == '84'){
+  $s84selectd = "selected";
+}
+if($_POST['tenuare'] == '90'){
+  $s90selectd = "selected";
+}
+if($_POST['tenuare'] == '96'){
+  $s96selectd = "selected";
+}
+
+if($_POST['tenuare'] == '102'){
+  $s102selectd = "selected";
+}
+if($_POST['tenuare'] == '108'){
+  $s108selectd = "selected";
+}
+if($_POST['tenuare'] == '114'){
+  $s114selectd = "selected";
+}
+if($_POST['tenuare'] == '120'){
+  $s120selectd = "selected";
+}
+
+
+//echo $s60selectd;exit;
+$output ='
+  <div id="emi-maincontainer">
+<!-- page title-->
+
+<div id="emi-pagetitle"><h1>EMI Calculator</h1></div>
+
+<!-- loan details-->
+<div id="emi-leftpanel"><h1>Loan Details</h1>
+<div class="loandetaildiv">';
+$output .='<table width="100%" border="0" cellspacing="2" cellpadding="1"><form method="POST" action="">
+  <tr>
+    <td width="48%" valign="top"> Loan Amount:</td>   
+    <td><input name="loan_amount" type="text"  id="loan_amount"  onkeypress = "return  fononlyn(event);" maxlength="7" value="'.$floan_amount.'"/><br/>(Upto 40,00000)</td>
+  </tr>
+  <tr>
+    <td>Interest Rate: (%)</td>   
+    <td><input name="interest" id="interest" type="text" onkeypress = "return  paypay(event);" value="'.$finterest.'" /></td>
+  </tr>
+  <tr>
+    <td>Tenure:</td>   
+    <td><select name="tenuare">
+	<option value="6" '.$s6selectd.'>6 Month</option>
+	<option value="12" '.$s12selectd.'>1 Year</option>
+	<option value="18" '.$s18selectd.'>1 Year 6 Month</option>
+	<option value="24" '.$s24selectd.'>2 Year</option>
+	<option value="30" '.$s30selectd.'>2 Year 6 Month</option>
+	<option value="36" '.$s36selectd.'>3 Year</option>
+	<option value="42" '.$s42selectd.'>3 Year 6 Month</option>
+	<option value="48" '.$s48selectd.'>4 Year</option>
+	<option value="54" '.$s54selectd.'>4 Year 6 Month</option>
+	<option value="60" '.$s60selectd. '>5 Year</option>	
+	<option value="66" '.$s66selectd.'>5 Year 6 Month</option>
+	<option value="72" '.$s72selectd.'>6 Year</option>
+	<option value="78" '.$s78selectd.'>6 Year 6 Month</option>
+	<option value="84" '.$s84selectd.'>7 Year</option>
+	<option value="90" '.$s90selectd.'>7 Year 6 Month</option>
+	<option value="96" '.$s96selectd.'>8 Year</option>
+	<option value="102" '.$s102selectd.'>8 Year 6 Month</option>
+	<option value="108" '.$s108selectd.'>9 Year</option>
+	<option value="114" '.$s54selectd.'>9 Year 6 Month</option>
+	<option value="120" '.$s120selectd. '>10 Year</option>
+	
+   </select></td>
+  </tr>
+  <tr>
+    <td>Subsidy Amount:</td>   
+    <td><input name="subsidy" type="text" id="subsidy" onkeypress = "return  fononlyn(event);" value="'.$fsubsidy.'" /></td>
+  </tr>
+  <tr>
+    <td>&nbsp;</td>   
+    <td>
+	
+	<input type="submit" name="emi" value="Calculate EMI" />
+	</td>
+  </tr>
+</form></table>
+		';
+$output .='</div>
+</div>
+<!-- loan details end-->
+
+<!-- EMI strt-->
+<div id="emi-rightpanel">
+  <h2>'.$emi_cal.'</h2><h1>EMI</h1>
+  <div class="emicontentdiv">
+<table width="100%" border="0" cellspacing="2" cellpadding="1">
+  <tr>
+	  <td valign="top">
+	  <table border="0" cellspacing="0" cellpadding="0">';
+	  $output .='<tr><td valign="top"><b>Loan Amount:</b> '.floatval($p_orgi).'</td></tr>';
+	  $output .='<tr><td valign="top"><b>Interest:</b> '.floatval($interestfinal).'</td></tr>';
+	  $output .='<tr><td valign="top"><b>Subsidy:</b> '.floatval($sub).'</td></tr>';
+	  $output .='<tr><td valign="top"><b>Total Amount:</b> '.floatval($totalp).'</td></tr>';
+	  $output .='</table></td>
+  </tr>';
+	  $output .='<tr>';	  
+	  if($_POST['interest'] ){
+  	  $output .='<td colspan="2" id="graphimage"><img src="'.$base_url.'/newpchart/examples/ppayment.php?loanamount='.floatval($p_orgi).'&subsidy_amount='.floatval($sub).'&interest='.floatval($year_int_val).'"  border="0" hspace="0" vspace="0" alt=""/></td>';  }   
+  $output .='</tr>';
+  // $output .='<tr><td>Loan Amount : '.$p_orgi.' <br />Subsidy : '.$sub.' <br /> Interest :'.round($int,2).'</td></tr>';
+  $output .='
+</table>
+</div>
+</div>
+<!-- EMI end-->
+
+<div class="clear"></div><br />
+
+<!-- generate table -->
+<div id="emi-generatetable">
+
+';
+
+//&interest=$_POST['interest']&tenuare=$_POST['tenuare']&subsidy=$_POST['subsidy']
+$interest =floatval($_POST['interest']);
+$tenuare = intval($_POST['tenuare']);
+$subsidy = floatval($_POST['subsidy']); 
+if($subsidy){
+ }else{
+   $subsidy=0;
+ }
+$pdfurl = $base_url."/emicalpdf.php?op=emical&loan_amount=$p_orgi&interest=$interest&tenuare=$tenuare&subsidy=$subsidy";
+$pdfimage = $base_url.'/'.drupal_get_path('theme','scst')."/images/pdf_icon.gif";
+
+if($_POST['interest'] != ''){
+
+if($nstatus==1){
+		$output .='<table width="100%" border="0" cellspacing="2" cellpadding="1" style="clear:both;">
+		  <tr>
+		 <td align="left"><h1>Amortization - Table Monthly View</h1></td>
+		 <td align="right" id="pdficon">
+			<a target="_blank" href="'.$pdfurl.'"><img style="float:right;" src="'.$pdfimage.'" alt="Export to PDF" title="Export to PDF"/></a></td></tr>	
+			</table>';
+		
+		
+		
+		$output .='<table width="100%" border="0" cellspacing="2" cellpadding="1">  
+		  <tr>
+			<th>Month</th>
+			<th>EMI</th>
+			<th>Interest Paid</th>
+			<th>Principal Paid</th>
+			<th>Ending Balance</th>
+		  </tr>';
+		 $output .= $valout;
+		$output .='</table>';
+}
+
+}
+$output .='</div>
+<!-- generate table end-->
+<br/>
+
+</div>';
+
+
+
+return $output;
+
+ 
+
+ //submition here
+
+ 
+  
+
+
+
+
+ 
+ 
+  
+}
+
+/**
+ @creating a from
+
+ */
+
+ function emi_form(){
+    $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('dff', '<front>');
+	$breadcrumb[] = l('Calculate EMI', 'emi_cal');
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+	
+  $form['loan_amount'] = array(
+      '#type' =>'textfield',
+	  '#title' => 'Loan Amount',
+	  '#maxlength' => '7',
+	  '#required' => TRUE,
+	 '#attributes' => array('onkeypress' =>'return  fononlyn(event)'),
+  ); 
+  $form['interest'] = array(
+     '#type' =>'textfield',
+	   '#title' => 'Interest Rate',
+	  '#maxlength' => '5',
+	  '#required' => TRUE,
+	  '#attributes' => array('onkeypress' =>'return  paypay(event)'),
+     
+  );
+
+ $form['tenuare'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Tenuare'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+
+    $form['tenuare']['tenuare_year'] = array(
+     '#type' =>'textfield',
+	'#title' => 'Year',
+	  '#maxlength' => '2',
+	  '#required' => FALSE,
+	 '#attributes' => array('onkeypress' =>'return  fononlyn(event)'),
+  );
+
+    $form['tenuare']['tenuare_month'] = array(
+     '#type' =>'textfield',
+		'#title' => 'Month',
+	  '#maxlength' =>'2',
+	  '#required' => FALSE,
+	 '#attributes' => array('onkeypress' =>'return  fononlyn(event)'),
+  );
+
+    $form['subsidy'] = array(
+     '#type' =>'textfield',
+		'#title' => 'Subsidy Amount',
+	  '#maxlength' => '6',
+	  '#required' => FALSE,
+	  '#attributes' => array('onkeypress' =>'return  fononlyn(event)'),
+  );
+
+	 $form['submit'] = array(
+	  '#type' =>'button',
+	  '#value' =>'GO',
+  );
+
+	 return $form;
+
+
+ }
+
+
+ function emicustom_theme() {
+	
+	return array(
+		'emi_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'emi_form',
+                                 ),
+				
+								 
+ );
+        
+}

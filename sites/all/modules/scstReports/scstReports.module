@@ -1,0 +1,144 @@
+<?php
+
+
+/**
+ *hook_perm
+ */
+ 
+ function scstReports_init() {
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+
+function scstReports_perm() {
+	return array('edit scstReports','administer scstReports', 'create scstReports', 'view scstReports');
+}
+
+function scstReports_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit scstReports', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create scstReports', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view scstReports', $account);
+	}
+	
+}
+
+
+function scstReports_menu(){
+
+  $items['scstReports_dispatch'] = array(
+										'title' => t('Dispatch Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'scstReports_dispatch',
+										'access arguments' => array('administer scstReports'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function scstReports_dispatch(){
+  return drupal_get_form('scstReports_dispatch_form');
+}
+
+function scstReports_dispatch_form(){
+ global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Dispatch Report', 'scstReports_dispatch');
+  drupal_set_breadcrumb($breadcrumb);
+ $form['dispatch_number'] = array(
+                                '#type' => 'textfield',
+								'#title'=>'Diary No.',
+								'#size' => '30',
+ );
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						'#title'=>'From Date',
+						   '#required' => FALSE,
+						   '#size' => '15',
+						   
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						 	'#title'=>'To Date',
+						   '#required' => FALSE,
+						   '#size' => '15',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+function scstReports_dispatch_form_validate($form, &$form_state){
+	
+	$values = $form_state['values'];
+	
+	$from_date = $values['from_date'];
+	$to_date = $values['to_date'];
+	if(!empty($to_date)&& !empty($from_date)){
+	if($from_date>$to_date){
+	form_set_error(to_date,'To Date should be greater than From Date');
+	}}
+	
+	if($from_date == '' && $to_date !=''){
+		
+	form_set_error('from_date','Form Date is required.');	
+		
+	}
+	
+	if($to_date == '' && $from_date !=''){
+		
+	form_set_error('to_date','To Date is required.');	
+		
+	}
+	
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function scstReports_theme() {
+	
+	return array(
+		
+		'scstReports_dispatch_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'scstReports_dispatch_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}
+
+
+/*function scstReports_cron(){
+	
+	
+	
+	
+	
+}	*/

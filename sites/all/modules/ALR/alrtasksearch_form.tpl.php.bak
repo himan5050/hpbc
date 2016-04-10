@@ -1,0 +1,115 @@
+<style>
+.container-inline-date .form-item, .container-inline-date .form-item input {
+width: 100px;
+display: inline;
+}
+
+input[type="text"] {
+width: 100px;
+height: 18px;
+margin: 0;
+padding: 2px;
+vertical-align: middle;
+font-family: sans-serif;
+font-size: 14px;
+border: #BCBCBC 1px solid;
+}
+.maincoldate{margin-top:12px;}
+</style>
+
+<div id="rec_participant">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" id="wrapper">
+  
+	<tr>	<td align="left" class="tdform-width"><fieldset><legend>ALR Report</legend>
+    
+    <table align="left" class="frmtbl">
+    <tr><td><div class="maincol"><?php print drupal_render($form['date_from']); ?></div></td  style="width:200px;"><td><div class="maincol maincoldate"><?php print drupal_render($form['date_to']); ?></div></td></tr><tr><td><div class="maincol maincoldate"><?php print drupal_render($form['writ_level']); ?></div></td><td colspan="2" align="right"><div style="margin-right:60px;"><?php print drupal_render($form); ?></div></td></tr>    
+    </td></tr>
+	</table>
+	</fieldset>
+  </table>
+</div>
+<?php
+global $base_url;
+$op = $_REQUEST['op'];
+if($op == 'Generate Report'){
+if($_REQUEST['date_from']['date'] != '' && $_REQUEST['date_to']['date'] != ''){
+  
+	$from = $_REQUEST['date_from']['date'];
+	$to = $_REQUEST['date_to']['date'];
+	$fromtime = strtotime($from);
+	$totime =  strtotime($to);
+	$writ_level = $_REQUEST['writ_level'];
+  if($_REQUEST['writ_level'] && $_REQUEST['date_from']['date'] && $_REQUEST['date_to']['date']){
+    
+	echo $sql = "SELECT * FROM tbl_writ where (due_date BETWEEN '".$fromtime."' AND '".$totime."') and status='".$_REQUEST['writ_level']."'";
+	
+  }
+  else if($_REQUEST['date_from']['date'] && $_REQUEST['date_to']['date'] && $_REQUEST['writ_level'] == ''){
+    $sql = "SELECT * FROM tbl_writ where (due_date BETWEEN '".$fromtime."' AND '".$totime."')";
+  }
+  $count_query = "SELECT COUNT(*) FROM (" . $sql . ") AS count_query";
+
+  $res = pager_query($sql, 10, 0, $count_query);
+
+ 
+
+	$output = '<table cellpadding="0" cellspacing="2" border="0" width="100%" id="wrapper1">
+	<tr class=oddrow><td colspan=6><h2 style="text-align:left;">ALR Report</h2></td></tr>
+	<tr>
+	
+	</tr>
+
+	</tr>
+	</table>';
+   
+   //$output .='';
+   $output .='<table cellpadding="2" cellspacing="1" bordercolor="#808080" id="wrapper" class="table-border">';
+   $output .='<tr>
+   				<th >S. No.</th>
+				<th>Due Date</th>
+				<th>Send Date</th>
+				<th>Documents</th>
+				<th>Account Number</th>
+				<th>Status</th>
+				
+			 </tr>';
+			//  $output .='<thead>'  '</thead>';
+   if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	//echo $fromtime;
+	////dispatch total
+	//echo $dispatch_no;
+
+   while($rs = db_fetch_object($res)){
+      $counter++;
+	 if($rs->documents){
+	    $file = l('Download',$base_url.'/'.$rs->documents,array('attributes' => array('target'=>'_blank')));
+	  }else{
+	    $file ='NA';
+	  }
+      if ($counter%2==0){$cl="even";}else{$cl="odd";}
+	  $output .='<tr class="'.$cl.'">
+					  <td>'.$counter.'</td>
+					 <td>'.date('d-m-Y',$rs->due_date).'</td>
+					  <td>'.date('d-m-Y',$rs->current_time).'</td>
+					  <td>'.$file.'</td>
+					   <td >'.$rs->account_number.'</td>
+					    <td >'.ucwords($rs->status).'</td>
+	            </tr>';
+   }
+   
+  if($counter > 0){
+  
+   $output .='</table>';
+   echo $output .= theme('pager', NULL, 10, 0);
+  }else{
+    echo '<font color="red"><b>No Record found...</b></font>';
+  }
+}		
+}
+
+?>

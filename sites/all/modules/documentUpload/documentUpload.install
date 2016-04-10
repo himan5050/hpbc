@@ -1,0 +1,149 @@
+<?php
+function documentUpload_schema() {
+
+  //nodal table
+   $schema['tbl_upload_document'] = array(
+							 'fields' => array(
+											'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),										
+											'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   
+                                               'uid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'title' => array(
+															   'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => '',
+															  ),
+                                         
+											   'discription' => array(
+															   'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => '',
+															  ),
+															  
+												'uploadfile' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  		  
+											  'departmant' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+											'branchoffice' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+											 'dateofupload' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),			  
+															  				  
+                                            'author' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												
+											  
+											'dateofexpire' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											
+															  
+											'fileno' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'keywords' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+										'accesslevel' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),		
+															  
+										'selectrole' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+								
+										'selectuser' => array(
+															  'type' => 'varchar',
+															  'length' => '225',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'doc_id' => array(
+															  'type' => 'varchar',
+															  'length' => '100',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'hod' => array(
+															  'type' => 'varchar',
+															  'length' => '100',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'status' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                               
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('vid'),
+							 );
+	return $schema;
+}
+function documentUpload_install() {
+	drupal_install_schema('documentUpload');
+}
+
+function documentUpload_uninstall() {
+	drupal_uninstall_schema('documentUpload');
+}

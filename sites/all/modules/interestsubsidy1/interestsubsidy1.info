@@ -1,0 +1,6 @@
+;$id 
+name="Interest Subsidy1"
+description="Interest Subsidy Form"
+core =6.x
+version = 6.x-1
+package="Loan"

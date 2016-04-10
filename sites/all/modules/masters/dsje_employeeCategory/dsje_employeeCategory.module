@@ -1,0 +1,466 @@
+<?php
+function dsje_employeeCategory_init() {
+	//drupal_add_css(drupal_get_path('module', 'dsje_language') .'/dsje_language.css');
+	
+}
+
+
+function dsje_employeeCategory_perm() {
+	return array('edit dsje_employeeCategory','administer dsje_employeeCategory', 'create dsje_employeeCategory', 'view dsje_employeeCategory');
+}
+
+function dsje_employeeCategory_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_employeeCategory', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_employeeCategory', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_employeeCategory', $account);
+	}
+	
+}
+
+function dsje_employeeCategory_menu() {
+	
+	
+	$items['admin/dsje/listemployeeCategory'] = array(
+										'title' => t('List of Employee Categories'),
+										'description' => 'Allow user to View Employee Categories',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewemployeeCategory',
+										'access arguments' => array('administer dsje_employeeCategory'),
+													 
+									  );
+	
+	$items['admin/dsje/listemployeeCategory/addemployeeCategory'] = array(
+										'title' => t('Create Employee Category'),
+										'description' => 'Allow user to add Employee Category',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_employeeCategory',
+										'access arguments' => array('administer dsje_employeeCategory'),
+													 
+									  );
+   	$items['admin/dsje/listemployeeCategory/edit/employeeCategory/%'] = array(
+								
+										'title' => t('Edit Employee Category'),
+										'description' => 'Allow user to add Employee Category',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addemployeeCategoryedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_employeeCategory'),
+													 
+									  );
+   $items['admin/dsje/listemployeeCategory/view/employeeCategory/%'] = array(
+								
+										'title' => t('View Employee Category'),
+										'description' => 'Allow user to add Employee Category',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addemployeeCategoryview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_employeeCategory'),
+													 
+									  );
+     $items['admin/dsje/del/employeeCategory/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'employeeCategory_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_employeeCategory'),
+													 
+									  );
+    $items['admin/dsje/enable/employeeCategory/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'employeeCategory_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_employeeCategory'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing employeeCategory
+ */
+
+function viewemployeeCategory(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjeemployeeCategory', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('employeeCategory'), 'field' => 'employeeCategory_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List employeeCategory', 'admin/dsje/listemployeeCategory/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT employeeCategory_id, employeeCategory_name, status FROM tbl_employeeCategorys where UPPER(employeeCategory_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_employeeCategorys where UPPER(employeeCategory_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT employeeCategory_id, employeeCategory_name, status FROM tbl_employeeCategorys ".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjeemployeeCategory', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listemployeeCategory');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjeemployeeCategory', 'code01', NULL),"admin/dsje/listemployeeCategory/addemployeeCategory");
+   	$lising = getMessage( 'dsjeemployeeCategory', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listemployeeCategory/edit/employeeCategory/".$row->employeeCategory_id,array('attributes'=>array('id'=>'edit-employeeCategory-id')));
+		$viewurl = l("View","admin/dsje/listemployeeCategory/view/employeeCategory/".$row->employeeCategory_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/employeeCategory/$row->employeeCategory_id/$row->employeeCategory_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/employeeCategory/$row->employeeCategory_id/$row->employeeCategory_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->employeeCategory_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_employeeCategory(){
+ return drupal_get_form('dsje_employeeCategory_form');
+}
+
+function dsje_employeeCategory_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of employeeCategory', 'admin/dsje/listemployeeCategory');
+  if($array[3] == 'addemployeeCategory'){
+     $breadcrumb[] = l('Add employeeCategory', 'admin/dsje/listemployeeCategory/addemployeeCategory');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['employeeCategory_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Employee Category Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	);*/
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listemployeeCategory'),
+);
+	return $form;
+}
+
+function dsje_employeeCategory_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $employeeCategory_name = trim($values['employeeCategory_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('employeeCategory_name',$employeeCategory_name,'employeeCategory');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_employeeCategorys` (`employeeCategory_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$employeeCategory_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjeemployeeCategory', 'code05', array("0"=>$employeeCategory_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listemployeeCategory');
+	}
+}
+
+function dsje_employeeCategory_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$employeeCategory_name = trim($values['employeeCategory_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('employeeCategory_name',$employeeCategory_name,'employeeCategory');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_employeeCategorys} where UCASE(employeeCategory_name)= '".strtoupper($employeeCategory_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjeemployeeCategory', 'code06', array("0"=>$employeeCategory_name));
+			form_set_error('employeeCategory_name', $message);
+		}
+	}	
+}
+
+function dsje_addemployeeCategoryedit($employeeCategory_id){
+ return drupal_get_form('dsje_employeeCategory_form_edit',$employeeCategory_id);
+}
+
+function dsje_employeeCategory_form_edit(&$form_states,$employeeCategory_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List employeeCategory', 'admin/dsje/listemployeeCategory');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit employeeCategory', 'admin/dsje/listemployeeCategory/edit/employeeCategory/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlemployeeCategory = "select * from tbl_employeeCategorys where employeeCategory_id=$employeeCategory_id";
+	$resemployeeCategory = db_query($sqlemployeeCategory);
+	$rsemployeeCategory = db_fetch_object($resemployeeCategory);
+	
+	$form['employeeCategory_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsemployeeCategory->employeeCategory_id,
+	);
+	
+	$form['employeeCategory_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Employee Category Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsemployeeCategory->employeeCategory_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['prev_employeeCategory_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsemployeeCategory->employeeCategory_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsemployeeCategory->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listemployeeCategory'),
+);
+	return $form;
+}
+
+function dsje_employeeCategory_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$employeeCategory_id = $values['employeeCategory_id'];
+	$employeeCategory_name = ParseData($values['employeeCategory_name']);
+	$prev_employeeCategory_name = ParseData($values['prev_employeeCategory_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('employeeCategory_name',$employeeCategory_name,'employeeCategory');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_employeeCategorys} where LOWER(employeeCategory_name)= '".strtolower($employeeCategory_name)."' GROUP BY employeeCategory_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_employeeCategory_name), strtolower($employeeCategory_name))==0){
+			db_query("UPDATE `tbl_employeeCategorys` set `employeeCategory_name` = '".$employeeCategory_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where employeeCategory_id='".$employeeCategory_id."'");
+			
+			$message = getMessage('dsjeemployeeCategory', 'code05', array("0"=>$employeeCategory_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listemployeeCategory");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_employeeCategorys` set `employeeCategory_name` = '".$employeeCategory_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where employeeCategory_id='".$employeeCategory_id."'");
+				
+				$message = getMessage('dsjeemployeeCategory', 'code05', array("0"=>$employeeCategory_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listemployeeCategory");	
+			
+			}else{
+				db_query("UPDATE `tbl_employeeCategorys` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where employeeCategory_id='".$employeeCategory_id."'");
+				
+				$message = getMessage('dsjeemployeeCategory', 'code06', array("0"=>$employeeCategory_name));
+				form_set_error('employeeCategory_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_employeeCategory_theme() {
+	
+	return array(
+				 
+		'dsje_employeeCategory_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_employeeCategory_form',
+                                 ),
+        'dsje_employeeCategory_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_employeeCategory_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_employeeCategory_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_employeeCategory_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_employeeCategory_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function employeeCategory_delete($sid, $sno){
+  $employeeCategory_id =  $sid;
+  db_query("UPDATE {tbl_employeeCategorys} SET status=0 WHERE employeeCategory_id ='".$employeeCategory_id."'");
+  $message = getMessage('dsjeemployeeCategory', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listemployeeCategory");
+ }
+
+
+  function employeeCategory_enable($sid, $sno){
+    $employeeCategory_id =  $sid;
+    db_query("UPDATE {tbl_employeeCategorys} SET status=1 WHERE employeeCategory_id ='".$employeeCategory_id."'");
+  
+    $message = getMessage('dsjeemployeeCategory', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listemployeeCategory");
+  }
+
+  function dsje_addemployeeCategoryview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List employeeCategory', 'admin/dsje/listemployeeCategory');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View employeeCategory', 'admin/dsje/listemployeeCategory/view/employeeCategory/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from tbl_employeeCategorys where employeeCategory_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>employeeCategory Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td>employeeCategory:</td><td>'.ucwords($rs->employeeCategory_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ 
+ $output .='</table></div>';
+ $output .=  l(t('Back'), 'admin/dsje/listemployeeCategory');
+ return $output;
+  }
+	
+	

@@ -1,0 +1,1301 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/fdr.inc');
+drupal_add_js(drupal_get_path('module', 'fdr') .'/rec_program.js');
+
+
+
+function fdr_node_info() {
+	return array (
+					'fdr' => array (
+										'name' => t('List of FDR Details'),
+										'module' => 'fdr',
+										'description' => "Creates FDR Details",
+										'has_title' => TRUE,
+										'title_label' => t('FDR Details'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function fdr_perm() {
+	return array('edit fdr','administer fdr', 'create fdr', 'view fdr');
+}
+
+function fdr_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit fdr', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create fdr', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view fdr', $account);
+	}
+}
+ 
+ function fdr_menu(){
+	 $items['list/fdrList'] = array(
+		   'title' => 'List of FDR Details',
+		   'page callback' => 'fdr_list',
+		   'access arguments' => array('administer fdr'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewfdr/%'] = array(
+								'title' => t('view FDR Details'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_fdr',
+								'page arguments' => array(1),
+								'access arguments' => array('administer fdr'),
+		                        
+						);
+  
+  $items['admin/dsje/del/fdr/%'] =  array(
+	               						 'title' => t('Delete FDR Details'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'fdr_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer fdr'),
+													 
+	);
+ $items['admin/dsje/enable/fdr/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'fdr_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer fdr'),
+														 
+	);	
+	
+		$items['dsje/headloan'] = array(
+										'page callback' => 'myheadloan',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+									
+	$items['dsje/autofill'] = array(
+										'page callback' => 'myautofill',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+
+									
+	$items['dsje/principal'] = array(
+										'page callback' => 'myprincipal',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+									
+						
+   return $items;
+ }
+  
+  function getchequeNo1($cheque_no){
+  $sql = "select * from {tbl_fdr} where cheque_no='".$cheque_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->cheque_no=='' )
+  return 0;
+  else 
+  return $rs;
+   
+}
+
+function getchequeNo1_edit($cheque_no,$prev_cheque_no){
+  $sql = "select * from {tbl_fdr} where cheque_no='".$cheque_no."' AND cheque_no != '".$prev_cheque_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->cheque_no=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+  
+
+  
+function getregNo1($cheque_no){
+  $sql = "select * from {tbl_fdr} where account_no='".$cheque_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->account_no=='' )
+  return 0;
+  else 
+  return $rs;
+   
+}
+
+function getregNo1_edit($cheque_no,$prev_cheque_no){
+  $sql = "select * from {tbl_fdr} where account_no='".$cheque_no."' AND account_no != '".$prev_cheque_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->account_no=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+  
+
+  
+
+
+
+
+function fdr_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjefdr', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	//array('data' => t('Due Date'), 'field' => 'tbl_fdr.date_due', 'sort' => 'asc'),
+	array('data' => t('FDR No.'), 'field' => 'fdr_no', 'sort' => 'asc'),
+	array('data' => t('FDR Date'), 'field' => 'fdr_date', 'sort' => 'asc'),
+	array('data' => t('Cheque No.'), 'field' => 'cheque_no', 'sort' => 'asc'),
+	array('data' => t('Principal Amount'), 'field' => 'tbl_fdr.amount', 'sort' => 'asc'),
+
+	//array('data' => t('Status')),
+	array('data' => t('Action'),'class'=>'addeditview'),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of FDR', 'list/fdrList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid,  fdr_no,fdr_date,cheque_no,amount FROM {node}
+	 INNER JOIN tbl_fdr ON (node.nid=tbl_fdr.nid)
+	  WHERE  (  fdr_no LIKE '".$val."' OR fdr_date LIKE '".$val."' OR cheque_no LIKE '".$val."' OR amount LIKE '".$val."') ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_fdr ON (node.nid=tbl_fdr.nid)
+	 WHERE  (  fdr_no LIKE '".$val."' OR fdr_date LIKE '".$val."' OR cheque_no LIKE '".$val."' OR amount LIKE '".$val."') ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	    $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid, fdr_no,fdr_date,cheque_no,amount FROM {node}
+	 INNER JOIN tbl_fdr ON (node.nid=tbl_fdr.nid)".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/fdrList';
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjefdr', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/fdrList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage('dsjefdr', 'code01', NULL),"node/add/fdr");
+   	$lising = getMessage('dsjefdr', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewfdr/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/fdr/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/fdr/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			//array('data' => date('d-m-Y',strtotime($rs->date_due)),
+			array('data' => $rs->fdr_no),
+			array('data' => date('d-m-Y',strtotime($rs->fdr_date))),
+            array('data' => $rs->cheque_no),
+			array('data' => round($rs->amount)),
+			// 	array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	return $output .=theme('pager', NULL, 20,0 );
+  }
+
+
+
+
+
+function myheadloan() {
+   
+global $base_url;
+   $fdr_type= $_POST['fdr_type'];
+	
+$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('fdr_form', $form, $form_state);
+
+if($fdr_type== 227){
+
+drupal_add_js(drupal_get_path('module', 'fdr') .'/rec_program.js');
+$form['prev_account_no']=array(
+		'#type'=>'hidden',
+		'#required'=>FALSE,
+		'#value'=> $found->account_no,
+	'#id'=>'edit-prev_account_no',
+	'#name'=>'prev_account_no',
+		);
+
+$form['account_no'] = array(
+	'#type' => 'textfield',
+	'#title' => t('Registration No.'),
+	'#required' => FALSE,
+//	'#id'=>'edit-account_no',
+//	'#name'=>'account_no',
+	'#value' =>'N/A',
+	
+	);
+
+}else{
+drupal_add_js(drupal_get_path('module', 'fdr') .'/rec_program.js');
+$form['prev_account_no']=array(
+		'#type'=>'hidden',
+		'#required'=>FALSE,
+		'#value'=> $found->account_no,
+	'#id'=>'edit-prev_account_no',
+	'#name'=>'prev_account_no',
+		);
+
+$form['account_no'] = array(
+	'#type' => 'select',
+	'#title' => t('Registration No.'),
+	'#required' => FALSE,
+	'#id'=>'edit-account_no',
+	'#name'=>'account_no',
+	'#value' =>'',
+	'#options' => SelectLoanAccountcollected(), 
+	'#attributes' => array('onchange'=> 'return showbank(this.value,"'.$base_url.'")'),
+	'#ahah' => array(
+				  'path' => 'dsje/principal',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'principal',
+				  ),
+	
+	);
+
+}
+
+	$output = drupal_render($form['account_no']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+function myprincipal() {
+    $account_no= $_POST['account_no'];
+	
+$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('fdr_form', $form, $form_state);
+
+	$val3=db_query("select reg_number from {tbl_loanee_detail} where loanee_id='".$account_no."'");
+	$val4=db_fetch_object($val3);
+
+$val2=db_query("select loan_requirement,scheme_name from {tbl_loan_detail} where reg_number='".$val4->reg_number."'");
+$val0=db_fetch_object($val2);
+
+$val5=db_query("select MMD_FDR from {tbl_scheme_master} where loan_scheme_id='".$val0->scheme_name."'");
+
+/*$val1=db_query("select loan_requirement,MMD_FDR from {tbl_loanee_detail},tbl_loan_detail,tbl_scheme_master 
+inner join tbl_loanee_detail on (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+inner join tbl_scheme_master on (tbl_scheme_master.loan_scheme_id=tbl_loan_detail.scheme_name)
+where loanee_id='".$account_no."'");
+*/
+$value=db_fetch_object($val5);
+if(!empty($value->MMD_FDR)){
+
+$princi= ($val0->loan_requirement)*(($value->MMD_FDR)/100);
+}else{$princi=0;}
+$form['amount'] = array(
+	'#type' => 'textfield',
+	'#title' => t('Principal Amount'),
+	'#required' => FALSE,
+	'#value' =>round($princi,2),
+	'#id'=>'edit-amount',
+	'#name'=>'amount',
+	);
+
+$findit=db_query("select cheque_no from {tbl_fdrcheque} where account_no='".$account_no."'");
+
+$found=db_fetch_object($findit);
+
+$form['prev_cheque_no']=array(
+		'#type'=>'hidden',
+		'#required'=>FALSE,
+		'#value'=> $found->cheque_no,
+	'#id'=>'edit-prev_cheque_no',
+	'#name'=>'prev_cheque_no',
+		);
+
+	  $form['cheque_no'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Cheque No.'),
+	 '#required' =>FALSE,
+	 '#size' =>6,
+	 '#maxlength'=>6,
+	 //'#minlenght'=>6,
+	 '#id'=>'edit-cheque_no',
+	 '#value' => $found->cheque_no,
+	 
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+		 '#id'=>'edit-cheque_no',
+	'#name'=>'cheque_no',
+  );	
+
+
+	$output = drupal_render($form['amount']);
+	$output .= drupal_render($form['cheque_no']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+
+
+
+
+function fdr_delete($nid){
+   $cnode = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("Delete from {tbl_fdr} WHERE courtcase_id ='".$courtcase_id."'");
+$ooh=db_query("select fdr_no from {tbl_fdr} where nid='".$node->nid."'");
+$oh=db_fetch_object($ooh);
+
+ echo $oh->fdr_no;exit;
+ 
+ db_query("DELETE from {tbl_fdr} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  
+  $message=getMessage('dsjefdr','code07',array("0"=>$node->fdr_no));
+  drupal_set_message($message);
+  
+  drupal_goto("list/fdrList");
+ }
+
+function fdr_enable($nid){
+  
+  $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("UPDATE {tbl_fdr} SET 	statusnodal =1 WHERE nid ='".$node->nid."'");
+  //drupal_set_message('Vehicle Insurance has been enabled successfully.');
+  //drupal_goto("list/fdrList");
+ // echo "select fdr_no from {tbl_fdr} where nid='".$node->nid."'";exit;
+ $ooh=db_query("select fdr_no from {tbl_fdr} where nid='".$node->nid."'");
+$oh=db_fetch_object($ooh);
+
+ //echo $oh->fdr_no;exit;
+ db_query("DELETE from {tbl_fdr} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  
+
+  $message=getMessage('dsjefdr','code07',array("0"=>$oh->fdr_no));
+  drupal_set_message($message);
+  
+  drupal_goto("list/fdrList");
+ }
+
+
+function fdr_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of FDR', 'list/fdrList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit FDR  ', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add FDR', 'node/add/fdr'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+   
+  if(is_numeric(arg(1))){
+	$sql = "SELECT * FROM {node} INNER JOIN tbl_fdr ON (node.nid=tbl_fdr.nid) WHERE node.nid=".arg(1);
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+  }
+	
+		
+	////////////////////////////////////
+	
+	$form['fdr_type'] = array(
+	'#type' => 'select',
+	'#title' => t('FDR Type'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->fdr_type,
+	'#options' => SelectfdrType(), 
+	'#attributes' => array('onchange'=> 'return showbank(this.value,"'.$base_url.'")'),
+		'#ahah' => array(
+				  'path' => 'dsje/headloan',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'headloan',
+				  ),
+	);
+
+
+$acc=db_query("select account_no from {tbl_fdr} where nid='".$rs->nid."'");
+$acc1=db_fetch_object($acc);
+
+$form['prev_account_no']=array(
+		'#type'=>'hidden',
+		'#required'=>FALSE,
+		'#default_value'=> $rs->account_no,
+		);
+	 
+	if($form->fdr_type=='227'){
+	
+	$form['account_no'] = array(
+	'#type' => 'textfield',
+	'#title' => t('Registration No.'),
+	'#required' => FALSE,
+	'#default_value' =>'N/A',
+		
+	 
+	
+	);
+	
+	}else{
+	$form['account_no'] = array(
+	'#type' => 'select',
+	'#title' => t('Registration No.'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->account_no,
+		'#id'=>'edit-account_no',
+	'#options' => SelectLoanAccountcollected(), 
+	'#attributes' => array('onchange'=> 'return showbank(this.value,"'.$base_url.'")'),
+	'#ahah' => array(
+				  'path' => 'dsje/principal',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'principal',
+				  ),	
+	);
+}
+	 $form['fdr_no'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('FDR No.'),
+	 '#required' =>TRUE,
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 //'#minlenght'=>6,
+	 '#default_value' => $rs->fdr_no,
+	 '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+  );	
+
+
+	$form['prev_cheque_no']=array(
+		'#type'=>'hidden',
+		'#required'=>FALSE,
+		'#default_value'=> $rs->cheque_no,
+		);
+
+	  $form['cheque_no'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Cheque No.'),
+	 '#required' =>FALSE,
+	 '#size' =>6,
+	 '#maxlength'=>6,
+	 //'#minlenght'=>6,
+	 '#default_value' => $rs->cheque_no,
+	 '#id'=>'edit-cheque_no',
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );	
+		
+		$getbank1=db_query("select bank_name from {tbl_bank} where bank_id='".$rs->bank_name."'");
+		$getbank=db_fetch_object($getbank1);
+		
+  $form['bank_name'] = array(
+	    '#type' =>'select',
+		'#title' => t('Bank Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rs->bank_name,
+		 '#maxlength'=>45, 
+		'#options' => selectbank(), 
+	);
+	
+	$form['fdr_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('FDR Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->fdr_date,
+		
+	);
+
+
+$form['amount'] = array(
+	'#type' => 'textfield',
+	'#title' => t('Principal Amount'),
+	'#required' => FALSE,
+	'#maxlength'=>11,
+	'#default_value' =>'',
+	'#id'=>'edit-amount',
+	'#name'=>'amount',
+ '#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"edit-amount",11)'),		
+	);
+
+/*
+ $form['amount'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Principal Amount'),
+	 '#required' =>TRUE,
+	 '#size' =>10,
+	 '#maxlength'=>10,
+	 '#value' => $node->amount,
+	
+	'#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"edit-amount",10)'),		
+  );*/
+
+	
+	$form['maturity_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Maturity Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->maturity_date,
+		
+	);
+	
+	 $form['interest_rate'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Interest Rate'),
+	 '#required' =>TRUE,
+	 '#size' =>5,
+	 '#maxlength'=>5,
+	 '#default_value' => $rs->interest_rate,
+	'#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"edit-interest-rate",5)'),	
+  );
+	
+ $form['interest_accrued'] = array(
+     '#type' =>'textarea',
+	 '#title' => t('Interest Accrued(Year Wise)'),
+	 '#required' =>TRUE,
+	'#rows' =>5,
+		'#cols' =>30,  
+	 '#size' =>200,
+	 '#maxlength'=>200,
+	 '#default_value' => $rs->interest_accrued,
+	'#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"edit-interest-accrued",199)'),	
+
+  );
+
+ $form['maturity_amount'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Maturity Amount'),
+	 '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $rs->maturity_amount,
+	'#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"edit-maturity-amount",11)'),	
+  );
+
+$form['days'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('No. of Days'),
+	 '#required' =>TRUE,
+	 '#size' =>5,
+	 '#maxlength'=>5,
+	 //'#minlenght'=>6,
+	 '#default_value' => $rs->days,
+	// '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	'#attributes' => array('readonly' => 'readonly'), 	 
+  );	
+
+$form['status1'] = array(
+	'#type' => 'select',
+	'#title' => t('Status'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->status1,
+	'#options' => SelectStatusfdr(), 
+	);
+
+
+
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/fdrList'),	
+);
+
+
+return $form;
+} 
+
+function fdr_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of FDR', 'list/fdrList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit FDR  ', 'node/'.$array[1].'/edit');
+	}
+	else{
+	$breadcrumb[] = l('Add FDR  ', 'node/add/fdr');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+	
+	$interest_rate=$form->interest_rate;
+
+	fononlyn('cheque_no',$form->cheque_no,'Cheque No.');
+	//paypay('amount',$form->amount,'Amount');
+	fononlyn('days',$form->days,'No. of Days');
+	
+	
+	$regno=$form->account_no;
+	$fdrtype=$form->fdr_type;
+	//echo $fdrtype;exit;
+	if($fdrtype != 227){
+	
+	if($regno==''){form_set_error('account_no',t('Registration No. should not be empty.'));}
+	
+	}
+	
+	
+	
+	
+	
+	alphanumeric('fdr_no',$form->fdr_no,'FDR No.');
+if($form->amount !=''){
+paypay('amount',$form->amount,'Principal Amount');
+}paypay('interest_rate',$form->interest_rate,'Interest Rate');
+if($interest_rate>100){
+
+form_set_error('interest_rate','Interest Rate should be less than 100.');
+}
+
+$thereg=db_query("select reg_number from {tbl_loanee_detail} where loanee_id='".$form->account_no."'");
+$theregno=db_fetch_object($thereg);
+$theloan=db_query("select sanction_date from {tbl_loan_detail} where reg_number='".$theregno->reg_number."'");
+$sanction=db_fetch_object($theloan);
+$fdr_date=date('Y-m-d',strtotime($form->fdr_date));
+//echo $fdr_date.' '.$sanction->sanction_date;exit;
+if($fdr_date<$sanction->sanction_date){form_set_error('fdr_date',t('FDR Date should be greater than the Loan Sanction Date.'));}
+
+$mat=$form->maturity_amount;
+$prince=$form->amount;
+if($mat<$prince){
+
+form_set_error('maturity_amount','Maturity Amount must me greater than  or equal to Principal Amount');
+}
+
+	$account_no= $form->account_no;
+///change
+$val3=db_query("select reg_number from {tbl_loanee_detail} where loanee_id='".$account_no."'");
+	$val4=db_fetch_object($val3);
+
+$val2=db_query("select loan_requirement,scheme_name from {tbl_loan_detail} where reg_number='".$val4->reg_number."'");
+$val0=db_fetch_object($val2);
+
+$val5=db_query("select MMD_FDR from {tbl_scheme_master} where loan_scheme_id='".$val0->scheme_name."'");
+
+/*$val1=db_query("select loan_requirement,MMD_FDR from {tbl_loanee_detail},tbl_loan_detail,tbl_scheme_master 
+inner join tbl_loanee_detail on (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+inner join tbl_scheme_master on (tbl_scheme_master.loan_scheme_id=tbl_loan_detail.scheme_name)
+where loanee_id='".$account_no."'");
+*/
+$value=db_fetch_object($val5);
+$mmdfdr=$value->MMD_FDR;
+if(!empty($mmfdr)){
+
+$princi= ($val0->loan_requirement)*(($value->MMD_FDR)/100);
+}else{$princi=0;}
+
+////
+$amount1=$form->amount;
+
+if(!empty($mmdfdr)){
+
+if($amount1>$princi){
+
+
+//form_set_error('amount','Principal amount cannot be greater than '.$princi);
+
+}
+	 
+
+}
+//echo '<pre>';
+//print_r($form);exit;
+	paypay('interest_accrued',$form->interest_accrued,'Interest Accrued');
+paypay('maturity_amount',$form->maturity_amount,'Maturity Amount');
+
+$fdrdate=$form->fdr_date;
+	$maturitydate=$form->maturity_date;
+
+
+if($fdrdate>$maturitydate){form_set_error('fdr_date','FDR Date should be less than the Maturity Date');}
+
+
+$prev_cheque_no=$form->prev_cheque_no;
+	$cheque_no=$form->cheque_no;
+
+
+if($prev_cheque_no == ''){
+	 $statusid = getchequeNo1($cheque_no); 
+		if($statusid){
+		form_set_error('cheque_no',$cheque_no.t(' Cheque Number already exist.'));
+		
+		}
+		}
+		else {
+	 $statusid = getchequeNo1_edit($cheque_no,$prev_cheque_no); 
+		if($statusid){
+		form_set_error('cheque_no',$cheque_no.t(' Cheque Number already exist.'));
+		
+		}
+		
+		}
+
+
+$prev_account_no=$form->prev_account_no;
+$account_no=$form->account_no;
+
+if($prev_account_no == ''){
+	 $statusid = getregNo1($account_no); 
+		if($statusid){
+		form_set_error('account_no',' Reg. No. '.getgetregno($account_no).' already exist.');
+		
+		}
+		}
+		else {
+	 $statusid = getregNo1_edit($account_no,$prev_account_no); 
+		if($statusid){
+		form_set_error('account_no',' Reg. No. '.getgetregno($account_no).' already exist.');
+		
+		}
+		
+		}
+
+
+
+	 
+}
+
+/**
+ *hook_form_alter
+ */
+function fdr_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='fdr_node_form'){
+	 
+	 $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	 
+	 
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function fdr_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+  $fdr_type=$node->fdr_type;
+  $account_no= $node->account_no;
+  $fdr_no = $node->fdr_no;
+	$bank_name = $node->bank_name;
+	
+	$getbankid=db_query("select bank_id from {tbl_bank} where bank_name='".$bank_name."'");
+	$gogo=db_fetch_object($getbankid);
+//$bank_name=$gogo->bank_id;
+	
+$cheque_no=$node->cheque_no;
+//$bank_name=$node->bank_name;
+$fdr_date=$node->fdr_date;
+    $amount = $node->amount;
+$maturity_date=$node->maturity_date;
+	$interest_rate=$node->interest_rate;
+	$interest_accrued=$node->interest_accrued;
+
+	$maturity_amount=$node->maturity_amount;
+
+    $status = $node->status1;
+    
+    $statusnodal =  1;   // $node->status1nodal;
+    $days=$node->days;
+
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   $days=$node->days;
+
+  
+
+db_query ("INSERT INTO {tbl_fdr} (`vid`, `nid`,`fdr_type`,`account_no`, `fdr_no`,`bank_name`,`status1`,`cheque_no`,`fdr_date`,`amount`,`maturity_date`,`interest_rate`,`interest_accrued`,`maturity_amount`,`days`) VALUES ('".$vid."','".$nid."','".$fdr_type."','".$account_no."','".$fdr_no."','".$bank_name."','".$status."','".$cheque_no."','".$fdr_date."','".$amount."','".$maturity_date."','".$interest_rate."','".$interest_accrued."','".$maturity_amount."','".$days."')");
+
+
+	
+  //  drupal_set_message('Vehicle Insurance Entry has been saved successfully.');
+	$message=getMessage('dsjefdr','code05',array("0"=>$node->fdr_no));
+  drupal_set_message($message);
+	drupal_goto("list/fdrList");
+
+ 
+ 
+ }
+
+function fdr_update($node){
+	
+	
+	   $fdr_type=$node->fdr_type;
+  $account_no= $node->account_no;
+  //echo $account_no;exit;
+  $fdr_no = $node->fdr_no;
+	$bank_name = $node->bank_name;
+	//echo $bank_name;exit;
+		$getbankid=db_query("select bank_id from {tbl_bank} where bank_name='".$bank_name."'");
+	$gogo=db_fetch_object($getbankid);
+//$bank_name=$gogo->bank_id;
+	
+	//echo $bank_name;exit;
+$cheque_no=$node->cheque_no;
+//$bank_name=$node->bank_name;
+$fdr_date=$node->fdr_date;
+    $amount = $node->amount;
+$maturity_date=$node->maturity_date;
+	$interest_rate=$node->interest_rate;
+	$interest_accrued=$node->interest_accrued;
+
+	$maturity_amount=$node->maturity_amount;
+$days=$node->days;
+    $status = $node->status1;
+    
+    $statusnodal =  1;   // $node->status11nodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$days=$node->days;
+	
+   
+	
+	
+	db_query("UPDATE {tbl_fdr} SET `fdr_type`='".$fdr_type."',`account_no`='".$account_no."',`fdr_no`='".$fdr_no."',`bank_name`='".$bank_name."',`cheque_no`='".$cheque_no."',`fdr_date`='".$fdr_date."',`fdr_date`='".$fdr_date."',`amount`='".$amount."',`maturity_date`='".$maturity_date."',`interest_rate`='".$interest_rate."',`interest_accrued`='".$interest_accrued."',`maturity_amount`='".$maturity_amount."',`status1`='".$status."',`days`='".$days."' WHERE nid='".$nid."'");
+	
+	
+	//drupal_set_message('FDR Details have been updated successfully.');
+	
+	$message=getMessage('dsjefdr','code06',array("0"=>$node->fdr_no));
+  drupal_set_message($message);
+	drupal_goto("list/fdrList");
+	
+	
+}
+
+
+function fdr_theme() {
+	
+	return array(
+				 
+		'fdr_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'fdr_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+
+
+/*function fdr_cron(){
+
+//$curr_date=date();
+$start=date('Y-m-d');
+
+$selDate=db_query("select * from {tbl_fdr} ");
+
+while($rs=db_fetch_object($selDate)){
+
+$date_diff=dateDiffByDays($start,$rs->date_to);
+
+if($date_diff==15 && $rs->remind_mail==0 && $rs->notification==84){
+
+
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+//$to = $u->mail;
+	$finduid=db_query("select * from {users_roles} where rid=13");
+$reg_no=db_fetch_object($reg);
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+if(createMail('fdr', $ms->mail,'',$parameter,''))
+{
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_fdr} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+
+}
+}
+}
+
+else if($date_diff==3 && $rs->remind_mail==1 && $rs->notification==84){
+
+
+
+
+//$to = $u->mail;
+	
+	$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+	$reg_no=db_fetch_object($reg);
+	$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('fdr', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_fdr} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+}}
+
+}
+
+
+else if($date_diff==0 && $rs->remind_mail <= 3 && $rs->notification==84){
+
+
+
+
+
+
+//$to = $u->mail;
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+$reg_no=db_fetch_object($reg);
+$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('fdr_today', $ms->mail,'',$parameter,'')){
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_fdr} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+} 
+
+}
+}}
+
+
+}
+
+
+*/
+
+
+
+
+function fdr_cron(){
+
+$curr_date=date();
+$start=date('Y-m-d',strtotime($curr_date));
+
+$selDate=db_query("select * from {tbl_fdr} ");
+
+while($rs=db_fetch_object($selDate)){
+
+$date_diff=dateDiffByDays($start,$rs->maturity_date);
+
+if($date_diff==15 && $rs->mail_remind==0){
+
+
+//$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+//$to = $u->mail;
+	$finduid=db_query("select * from {users_roles} where rid=13 or rid=5 or rid=18");
+//$reg_no=db_fetch_object($reg);
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name)); 
+
+if(createMail('fdr', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->mail_remind + 1;
+db_query("UPDATE {tbl_fdr} set mail_remind='".$reminder."' where nid='".$rs->nid."'");
+
+
+}
+
+}
+}
+}
+
+else if($date_diff==3 && $rs->mail_remind==1){
+
+
+
+//$to = $u->mail;
+	
+
+		$finduid=db_query("select * from {users_roles} where rid=13 or rid=5 or rid=18");
+//$reg_no=db_fetch_object($reg);
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name)); 
+
+if(createMail('fdr', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->mail_remind + 1;
+db_query("UPDATE {tbl_fdr} set mail_remind='".$reminder."' where nid='".$rs->nid."'");
+
+
+}
+
+}
+}
+
+}
+
+
+else if($date_diff==0 && $rs->mail_remind <= 3){
+
+
+
+
+
+//$to = $u->mail;
+	$finduid=db_query("select * from {users_roles} where rid=13 or rid=5 or rid=18");
+//$reg_no=db_fetch_object($reg);
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name)); 
+
+if(createMail('fdr_today', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->mail_remind + 1;
+db_query("UPDATE {tbl_fdr} set mail_remind='".$reminder."' where nid='".$rs->nid."'");
+
+
+}
+
+}
+}
+}}
+
+
+}
+
+
+
+
+
+/* 
+function fdr_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_fdr ON (node.nid=tbl_fdr.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}*/
+  
+function view_fdr($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of FDR', 'list/fdrList');
+   if($array[0] == 'viewfdr'){
+     $breadcrumb[] = l('View FDR Details', 'viewfdr/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from {tbl_fdr} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from {users} where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+//$add_type=getLookupName($rs->add_type);
+//$regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+//$regno= db_fetch_object($regnowa);
+//$notification=getLookupName($rs->notification);
+ $reggg=db_query("select reg_number from {tbl_loanee_detail} where loanee_id='".$rs->account_no."'");
+	  $regno=db_fetch_object($reggg);
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-conatiner">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>FDR Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">FDR Type:</td><td class="normal"> '.ucwords(getLookupName($rs->fdr_type)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%"> FDR No.:</td><td class="normal">'.$rs->fdr_no.'</td></tr>';
+$chequeno=$rs->cheque_no;
+
+if($chequeno==''){$chequeno='N/A';}
+
+$output .='<tr class="evenrow"><td width="50%">Cheque No.:</td><td class="normal"> '.$chequeno.'</td></tr>';
+//$output .='<tr class="oddrow" colspan="2"><td>PERIOD</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Bank Name:</td><td class="normal"> '.ucwords(getBankName($rs->bank_name)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">FDR Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->fdr_date)).'</td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">Due Date:</td><td class="normal">'.$rs->date_due.'</td></tr>';
+
+$prince=round($rs->amount,2);
+if($prince==''){$prince='N/A';}
+
+$output .='<tr class="oddrow"><td width="50%">Principal Amount:</td><td class="normal">'.round($prince).'</td></tr>';
+
+
+$regnoo=$regno->reg_number;
+if($regnoo==''){$regnoo='N/A';}
+$output .='<tr class="evenrow"><td width="50%">Registration No.:</td><td class="normal">'.$regnoo.'</td></tr>';
+
+
+
+$output .='<tr class="oddrow"><td width="50%">Maturity Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->maturity_date)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Interest Rate(%):</td><td class="normal">'.$rs->interest_rate.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Interest Accrued:</td><td class="normal">'.$rs->interest_accrued.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Maturity Amount:</td><td class="normal">'.round($rs->maturity_amount).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">No. of Days:</td><td class="normal">'.$rs->days.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.ucwords(getLookupName($rs->status1)).'</td></tr>';
+
+$output .='<tr class="oddrow"><td align="center" class="back" colspan="2">'.l(t('Back'), 'list/fdrList').'</td></tr>'; 
+ $output .='</table>';
+return $output ;
+}

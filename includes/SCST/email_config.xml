@@ -1,0 +1,679 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<emailmessage>
+ 
+	<module name="LoanSanction">
+		<NodeId id="Body">
+			<![CDATA[       <table>
+          <tr>
+		          <td>
+			          Dear <strong>{0}<br/> </strong>
+		          </td>
+	        </tr>
+	        <tr>
+		          <td>
+			               Thank you for choosing Flexiconnect VPN 
+			               service from Airtel. Your account has been created . 
+			               Below are your login details.
+			              
+		          </td>
+	        </tr>
+      </table>
+	  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Loan Sanctioned</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+
+
+<module name="dsje_joinings">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>This mail is to inform you that the Joining Form of Employee id: {1} and Employee Name: {2}  has been submitted.
+					   
+				  This is an auto-generated mail. Please do not reply back.
+					  
+				  Regards,
+				  Establishment Section
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">DSJE JOINING</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+  
+  
+  
+  
+  <module name="vehicleAMC_today">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>This AMC of vendor {1} expired today ({2}).
+					   
+				  This is an auto-generated mail. Please do not reply back.
+					  
+				  Regards,
+				  AMC Section
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Vehicle AMC (expiry)</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+  
+  
+  
+  
+  <module name="vehicleAMC">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>This AMC of vendor {1} will expire on {2}.
+					   
+				  This is an auto-generated mail. Please do not reply back.
+					  
+				  Regards,
+				  AMC Section
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Vehicle AMC (expiry)</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+  
+  
+  
+  //---
+  
+  
+  <module name="vehiclePollution_today">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>This vehicle pollution certificate of vehicle reg. no. {1} expired today ({2}).
+					   
+				  This is an auto-generated mail. Please do not reply back.
+					  
+				  Regards,
+				  AMC Section
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Vehicle Pollution (expiry)</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+  
+  
+  
+  
+  <module name="vehiclePollution">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>This vehicle pollution certificate of vehicle reg. no. {1} will expire on {2}.
+					   
+				  This is an auto-generated mail. Please do not reply back.
+					  
+				  Regards,
+				  AMC Section
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Vehicle Pollution (expiry)</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+  
+  
+  
+  //---
+  
+  
+  
+  
+   <module name="vehicleInsurance_today">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>This vehicle insurance certificate of vehicle reg. no. {1} expired today ({2}).
+					   
+				  This is an auto-generated mail. Please do not reply back.
+					  
+				  Regards,
+				  Insurance Section
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Vehicle Insurance (expiry)</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+  
+  
+  
+  
+  <module name="vehicleInsurance">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>This vehicle insurance certificate of vehicle reg. no. {1} will expire on {2}.
+					   
+				  This is an auto-generated mail. Please do not reply back.
+					  
+				  Regards,
+				  Insurance Section
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Vehicle Insurance (expiry)</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+  
+  
+  
+    
+  <module name="inboundMail">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr></table>
+		<table width="100%" cellpadding="1" cellspacing="0" align="center" border="0" bgcolor="#ababab">      <tbody><tr><td>        <table width="100%" cellpadding="3" cellspacing="0" align="center" border="0">          <tbody><tr bgcolor="#ffffff"><td><table align="left" cellpadding="1" cellspacing="5" border="0">
+              <tbody><tr><td align="left"><br><pre>This is to inform you that an inbound mail has been assigned to you. Please check your pending notifications.
+
+This is an auto-generated mail. Please do not reply back.
+
+Regards,
+Dispatch Section
+
+</pre>
+</td>
+</tr>            </tbody></table>          </td></tr>        </tbody></table></td></tr>    </tbody></table>
+  
+  ]]> 
+  
+  
+  
+  
+</NodeId>
+<NodeId id="Subject">Dispatch Section(Inbound Mail Received)</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+  
+  
+  
+  
+    
+  <module name="helpdeskIssue_created">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr></table>
+		<table width="100%" cellpadding="1" cellspacing="0" align="center" border="0" bgcolor="#ababab">      <tbody><tr><td>        <table width="100%" cellpadding="3" cellspacing="0" align="center" border="0">          <tbody><tr bgcolor="#ffffff"><td><table align="left" cellpadding="1" cellspacing="5" border="0">
+              <tbody><tr><td align="left"><br><pre>This mail is to inform you that an issue has been logged in the Help Desk. 
+ 
+ 
+This is an auto-generated mail. Please do not reply back.
+
+Regards,
+Help Desk Section
+
+</pre>
+</td>
+</tr>            </tbody></table>          </td></tr>        </tbody></table></td></tr>    </tbody></table>
+  
+  ]]> 
+  
+  
+  
+  
+</NodeId>
+<NodeId id="Subject">Help Desk Section (Issue Created)</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+  
+  
+  
+  
+      
+  <module name="helpdeskIssue_commented">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr></table>
+		<table width="100%" cellpadding="1" cellspacing="0" align="center" border="0" bgcolor="#ababab">      <tbody><tr><td>        <table width="100%" cellpadding="3" cellspacing="0" align="center" border="0">          <tbody><tr bgcolor="#ffffff"><td><table align="left" cellpadding="1" cellspacing="5" border="0">
+              <tbody><tr><td align="left"><br><pre>This mail is to inform you that a comment has been added to an issue logged in the Help Desk. 
+ 
+ 
+This is an auto-generated mail. Please do not reply back.
+
+Regards,
+Help Desk Section
+
+</pre>
+</td>
+</tr>            </tbody></table>          </td></tr>        </tbody></table></td></tr>    </tbody></table>
+  
+  ]]> 
+  
+  
+  
+  
+</NodeId>
+<NodeId id="Subject">Help Desk Section (Comment Received)</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+  
+  
+    <module name="helpdeskIssue_status">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr></table>
+		<table width="100%" cellpadding="1" cellspacing="0" align="center" border="0" bgcolor="#ababab">      <tbody><tr><td>        <table width="100%" cellpadding="3" cellspacing="0" align="center" border="0">          <tbody><tr bgcolor="#ffffff"><td><table align="left" cellpadding="1" cellspacing="5" border="0">
+              <tbody><tr><td align="left"><br><pre>This mail is to inform you that a status of the issue logged in the Help Desk has been changed. 
+ 
+ 
+This is an auto-generated mail. Please do not reply back.
+
+Regards,
+Help Desk Section
+
+</pre>
+</td>
+</tr>            </tbody></table>          </td></tr>        </tbody></table></td></tr>    </tbody></table>
+  
+  ]]> 
+  
+  
+  
+  
+</NodeId>
+<NodeId id="Subject">Help Desk Section (Status Changed)</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+  
+  
+  
+  
+  
+  <module name="inboundDeputation">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr></table>
+		<table width="100%" cellpadding="1" cellspacing="0" align="center" border="0" bgcolor="#ababab">      <tbody><tr><td>        <table width="100%" cellpadding="3" cellspacing="0" align="center" border="0">          <tbody><tr bgcolor="#ffffff"><td><table align="left" cellpadding="1" cellspacing="5" border="0">
+              <tbody><tr><td align="left"><br><pre>This mail is to inform you that Employee id: {1} and Employee Name: {2} 
+has been deputed.
+ 
+ Inbound Deputation Order No. : {3}
+ Previous Corporation Office: {4}
+ Previous Designation: {5}
+ Previous Department: {6}
+
+This is an auto-generated mail. Please do not reply back.
+
+Regards,
+Establishment Section
+
+</pre>
+</td>
+</tr>            </tbody></table>          </td></tr>        </tbody></table></td></tr>    </tbody></table>
+  
+  ]]> 
+  
+  
+  
+  
+</NodeId>
+<NodeId id="Subject">Establishment Section (Inbound Deputation)</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+
+
+    <module name="outboundDeputation">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr></table>
+		<table width="100%" cellpadding="1" cellspacing="0" align="center" border="0" bgcolor="#ababab">      <tbody><tr><td>        <table width="100%" cellpadding="3" cellspacing="0" align="center" border="0">          <tbody><tr bgcolor="#ffffff"><td><table align="left" cellpadding="1" cellspacing="5" border="0">
+              <tbody><tr><td align="left"><br><pre>This mail is to inform you that Employee id: {1} and Employee Name: {2} 
+has been deputed.
+ 
+ Inbound Deputation Order No. : {3}
+
+ Previous Corporation Office: {4}
+ Previous Designation: {5}
+ Previous Department: {6}
+
+ New Corporation Office: {7}
+ New Designation: {8}
+ New Department: {9}
+
+
+This is an auto-generated mail. Please do not reply back.
+
+Regards,
+Establishment Section
+
+</pre>
+</td>
+</tr>            </tbody></table>          </td></tr>        </tbody></table></td></tr>    </tbody></table>
+  
+  ]]> 
+  
+  
+  
+  
+</NodeId>
+<NodeId id="Subject">Establishment Section (Outbound Deputation)</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <module name="transferPromotion">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr></table>
+		<table width="100%" cellpadding="1" cellspacing="0" align="center" border="0" bgcolor="#ababab">      <tbody><tr><td>        <table width="100%" cellpadding="3" cellspacing="0" align="center" border="0">          <tbody><tr bgcolor="#ffffff"><td><table align="left" cellpadding="1" cellspacing="5" border="0">
+              <tbody><tr><td align="left"><br><pre>This mail is to inform you that Employee id: {1} and Employee Name: {2} 
+has been {3}.
+ 
+ Order No. : {10}
+ Previous Corporation Office: {4}
+ Previous Designation: {5}
+ Previous Department: {6}
+
+ New Corporation Office: {7}
+ New Designation: {8}
+ New Department: {9}
+
+This is an auto-generated mail. Please do not reply back.
+
+Regards,
+Establishment Section
+
+</pre>
+</td>
+</tr>            </tbody></table>          </td></tr>        </tbody></table></td></tr>    </tbody></table>
+  
+  ]]> 
+  
+  
+  
+  
+</NodeId>
+<NodeId id="Subject">Establishment Section (Transfer/Promotion)</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+
+
+<module name="grievance">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>
+					   This mail from Grievance.
+					  
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+</NodeId>
+<NodeId id="Subject">Grievance Sanctioned</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+<module name="rti_management">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>
+					   This mail from RTI.
+					  
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+</NodeId>
+<NodeId id="Subject">RTI Sanctioned</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+<module name="grievanceclose">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+			   <td>
+				  Applicant <strong>{1}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>
+					   Your Grievance has beem closed.
+					  
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+</NodeId>
+<NodeId id="Subject">Grievance Sanctioned</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+<module name="rticlose">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+			   <td>
+				  Applicant <strong>{1}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>
+					   Your RTI has beem closed.
+					  
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+</NodeId>
+<NodeId id="Subject">Grievance Sanctioned</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module>
+
+ <module name="courtcase">
+	<NodeId id="Body">
+		<![CDATA[       <table>
+	  <tr>
+			  <td>
+				  Dear <strong>{0}<br/> </strong>
+			  </td>
+		</tr>
+		<tr>
+			  <td>
+					   Thank you for choosing Flexiconnect VPN 
+					   service from Airtel. Your account has been created . 
+					   Below are your login details.
+					  
+			  </td>
+		</tr>
+  </table>
+  ]]> 
+</NodeId>
+<NodeId id="Subject">Courtcase Sanctioned</NodeId> 
+<NodeId id="Prority">1</NodeId> 
+</module> 
+
+<module name="emailnotification">
+		<NodeId id="Body">
+			<![CDATA[       <table>
+          <tr>
+		          <td>
+			          Dear <strong>{1}<br/> </strong>
+		          </td>
+	        </tr>
+	        <tr>
+		          <td>
+			              Pending task notification..
+			              
+		          </td>
+	        </tr>
+      </table>
+	  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Pending Task Notifaction</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+
+
+
+
+<module name="medicalclaim">
+		<NodeId id="Body">
+			<![CDATA[       <table>
+          <tr>
+		          <td>
+			          Dear <strong>{0}<br/> </strong>
+		          </td>
+	        </tr>
+	        <tr>
+		          <td>
+			              Medical Claim
+			              
+		          </td>
+	        </tr>
+      </table>
+	  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Medical Claim</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+
+
+
+<module name="separation">
+		<NodeId id="Body">
+			<![CDATA[       <table>
+          <tr>
+		          <td>
+			          Dear <strong>{0}<br/> </strong>
+		          </td>
+	        </tr>
+	        <tr>
+		          <td>
+			              Separation 
+			              
+		          </td>
+	        </tr>
+      </table>
+	  ]]> 
+  	</NodeId>
+  	<NodeId id="Subject">Separation</NodeId> 
+	<NodeId id="Prority">1</NodeId> 
+</module>
+
+
+
+
+
+</emailmessage>

@@ -1,0 +1,103 @@
+.maincol{display: inline; float: left; width: 250px; padding-left:25px;}
+.maincol #edit-to-date-wrapper label{ width:110px; float:left; padding-top: 3px;}
+#edit-dispatch-number-wrapper label{width:110px; float:left; padding-top: 3px;}
+.maincol #edit-from-date-wrapper label{ width:110px; float:left; padding-top: 3px;}
+#edit-reg-no-wrapper label{float:left; padding-top: 3px; padding-right: 0px;}
+.bttncol{display:inline-block; float: right; width:0px; text-align:right; margin-top:5px;}
+
+.outcol #edit-duration-years-wrapper label{width:70px;}
+.outcol #edit-duration-months-wrapper label{width:70px;}
+
+.container-inline-date .form-item input, .container-inline-date .form-item select, .container-inline-date .form-item option {
+margin-right: 5px;
+
+}
+
+
+fieldset
+{
+	padding:10px 10px 10px 10px;
+	background-color:#ffffff;
+	border:2px solid #000033;
+	margin:5px 5px 10px 0px;
+	*margin-bottom:10px;
+	width: 908px;
+	
+}
+
+legend
+{
+	font-weight: bold;
+	font-size:14px;
+	color:#666666;
+	border: #cccccc 1px solid ;
+	background-color: #ffffff;
+	padding: 5px 5px;
+	margin:5px 0px 5px 0px;
+}
+
+#legend-container
+{
+    background-color: #ffffff;
+    }
+
+    
+#legend-container span {
+	color: #333333;
+	font-size: 12px ;
+	font-family:verdana;
+	font-weight: bold;
+	font-variant: normal;
+	padding-left: 5px;
+	padding-right: 15px;
+}
+
+.legend-top-space
+{
+    margin-top: 10px;
+}
+
+.tdform-width{width:175px;}
+
+
+
+#dsje-vehicle-form input[type="text"] {
+width: 205px;
+height: 18px;
+margin: 0;
+padding: 2px;
+vertical-align: middle;
+font-family: sans-serif;
+font-size: 14px;
+
+}
+
+
+#edit-reg-no-wrapper input[type="text"] {
+width: 100px;
+height: 18px;
+margin: 0;
+padding: 2px;
+vertical-align: middle;
+font-family: sans-serif;
+font-size: 14px;
+
+}
+
+.bttncol input[type="submit"] {
+border: 1px solid #9D9D9D;
+font-family: sans-serif;
+font-size: 12px;
+vertical-align: middle;}
+
+.frmtbl {border:none;}
+#edit-date-from-datepicker-popup-0{width:210px;}
+#edit-date-valid-datepicker-popup-0{width:210px;}
+#edit-date-insurance-datepicker-popup-0{width:210px;}
+#edit-date-to-datepicker-popup-0{width:210px;}
+#edit-date-purchase-datepicker-popup-0{width:210px;}
+#edit-mfd-datepicker-popup-0{width:210px;}
+.maincol .form-item label{display: inline; font-weight: bold; float: left; width: 110px;}
+
+.maincol1{display:inline; float:left; padding-left:25px;}
+.maincol1 .form-item label{display: inline; font-weight: bold; float: left; width: 110px;}

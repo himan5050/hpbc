@@ -1,0 +1,270 @@
+<?php
+
+
+function searchcontent_init() {
+	drupal_add_js(drupal_get_path('module', 'searchcontent') .'/searchcontent.js');
+	drupal_add_css(drupal_get_path('module', 'searchcontent') .'/searchcontent.css');
+
+	
+}
+
+function searchcontent_block($op = 'list', $delta = 0) {
+  $block = array();
+  switch ($op) {
+    case 'list':
+      $block[0]['info'] = t('Content Search Block');
+      return $block;
+    case 'view':
+      switch ($delta) {
+        case 0: 
+          $block['subject'] = t('Search Block');
+          $block['content'] = drupal_get_form('csearch_form');
+          break;
+              }
+      return $block;
+  }
+} 
+
+function searchcontent_menu(){
+
+$items['user-search-list/%'] = array(
+	'title' => '',
+//	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'searchlistcontent',
+	'page arguments' => array(1),
+'type' => MENU_CALLBACK,
+'access arguments' => array('access content'),
+);
+
+
+return $items;
+
+}
+
+function csearch_form(){
+
+$form['search'] = array(
+'#type' => 'submit',
+'#value' =>t('SEARCH'),
+'#prefix' =>'<div id="ie7serach">',
+);
+
+
+$form['search_box']=array(
+'#type' => 'textfield',
+'#title' => '',
+'#required' => FALSE,
+'#size' => 20,
+'#suffix' =>'</div>',
+);
+
+
+return $form;
+}
+
+function csearch_form_submit($form, &$form_state){
+
+
+$keydata = $form_state['values']['search_box'];
+drupal_goto('user-search-list/'.$keydata);
+
+}
+
+
+function searchlistcontent($keydata){
+
+global $user;
+//return 'test';
+//echo $getrol =getRole(7);
+global  $base_url,$language;
+
+if($language->language == 'en'){
+
+$output ='<div id="lestednews">'; 
+$output .= drupal_get_form('csearch_form');
+
+
+
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);	 
+$time_start = microtime_float();
+if($user->uid > 1){
+   $currentrole = getRole($user->uid);
+ $sql = "select tbl_upload_document.title as dtitle,tbl_upload_document.discription as ddesciption,tbl_upload_document.keywords as keywords,tbl_upload_document.dateofupload as dupload,tbl_upload_document.selectrole as selectrole, tbl_upload_document.selectuser as selectuser,
+node.nid AS nid, node.title AS node_title, node.created AS node_created,node_revisions.body AS body ,node_revisions.nid as rnid from node LEFT JOIN tbl_upload_document ON(node.nid=tbl_upload_document.nid)
+LEFT JOIN node_revisions ON ( node.nid = node_revisions.nid) 
+WHERE node.type in ('documentUpload', 'application_forms', 'cast', 'latestnews', 'list_scst', 'page', 'scheduled', 'scheme_name', 'story', 'welcome') AND
+(((node.title LIKE '".$val."' OR node_revisions.body LIKE '".$val."') AND node.status = 1) OR tbl_upload_document.title LIKE '".$val."' OR tbl_upload_document.keywords LIKE '".$val."' ) AND(tbl_upload_document.selectrole LIKE ('%".$currentrole."%') OR tbl_upload_document.selectuser LIKE ('%".$user->uid."%') OR tbl_upload_document.uid = '".$user->uid."') and language ='en' ORDER BY node_created DESC";
+//drupal_set_message($sql);
+}
+else if($user->uid == 1){$currentrole = getRole($user->uid);
+ $sql = "select tbl_upload_document.title as dtitle,tbl_upload_document.discription as ddesciption,tbl_upload_document.keywords as keywords,tbl_upload_document.dateofupload as dupload,tbl_upload_document.selectrole as selectrole, tbl_upload_document.selectuser as selectuser,
+node.nid AS nid, node.title AS node_title, node.created AS node_created,node_revisions.body AS body ,node_revisions.nid as rnid from node LEFT JOIN tbl_upload_document ON(node.nid=tbl_upload_document.nid)
+LEFT JOIN node_revisions ON ( node.nid = node_revisions.nid) 
+WHERE node.type in ('documentUpload', 'application_forms', 'cast', 'latestnews', 'list_scst', 'page', 'scheduled', 'scheme_name', 'story', 'welcome') AND
+(((node.title LIKE '".$val."' OR node_revisions.body LIKE '".$val."') AND node.status = 1) OR tbl_upload_document.title LIKE '".$val."' OR tbl_upload_document.keywords LIKE '".$val."' ) and language ='en'  ORDER BY node_created DESC";
+//drupal_set_message($sql);
+}
+else{
+	
+   $sql = "select 
+node.nid AS nid, node.title AS node_title, node.created AS node_created,node_revisions.body AS body ,node_revisions.nid as rnid from node 
+LEFT JOIN node_revisions ON ( node.nid = node_revisions.nid) 
+WHERE node.type in ('application_forms', 'cast', 'latestnews', 'list_scst', 'page', 'scheduled', 'scheme_name', 'story', 'welcome') AND
+(node.title LIKE '".$val."' OR node_revisions.body LIKE '".$val."' ) AND node.status = 1 and language ='en' ORDER BY node_created DESC ";
+}
+$time_end = microtime_float();
+$time = $time_end - $time_start;
+//$output .= number_format($time,4);
+//$res = db_query($sql);
+$count_query = "SELECT COUNT(*)as cc FROM (" . $sql . ") AS count_query";
+$cres = db_query($count_query);
+$crs = db_fetch_object($cres); 
+$output .='<div class="count_no">'.$crs->cc.' result(s) found</div>';
+$result = pager_query($sql, 10, 0, $count_query);
+$output .='<div id="contdiv">'; 
+if($result){
+	
+	$countno =0;
+	  while($rs = db_fetch_object($result)){
+         
+		   $countno++;
+		   
+		   //$rolearray = explode(',',$rs->selectrole);
+		   //$userarray = explode(',',$rs->selectuser);
+		  // $currentrole = getRole($user->uid);
+		   
+		   $nodden = node_load($rs->nid);
+		  if($nodden->type == 'documentUpload'){
+			
+			  $output .='<div class="newses">';
+			  $output .='<h2>'.l($rs->dtitle,'view-upload-document/'.$rs->nid).'</h2>';
+			  $output .= '<span>Posted Date: '.date("d-m-Y",$rs->dupload).'</span>';
+			  $output .= '<p>'.substr(strip_tags($rs->ddesciption),0,300).'....</p>';
+			  $output .='</div>';
+			}
+			
+		 
+		  else{
+			  $output .='<div class="newses">';
+			  $output .='<h2>'.l($rs->node_title,'node/'.$rs->nid).'</h2>';
+			  $output .= '<span>Posted Date: '.date("d-m-Y",$rs->node_created).'</span>';
+			  $output .= '<p>'.substr(strip_tags($rs->body),0,300).'....</p>';
+			  $output .='</div>';
+		  }
+
+		//echo '<pre>';
+		//print_r($nodden);
+		//exit;
+	  }
+	
+}
+else{
+	 $output .="No Record Found.";
+}
+  
+  
+
+	$output .=theme('pager', NULL, 20,0 );
+$output .='</div>'; 
+  $output .='</div>'; 
+ 
+	return $output;
+}else{
+$output ='<div id="lestednews">'; 
+$output .= drupal_get_form('csearch_form');
+
+
+
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);	 
+$time_start = microtime_float();
+if($user->uid > 1){
+   $currentrole = getRole($user->uid);
+ $sql = "select tbl_upload_document.title as dtitle,tbl_upload_document.discription as ddesciption,tbl_upload_document.keywords as keywords,tbl_upload_document.dateofupload as dupload,tbl_upload_document.selectrole as selectrole, tbl_upload_document.selectuser as selectuser,
+node.nid AS nid, node.title AS node_title, node.created AS node_created,node_revisions.body AS body ,node_revisions.nid as rnid from node LEFT JOIN tbl_upload_document ON(node.nid=tbl_upload_document.nid)
+LEFT JOIN node_revisions ON ( node.nid = node_revisions.nid) 
+WHERE node.type in ('documentUpload', 'application_forms', 'cast', 'latestnews', 'list_scst', 'page', 'scheduled', 'scheme_name', 'story', 'welcome') AND
+(((node.title LIKE '".$val."' OR node_revisions.body LIKE '".$val."') AND node.status = 1) OR tbl_upload_document.title LIKE '".$val."' OR tbl_upload_document.keywords LIKE '".$val."' ) AND(tbl_upload_document.selectrole LIKE ('%".$currentrole."%') OR tbl_upload_document.selectuser LIKE ('%".$user->uid."%') OR tbl_upload_document.uid = '".$user->uid."') and language ='hi' ORDER BY node_created DESC";
+//drupal_set_message($sql);
+}
+else if($user->uid == 1){$currentrole = getRole($user->uid);
+ $sql = "select tbl_upload_document.title as dtitle,tbl_upload_document.discription as ddesciption,tbl_upload_document.keywords as keywords,tbl_upload_document.dateofupload as dupload,tbl_upload_document.selectrole as selectrole, tbl_upload_document.selectuser as selectuser,
+node.nid AS nid, node.title AS node_title, node.created AS node_created,node_revisions.body AS body ,node_revisions.nid as rnid from node LEFT JOIN tbl_upload_document ON(node.nid=tbl_upload_document.nid)
+LEFT JOIN node_revisions ON ( node.nid = node_revisions.nid) 
+WHERE node.type in ('documentUpload', 'application_forms', 'cast', 'latestnews', 'list_scst', 'page', 'scheduled', 'scheme_name', 'story', 'welcome') AND
+(((node.title LIKE '".$val."' OR node_revisions.body LIKE '".$val."') AND node.status = 1) OR tbl_upload_document.title LIKE '".$val."' OR tbl_upload_document.keywords LIKE '".$val."' ) and language ='hi'  ORDER BY node_created DESC";
+//drupal_set_message($sql);
+}
+else{
+	
+   $sql = "select 
+node.nid AS nid, node.title AS node_title, node.created AS node_created,node_revisions.body AS body ,node_revisions.nid as rnid from node 
+LEFT JOIN node_revisions ON ( node.nid = node_revisions.nid) 
+WHERE node.type in ('application_forms', 'cast', 'latestnews', 'list_scst', 'page', 'scheduled', 'scheme_name', 'story', 'welcome') AND
+(node.title LIKE '".$val."' OR node_revisions.body LIKE '".$val."' ) AND node.status = 1 and language ='hi' ORDER BY node_created DESC ";
+}
+$time_end = microtime_float();
+$time = $time_end - $time_start;
+//$output .= number_format($time,4);
+//$res = db_query($sql);
+$count_query = "SELECT COUNT(*)as cc FROM (" . $sql . ") AS count_query";
+$cres = db_query($count_query);
+$crs = db_fetch_object($cres); 
+$output .='<div class="count_no">'.$crs->cc.' result(s) found</div>';
+$result = pager_query($sql, 10, 0, $count_query);
+$output .='<div id="contdiv">'; 
+if($result){
+	
+	$countno =0;
+	  while($rs = db_fetch_object($result)){
+         
+		   $countno++;
+		   
+		   //$rolearray = explode(',',$rs->selectrole);
+		   //$userarray = explode(',',$rs->selectuser);
+		  // $currentrole = getRole($user->uid);
+		   
+		   $nodden = node_load($rs->nid);
+		  if($nodden->type == 'documentUpload'){
+			
+			  $output .='<div class="newses">';
+			  $output .='<h2>'.l($rs->dtitle,'view-upload-document/'.$rs->nid).'</h2>';
+			  $output .= '<span>Posted Date: '.date("d-m-Y",$rs->dupload).'</span>';
+			  $output .= '<p>'.substr(strip_tags($rs->ddesciption),0,300).'....</p>';
+			  $output .='</div>';
+			}
+			
+		 
+		  else{
+			  $output .='<div class="newses">';
+			  $output .='<h2>'.l($rs->node_title,'node/'.$rs->nid).'</h2>';
+			  $output .= '<span>Posted Date: '.date("d-m-Y",$rs->node_created).'</span>';
+			  $output .= '<p>'.substr(strip_tags($rs->body),0,300).'....</p>';
+			  $output .='</div>';
+		  }
+
+		//echo '<pre>';
+		//print_r($nodden);
+		//exit;
+	  }
+	
+}
+else{
+	 $output .="No Record Found.";
+}
+  
+  
+
+	$output .=theme('pager', NULL, 20,0 );
+$output .='</div>'; 
+  $output .='</div>'; 
+ 
+	return $output;	
+	
+}
+  }
+
+function microtime_float()
+{
+   list($usec, $sec) = explode(" ", microtime());
+   return ((float)$usec + (float)$sec);
+}

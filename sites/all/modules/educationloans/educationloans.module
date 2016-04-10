@@ -1,0 +1,173 @@
+<?php
+
+global $base_url;
+
+/**
+* Implementing hook_perm()
+*/
+
+function educationloans_perm(){
+   return array(
+          'edit educationloans', 'administer educationloans', 'create educationloans', 'view educationloans'
+		  );
+}
+
+/**
+* Implementing hook_access()
+*/
+
+function educationloans_access($op, $node, $account){
+     if($op == 'update' || $op == 'delete'){
+	       if(user_access('edit educationloans', $account) ){
+		       return TRUE;
+		   }
+	 }
+	 if(($op == 'create') && ($op == 'list')){
+	      if(user_access('create educationloans', $account)){
+		      return TRUE;
+		  }
+	 }
+	 if(($op == 'view') || ($op == 'list')){
+	      return user_access('view educationloans', $account);
+	 }
+}
+
+
+/**
+* Implementing hook_menu()
+*/
+
+function educationloans_menu(){									  
+        $items['educationloans_schemereport'] = array(
+                                                'title' => t('Education Loan Scheme Report'),
+										        'type' => MENU_NORMAL_ITEM,
+										        'page callback' => 'educationloans_SchemeReport',
+										        'access arguments' => array('administer educationloans_SchemeReport'),
+                                                );
+
+       return $items;
+}
+
+/**
+* Implementing Page Callback Function for 
+* Education Loan Scheme Report
+*/
+
+function educationloans_SchemeReport(){
+   $array = explode('/', $_GET['q']);
+   $breadcrumb = array();
+   $breadcrumb[] = l('Home','<front>');
+   $breadcrumb[] = l('Education Loan Scheme Report','educationloans_schemereport');
+   drupal_set_breadcrumb($breadcrumb);
+   return drupal_get_form(educationloans_SchemeReport_form);
+}
+
+
+/**
+* Implementing Drupal Form API
+* for Education Loan Scheme report.
+*/
+
+function educationloans_SchemeReport_form(){
+  global $base_url;
+  
+  $dist_sql = db_query("select * from tbl_district where status = '1' order by district_name");
+  if($dist_sql){
+    $dist_array[''] = '---select---';
+	while($res = db_fetch_object($dist_sql)){
+	     $dist_array[$res->district_id] = ucfirst($res->district_name);
+	}
+  }
+  
+  $form['district_id'] = array(
+                         '#type' => 'select',
+						 '#title' => t(''),
+						 '#required' => false,
+						 '#default_value' => '',
+						 '#options' => $dist_array,
+						 );
+
+  $tehsil_sql = db_query("select * from tbl_tehsil where status = '1' order by tehsil_name");
+  if($tehsil_sql){
+    $tehsil_array[''] = '---select---';
+	while($res = db_fetch_object($tehsil_sql)){
+	     $tehsil_array[$res->tehsil_id] = ucfirst($res->tehsil_name);
+	}
+  }
+  
+  $form['tehsil_id'] = array(
+                         '#type' => 'select',
+						 '#title' => t(''),
+						 '#required' => false,
+						 '#default_value' => '',
+						 '#options' => $tehsil_array,
+						 );
+
+  $panchayat_sql = db_query("select * from tbl_panchayt where status = '1' order by panchayt_name");
+  if($panchayat_sql){
+    $panchayat_array[''] = '---select---';
+	while($res = db_fetch_object($panchayat_sql)){
+	     $panchayat_array[$res->panchayt_id] = ucfirst($res->panchayt_name);
+	}
+  }
+  
+  $form['panchayt_id'] = array(
+                         '#type' => 'select',
+						 '#title' => t(''),
+						 '#required' => false,
+						 '#default_value' => '',
+						 '#options' => $panchayat_array,
+						 );
+						 
+  $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => false,
+						   '#size' => '30',
+                       );
+ 
+  $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => false,
+						   '#size' => '30',			   
+		);
+		
+  $course_sql = db_query("select * from tbl_courses where course_status = '1' order by course_name");
+  if($course_sql){
+    $course_array[''] = '---select---';
+	while($res = db_fetch_object($course_sql)){
+	     $course_array[$res->course_id] = ucfirst($res->course_name);
+	}
+  }
+  
+  $form['course_id'] = array(
+                         '#type' => 'select',
+						 '#title' => t(''),
+						 '#required' => false,
+						 '#default_value' => '',
+						 '#options' => $course_array,
+						 );
+ 
+						 
+  $form['submit'] = array('#type' => 'button', '#default_value' => 'Generate Report');
+  
+  return $form;
+}
+
+
+/**
+* Implementation of hook_theme()
+*/
+
+function educationloans_theme(){
+     $themable_items = array(
+	                      'educationloans_SchemeReport_form' => array(
+						                                        'arguments' => array('form' => NULL),
+																'template' => 'educationloans_SchemeReport_form'
+																),
+					   );
+	return $themable_items;
+}

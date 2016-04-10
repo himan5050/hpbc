@@ -1,0 +1,913 @@
+<?php
+function dsje_panchayt_init() {
+}
+
+function dsje_panchayt_perm() {
+	return array('edit dsje_panchayt','administer dsje_panchayt', 'create dsje_panchayt', 'view dsje_panchayt');
+}
+
+function dsje_panchayt_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_panchayt', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_panchayt', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_panchayt', $account);
+	}
+}
+
+function dsje_panchayt_menu() {
+
+
+	$items['rec/district'] = array(
+										'page callback' => 'mydistrict',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+$items['rec/tehsil'] = array(
+										'page callback' => 'mytehsil',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+
+
+
+	$items['dsje/district'] = array(
+										'page callback' => 'selectblock',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+										
+	$items['dsje/block'] = array(
+										'page callback' => 'myblock',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);									
+			
+										
+	$items['dsje/panchayt'] = array(
+										'page callback' => 'mypanchayt',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);													
+				
+								
+								
+	
+	$items['dsje/listpanchayt'] = array(
+										'title' => t('List of Panchayat'),
+										'description' => 'Allow user to View Panchayt',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewpanchayt',
+										'access arguments' => array('administer dsje_panchayt'),
+													 
+									  );
+	
+	$items['dsje/listpanchayt/addpanchayt'] = array(
+										'title' => t('Add Panchayat'),
+										'description' => 'Allow user to Add Panchayat',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addpanchayt',
+										'access arguments' => array('administer dsje_panchayt'),
+													 
+									  );
+   	$items['dsje/listpanchayt/edit/panchayt/%'] = array(
+								
+	                                    'title' => t('Edit Panchayat'),
+										'description' => 'Allow user to Add Panchayat',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addpanchaytedit',
+                                        'page arguments' => array(4),  
+		                                'access arguments' => array('administer dsje_panchayt'),
+													 
+									  );
+     	$items['dsje/listpanchayt/view/panchayt/%'] = array(
+								
+	                                    'title' => t('View Panchayat'),
+										'description' => 'Allow user to Add Panchayat',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addpanchaytview',
+                                        'page arguments' => array(4), 
+		                                'access arguments' => array('administer dsje_panchayt'),
+													 
+									  );
+
+      $items['dsje/del/panchayt/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'panchayt_delete',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer rec_master'),
+													 
+									  );
+      $items['dsje/enable/panchayt/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'panchayt_enable',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer dsje_panchayt'),
+													 
+									  );
+	return $items;
+}
+
+
+/** listing Tehsil */
+function viewpanchayt(){
+global $user;
+global $base_url;
+global $xpathObj;
+$limit = (int)getMessage( 'dsjepanchayt', 'code04', NULL);
+$lising = 'List of Panchayat';
+$addurl = l("Add Panchayat","dsje/listpanchayt");
+
+$output = '<table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+<tr>
+<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+</tr>
+</table>';
+ 
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Tehsil'), 'field' => 'tbl_tehsil.tehsil_name', 'sort' => 'asc'),
+        array('data' => t('District'), 'field' => 'tbl_district.district_name', 'sort' => 'asc'),
+	    array('data' => t('State'), 'field' => 'tbl_dsjestate.state_name', 'sort' => 'asc'),
+		 array('data' => t('Panchayat'), 'field' => 'tbl_panchayt.panchayt_name', 'sort' => 'asc'),
+		  array('data' => t('Block'), 'field' => 'tbl_block.block_name', 'sort' => 'asc'),
+		//array('data' => t('Remarks')),
+	    array('data' => t('Status'), 'field' => 'tbl_panchayt.status', 'sort' => 'asc'),
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Panchayat', 'dsje/listpanchayt/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	
+	
+	$status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "UPPER(tbl_dsjestate.state_name) LIKE '".$val."' OR UPPER(tbl_tehsil.tehsil_name) LIKE '".$val."' OR UPPER(tbl_district.district_name) LIKE '".$val."' OR UPPER(tbl_district.district_name) LIKE '".$val."' OR UPPER(tbl_panchayt.panchayt_name) LIKE '".$val."' OR UPPER(tbl_block.block_name) LIKE '".$val."'";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "tbl_panchayt.status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(tbl_dsjestate.state_name) LIKE '".$val."' OR UPPER(tbl_tehsil.tehsil_name) LIKE '".$val."' OR UPPER(tbl_district.district_name) LIKE '".$val."' OR UPPER(tbl_district.district_name) LIKE '".$val."' OR UPPER(tbl_panchayt.panchayt_name) LIKE '".$val."' OR UPPER(tbl_block.block_name) LIKE '".$val."') AND tbl_panchayt.status='".$status."'";
+	 }
+	 
+	$query = "SELECT tbl_tehsil.tehsil_id,tbl_tehsil.tehsil_name,tbl_panchayt.status,tbl_panchayt.panchayt_name,tbl_block.block_name, tbl_dsjestate.state_id, tbl_dsjestate.state_name,tbl_district.district_id,tbl_district.district_name, tbl_tehsil.remarks,tbl_panchayt.panchayt_id from {tbl_panchayt} INNER JOIN tbl_district ON (tbl_district.district_id=tbl_panchayt.district_id) INNER JOIN tbl_tehsil ON (tbl_tehsil.tehsil_id=tbl_panchayt.tehsil_id) INNER JOIN tbl_dsjestate ON (tbl_dsjestate.state_id=tbl_panchayt.state_id) INNER JOIN tbl_block ON (tbl_block.block_id=tbl_panchayt.block_id) where ".$searchquery."".tablesort_sql($header);
+     $sqlcount = "SELECT COUNT(*) AS count from {tbl_panchayt} INNER JOIN tbl_district ON (tbl_district.district_id=tbl_panchayt.district_id) INNER JOIN tbl_tehsil ON (tbl_tehsil.tehsil_id=tbl_panchayt.tehsil_id) INNER JOIN tbl_dsjestate ON (tbl_dsjestate.state_id=tbl_panchayt.state_id) INNER JOIN tbl_block ON (tbl_block.block_id=tbl_panchayt.block_id) where ".$searchquery."".tablesort_sql($header);
+	 $rscount = db_query($sqlcount);
+	 $rscounter = db_fetch_object($rscount);
+	 //$_REQUEST['page']=0;
+	}else{
+	  $query = "SELECT tbl_tehsil.tehsil_id,tbl_tehsil.tehsil_name ,tbl_panchayt.status,tbl_panchayt.panchayt_id,tbl_panchayt.panchayt_name,tbl_block.block_name ,tbl_dsjestate.state_id,tbl_dsjestate.state_name,tbl_district.district_id,tbl_district.district_name, tbl_tehsil.tehsil_name, tbl_tehsil.remarks from {tbl_panchayt} INNER JOIN tbl_district ON (tbl_district.district_id=tbl_panchayt.district_id) INNER JOIN tbl_tehsil ON (tbl_tehsil.tehsil_id=tbl_panchayt.tehsil_id) INNER JOIN tbl_dsjestate ON (tbl_dsjestate.state_id=tbl_panchayt.state_id) INNER JOIN tbl_block ON (tbl_block.block_id=tbl_panchayt.block_id) ".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/dsje/listpanchayt';
+
+$t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+	$output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'dsjepanchayt', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','dsje/listpanchayt');
+	}
+	
+	$output .='</td><td colspan="3"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjepanchayt', 'code01', NULL),"dsje/listpanchayt/addpanchayt");
+   	$lising = getMessage( 'dsjepanchayt', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query,$limit);
+
+	
+	if($_REQUEST['page']){
+		 $counter = $_REQUEST['page']*$limit;
+		}else{
+		 $counter = 0;
+	}
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","dsje/listpanchayt/edit/panchayt/".$row->panchayt_id);
+		$viewurl = l("View","dsje/listpanchayt/view/panchayt/".$row->panchayt_id);
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","dsje/del/panchayt/$row->panchayt_id/$row->panchayt_name");
+		}else{
+		  $deleteurl = l("Enable","dsje/enable/panchayt/$row->panchayt_id/$row->panchayt_name");
+		}
+		if($row->status =='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		//$state_union_territory = $row->state_union_territory;
+		
+		
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->tehsil_name)),
+            array('data' => ucwords($row->district_name)),
+            array('data' => ucwords($row->state_name)),
+			 array('data' => ucwords($row->panchayt_name)),
+			  array('data' => ucwords($row->block_name)),
+			//array('data' => $row->remarks),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+	}
+	
+	if($rows== NULL)
+	$header=NULL;
+	
+	
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+ 
+ 
+ 
+function dsje_addpanchayt(){
+ return drupal_get_form('dsje_panchayt_form');
+}
+
+/**
+ *form creation
+ */
+
+function dsje_panchayt_form() {
+	$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Panchayat', 'dsje/listpanchayt');
+  if($array[2] == 'addpanchayt'){
+     $breadcrumb[] = l('Add Panchayat', 'dsje/listpanchayt/addpanchayt');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+
+	
+		$sqlcountry = "select * from {tbl_dsjestate} WHERE status='1' ORDER BY state_name";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--Select--'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->state_id] = ucfirst($rscountry->state_name);
+	  }
+	}
+	$form['state_id'] = array(
+		'#type' => 'select',
+		'#title' => t('State'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		'#ahah' => array(
+					  'path' => 'rec/district',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'zone',
+					  ),
+	);
+	
+	
+	
+    $zonearray[''] = '--Select--';
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' =>$zonearray,
+		'#ahah' => array(
+					  'path' => 'rec/tehsil',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'state',
+					  ), 
+	);
+    
+    $statearray[''] = '--Select--';
+	
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => '',
+			'#options' => $statearray,
+			'#ahah' => array(
+					  'path' => 'dsje/block',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'block_test',
+					  ), 
+			
+		);
+	
+	$statearray1[''] = '--Select--';
+	$form['block_name'] = array(
+		'#type' => 'select',
+		'#title' => t('Block'),
+		'#required' => TRUE,
+		'#default_value' => $form->block_name,
+		'#options' => $statearray1,
+		
+	);
+	
+	
+	$form['panchayt_name'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#maxlength'=>45,
+		'#title' => t('Panchayat'),
+		'#required' => TRUE,
+		'#default_value' => $form->panchayt_name,
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>'',
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/listpanchayt'),
+);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+/**
+ *submit handler
+ */
+
+function dsje_panchayt_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $state_id =$values['state_id'];
+    $district_id = $values['district_id'];
+    $tehsil_id = trim($values['tehsil_id']);
+	$block_id = trim($values['block_name']);
+	$panchayt_name = trim($values['panchayt_name']);
+	//$state_uid = trim($values['state_uid']);
+	//$state_union_territory = parseData(trim($values['state_union_territory']));
+    $remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+	$updatedby = $user->uid;
+	$updatedon = $createdon;
+     
+	 if($district_id == '')
+	 { form_set_error($district_id,t('District field is requried'));}
+	 
+	 
+	 
+	 else{
+   db_query("INSERT INTO {tbl_panchayt} (`panchayt_name`, `state_id`, `district_id` ,`tehsil_id` ,`block_id` , `status` ,`createdby` ,`createdon` ,`updatedby` ,`updatedon`) VALUES('".$panchayt_name."', '".$state_id."','".$district_id."','".$tehsil_id."','".$block_id."','".$status."','".$createdby."','".$createdon."','".$updatedby."','".$updatedon."') ");
+	$message = getMessage('dsjepanchayt', 'code05', array("0"=>$panchayt_name));
+	drupal_set_message($message);
+	drupal_goto('dsje/listpanchayt');
+}}
+
+function dsje_panchayt_form_validate($form, &$form_state) {
+	
+	$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Panchayat', 'dsje/listpanchayt');
+  if($array[2] == 'addpanchayt'){
+     $breadcrumb[] = l('Add Panchayat', 'dsje/listpanchayt/addpanchayt');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	
+	
+	 $values = $form_state['values'];
+	
+	
+	
+	
+	$state_id = parseData(trim($values['state_id']));
+	$district_id = parseData(trim($values['district_id']));
+	$tehsil_id = parseData(trim($values['tehsil_id']));
+	$block_id = $values['block_name'];
+	$panchayt_name = parseData(trim($values['panchayt_name']));
+	$remarks = trim($values['remarks']);
+		if($state_id==''){
+			form_set_error('state_id', t('State field is required.'));
+			$s3=1;
+		}
+		
+		if($district_id==''){
+			form_set_error('district_id', t('District field is required.'));
+		$s2=2;
+		}
+		if($tehsil_id==''){
+			form_set_error('tehsil_id', t('Tehsil field is required.'));
+		$s1=3;
+		}
+		/*if($block_id==''){
+			form_set_error('block_id', t('Block field is required.'));
+		$s0=4;
+		}*/
+		
+		if($block_id == 0 || $block_id == '')
+	{
+		
+	form_set_error('block_name','Block field is Required');	
+		
+	}
+		
+	textonlyn('panchayt_name',$panchayt_name,'Panchayat');
+	//$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	
+	 $sql = "SELECT * FROM {tbl_panchayt}  where LOWER(panchayt_name)= '".strtolower($panchayt_name)."' and block_id = '".$block_id."'";
+		$res = db_query($sql);
+	  
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjepanchayt', 'code06', array("0"=>$panchayt_name));	
+			form_set_error('panchayt_name', $message);
+	
+}
+}
+
+
+
+
+
+
+function dsje_addpanchaytedit($id){
+ return drupal_get_form('dsje_panchayt_form_edit',$id);
+}
+
+function dsje_panchayt_form_edit($form_state,$id) {
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Panchayat', 'dsje/listpanchayt');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Panchayat', 'dsje/listpanchayt/edit/panchayt/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+	 $sql = "select * from {tbl_panchayt} inner join tbl_block on (tbl_block.block_id=tbl_panchayt.block_id) where panchayt_id='".$id."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+	
+		//location details
+  
+	$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->state_id,
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	
+	  $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $rs->district_id,
+		'#options' =>GetDistrictStateWise($rs->state_id),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $rs->tehsil_id,
+			'#options' =>GetTehsilDistrictWise($rs->dsitrict_id,$rs->state_id),
+			'#ahah' => array(
+					  'path' => 'dsje/block',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'block_test',
+					  ), 
+		    
+		);
+		
+		
+		
+	//end
+     
+	
+	$form['block_name'] = array(
+		'#type' => 'select',
+		'#title' => t('Block'),
+		'#required' => TRUE,
+		'#default_value' => $rs->block_id,
+		'#options' => GetCityStateWise($rs->tehsil_id,$rs->dsitrict_id,$rs->state_id),
+		
+	);
+	
+	
+	$form['panchayt_name'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#maxlength'=>45,
+		'#title' => t('Panchayat'),
+		'#required' => TRUE,
+		'#default_value' => $rs->panchayt_name,
+		'#id' => 'id-pan',
+		'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+	
+	
+	$form['prev_state_uid'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $rsstate->tehsil_uid,
+		
+	);
+	
+	$form['panchayt_id'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $id,
+		
+	);
+	
+	$form['prev_state_name'] = array(
+		'#type' => 'hidden',
+		'#default_value' => $rsstate->tehsil_name,
+		
+	);
+    
+	
+	
+	
+	
+	
+
+	
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>$rsstate->remarks,
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rsstate->status,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'dsje/listpanchayt'),
+);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	
+	return $form;
+}
+function dsje_panchayt_form_edit_validate($form, &$form_state) { 
+   global $user;
+   
+   $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Panchayat', 'dsje/listpanchayt');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Panchayat', 'dsje/listpanchayt/edit/panchayt/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+   
+	$values = $form_state['values'];
+    $tehsil_id = $values['tehsil_id'];
+	$state_id =$values['state_id'];
+    $district_id = $values['district_id'];
+	$block_id = $values['block_name'];
+	$panchayt_name = parseData(trim($values['panchayt_name']));
+    $district_name = trim($values['district_name']);
+	$prev_state_name = $values['prev_state_name'];	
+    $remarks = parseData(trim($values['remarks']));
+    //$status = $values['status'];
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	
+	if($state_id=''){
+			form_set_error('state_id', t('State field is required.'));
+		}
+		$s2=0;
+		if($district_id=''){
+			form_set_error('district_id', t('District field is required.'));
+		$s2=1;
+		}
+		
+		if($tehsil_id == '0')
+	{
+		
+	form_set_error('tehsil_id','Tehsil field is Required');	
+		
+	}
+	
+	if($district_id == '0')
+	{
+		
+	form_set_error('district_id','District field is Required');	
+		
+	}
+	
+	if($block_id == 0 || $block_id == '')
+	{
+		
+	form_set_error('block_id','Block field is Required');	
+		
+	}
+		
+	$s = textonlyn('tehsil_name',$tehsil_name,'Tehsil Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	/*if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_panchayt} where LOWER(tehsil_name)= '".strtolower($tehsil_name)."'";
+		$res = db_query($sql);
+	  
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjepanchayt', 'code06', array("0"=>$tehsil_name));	
+			form_set_error('tehsil_name', $message);
+		}
+	}*/
+	
+	 
+	
+   /* $countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_tehsil} where LOWER(tehsil_name)= '".strtolower($tehsil_name)."' GROUP BY tehsil_id"));
+		    $count = $countObj->count;
+			
+			if( strcmp(strtolower($prev_state_name), strtolower($tehsil_name))==0){
+							
+			}else{
+				if($count==0){
+				
+				}else{
+				
+					//db_query("UPDATE `tbl_states` set `state_name` ='".$state_name."'  , `remarks`='".$remarks."' ,`country_id`= '".$country_id."',`zone_id`= '".$zone_id."',updatedby='".$updatedby."'  ,updatedon='".$updatedon."' where state_id='$state_id'");
+					//$message = getMessage('recState', 'code06', array("0"=>$state_name));
+					//form_set_error('state_name', $message);
+					form_set_error('state_name', 'The State Name '.$state_name.' alreday exist.');
+					//drupal_goto("rec/liststate");	
+				}
+			}*/
+	 
+} 
+
+function dsje_panchayt_form_edit_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $tehsil_id = parseData(trim($values['tehsil_id']));
+	$state_id =parseData(trim($values['state_id']));
+    $district_id = parseData(trim($values['district_id']));
+	$block_id = parseData(trim($values['block_name']));
+	$panchayt_name = parseData(trim($values['panchayt_name']));
+	$tehsil_name = parseData(trim($values['tehsil_name']));
+	$panchayt_id = $values['panchayt_id'];
+	
+	
+	$field = "";
+	
+
+	
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('panchayt_name',$panchayt_name,'Panchayat');
+    //$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+    /*$sql = "SELECT * FROM {tbl_bankbranch} where UCASE(bankbranch_name)= '".strtoupper($bankbranch_name)."' AND status =1";
+	   $res = db_query($sql);
+	  
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('recBankbranch', 'code06', array("0"=>$bankbranch_name));
+			form_set_error('bank_name', $message);
+	   }
+*/
+	$sql = "UPDATE `tbl_panchayt` set `state_id` ='".$state_id."',`district_id`='".$district_id."' ,`tehsil_id`='".$tehsil_id."' ,`block_id`='".$block_id."' ,`panchayt_name` ='".$panchayt_name."',`updatedby` ='".$updatedby."',`updatedon`='".$updatedon."' where	panchayt_id='".$panchayt_id."'"; 	
+    db_query($sql);
+	
+	$message = getMessage('dsjepanchayt', 'code11', array("0"=>$panchayt_name));
+			drupal_set_message($message);
+					
+		//drupal_set_message(Panchayt.$panchayt_name .' has been updated successully.');
+		drupal_goto('dsje/listpanchayt');
+}
+
+/**
+ *hook_theme
+ */
+function dsje_panchayt_theme() {
+	
+	return array(
+				 
+		'dsje_panchayt_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_panchayt_form',
+                                 ),
+        'dsje_panchayt_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_panchayt_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+ function dsje_panchayt_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_panchayt_form_edit'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	}
+ }
+
+
+ function panchayt_delete($id,$sno){
+	$panchayt_id =  $id;
+	
+		//db_query("UPDATE {tbl_district} SET status=0 WHERE district_id ='".$state_id."'");
+		//echo "UPDATE {tbl_panchayt} SET status =0 WHERE panchayt_id ='".$panchayt_id."'";exit;
+		db_query("UPDATE {tbl_panchayt} SET status =0 WHERE panchayt_id ='".$panchayt_id."'");
+		
+		$message = getMessage('dsjepanchayt', 'code07', array("0"=>$sno));
+		drupal_set_message($message);
+ 
+	drupal_goto("dsje/listpanchayt");
+ }
+
+  function panchayt_enable($id,$sno){
+	$panchayt_id =  $id;
+	
+	 db_query("UPDATE {tbl_panchayt} SET status=1 WHERE panchayt_id ='".$panchayt_id."'");
+	
+	$message = getMessage('dsjepanchayt', 'code10', array("0"=>$sno));
+	drupal_set_message($message);
+	drupal_goto("dsje/listpanchayt");
+ }
+
+
+function dsje_addpanchaytview($id){
+		$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Panchayat', 'dsje/listpanchayt');
+  if($array[2] == 'view'){
+     $breadcrumb[] = l('View Panchayat', 'dsje/listpanchayt/view/panchayt/'.$array[4].'');
+  }
+  
+  
+    drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from {tbl_panchayt} inner join tbl_tehsil on (tbl_tehsil.tehsil_id = tbl_panchayt.tehsil_id) inner join tbl_block on (tbl_block.block_id = tbl_panchayt.block_id) where panchayt_id = $id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+	$status ='Enabled';
+	}else{
+	$status ='Disabled';
+	}
+	
+	$remarks = ucfirst($rs->remarks);
+	if($remarks==''){$remarks='N/A';}
+	
+	$state_uid = ucfirst($rs->state_uid);
+	if($state_uid==''){$state_uid='N/A';}
+	
+	$statename = getState($rs->state_id);
+	$districtname = ucwords(getdistrict($rs->district_id));
+	$output .='<div id="form-container"><table cellpadding="2" cellspacing="1" border="0" id="wrapper">';
+	$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Panchayat Details</h2></td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">Panchayat:</td><td class="normal">'.ucwords($rs->panchayt_name).'</td></tr>';
+	$output .='<tr class="oddrow"><td width="50%">Block:</td><td class="normal">'.ucwords($rs->block_name).'</td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">Tehsil:</td><td class="normal">'.ucwords($rs->tehsil_name).'</td></tr>';
+	$output .='<tr class="oddrow"><td width="50%">District:</td><td class="normal">'.ucwords($districtname).'</td></tr>';
+	$output .='<tr class="evenrow"><td width="50%">State:</td><td class="normal">'.ucwords($statename).'</td></tr>';
+	$output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+	$output .='<tr class="evenrow"><td class="back" align="center" colspan="2">'.l(t('Back'), 'dsje/listpanchayt').'</td></tr>';
+	$output .='</table></div>';
+	return $output;
+}
+
+
+function mypanchayt() {
+ $block_id = $_POST['block_name'];
+	  $query = "SELECT panchayt_id,panchayt_name from {tbl_panchayt} WHERE block_id = '$block_id ' AND status='1' ORDER BY panchayt_name";
+	$result = db_query($query);
+	
+	$statearray2 = array();
+	$statearray2[''] = "--Select--";
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$statearray2[$row->panchayt_id] = ucfirst($row->panchayt_name);
+		$counter++;
+	}
+	
+	if($counter==0) {
+		$statearray2[''] = "--Select--";
+	}
+	
+	
+	
+	$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('dsje_corporation_form', $form, $form_state);
+	$form['panchayt_name'] = array (
+							'#type' => 'select',
+							'#title' => t('Panchayat Name'),
+							'#required' => TRUE,
+							'#default_value' => '',
+							'#options' => $statearray2,
+							'#id' => 'edit-panchayat',
+							'#name' => 'panchayt_name',
+							
+					
+		                    
+						 );
+						 
+				
+						 
+	$output = drupal_render($form['panchayt_name']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+	
+
+	

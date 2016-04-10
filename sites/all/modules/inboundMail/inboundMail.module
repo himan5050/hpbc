@@ -1,0 +1,916 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/inboundMail.inc');
+
+function inboundMail_node_info() {
+	return array (
+					'inboundMail' => array (
+										'name' => t('List Of Inbound Mails'),
+										'module' => 'inboundMail',
+										'description' => "Creates New Inbound Mail",
+										'has_title' => TRUE,
+										'title_label' => t('Inbound Mails'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function inboundMail_perm() {
+	return array('edit inboundMail','administer inboundMail', 'create inboundMail', 'view inboundMail');
+}
+
+function inboundMail_access($op, $cnode, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $cnode->uid)
+		if (user_access('edit inboundMail', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create inboundMail', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view inboundMail', $account);
+	}
+}
+ 
+ function inboundMail_menu(){
+	 $items['list/inboundMailList'] = array(
+		   'title' => 'List of Inbound Mails',
+		   'page callback' => 'inboundMail_list',
+		   'access arguments' => array('administer inboundMail'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewinboundMail/%'] = array(
+								'title' => t('view Inbound Mails'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_inboundMail',
+								'page arguments' => array(1),
+								'access arguments' => array('administer inboundMail'),
+		                        
+						);
+  
+  $items['admin/dsje/del/inboundMail/%'] =  array(
+	               						 'title' => t('Delete Inbound Mails'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'inboundMail_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer inboundMail'),
+													 
+	);
+ $items['admin/dsje/enable/inboundMail/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'inboundMail_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer inboundMail'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function inboundMail_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjeinboundMail', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Date'), 'field' => 'tbl_inboundmails.date1', 'sort' => 'asc'),
+	array('data' => t('Diary No.'), 'field' => 'tbl_inboundmails.diary_no', 'sort' => 'asc'),
+		array('data' => t('File No.'), 'field' => 'tbl_inboundmails.file_no', 'sort' => 'asc'),
+	array('data' => t('Subject'), 'field' => 'tbl_inboundmails.subject', 'sort' => 'asc'),
+	
+	array('data' => t('Action'),'class' => 'addeditview',),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Inbound Mails', 'list/inboundMailList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+
+$chk_usr=db_query("select employee_id from {tbl_joinings} where program_uid='".$user->uid."'");
+	$chkusr=db_fetch_object($chk_usr);
+	
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	
+	/////////assigned to different user - listing display
+	/*
+	$chk_usr=db_query("select employee_id from {tbl_joinings} where program_uid='".$user->uid."'");
+	$chkusr=db_fetch_object($chk_usr);
+	
+	   $sql = "SELECT  node.nid,node.uid, tbl_inboundmails.date1,tbl_inboundmails.entry_by,tbl_inboundmails.assigned_toassigned_to, tbl_inboundmails.diary_no,tbl_inboundmails.subject,tbl_inboundmails.statusnodal FROM {node}
+	 INNER JOIN tbl_inboundmails ON (node.nid=tbl_inboundmails.nid)
+	 WHERE node.uid='".$user->uid."' or tbl_inboundmails.entry_by='".$user->name."' or tbl_inboundmails.assigned_to='".$chkusr->employee_id."'  ".tablesort_sql($header);
+	*/
+	
+	///////////
+	/*
+	 $sql = "SELECT  node.nid,node.uid, tbl_inboundmails.date1, tbl_inboundmails.diary_no,tbl_inboundmails.subject,tbl_inboundmails.statusnodal FROM {node}
+	 INNER JOIN tbl_inboundmails ON (node.nid=tbl_inboundmails.nid)
+	 WHERE node.uid='".$user->uid."'".tablesort_sql($header);
+	
+	*/
+	
+	
+	
+	
+	
+	
+	 	
+	 $sql = "SELECT  node.nid,node.uid, tbl_inboundmails.date1, tbl_inboundmails.diary_no, tbl_inboundmails.file_no,tbl_inboundmails.subject,tbl_inboundmails.statusnodal FROM {node}
+	 INNER JOIN tbl_inboundmails ON (node.nid=tbl_inboundmails.nid)
+	 WHERE ( tbl_inboundmails.entry_by='".$user->name."' or tbl_inboundmails.assigned_to='".$chkusr->employee_id."') AND( tbl_inboundmails.date1 LIKE '".$val."' OR tbl_inboundmails.diary_no LIKE '".$val."' OR tbl_inboundmails.file_no LIKE '".$val."' OR tbl_inboundmails.subject LIKE '".$val."' OR tbl_inboundmails.statusnodal LIKE '".$val."') ".tablesort_sql($header);
+   
+  //drupal_set_message($sql);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_inboundmails ON (node.nid=tbl_inboundmails.nid)
+	 
+	 WHERE ( tbl_inboundmails.entry_by='".$user->name."' or tbl_inboundmails.assigned_to='".$chkusr->employee_id."') AND( tbl_inboundmails.date1 LIKE '".$val."' OR tbl_inboundmails.diary_no LIKE '".$val."' OR tbl_inboundmails.subject LIKE '".$val."' OR tbl_inboundmails.statusnodal LIKE '".$val."' OR tbl_inboundmails.file_no LIKE '".$val."') ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	 //   $_REQUEST['page']=0;
+	}else{
+	
+	   $sql = "SELECT  node.nid,node.uid, tbl_inboundmails.date1,tbl_inboundmails.entry_by,tbl_inboundmails.assigned_to, tbl_inboundmails.diary_no,tbl_inboundmails.file_no,tbl_inboundmails.subject,tbl_inboundmails.statusnodal FROM {node}
+	 INNER JOIN tbl_inboundmails ON (node.nid=tbl_inboundmails.nid)
+	 WHERE  tbl_inboundmails.entry_by='".$user->name."' or tbl_inboundmails.assigned_to='".$chkusr->employee_id."'  ".tablesort_sql($header);
+	 
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+global $base_url;
+$action = $base_url.'/list/inboundMailList';
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjeinboundMail', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/inboundMailList');
+	}
+	
+	
+	$output .='</td></tr>';
+	
+	$addurl = l(getMessage('dsjeinboundMail', 'code01', NULL),"node/add/inboundMail");
+   	$lising = getMessage('dsjeinboundMail', 'code02', NULL);
+		
+	$output .='<tr>
+	        <td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewinboundMail/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/inboundMail/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Enable","admin/dsje/enable/inboundMail/".$rs->nid."/");
+		}
+
+      
+		//  $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => date('d-m-Y',strtotime($rs->date1))),
+			array('data' => $rs->diary_no),
+			array('data' => $rs->file_no),
+            array('data' => ucwords($rs->subject)),
+          	
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+    if($rows== NULL)
+	$header=NULL;
+	 
+	$output .=theme_table($header,$rows);
+   $output .=theme('pager', NULL, 20,0 );
+	return $output;
+  }
+
+function inboundMail_delete($nid){
+   $cnode = node_load($nid);
+  $sql = "select diary_no from {tbl_inboundmails} where nid='".$nid."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  
+  $diary_no = $rs->diary_no;
+  
+  db_query("DELETE from {tbl_inboundmails} WHERE nid ='".$cnode->nid."'");
+  
+  $message = getMessage('dsjeinboundMail', 'code06', array("0"=>$diary_no));
+			drupal_set_message($message);
+  
+  //drupal_set_message(' Inbound Mail has been deleted successfully.');
+  drupal_goto("list/inboundMailList");
+ }
+
+function inboundMail_enable($nid){
+  
+  $cnode = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$cnode->uid."'");
+  db_query("UPDATE {tbl_inboundmails} SET 	statusnodal =1 WHERE nid ='".$nid."'");
+  drupal_set_message('Inbound Mail has been enabled successfully.');
+  drupal_goto("list/inboundMailList");
+ }
+
+
+function inboundMail_form(){
+         //  if(is_numeric(arg(1))){	
+
+                 $sql = "SELECT * FROM {node} INNER JOIN tbl_inboundmails ON (node.nid=tbl_inboundmails.nid) WHERE node.nid=".arg(1);
+	         $res = db_query($sql);
+	         $cnode= db_fetch_object($res);
+//}
+
+   global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Inbound Mails', 'list/inboundMailList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Inbound Mail', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Inbound Mail', 'node/add/inboundMail'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  
+	//echo'<pre>';print_r($cnode);exit;
+
+	//$form[field_document_upload]['#default_value']=$cnode->field_document_upload;
+ //$form['#attributes']['enctype'] = 'multipart/form-data'; 
+		$form['prev_diary_no'] = array(
+		'#type' =>'hidden',
+          '#default_value' => $cnode->diary_no,
+		  );		
+		
+  $form['diary_no'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Diary No.'),
+	 '#required' =>TRUE,
+	 '#size' =>10,
+	 '#maxlength'=>10,
+	 '#default_value' => $cnode->diary_no,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)')	
+  );
+	
+    
+	 $form['person_details'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Details of person from whom it is received'),
+	'#required' => TRUE,
+	'#default_value' =>$cnode->person_details,
+	'#size' =>45,
+	'#maxlength'=>45,
+	'#attributes' => array('onkeypress' => 'return textcoursename(event)')
+	
+	);
+	
+	  $form['subject'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Subject'),
+	'#required' => TRUE,
+	'#default_value' =>$cnode->subject,
+	'#size' =>45,
+	'#maxlength'=>45,
+	'#attributes' => array('onkeypress' => 'return alphanumeric1(event)')
+	
+	);
+	
+	
+		$form['date1'] = array(
+	  '#type' =>'date_popup',
+	  '#date_format' => 'd-m-Y',
+	  '#title' =>t('Date'),
+	  '#required' => TRUE,
+	  '#size' => '10',
+	  '#default_value' => $cnode->date1,	
+	);
+	
+	
+	
+	 $form['address_to'] = array(
+	'#type' =>'select',
+	'#title' => t('Address To'),
+	'#required' => TRUE,
+	'#default_value' =>$cnode->address_to,
+	'#options'=>inboundAssign(),
+	//'#options'=> selectEmployee(),
+	);
+	
+	
+
+	
+	
+		$form['prev_file_no'] = array(
+		'#type' =>'hidden',
+          '#default_value' => $cnode->file_no,
+		  );	
+	
+	
+  $form['file_no'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('File No.'),
+	 '#required' =>TRUE,
+	 '#size' =>10,
+	 '#maxlength'=>10,
+	 '#default_value' => $cnode->file_no,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+	
+	
+	$form['mod'] = array(
+	'#type' => 'select',
+	'#title' => t('Mode'),
+	'#required' => TRUE,
+	'#default_value' => $cnode->mod,
+	'#options' => inboundMode(),
+	);
+	 
+	
+	 $form['prev_assigned_to'] = array(
+	'#type' =>'hidden',
+	
+	'#default_value' =>$cnode->assigned_to,
+	
+	);
+	
+	
+	
+	$ent=db_query("select username from {tbl_joinings} where employee_id='".$cnode->assigned_to."'"); 
+	$entt=db_fetch_object($ent);
+	
+	
+  	 $form['assigned_to'] = array(
+	'#type' =>'select',
+	'#title' => t('Assigned To'),
+	'#required' => TRUE,
+	'#default_value' =>$cnode->assigned_to,
+	//'#default_value' =>$entt->username,
+	'#options'=> inboundAssign(),
+	);
+	
+	//drupal_set_message($cnode->assigned_to);
+
+	// status will be visible to whome the mail is assigned to - Filed/Dealt
+	
+	$check=db_query("select employee_id from {tbl_joinings} where program_uid='".$user->uid."' ");
+	$chk=db_fetch_object($check);
+	
+	$cond=db_query("select assigned_to from {tbl_inboundmails} where nid='".$cnode->nid."'ORDER BY assigned_to ASC");
+	$condition=db_fetch_object($cond);
+	
+	if(!empty($condition->assigned_to))
+	{
+	if($cnode->assigned_to== $chk->employee_id){
+	
+	$form['status1'] = array(
+ 		'#type' => 'select',
+		'#title' => t('Status'),
+		 '#required' =>FALSE,
+		  '#default_value' => $cnode->status1,
+		 '#options' => inboundStatus(),
+
+);}
+	}
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/inboundMailList'),
+);
+return $form;
+} 
+
+//////
+
+function getfileNo($file_no){
+  $sql = "select * from {tbl_inboundmails} where file_no='".$file_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+ // $nid=$cnode->nid;
+ 
+  if ($rs->file_no=='' )
+  return 0;
+  else 
+  return $rs;
+   
+}
+
+function getfileNo_edit($file_no,$prev_file_no){
+  $sql = "select * from {tbl_inboundmails} where file_no='".$file_no."' AND file_no != '".$prev_file_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  //$nid=$cnode->nid;
+ 
+  if ($rs->file_no=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+
+
+////////
+function getdiaryNo($diary_no){
+  $sql = "select * from {tbl_inboundmails} where diary_no='".$diary_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  //$nid=$cnode->nid;
+ 
+  if ($rs->diary_no=='' )
+  return 0;
+  else 
+  return $rs;
+   
+}
+
+function getdiaryNo_edit($diary_no,$prev_diary_no){
+  $sql = "select * from {tbl_inboundmails} where diary_no='".$diary_no."' AND diary_no != '".$prev_diary_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  //$nid=$cnode->nid;
+ 
+  if ($rs->diary_no=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+
+function inboundMail_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Inbound Mails', 'list/inboundMailList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Inbound Mail', 'node/'.$array[1].'/edit');
+	}
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	else{$breadcrumb[] = l('Add Inbound Mail', 'node/add/inboundMail');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+	
+	$_POST['uploadprob']=$form->field_document_upload[0]['filepath'];
+	$status=$form->status1;
+	
+	fononlyn('diary_no',$form->diary_no,'Diary No.');
+	alphanumeric('person_details',$form->person_details,'Person Details');
+	alphanumeric('subject',$form->subject,'Subject');
+	//alphanumeric('address_to',$form->address_to,'Address To');
+	fononlyn('file_no',$form->file_no,'File No.');
+	
+
+$dateof=date('Y-m-d',strtotime($form->date1));
+$curr_date=date('Y-m-d');
+
+if($dateof>$curr_date){
+
+form_set_error('date1',t(' The entered date should not be greater than the current date'));
+
+}
+
+
+
+
+	$prev_file_no = $form-> prev_file_no;
+	$file_no=$form->file_no;
+	/////////
+	if($form->prev_file_no == ''){
+	 $statusid = getfileNo($file_no); 
+		if($statusid){
+		form_set_error('file_no',$file_no.t(' File Number already exist.'));
+		
+		}
+		}
+		else {
+	 $statusid = getfileNo_edit($file_no,$form->prev_file_no); 
+		if($statusid){
+		form_set_error('file_no',$file_no.t(' File Number already exist.'));
+		
+		}
+		
+		}
+
+
+	
+	////////
+	$prev_diary_no = $form-> prev_diary_no;
+	$diary_no=$form->diary_no;
+	if($form->prev_diary_no == ''){
+	 $statusid = getdiaryNo($diary_no); 
+		if($statusid){
+		form_set_error('diary_no',$diary_no.t(' Diary Number already exist.'));
+		
+		}
+		}
+		else {
+	 $statusid = getdiaryNo_edit($diary_no,$form->prev_diary_no); 
+		if($statusid){
+		form_set_error('diary_no',$diary_no.t(' Diary Number already exist.'));
+		
+		}
+		
+		}
+
+
+	
+
+}
+
+/**
+ *hook_form_alter
+ */
+ 
+ function inboundMail_nodeapi(&$cnode, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+   
+    case 'insert':
+	//echo $cnode->type; exit;
+	  if($cnode->type == 'inboundMail'){
+	   drupal_goto("list/inboundMailList");
+	  }	
+	break;
+    case 'update':
+	   if($cnode->type == 'inboundMail'){
+         drupal_goto("list/inboundMailList");
+	   }
+      break;
+   }
+
+}
+ 
+ 
+ 
+function inboundMail_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='inboundMail_node_form'){
+	$form['#attributes']['enctype'] = 'multipart/form-data'; 
+	$form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    
+   $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	 
+	 
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function inboundMail_insert($cnode){
+   global $user;
+   
+
+
+  //all values
+  $diary_no = $cnode->diary_no;
+  $person_details= $cnode-> person_details;
+  $address_to= ucwords($cnode-> address_to);
+  $file_no= $cnode-> file_no;
+  $subject= $cnode-> subject;
+  $date =$cnode->date1;
+ $uid= $cnode->uid;
+  $mod = $cnode->mod;
+  $assigned_to=$cnode->assigned_to;
+ // $assigned_to1= db_query("select uid from {users} where name='".$cnode->assigned_to."'");
+  //$assigned_to=db_fetch_object($assigned_to1);
+  
+  $status = $cnode->status1;
+  $entry_by= $user->name;
+
+    $field_document_upload= $cnode->field_document_upload[0]['filepath'];
+    $statusnodal =  1;   // $cnode->statusnodal;
+    
+	$nid = $cnode->nid;
+	$vid = $cnode->vid;
+	
+   
+
+db_query ("INSERT INTO {tbl_inboundmails} (`vid`, `nid`,`inboundMail_uid`, `diary_no`, `person_details`, `subject`,`date1`,`address_to`, `file_no`,  `mod`, `entry_by`,`assigned_to`, `status1`, `statusnodal`,`field_document_upload`) VALUES ('".$vid."','".$nid."','".$uid."','".$diary_no."','".$person_details."','".$subject."','".$date."','".$address_to."','".$file_no."','".$mod."','".$entry_by."','".$assigned_to."','".$status."','".$statusnodal."','".$field_document_upload."')");
+
+
+$mail=db_query("select mail,name,uid from {users}  INNER JOIN tbl_joinings ON (tbl_joinings.program_uid=users.uid) where tbl_joinings.employee_id='".$assigned_to."'");
+
+
+$email2=db_fetch_object($mail);
+$email=$email2->mail;
+
+$time1=time();
+db_query("insert into {tbl_workflow_docket} (`workflow_id`,`time`,`status`) values (12,'".$time1."','pending')");
+
+$doc=db_query("select max(doc_id) as doc_id from {tbl_workflow_docket}");
+$doc_id=db_fetch_object($doc);
+
+db_query("update {tbl_inboundmails} set doc_id='".$doc_id->doc_id."' where nid='".$cnode->nid."'");
+
+db_query("insert into {tbl_workflow_task} (`doc_id`,`uid`,`status`) values ('".$doc_id->doc_id."','".$email2->uid."',0)");
+
+
+
+
+	$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$email2->name)); 
+
+
+
+createMail('inboundMail', $email,'',$parameter,'');
+
+
+
+ $message = getMessage('dsjeinboundMail', 'code05', array("0"=>$diary_no));
+			drupal_set_message($message);
+
+	
+   // drupal_set_message('Diary No. '.$diary_no.' has been saved successfully.');
+	drupal_goto("list/inboundMailList");
+
+ 
+ 
+ }
+
+function inboundMail_update($cnode){
+	
+	
+	  $diary_no = $cnode->diary_no;
+  $person_details= $cnode-> person_details;
+  $address_to= $cnode-> address_to;
+  $file_no= $cnode-> file_no;
+  $subject= $cnode-> subject;
+  $date =$cnode->date1;
+ $prev_diary=$cnode->prev_diary_no;
+  $mod = $cnode->mod;
+ // $assigned_to1= db_query("select uid from {users} where name='".$cnode->assigned_to."'");
+ // $assigned_to=db_fetch_object($assigned_to1);
+  $assigned_to=$cnode->assigned_to;
+  $status = $cnode->status1;
+  $entry_by= $user->name;
+  $doc=db_query("select doc_id from {tbl_inboundmails} where nid='".$cnode->nid."'");
+$doc_id=db_fetch_object($doc);
+if($status==64 || $status==65){
+
+db_query("update {tbl_workflow_task} set status=1 where doc_id='".$doc_id->doc_id."'");
+
+db_query("update {tbl_workflow_docket} set status='closed' where doc_id='".$doc_id->doc_id."'");
+}
+	$statusnodal = $cnode->statusnodal;
+	$nid = $cnode->nid;
+	$vid = $cnode->vid;
+	$uid=$cnode->uid;
+	
+	  $field_document_upload= $cnode->field_document_upload[0]['filepath'];
+	if($field_document_upload){}else{
+	
+	$queryy=db_query("select field_document_upload from {tbl_inboundmails} where diary_no='".$prev_diary."'");
+	$qq=db_fetch_object($queryy);
+$field_document_upload=$qq->field_document_upload;
+	
+	}
+	
+  
+	db_query("update {tbl_inboundmails} SET `diary_no`='".$diary_no."',`person_details`='".$person_details."',`subject`='".$subject."',`date1`='".$date."',`address_to`='".$address_to."',`file_no`='".$file_no."',`mod`='".$mod."',`assigned_to`='".$assigned_to."',`status1`='".$status."',`field_document_upload`='".$field_document_upload."' WHERE nid='".$nid."'");
+	
+	
+	$prev_assigned_to=$cnode->prev_assigned_to;
+	
+	if($prev_assigned_to !=  $assigned_to){
+	
+	$mail=db_query("select mail,name from {users}  INNER JOIN tbl_joinings ON (tbl_joinings.program_uid=users.uid) where tbl_joinings.employee_id='".$assigned_to."'");
+$email2=db_fetch_object($mail);
+$email=$email2->mail;
+
+
+//$time1=time();
+//db_query("insert into {tbl_workflow_docket} (`workflow_id`,`time`,`status`) values (10,'".$time1."',pending)");
+
+
+
+//db_query("update {tbl_inboundmails} set doc_id='".$doc_id->doc_id."' where nid='".$cnode->nid."'");
+
+db_query("update {tbl_workflow_task} set uid='".$email2->uid."' where doc_id='".$doc_id->doc_id."'");
+
+
+
+
+//drupal_set_message($email);
+	$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$email2->name,1=>$person_details,2=>$date)); 
+
+
+
+createMail('inboundMail', $email,'',$parameter,'');
+	
+	
+	}
+	
+	
+	
+	drupal_set_message('Diary No. '.$diary_no.' has been updated successfully.');
+	//drupal_goto("list/inboundMailList");
+	
+	
+}
+
+
+function inboundMail_theme() {
+	
+	return array(
+				 
+		'inboundMail_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'inboundMail_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+
+ 
+/*function inboundMail_load($cnode){
+	
+	
+
+	
+	if($cnode->type == 'inboundMail'){
+		 $sql = "SELECT * FROM {node} INNER JOIN tbl_inboundmails ON (node.nid=tbl_inboundmails.nid) WHERE node.nid='".$cnode->nid."'";
+	         $res = db_query($sql);
+	         $rs = db_fetch_object($res);
+	
+	 return $rs;
+	}
+    
+}*/
+  
+function view_inboundMail($cnode){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Inbound Mails', 'list/inboundMailList');
+   if($array[0] == 'viewinboundMail'){
+     $breadcrumb[] = l('View Inbound Mail', 'viewinboundMail/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from {tbl_inboundmails} where nid = $cnode";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+/*
+$nn=ucwords($rs->assigned_to);
+$nam= "select users.name from {users} where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+$name1= db_query("select username from {tbl_joinings} where employee_id='".$rs->assigned_to."'");
+$assign=db_fetch_object($name1);
+
+$name2= db_query("select username from {tbl_joinings} where employee_id='".$rs->address_to."'");
+$address=db_fetch_object($name2);
+
+
+
+$mod= getLookupName($rs->mod);
+$status1=getLookupName($rs->status1);
+
+
+
+$output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="wrapper2">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Inbound Mail Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Diary No.:</td><td class="normal"> '.$rs->diary_no.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Details of person from whom it is received:</td><td class="normal"> '.$rs->person_details.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Subject:</td><td class="normal"> '.$rs->subject.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date:</td><td class="normal"> '.date('d-m-Y',strtotime($rs->date1)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Address To:</td><td class="normal">'.$address->username.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">File No.:</td><td class="normal">'.$rs->file_no.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Mode:</td><td class="normal">'.$mod.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Entry By:</td><td class="normal">'.$rs->entry_by.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Assigned To:</td><td class="normal">'.$assign->username.'</td></tr>';
+if($rs->field_document_upload !=''){
+$output .='<tr class="oddrow"><td width="50%">Attached File:</td><td class="normal">'.l('Download',$base_url.'/'.$rs->field_document_upload).'</td></tr>';
+}
+else
+{
+$output .='<tr class="oddrow"><td width="50%">File Download:</td><td class="normal">'.'N/A'.'</td></tr>';
+
+}
+if($rs->status1==''){
+$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.'N/A'.'</td></tr>';
+$output .='<tr class="oddrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'list/inboundMailList').'</td></tr>';
+}else{
+$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.ucwords(getLookupName($rs->status1)).'</td></tr>';
+$output .='<tr class="oddrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'list/inboundMailList').'</td></tr>';
+}
+
+$output .='</table>';
+return $output ;
+}

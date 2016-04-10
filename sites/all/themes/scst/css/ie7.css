@@ -1,0 +1,29 @@
+.tblHeaderRight #edit-search-box-wrapper{float:left; /*margin-left:122px!important;*/}
+.tblHeaderRight #edit-search-box-wrapper input{float:left!important; margin-right:5px!important; margin-left:5px;}
+
+#cast-search-form #edit-status-wrapper {
+    margin-left:150px;
+	margin-top:2px;
+	float: left;
+}
+
+
+.listsearchie7{float:left!important; margin-left:255px; margin-top:20px;}
+
+.listsearchie7_leave{float:left!important; width:550px;}
+
+.listsearchie7 #edit-search-box-wrapper{ width:240px;}
+.listsearchie7_leave #edit-search-box-wrapper{float:left!important; width:190px!important;}
+.listsearchie7_leave #edit-search-box-wrapper input{float:left!important;}
+
+.leaveallocation #edit-search-box{width:200px!important;}
+
+#leaveallocation-search-form #edit-status-wrapper{float:left;margin-left:112px;margin-top:0;margin-bottom:0; position:relative;}
+
+
+#leave-management-search-form .listsearchie7{margin-left:0px!important; margin-top:0!important; float:none!important;}
+
+#leave-management-search-form .listsearchie7 #edit-search-box-wrapper{float:left; margin-left:20px}
+
+.searchie7{width:312px!important;}
+.listsearchieappeal7{margin-left:127px; margin-top:20px;}

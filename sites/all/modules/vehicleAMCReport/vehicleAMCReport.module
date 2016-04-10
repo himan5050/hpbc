@@ -1,0 +1,132 @@
+<?php
+
+/**
+ *hook_perm
+ */
+ 
+ function vehicleAMCReport_init() {
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+function vehicleAMCReport_perm() {
+	return array('edit vehicleAMCReport','administer vehicleAMCReport', 'create vehicleAMCReport', 'view vehicleAMCReport');
+}
+
+function vehicleAMCReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit vehicleAMCReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create vehicleAMCReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view vehicleAMCReport', $account);
+	}
+	
+}
+
+
+function vehicleAMCReport_menu(){
+
+  $items['vehicleAMCReport_vehicle'] = array(
+										'title' => t('Vehicle AMC Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'vehicleAMCReport_vehicle',
+										'access arguments' => array('administer vehicleAMCReport_vehicle'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function vehicleAMCReport_vehicle(){
+  return drupal_get_form('vehicleAMCReport_vehicle_form');
+}
+
+function vehicleAMCReport_vehicle_form(){
+ global $base_url;
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Vehicle AMC Report', 'vehicleAMCReport_vehicle');
+  drupal_set_breadcrumb($breadcrumb);
+ $form['reg_no'] = array(
+                                '#type' => 'textfield',
+							
+								'#size' => '30',
+ );
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+function vehicleAMCReport_vehicle_form_validate($form, &$form_state){
+	
+	$values = $form_state['values'];
+	
+	$from_date = $values['from_date'];
+	$to_date = $values['to_date'];
+	
+	if($from_date>$to_date){
+	
+	form_set_error(to_date,'To Date should be greater than From Date');
+	}
+	
+	if($from_date == '' && $to_date !=''){
+		
+	form_set_error('from_date','Form Date is required.');	
+		
+	}
+	
+	if($to_date == '' && $from_date !=''){
+		
+	form_set_error('to_date','To Date is required.');	
+		
+	}
+	
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function vehicleAMCReport_theme() {
+	
+	return array(
+		
+		'vehicleAMCReport_vehicle_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'vehicleAMCReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

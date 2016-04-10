@@ -1,0 +1,475 @@
+<?php
+
+function rec_language_init() {
+	//drupal_add_css(drupal_get_path('module', 'rec_language') .'/rec_language.css');
+	
+}
+
+
+function rec_language_perm() {
+	return array('edit rec_language','administer rec_language', 'create rec_language', 'view rec_language');
+}
+
+function rec_language_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit rec_language', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create rec_language', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view rec_language', $account);
+	}
+	
+}
+
+function rec_language_menu() {
+	$items['admin/rec/listlanguage'] = array(
+										'title' => t('List of Languages'),
+										'description' => 'Allow user to View Language',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewlanguage',
+										'access arguments' => array('administer rec_language'),
+													 
+									  );
+	
+	$items['admin/rec/listlanguage/addlanguage'] = array(
+										'title' => t('Add Language'),
+										'description' => 'Allow user to add Language',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_language',
+										'access arguments' => array('administer rec_language'),
+													 
+									  );
+   	$items['admin/rec/listlanguage/edit/language/%'] = array(
+								
+										'title' => t('Edit Language'),
+										'description' => 'Allow user to add Language',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addlanguageedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer rec_language'),
+													 
+									  );
+     	$items['admin/rec/listlanguage/view/language/%'] = array(
+								
+										'title' => t('View Language'),
+										'description' => 'Allow user to add Language',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addlanguageview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer rec_language'),
+													 
+									  );
+     $items['admin/rec/del/language/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'language_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_designation'),
+													 
+									  );
+   $items['admin/rec/enable/language/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'language_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_designation'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing Language
+ */
+ function viewlanguage(){
+    global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage( 'recLanguage', 'code04', NULL);
+  
+ $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('Language'), 'field' => 'language_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List language', 'admin/rec/listlanguage/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	$query = "SELECT language_id, language_name, status FROM tbl_languages  where UPPER(language_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count FROM  tbl_languages  where UPPER(language_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT language_id, language_name, status FROM tbl_languages ".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'recLanguage', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/rec/listlanguage');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'recLanguage', 'code01', NULL),"admin/rec/listlanguage/addlanguage");
+   	$lising = getMessage( 'recLanguage', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/rec/listlanguage/edit/language/".$row->language_id);
+		$viewurl = l("View","admin/rec/listlanguage/view/language/".$row->language_id);
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/rec/del/language/".$row->language_id."/".$row->language_name);
+		}else{
+		  $deleteurl = l("Enable","admin/rec/enable/language/".$row->language_id."/".$row->language_name);
+		}
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->language_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function rec_addlanguageedit($language_id){
+ return drupal_get_form('rec_language_form_edit',$language_id);
+}
+
+function rec_language_form_edit(&$form_states,$language_id) {
+		$array = explode('/',$_GET['q']);
+ //echo '<pre>';
+//print_r($array);
+ //echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Languages', 'admin/rec/listlanguage');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Language', 'admin/rec/listlanguage/edit/language/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+	
+	$sqllanguage = "select * from tbl_languages where language_id=$language_id";
+	$reslanguage = db_query($sqllanguage);
+	$rslanguage = db_fetch_object($reslanguage);
+	
+	$form['language_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Language Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rslanguage->language_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+
+		$form['prev_language_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' => $rslanguage->language_name,
+	);
+	$form['id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rslanguage->language_id,
+	);
+    
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rslanguage->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	/*$form['status'] = array(
+		'#type' => 'hidden',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rslanguage->status,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listlanguage'),
+);
+	return $form;
+}
+function rec_language_form_edit_submit($form, &$form_state) {
+	global $user;
+
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$createdby = $user->uid;
+	$id = $values['id'];
+	$language_name = parseData(trim($values['language_name']));
+	$prev_language_name = parseData($values['prev_language_name']);
+	$remarks = parseData(trim($values['remarks']));
+	$createdon = time();
+   
+    $remarks = trim($values['remarks']);
+	$s = textonlyn('language_name',$language_name,'Language Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+
+		////Amit : Function to validate the duplicate  value while editing//
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_languages} where LOWER(language_name)= '".strtolower($language_name)."' GROUP BY language_id"));
+		$count = $countObj->count;
+		if( strcmp(strtolower($prev_language_name), strtolower($language_name))==0){
+			db_query("UPDATE `tbl_languages` set `language_name` = '".$language_name."' ,`status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`remarks`='".$remarks."' where language_id='".$id."'");
+			
+			$message = getMessage('recLanguage', 'code05', array("0"=>$language_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listlanguage");	
+			}else{
+			if($count==0){
+				db_query("UPDATE `tbl_languages` set `language_name` = '".$language_name."' ,`status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`remarks`='".$remarks."' where language_id='".$id."'");
+				$message = getMessage('recLanguage', 'code05', array('0'=>$language_name));
+				drupal_set_message($message);
+				drupal_goto("admin/rec/listlanguage");	
+			
+				}else{
+				db_query("UPDATE `tbl_languages` set `status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`remarks`='".$remarks."' where language_id='".$id."'");
+				
+				$message = getMessage('recLanguage', 'code06', array("0"=>$language_name));
+				form_set_error('language_name', $message);
+			 }	
+		}
+	}
+
+}
+function rec_language(){
+ return drupal_get_form('rec_language_form');
+}
+function rec_language_form() {
+	$array = explode('/',$_GET['q']);
+ //echo '<pre>';
+//print_r($array);
+ //echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Languages', 'admin/rec/listlanguage');
+  if($array[3] == 'addlanguage'){
+     $breadcrumb[] = l('Add Language', 'admin/rec/listlanguage/addlanguage');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+	
+   $form['language_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Language Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listlanguage'),
+);
+	return $form;
+}
+//Amit : Function to validate the duplicate  value while addition//
+function rec_language_form_validate($form, &$form_state) {
+		$array = explode('/',$_GET['q']);
+ //echo '<pre>';
+//print_r($array);
+ //echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Languages', 'admin/rec/listlanguage');
+  if($array[3] == 'addlanguage'){
+     $breadcrumb[] = l('Add Language', 'admin/rec/listlanguage/addlanguage');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  $values = $form_state['values'];
+  $language_name = parseData(trim($values['language_name']));
+  $remarks = parseData(trim($values['remarks']));
+  $s = textonlyn('language_name',$language_name,'Language Name');
+  $s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+  if($s == 0 && $s1 == 0){
+	  $sql = "SELECT * FROM {tbl_languages} where UCASE(language_name)= '".strtoupper($language_name)."' AND status =1";
+	   $res = db_query($sql);
+	  
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('recLanguage', 'code06', array("0"=>$language_name));
+			form_set_error('language_name', $message);
+	   }
+  }
+	
+}
+
+function rec_language_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $language_name = parseData(trim($values['language_name']));
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+    
+	$sql = "SELECT * FROM {tbl_languages} where UCASE(language_name)= '".strtoupper($language_name)."' AND status !=1";
+   $res = db_query($sql);
+  
+   if($rs = db_fetch_object($res)){
+      db_query("UPDATE tbl_languages SET status=1 where language_id=$rs->language_id");
+   }else{
+
+	db_query("INSERT INTO `tbl_languages` (`language_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$language_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+   }
+   $message = getMessage('recLanguage', 'code05', array("0"=>$language_name));
+	drupal_set_message($message);
+	drupal_goto('admin/rec/listlanguage');
+
+}
+
+
+function rec_language_theme() {
+	
+	return array(
+				 
+		'rec_language_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_language_form',
+                                 ),
+        'rec_language_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_language_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function rec_language_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='rec_language_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='rec_language_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function language_delete($sid,$name){
+	 $language_id = $sid;
+	 db_query("UPDATE `tbl_languages` set status=0 where language_id='".$language_id."'");
+	 $message = getMessage('recLanguage', 'code07', array("0"=>$name));
+	 drupal_set_message($message);
+	 drupal_goto('admin/rec/listlanguage');
+ }
+
+ function language_enable($sid,$name){
+	 $language_id = $sid;
+	 db_query("UPDATE `tbl_languages` set status=1 where language_id='".$language_id."'");
+	 $message = getMessage('recLanguage', 'code09', array("0"=>$name));
+	 drupal_set_message($message);
+	 drupal_goto('admin/rec/listlanguage');
+ }
+
+function rec_addlanguageview($id){
+			$array = explode('/',$_GET['q']);
+ //echo '<pre>';
+//print_r($array);
+ //echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Languages', 'admin/rec/listlanguage');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Language', 'admin/rec/listlanguage/view/language/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  $sql = "select * from tbl_languages where language_id=$id";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+/*
+     [language_name] => Gujrati
+    [remarks] => 
+    [status] => 1
+
+*/
+if($rs->status ==1){
+   $status ='Enabled';
+ }else{
+   $status ='Disabled';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>Language Details</h2></td></tr>';
+ $output .='<tr class="evenrow"><td>Language Name:</td><td>'.ucwords($rs->language_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='</table></div>';
+$output .=  l(t('Back'), 'admin/rec/listlanguage');
+ return $output;
+}
+  
+  
+	
+	

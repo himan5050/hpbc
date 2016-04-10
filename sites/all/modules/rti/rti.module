@@ -1,0 +1,72 @@
+<?php
+
+function rti_init() {
+	drupal_add_css(drupal_get_path('module', 'rti') .'/view.css');
+	drupal_add_js(drupal_get_path('module', 'rti') .'/view.js'.'jquery-1.6.2.js'.'selectiondrop.js');
+	
+}
+
+function rti_node_info() {
+	return array (
+					'rti' => array (
+										'name' => t('RTI Management'),
+										'module' => 'rti',
+										'description' => "register your rti",
+										'has_title' => TRUE,
+										'title_label' => t('rti'),
+										'has_body' => FALSE,
+										),
+				);
+}
+
+function rti_perm() {
+	return array('edit rti','administer rti', 'create rti', 'view rti');
+}
+
+function rti_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit rti', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create rti', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view rti', $account);
+	}
+	
+}
+
+
+function rti_form(&$node) {
+	$type = node_get_types('type', $node);
+	return $form;
+	}
+	
+function rti_theme() {
+	
+	return array(
+				 
+	'rti_node_form' => array(
+        'arguments' => array('form' => NULL),
+        'template' => 'rti_node_form',
+    ),
+	
+				 );
+}
+
+function rti_form_alter(&$form, $form_state, $form_id) {
+	//drupal_set_message("Form ID: " . $form_id);
+	if($form_id == "rti_node_form") {
+		$node = $form['#node'];
+		if($node->nid) {
+		//	$form['policy_name']['#disabled'] = TRUE;
+		//	$form['policy_no']['#disabled']= TRUE ;
+		//	$form['insurer']['#disabled']= TRUE ;
+			
+		}
+	}
+}	
+return $form;

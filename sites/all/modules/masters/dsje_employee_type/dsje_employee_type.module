@@ -1,0 +1,467 @@
+<?php
+function dsje_employee_type_init() {
+	//drupal_add_css(drupal_get_path('module', 'dsje_language') .'/dsje_language.css');
+	
+}
+
+
+function dsje_employee_type_perm() {
+	return array('edit dsje_employee_type','administer dsje_employee_type', 'create dsje_employee_type', 'view dsje_employee_type');
+}
+
+function dsje_employee_type_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_employee_type', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_employee_type', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_employee_type', $account);
+	}
+	
+}
+
+function dsje_employee_type_menu() {
+	
+	
+	$items['admin/dsje/listemployee_type'] = array(
+										'title' => t('List of employee_type'),
+										'description' => 'Allow user to View employee_type',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewemployee_type',
+										'access arguments' => array('administer dsje_employee_type'),
+													 
+									  );
+	
+	$items['admin/dsje/listemployee_type/addemployee_type'] = array(
+										'title' => t('Create employee_type'),
+										'description' => 'Allow user to add employee_type',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_employee_type',
+										'access arguments' => array('administer dsje_employee_type'),
+													 
+									  );
+   	$items['admin/dsje/listemployee_type/edit/employee_type/%'] = array(
+								
+										'title' => t('Edit employee_type'),
+										'description' => 'Allow user to add employee_type',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addemployee_typeedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_employee_type'),
+													 
+									  );
+   $items['admin/dsje/listemployee_type/view/employee_type/%'] = array(
+								
+										'title' => t('View employee_type'),
+										'description' => 'Allow user to add employee_type',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addemployee_typeview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_employee_type'),
+													 
+									  );
+     $items['admin/dsje/del/employee_type/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'employee_type_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_employee_type'),
+													 
+									  );
+    $items['admin/dsje/enable/employee_type/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'employee_type_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_employee_type'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing employee_type
+ */
+
+function viewemployee_type(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjeemployee_type', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('employee_type'), 'field' => 'employee_type_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List employee_type', 'admin/dsje/listemployee_type/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT employee_type_id, employee_type_name, status FROM tbl_employees where UPPER(employee_type_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_employees where UPPER(employee_type_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT employee_type_id, employee_type_name, status FROM tbl_employees ".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjeemployee_type', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listemployee_type');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjeemployee_type', 'code01', NULL),"admin/dsje/listemployee_type/addemployee_type");
+   	$lising = getMessage( 'dsjeemployee_type', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listemployee_type/edit/employee_type/".$row->employee_type_id,array('attributes'=>array('id'=>'edit-employee_type-id')));
+		$viewurl = l("View","admin/dsje/listemployee_type/view/employee_type/".$row->employee_type_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/employee_type/$row->employee_type_id/$row->employee_type_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/employee_type/$row->employee_type_id/$row->employee_type_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->employee_type_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){}else{
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );}
+	return $output;
+ }
+
+function dsje_employee_type(){
+ return drupal_get_form('dsje_employee_type_form');
+}
+
+function dsje_employee_type_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of employee_type', 'admin/dsje/listemployee_type');
+  if($array[3] == 'addemployee_type'){
+     $breadcrumb[] = l('Add employee_type', 'admin/dsje/listemployee_type/addemployee_type');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['employee_type_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('employee_type Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listemployee_type'),
+);
+	return $form;
+}
+
+function dsje_employee_type_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $employee_type_name = trim($values['employee_type_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('employee_type_name',$employee_type_name,'employee_type');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_employees` (`employee_type_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$employee_type_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjeemployee_type', 'code05', array("0"=>$employee_type_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listemployee_type');
+	}
+}
+
+function dsje_employee_type_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$employee_type_name = trim($values['employee_type_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('employee_type_name',$employee_type_name,'employee_type');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_employees} where UCASE(employee_type_name)= '".strtoupper($employee_type_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjeemployee_type', 'code06', array("0"=>$employee_type_name));
+			form_set_error('employee_type_name', $message);
+		}
+	}	
+}
+
+function dsje_addemployee_typeedit($employee_type_id){
+ return drupal_get_form('dsje_employee_type_form_edit',$employee_type_id);
+}
+
+function dsje_employee_type_form_edit(&$form_states,$employee_type_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List employee_type', 'admin/dsje/listemployee_type');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit employee_type', 'admin/dsje/listemployee_type/edit/employee_type/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlemployee_type = "select * from tbl_employees where employee_type_id=$employee_type_id";
+	$resemployee_type = db_query($sqlemployee_type);
+	$rsemployee_type = db_fetch_object($resemployee_type);
+	
+	$form['employee_type_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsemployee_type->employee_type_id,
+	);
+	
+	$form['employee_type_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('employee_type Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsemployee_type->employee_type_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['prev_employee_type_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsemployee_type->employee_type_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsemployee_type->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listemployee_type'),
+);
+	return $form;
+}
+
+function dsje_employee_type_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$employee_type_id = $values['employee_type_id'];
+	$employee_type_name = ParseData($values['employee_type_name']);
+	$prev_employee_type_name = ParseData($values['prev_employee_type_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('employee_type_name',$employee_type_name,'employee_type');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_employees} where LOWER(employee_type_name)= '".strtolower($employee_type_name)."' GROUP BY employee_type_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_employee_type_name), strtolower($employee_type_name))==0){
+			db_query("UPDATE `tbl_employees` set `employee_type_name` = '".$employee_type_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where employee_type_id='".$employee_type_id."'");
+			
+			$message = getMessage('dsjeemployee_type', 'code05', array("0"=>$employee_type_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listemployee_type");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_employees` set `employee_type_name` = '".$employee_type_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where employee_type_id='".$employee_type_id."'");
+				
+				$message = getMessage('dsjeemployee_type', 'code05', array("0"=>$employee_type_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listemployee_type");	
+			
+			}else{
+				db_query("UPDATE `tbl_employees` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where employee_type_id='".$employee_type_id."'");
+				
+				$message = getMessage('dsjeemployee_type', 'code06', array("0"=>$employee_type_name));
+				form_set_error('employee_type_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_employee_type_theme() {
+	
+	return array(
+				 
+		'dsje_employee_type_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_employee_type_form',
+                                 ),
+        'dsje_employee_type_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_employee_type_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_employee_type_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_employee_type_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_employee_type_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function employee_type_delete($sid, $sno){
+  $employee_type_id =  $sid;
+  db_query("UPDATE {tbl_employees} SET status=0 WHERE employee_type_id ='".$employee_type_id."'");
+  $message = getMessage('dsjeemployee_type', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listemployee_type");
+ }
+
+
+  function employee_type_enable($sid, $sno){
+    $employee_type_id =  $sid;
+    db_query("UPDATE {tbl_employees} SET status=1 WHERE employee_type_id ='".$employee_type_id."'");
+  
+    $message = getMessage('dsjeemployee_type', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listemployee_type");
+  }
+
+  function dsje_addemployee_typeview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List employee_type', 'admin/dsje/listemployee_type');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View employee_type', 'admin/dsje/listemployee_type/view/employee_type/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from tbl_employees where employee_type_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>employee_type Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td>employee_type:</td><td>'.ucwords($rs->employee_type_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='</table></div>';
+$output .=  l(t('Back'), 'admin/dsje/listemployee_type');
+ return $output;
+  }
+	
+	

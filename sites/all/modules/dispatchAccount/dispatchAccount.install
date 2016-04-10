@@ -1,0 +1,95 @@
+<?php
+function dispatchAccount_schema() {
+
+  //language table
+   $schema['tbl_dispatchAccounts'] = array(
+							 'fields' => array(
+											   'dispatchAccount_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											
+												'account_uid' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' =>0,
+															  ),
+												
+												'date' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												 'amount' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												'total' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+                                    	   	   'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+												
+                                               
+											   ),
+							 'indexes' => array(
+												'dispatchAccount_id' => array('dispatchAccount_id'),
+												),
+							 'primary key' => array('dispatchAccount_id'),
+							 );
+	
+	return $schema;
+}
+
+function dispatchAccount_install() {
+	drupal_install_schema('dispatchAccount');
+}
+
+function dispatchAccount_uninstall() {
+	drupal_uninstall_schema('dispatchAccount');
+}

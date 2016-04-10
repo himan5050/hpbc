@@ -1,0 +1,1115 @@
+<?php
+//include(drupal_add_js('theme', 'garland') . '/includes/transferPromotion.inc');
+
+function transferPromotion_init() {
+	drupal_add_js(drupal_get_path('module', 'transferPromotion') .'/transferPromotion.js');
+	
+}
+function transferPromotion_node_info() {
+	return array (
+					'transferPromotion' => array (
+										'name' => t('List Of Transfers/Promotions'),
+										'module' => 'transferPromotion',
+										'description' => "Add Transfer And Promotion Entries",
+										'has_title' => TRUE,
+										'title_label' => t('Transfer/Promotion'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function transferPromotion_perm() {
+	return array('edit transferPromotion','administer transferPromotion', 'create transferPromotion', 'view transferPromotion');
+}
+
+function transferPromotion_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit transferPromotion', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create transferPromotion', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view transferPromotion', $account);
+	}
+}
+ 
+ function transferPromotion_menu(){
+	 $items['list/transferPromotionList'] = array(
+		   'title' => 'List of Transfers and Promotions',
+		   'page callback' => 'transferPromotion_list',
+		   'access arguments' => array('administer transferPromotion'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewtransferPromotion/%'] = array(
+								'title' => t('View Entries'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_transferPromotion',
+								'page arguments' => array(1),
+								'access arguments' => array('administer transferPromotion'),
+		                        
+						);
+  
+  $items['admin/dsje/del/transferPromotion/%/%'] =  array(
+	               						 'title' => t('Delete Entry'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'transferPromotin_delete',
+		           			             'page arguments' => array(4,5),
+		               			         'access arguments' => array('administer transferPromotion'),
+													 
+	);
+ $items['admin/dsje/enable/transferPromotion/%/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'transferPromotion_enable',
+		            			            'page arguments' => array(4,5),
+		                  				    'access arguments' => array('administer transferPromotion'),
+														 
+	);	
+	
+$items['dsje/selectFields'] = array(
+										'page callback' => 'selectField',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function transferPromotion_list(){
+	global $user, $base_url;
+	$limit =(int)getMessage('dsjetransferPromotion', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Employee Id'), 'field' => 'tbl_transferpromotions.employee_id', 'sort' => 'asc'),
+	array('data' => t('Employee Name'), 'field' => 'tbl_transferpromotions.employee_name', 'sort' => 'asc'),
+	array('data' => t('Action'),'field'=> 'tbl_lookups.lookup_name','sort'=>'asc'),
+	//array('data' => t('Status')),
+	array('data' => t('Action'), 'class' => 'addeditview',),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Transfers and Promotions', 'list/transferPromotionList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid,tbl_transferpromotions.employee_id, tbl_transferpromotions.employee_name,tbl_lookups.lookup_name, tbl_transferpromotions.statusnodal  FROM {node}
+	 INNER JOIN tbl_transferpromotions ON (node.nid=tbl_transferpromotions.nid)	 
+	  INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_transferpromotions.action)
+	 WHERE node.uid='".$user->uid."' AND( tbl_transferpromotions.employee_name LIKE '".$val."' OR tbl_transferpromotions.employee_id LIKE '".$val."' OR tbl_lookups.lookup_name LIKE '".$val."' ) ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_transferpromotions ON (node.nid=tbl_transferpromotions.nid)
+	INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_transferpromotions.action)
+	 
+	 WHERE node.uid='".$user->uid."' AND(  tbl_transferpromotions.employee_name LIKE '".$val."' OR tbl_transferpromotions.employee_id LIKE '".$val."' OR tbl_lookups.lookup_name LIKE '".$val."' ) ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	   $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT node.nid,node.uid,tbl_transferpromotions.employee_id,tbl_transferpromotions.employee_name,tbl_lookups.lookup_name, tbl_transferpromotions.statusnodal  FROM {node}
+	 INNER JOIN tbl_transferpromotions ON (node.nid=tbl_transferpromotions.nid)
+	 INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_transferpromotions.action)
+	 WHERE node.uid='".$user->uid."'".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/transferPromotionList';
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjetransferPromotion', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/transferPromotionList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight" align="center"></td></tr>';
+	
+	$addurl = l(getMessage('dsjetransferPromotion', 'code01', NULL),"node/add/transferPromotion");
+   	$lising = getMessage('dsjetransferPromotion', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewtransferPromotion/".$rs->nid);
+		
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/transferPromotion/".$rs->nid."/".$rs->employee_name);
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Enable","admin/dsje/enable/transferPromotion/".$rs->nid."/".$rs->employee_name);
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+  $dd=db_query("select row from {tbl_transferpromotions} where tbl_transferpromotions.nid= $rs->nid");
+$ddo=db_fetch_object($dd);
+
+
+if ($ddo->row == 0){
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => $rs->employee_id),
+			array('data' => ucwords($rs->employee_name)),
+            array('data' => ucwords($rs->lookup_name)),
+            //array('data' => $st),
+			array('data' => $viewurl." | ".$editurl),
+		);
+		}
+		else
+		{
+			$rows[] = array(
+			array('data' => $counter),
+			array('data' => $rs->employee_id),
+			array('data' => ucwords($rs->employee_name)),
+            array('data' => ucwords($rs->lookup_name)),
+            //array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		
+		);
+	  }
+	
+	  
+	 
+	  }
+	}
+     if($rows== NULL)
+	$header=NULL;
+	 
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, 20,0 );
+	return $output;
+  }
+
+function selectField() {
+    $action = $_POST['action'];
+	/*$query = "SELECT district_id, district_name FROM {tbl_district} WHERE state_id = '".$state_id."' AND status='1' ORDER BY district_name" ;
+	$result = db_query($query);*/
+	
+	
+	
+	$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('transferPromotion_form', $form, $form_state);
+	
+	$sql=db_query("select * from {tbl_joinings} where employee_id='".$form->employee_id."'");
+	$res=db_fetch_object($sql);
+	
+	   $form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Employee Name'),
+	'#required' => TRUE,
+	'#default_value' =>$res->employee_name,
+	'#attributes' => array('readonly' => 'readonly'),
+	'#size' =>45,
+	);
+	
+	$form['prev_officeid'] = array(
+	'#type' => 'textfield',
+	'#title' => t('Previous Office'),
+	'#required' => TRUE,
+	'#default_value' =>$res->current_officeid,
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+		
+	
+	
+	
+	$form['prev_designationid'] = array(
+	'#type' => 'textfield',
+	'#title' => t('Previous Designation'),
+	'#required' => TRUE,
+	'#default_value' =>$res->current_designationid,
+	'#attributes' => array('readonly' => 'readonly'), 
+	); 
+			$form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $node->email,	
+'#attributes' => array('readonly' => 'readonly'),
+  );
+  
+
+  $form['mobile'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Mobile No.'),
+	
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $node->mobile,
+	'#attributes' => array('readonly' => 'readonly'),
+  );
+
+  $form['phone'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Phone No.'),
+	
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $node->phone,
+	'#attributes' => array('readonly' => 'readonly'),
+  );
+	
+		
+	
+	
+	$form['prev_Departmentid'] = array(
+	'#type' => 'textfield',
+	'#title' => t('Previous Department'),
+	'#required' => TRUE,
+	'#default_value' =>$res->current_Departmentid,
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+	
+	
+	$output = drupal_render($form['employee_name']);
+	$output .= drupal_render($form['prev_officeid']);
+	$output .= drupal_render($form['prev_designationid']);
+	$output .= drupal_render($form['prev_Departmentid']);
+	
+	
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+	
+	
+	
+	}
+
+
+function transferPromotin_delete($nid,$name){
+  
+  $node = node_load($nid);
+  
+  $saw=db_query("select * from {tbl_transferpromotions} where nid ='".$node->nid."'");
+  
+  $rol=db_fetch_object($saw);
+  
+  
+  
+  // db_query("update {tbl_transferpromotions} set row=0");
+ $kko= db_query("select max(nid) as nid from {tbl_transferpromotions} where nid < ( select max(nid) from {tbl_transferpromotions})");
+ 
+ $gg=db_fetch_object($kko);
+ $rr= $gg->nid;
+db_query("update {tbl_joinings} set tbl_joinings.current_officeid = '".$node->prev_officeid."',tbl_joinings.current_designationid='".$node->prev_designationid."', tbl_joinings.current_Departmentid='".$node->prev_Departmentid."'  where tbl_joinings.employee_id= '".$node->employee_id."'");
+  
+db_query("update {tbl_transferpromotions} set row=1 where nid= '".$rr."'");
+
+   db_query("DELETE from {tbl_transferpromotions} WHERE nid ='".$node->nid."'");
+ // db_query("UPDATE {tbl_transferpromotions} SET 	statusnodal =0 WHERE nid ='".$node->nid."'");
+ // drupal_set_message(' Entry has been deleted successfully.');
+  $message=getMessage('dsjetransferPromotion','code07',array("0"=>$rol->employee_id));
+  drupal_set_message($message);
+	
+
+ 
+  drupal_goto("list/transferPromotionList");
+ }
+
+function transferPromotion_enable($nid,$name){
+  
+  $node = node_load($nid);
+  
+  db_query("UPDATE {tbl_transferpromotions} SET 	statusnodal =1 WHERE nid ='".$node->nid."'");
+  //drupal_set_message('Employee '.$name.' has been enabled successfully.');
+  $message=getMessage('dsjeEmployee','code05',array("0"=>$node->employee_id));
+  drupal_set_message($message);
+	
+
+  drupal_goto("list/transferPromotionList");
+ }
+
+
+function transferPromotion_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Transfers and Promotions', 'list/transferPromotionList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Transfer or Promotion', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Transfer or Promotion', 'node/add/transferPromotion'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+   if(is_numeric(arg(1))){
+     $sql = "SELECT * FROM {node} INNER JOIN tbl_transferpromotions ON (node.nid=tbl_transferpromotions.nid) WHERE node.nid=".arg(1);
+      $res = db_query($sql);
+      $rs = db_fetch_object($res);
+   }
+    if($rs->prev_officeid=='')
+	{
+	
+	$form['employee_id'] = array(
+	'#type' =>'select',
+	'#title' => t('Employee'),
+	'#required' =>TRUE,
+	'#default_value' =>$rs->employee_id, 
+	'#options' => selectEmployee(),
+	'#attributes' => array('onchange'=> 'return showUsert(this.value,"'.$base_url.'")'),
+		
+	);
+	
+	
+	
+	
+	   $form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Employee Name'),
+	'#required' => TRUE,
+	'#id' => 'employee_id',
+	'#default_value' =>$rs->employee_name,
+	'#attributes' => array('readonly' => 'readonly'),
+	'#size' =>45,
+	);
+	
+	
+	$form['prev_officeid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'office_id',
+	'#title' => t('Previous Office'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->prev_officeid,
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+		
+	
+	
+	
+	$form['prev_designationid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'designation_id',
+	'#title' => t('Previous Designation'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->prev_designationid,
+	'#attributes' => array('readonly' => 'readonly'), 
+	); 
+	
+	
+		
+	
+	
+	$form['prev_Departmentid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'department_id',
+	'#title' => t('Previous Department'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->prev_Departmentid,
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+	}
+	
+	else
+	
+	{
+	
+	$form['employee_id'] = array(
+	'#type' =>'select',
+	'#title' => t('Employee'),
+	'#required' =>TRUE,
+	'#default_value' =>$rs->employee_id, 
+	'#options' => selectEmployee(),
+	'#attributes' => array('onchange'=> 'return showUsert(this.value,"'.$base_url.'")'),
+		
+	);
+	
+	
+	
+	
+	   $form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Employee Name'),
+	'#required' => TRUE,
+	'#id' => 'employee_id',
+	'#default_value' =>$rs->employee_name,
+	'#attributes' => array('readonly' => 'readonly'),
+	'#size' =>45,
+	);
+	
+	
+	$do=getCorporationName($rs->prev_officeid);
+	
+	$form['prev_officeid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'office_id',
+	'#title' => t('Previous Office'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->prev_officeid,
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+		
+	
+	$dd=getLookupName($rs->prev_designationid);
+	
+	$form['prev_designationid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'designation_id',
+	'#title' => t('Previous Designation'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->prev_designationid,
+	'#attributes' => array('readonly' => 'readonly'), 
+	); 
+	
+	
+		
+	$dD=getLookupName($rs->prev_Departmentid);
+	
+	$form['prev_Departmentid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'department_id',
+	'#title' => t('Previous Department'),
+	'#required' => TRUE,
+	'#default_value' =>$dD,
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+	}
+	
+	$form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $rs->email,	
+'#attributes' => array('readonly' => 'readonly'),
+  );
+  
+
+  $form['mobile'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Mobile No.'),
+	
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $rs->mobile,
+	'#attributes' => array('readonly' => 'readonly'),
+  );
+
+  $form['phone'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Phone No.'),
+	
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $rs->phone,
+	'#attributes' => array('readonly' => 'readonly'),
+  );
+	
+		
+	
+	$form['action'] = array(
+	'#type' => 'select',
+	'#title' => t('Action'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->action,
+	'#options' => SelectAction(), 
+	'#attributes' => array('onchange' => 'return changeMenutransfer(this)'),
+
+	);
+	
+	$form['categoryname'] = array(
+	'#type' => 'select',
+	'#title' => t('Category'),
+	'#required' => false,
+	'#default_value' =>$rs->categoryname,
+	'#id' => 'categorttransfer',
+	'#options' => array('' => '----Select Category----','rotation' => 'Rotation','administration ground' => 'Administration Ground','in consonance with the existing policy' => 'in consonance with the existing policy'), 
+
+	);
+	
+	
+	$form['orderno'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Order No.'),
+	'#required' =>TRUE,
+	'#size' =>20,
+	'#maxlength' =>'20',  
+	'#default_value' =>$rs->orderno, 
+	'#attributes' => array('onkeypress' => 'return alphanumeric1(event)')	
+	);
+	
+	
+	$form['order_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Order Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->order_date,
+	);
+	
+
+	$form['releiving_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Relieving Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->releiving_date,
+	);
+	
+	
+	$form['joining_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Date of Joining'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->joining_date,
+	);
+	
+	
+	
+	$form['current_officeid'] = array(
+	'#type' => 'select',
+	'#title' => t('Current Office'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->current_officeid,
+	'#options' => SelectOffices(), 
+	);
+	
+		
+	
+	
+	
+	$form['current_designationid'] = array(
+	'#type' => 'select',
+	'#title' => t('Current Designation'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->current_designationid,
+	'#options' => SelectDesignation(), 
+	); 
+	
+	
+	
+	
+	
+	$form['current_Departmentid'] = array(
+	'#type' => 'select',
+	'#title' => t('Current Department'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->current_Departmentid,
+	'#options' => SelectDepartment(), 
+	);
+	
+
+	
+		$form['statusnodal'] = array(
+		'#type' => 'hidden',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rs->statusnodal,
+		'#options' => array('1'=>'Enable','0'=>'Disable'),
+		);
+	
+			$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/transferPromotionList'),
+);
+return $form;
+} 
+
+function transferPromotion_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+	/**
+	*@when validation fire custom breadcrumb fail
+	*@here we will add code for breadcrumb 
+	*@code start below 4/7/2011 Neshat Khan Claritus consulting mang.
+	*/
+	
+	
+	
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Transfers and Promotions', 'list/transferPromotionList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Transfer or Promotion', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Transfer or Promotion', 'node/add/transferPromotion'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+	
+	
+
+
+ $employee_name = $form->employee_name;
+ $employee_id = $form->employee_id;
+
+ 
+ 
+ alphabet('employee_name',$employee_name,'Employee Name');
+	alphanumeric ('employee_id',$employee_id,'Employee Id');	
+ alphanumeric ('employee_id',$employee_id,'Employee Id');
+	
+	date('d-m-Y');
+	
+alphanumeric1('orderno',$form->orderno,'Order No.');
+ //fononlyn('promotion_orderno',$form->promotion_orderno,'Promotion Order No.');
+	$joining=$form->joining_date;
+	$releiving=$form->releiving_date;
+	$order=$form->order_date;
+	
+	if($order >= $releiving &&  ((!empty($order)) && (!empty($releiving))))
+	{
+	form_set_error(releiving_date,t('Relieving Date should be greater than the order date'));
+	}
+	
+	if($form->action == '77')
+	{
+		
+		if($form->categoryname == '')
+		{
+		form_set_error(categoryname,t('Category field is required'));	
+			
+		}
+		
+		
+	}
+	
+	if($joining <= $releiving &&  ((!empty($joining)) && (!empty($releiving)))){form_set_error(joining_date,t('Joining Date should be greater than the relieving date'));}
+  
+}
+
+/**
+ *hook_form_alter
+ */
+function transferPromotion_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 /* $state_id = $values['state_id'];
+    $district_id = $values['district_id'];
+    $tehsil_id = $values['tehsil_id'];*/
+	
+	if($form_id =='transferPromotion_node_form'){
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	
+	  $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	 
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	  $form['path']['#type'] = hidden;
+	}
+	
+ }
+
+
+function transferPromotion_insert($node){
+   global $user;
+   
+  //all values
+  
+    $employee_name = parseData($node->employee_name);
+	$employee_id= $node-> employee_id;
+	
+    $current_officeid = $node->current_officeid;
+   
+	$current_Departmentid = $node->current_Departmentid;
+	
+	 $current_designationid = $node->current_designationid;
+	 $action= $node->action;
+	  $categoryname= $node->categoryname;
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$phone= $node->phone;
+ $mobile= $node->mobile;
+ $email= $node->email;
+	$order_date = $node->order_date;
+   // $promotion_date = $node->promotion_date;
+	$releiving_date = $node->releiving_date;
+	$joining_date = $node->joining_date;
+    
+	$orderno = $node->orderno;
+	//$promotion_orderno = $node->promotion_orderno;
+	
+	//echo "select corporation_id from {tbl_corporations} where corporation_name='".$node->prev_officeid."'";exit;
+	
+	$corp_id=db_query("select corporation_id from {tbl_corporations} where corporation_name='".$node->prev_officeid."'");
+  $ccc=db_fetch_object($corp_id);
+ $prev_officeid =$node->prev_officeid;
+    $prev_designationid = $node->prev_designationid; 
+    $prev_Departmentid = getLookupId($node->prev_Departmentid);
+ 
+   
+   
+   
+   
+    $statusnodal =  1;  
+	
+	
+	db_query("update {tbl_transferpromotions} set row=0");
+	//db_query("update {tbl_transferpromotions} set row= 1 where tbl_transferpromotions.employee_id='".$employee_id."'");
+	
+	db_query("INSERT into {tbl_transferpromotions}(nid,vid,employee_id,employee_name,orderno,order_date,phone,mobile,email,releiving_date,joining_date,prev_officeid,prev_designationid,prev_Departmentid,current_officeid,current_designationid,current_Departmentid,action,	categoryname,statusnodal,row) VALUES ('".$nid."','".$vid."','".$employee_id."','".$employee_name."','".$orderno."','".$order_date."','".$phone."','".$mobile."','".$email."','".$releiving_date."','".$joining_date."','".$prev_officeid."','".$prev_designationid."','".$prev_Departmentid."','".$current_officeid."','".$current_designationid."','".$current_Departmentid."','".$action."','".$categoryname."','".$statusnodal."',1)");
+
+db_query("update {tbl_joinings} SET current_officeid='".$current_officeid."' , current_designationid='".$current_designationid."' , current_Departmentid='".$current_Departmentid."' WHERE employee_id = '".$employee_id."' ");
+
+	//user table
+	
+	
+	$parameter = '';
+//$to = $u->mail;
+//$parameter = json_encode(array(0=>"$employee_name",1=>"$employee_id",2=>"$employee_name",3=>getLookupName($action),10=>"$orderno",4=>getCorporationName($prev_officeid),5=>getLookupName($prev_designationid),6=>getLookupName($prev_Departmentid),7=>getCorporationName($current_officeid),8=>getLookupName($curret_designationid),9=>getLookupName($curret_Departmentid))); 
+
+//print_r(array(0=>"$employee_name",1=>"$employee_id",2=>"$employee_name",3=>getLookupName($action),10=>"$orderno",4=>getCorporationName($prev_officeid),5=>getLookupName($prev_designationid),6=>getLookupName($prev_Departmentid),7=>getCorporationName($current_officeid),8=>getLookupName($curret_designationid),9=>getLookupName($curret_Departmentid)));exit;
+$parameter .= json_encode(array(1=>$employee_id,2=>$employee_name,3=>getLookupName($action),10=>$orderno,4=>getCorporationName($prev_officeid),5=>getLookupName($prev_designationid),6=>getLookupName($prev_Departmentid),7=>getCorporationName($current_officeid),8=>getLookupName($curret_designationid),9=>getLookupName($curret_Departmentid),15=>$joining_date,14=>$releiving_date)); 
+
+$corp=getCorporationName($current_officeid);
+$mob='91'.$mobile;
+$sms="Your '.getLookupName($action).' has been done with effect from '.$joining_date.' to corporation office '.$corp.'";
+customsendsms($mob,$sms);
+
+
+createMail('transferPromotion', $email,'',$parameter,'');
+
+$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+$koko=db_fetch_object($sendto);
+
+$popo=db_query("select mobile from tbl_joining where username='".$koko->name."'");
+$soso=db_fetch_object($popo);
+$mob=$soso->mobile;
+
+
+
+while($ms=db_fetch_object($sendto))
+{
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$employee_id,2=>$employee_name,3=>getLookupName($action),4=>getCorporationName($prev_officeid),5=>getLookupName($prev_designationid),6=>getLookupName($prev_Departmentid),7=>getCorporationName($current_officeid),8=>getLookupName($curret_designationid),9=>getLookupName($curret_Departmentid),10=>$orderno,15=>$joining_date,14=>$releiving_date)); 
+
+
+//$to = $u->mail;
+$sms="Name: '.$employee_name.' has been '.getLookupName($action).'  with effect from '.$joining_date.' to corporation office '.$corp.'";
+customsendsms($mob,$sms);	
+createMail('transferPromotion', $ms->mail,'',$parameter,'');
+}
+
+}
+
+
+
+
+
+
+	$created = time();
+	//drupal_set_message('Entry of '.$employee_name.' has been saved successfully.');
+	$message=getMessage('dsjetransferPromotion','code05',array("0"=>$node->employee_id));
+  drupal_set_message($message);
+	drupal_goto("list/transferPromotionList");
+ }
+
+function transferPromotion_update($node){
+	global $user;
+   
+  //all values
+  
+    $employee_name = parseData($node->employee_name);
+	$employee_id= $node-> employee_id;
+	$prev_officeid = $node->prev_officeid;
+    $current_officeid = $node->current_officeid;
+    $prev_Departmentid = $node->prev_Departmentid;
+	$current_Departmentid = $node->current_Departmentid;
+	 $prev_designationid = $node->prev_designationid; 
+	 $current_designationid = $node->current_designationid;
+	 $action= $node->action;
+	 $categoryname= $node->categoryname;
+	$nid = $node->nid;
+	$vid = $node->vid;
+	$phone= $node->phone;
+ $mobile= $node->mobile;
+ $email= $node->email;
+	$order_date = $node->order_date;
+  //  $promotion_date = $node->promotion_date;
+	$releiving_date = $node->releiving_date;
+	$joining_date = $node->joining_date;
+    
+	$orderno = $node->orderno;
+	//$promotion_orderno = $node->promotion_orderno;
+   
+    $statusnodal = $node->statusnodal;  
+	
+	 
+	$corp_id=db_query("select corporation_id from {tbl_corporations} where corporation_name='".$node->prev_officeid."'");
+  $ccc=db_fetch_object($corp_id);
+  // $prev_officeid =$node->corporation_id;
+    $prev_designationid = $node->prev_designationid; 
+    $prev_Departmentid = getLookupId($node->prev_Departmentid);
+
+	
+	db_query("update {tbl_transferpromotions} SET employee_id='".$employee_id."',employee_name='".$employee_name."',orderno='".$orderno."',order_date='".$order_date."',releiving_date='".$releiving_date."',joining_date='".$joining_date."',prev_officeid='".$prev_officeid."',prev_designationid='".$prev_designationid."',prev_Departmentid='".$prev_Departmentid."',current_officeid='".$current_officeid."',current_designationid='".$current_designationid."',current_Departmentid='".$current_Departmentid."',action='".$action."',categoryname='".$categoryname."',`phone`='".$phone."',`mobile`='".$mobile."',`email`='".$email."',statusnodal='".$statusnodal."' WHERE nid=$nid");
+	
+	 
+	//drupal_set_message('Entry of '.$employee_name.' has been updated successfully.');
+	$message=getMessage('dsjetransferPromotion','code06',array("0"=>$node->employee_id));
+  drupal_set_message($message);
+	
+	drupal_goto("list/transferPromotionList");
+}
+
+
+function transferPromotion_theme() {
+	
+	return array(
+				 
+		'transferPromotion_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'transferPromotion_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+
+/* 
+function transferPromotion_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_transferpromotions ON (node.nid=tbl_transferpromotions.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+*/
+  
+function view_transferPromotion($officeid){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Transfers and Promotions ', 'list/transferPromotionList');
+   if($array[0] == 'viewtransferPromotion'){
+     $breadcrumb[] = l('View Transfer or Promotion', 'viewtransferPromotion/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from {tbl_transferpromotions} where nid = $officeid";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+ if($rs->gender =='f'){
+  $gender ='Female';
+}else{
+  $gender ='Male';
+}
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+
+
+/*$sqlr = "SELECT tbl_nationalitites.nationality_name, tbl_religions.religion_name, tbl_cast_categories.cast_category_name FROM {node} INNER JOIN tbl_nationalities ON  (tbl_nationalities.nationality_id= tbl_transferpromotions.nationality)
+ INNER JOIN tbl_religions ON (tbl_religions.religion_id=tbl_transferpromotions.religion)
+ INNER JOIN tbl_cast_categories ON (tbl_cast_categories.cast_category_id=tbl_transferpromotions.caste)
+ WHERE node.uid='".$user->uid."'";
+ $resr= db_query($sqlr);
+ $rsr = db_fetch_object ($resr);*/
+
+//$addrr= "select * from {tbl_corporations} where corporation"; 
+
+$sqlo = "SELECT *  from {tbl_corporations} WHERE corporation_id='".$rs->current_officeid."'";
+$reso = db_query($sqlo);
+$rso = db_fetch_object($reso);
+
+$sqko = "SELECT *  from {tbl_corporations} WHERE corporation_id='".$rs->prev_officeid."'";
+$reko = db_query($sqko);
+$rko = db_fetch_object($reko);
+
+/*$sqdo = "SELECT department_name  FROM tbl_departments WHERE department_id='".$rs->prev_Departmentid."'";
+$redo = db_query($sqdo);
+$rdo = db_fetch_object($redo);
+*/
+/*
+$sqmo = "SELECT department_name  FROM tbl_departments WHERE department_id='".$rs->current_Departmentid."'";
+$remo = db_query($sqmo);
+$rmo = db_fetch_object($remo);
+*/
+
+if($rs->employee_id ==''){
+  $unique = 'NA';
+}else{
+  $unique = $rs->employee_id;
+}
+
+if($rs->action == '77')
+{
+$action = 'Transfer';	
+	
+}
+else{
+$action = 'Promotion';		
+	
+}
+
+ $prev_officeid =getCorporationName($rs->prev_officeid);
+     $prev_designationid = getLookupName($rs->prev_designationid); 
+    $prev_Departmentid = getLookupName($rs->prev_Departmentid);
+$designationid=getLookupName($rs->current_designationid);
+$Departmentid=getLookupName($rs->current_Departmentid);
+
+function getemptyloan($val)
+		{
+		if($val != '')
+		  {
+		  return $val;
+		  }
+		  else
+		  {
+		  return 'NA';
+		  }
+		}
+			
+		
+
+$sqlo = "SELECT corporation_name  from {tbl_corporations} WHERE corporation_id='".$rs->current_officeid."'";
+$reso = db_query($sqlo);
+$rso = db_fetch_object($reso);
+
+
+$output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="form-container">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Transfer/Promotion Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Employee Id:</td><td class="normal">'.ucwords($rs->employee_id).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Employee Name:</td><td class="normal">'.ucwords($rs->employee_name).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Previous Office:</td><td class="normal"> '.ucwords($rs->prev_officeid).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Previous Designation:</td><td class="normal"> '.ucwords($rs->prev_designationid).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Previous Department:</td><td class="normal">'.ucwords($prev_Departmentid).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Phone No.:</td><td class="normal"> '.getemptyloan($rs->phone).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Mobile No.:</td><td class="normal"> '.getemptyloan($rs->mobile).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Email Id:</td><td class="normal"> '.$rs->email.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Action:</td><td class="normal"> '.$action.'</td></tr>';
+if(ucwords($rs->action) == 77){
+/*$output .='<tr class="oddrow"><td>Previous Office Address</td><td>';
+$output .='<tr class="evenrow"><td width="50%">Address Type:</td><td class="normal">'.ucwords($rko->add_type).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Addresss Line 1:</td><td class="normal">'.ucwords($rko->add_line1).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Addresss Line 2:</td><td class="normal">'.ucwords($rko->add_line2).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">State:</td><td class="normal">'.ucwords(getState($rko->state_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">District:</td><td class="normal">'.ucwords(getdistrict($rko->district_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Tehsil:</td><td class="normal">'.ucwords(gettehsil($rko->tehsil_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Block:</td><td class="normal">'.$rko->block.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Panchayat:</td><td class="normal">'.$rko->panchayat.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Pin code:</td><td class="normal">'.$rko->pincode.'</td></tr>';
+$output .='<tr class="oddrow"><td>  </td><td>';*/
+$output .='<tr class="oddrow"><td width="50%">Category:</td><td class="normal">'.ucwords($rs->categoryname).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Transfer Order No.:</td><td class="normal">'.$rs->orderno.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Transfer Order Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->order_date)).'</td></tr>';
+/*$output .='<tr class="evenrow"><td>  </td><td>';
+$output .='<tr class="oddrow"><td>New Office Address:</td><td>';
+$output .='<tr class="evenrow"><td width="50%">Address Type:</td><td class="normal">'.ucwords($rso->add_type).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Addresss Line 1:</td><td class="normal">'.ucwords($rso->add_line1).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Addresss Line 2:</td><td class="normal">'.ucwords($rso->add_line2).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">State:</td><td class="normal">'.ucwords(getState($rso->state_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">District:</td><td class="normal">'.ucwords(getdistrict($rso->district_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Tehsil:</td><td class="normal">'.ucwords(gettehsil($rso->tehsil_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Block:</td><td class="normal">'.$rso->block.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Panchayat:</td><td class="normal">'.$rso->panchayat.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Pin code:</td><td class="normal">'.$rso->pincode.'</td></tr>';
+*/}else{
+
+$output .='<tr class="evenrow"><td width="50%">Promotion Order No.:</td><td class="normal">'.$rs->orderno.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Promotion Order Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->order_date)).'</td></tr>';
+}
+$output .='<tr class="evenrow"><td width="50%">Relieving Date:</td><td class="normal"> '.date('d-m-Y',strtotime($rs->releiving_date)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Joining Date:</td><td class="normal"> '.date('d-m-Y',strtotime($rs->joining_date)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">New Office :</td><td class="normal">'.ucwords($rso->corporation_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">New Designation:</td><td class="normal"> '.ucwords($designationid).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">New Department:</td><td class="normal"> '.ucwords($Departmentid).'</td></tr>';
+$output .='<tr class="oddrow"><td colspan="2" align="center" class="back">'.l('Back','list/transferPromotionList').'</td></tr>'; 
+/*
+$output .='<tr class="oddrow"><td width="50%">Phone No.:</td><td class="normal">'.$rs->phone.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Mobile No.:</td><td class="normal">'.$mobile.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Email Id:</td><td class="normal">'.$rs->email.'</td></tr>';
+'list/transferPromotionList').'</td></tr>';
+*/
+//$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.$statusnodal.'</td></tr>';
+ $output .='</table>';
+return $output ;
+}

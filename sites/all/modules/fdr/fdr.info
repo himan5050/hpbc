@@ -1,0 +1,6 @@
+;$id 
+name="FDR Details"
+description="FDR Details"
+core =6.x
+version = 6.x-1
+package="Dsje"

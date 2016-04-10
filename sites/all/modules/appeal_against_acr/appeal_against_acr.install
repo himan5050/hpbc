@@ -1,0 +1,72 @@
+<?php
+function appeal_against_acr_schema() {
+
+  //designation table
+   $schema['tbl_appeal_against_acr'] = array(
+							 'fields' => array(
+											   'appeal_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'acr_no' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												 'emp_id' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+	                                           'year' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+		                                     
+												'acr_status' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												  'discription' => array(
+															  'type' => 'varchar',
+															  'length' => '100',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												  'submitdate' => array(
+															  'type' => 'varchar',
+															  'length' => '100',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+													 'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												
+											   ),
+							 'indexes' => array(
+												'appeal_id' => array('appeal_id'),
+												),
+							 'primary key' => array('appeal_id'),
+							 );
+	
+	return $schema;
+}
+
+function appeal_against_acr_install() {
+	drupal_install_schema('appeal_against_acr');
+}
+
+function appeal_against_acr_uninstall() {
+	drupal_uninstall_schema('appeal_against_acr');
+}

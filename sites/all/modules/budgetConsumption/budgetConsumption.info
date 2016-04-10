@@ -1,0 +1,6 @@
+;$id 
+name="Budget Consumption"
+description="Budget Consumption Management"
+core =6.x
+version = 6.x-1
+package="Dsje"

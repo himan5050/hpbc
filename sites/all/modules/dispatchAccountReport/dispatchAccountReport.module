@@ -1,0 +1,146 @@
+<?php
+
+
+/**
+ *hook_perm
+ */
+ 
+ function dispatchAccountReport_init() {
+	drupal_add_css(drupal_get_path('module', 'dispatchAccountReport') .'/report_style.css');
+	
+}
+
+function dispatchAccountReport_perm() {
+	return array('edit dispatchAccountReport','administer dispatchAccountReport', 'create dispatchAccountReport', 'view dispatchAccountReport');
+}
+
+function dispatchAccountReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dispatchAccountReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dispatchAccountReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dispatchAccountReport', $account);
+	}
+	
+}
+
+
+function dispatchAccountReport_menu(){
+
+  $items['dispatchAccountReport'] = array(
+										'title' => t('TICKET Received by Dispatch Section from Account'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'dispatchAccountReport',
+										'access arguments' => array('administer dispatchAccountReport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function dispatchAccountReport(){
+  return drupal_get_form('dispatchAccountReport_form');
+}
+
+function dispatchAccountReport_form(){
+ global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Ticket Received by Dispatch Section from Account', 'dispatchAccountReport');
+  drupal_set_breadcrumb($breadcrumb);
+
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						    '#title'=>'',
+						   '#required' => FALSE,
+						   '#size' => '15',
+						   
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						    '#title'=>'',
+						   '#required' => FALSE,
+						   '#size' => '15',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+function dispatchAccountReport_form_validate($form, &$form_state){
+	$_REQUEST['page']=0;
+	$values = $form_state['values'];
+	
+	$from_date = $values['from_date'];
+	$to_date = $values['to_date'];
+	if(!empty($from_date) && !empty($to_date)){
+	if($from_date>$to_date){
+	
+	form_set_error(to_date,'To Date should be greater than From Date');
+	}}
+	
+	if($from_date == '' && $to_date ==''){
+		
+	form_set_error('form','Please enter both the fields.');	
+		
+	}
+	
+	if($from_date == '' && $to_date !=''){
+		
+	form_set_error('from_date','Form Date is required.');	
+		
+	}
+	
+	if($to_date == '' && $from_date !=''){
+		
+	form_set_error('to_date','To Date is required.');	
+		
+	}
+	
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function dispatchAccountReport_theme() {
+	
+	return array(
+		
+		'dispatchAccountReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dispatchAccountReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}
+
+
+/*function dispatchAccountReport_cron(){
+	
+	
+	
+	
+	
+}	*/

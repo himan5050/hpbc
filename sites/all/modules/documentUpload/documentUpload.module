@@ -1,0 +1,908 @@
+<?php
+//echo '<pre>';
+//print_r('xdgfdfg');
+//exit;
+function documentUpload_init() {
+	drupal_add_js(drupal_get_path('module', 'documentUpload') .'/documentUpload.js');
+	drupal_add_css(drupal_get_path('module', 'documentUpload') .'/documentUpload.css');
+	
+}
+function documentUpload_node_info() {
+	return array (
+					'documentUpload' => array (
+										'name' => t('Add the Document'),
+										'module' => 'documentUpload',
+										'description' => "Add Document Entries",
+										'has_title' => TRUE,
+										'title_label' => t('Document'),
+										'has_body' => FALSE,
+										),
+				);
+}
+
+
+function documentUpload_perm() {
+	return array('edit documentUpload','administer documentUpload', 'create documentUpload', 'view documentUpload');
+}
+
+function documentUpload_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit documentUpload', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create documentUpload', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view documentUpload', $account);
+	}
+}
+ 
+
+function documentUpload_form(&$node){
+	//echo '<pre>';
+	//print_r($node);
+	//exit;
+	global $user;
+	$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Document', 'documentlist');
+	if($array[0] == 'node/'.arg(1).'/edit'){
+	$breadcrumb[] = l('Edit Upload Document', 'node/'.arg(1).'/edit');
+	}
+	if($array[0] == 'node/add/documentUpload'){
+	$breadcrumb[] = l('Document Entry Form', 'node/add/documentUpload');
+	}
+	if(arg(2)=='edit'){
+   $sql = "SELECT * FROM {tbl_upload_document} WHERE nid=".arg(1);
+   $res = db_query($sql);
+   $rs = db_fetch_object($res);
+	}
+	drupal_set_breadcrumb($breadcrumb);
+	
+     $form['file_title'] = array(
+	'#type' =>'textfield',
+	'#title' => t('File Title'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->title,
+	'#size' =>45,
+	'#maxlength' =>45,
+	'#attributes' =>array('onkeypress' => 'return alphanumeric2(event)'),
+	);
+	
+	 $form['file_discription'] = array(
+	'#type' =>'textarea',
+	'#title' => t('File Description'),
+	'#required' => FALSE,
+	'#default_value' =>$rs->discription,
+	'#maxlength' =>200,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-file-discription",100)'),
+	);
+	
+	
+	$form['department'] = array(
+	'#type' => 'select',
+	'#title' => t('Department'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->departmant,
+	'#options' => getdepartment(),
+	); 
+
+	$form['branchoffice'] =array(
+	'#type'=>'select',
+		'#title'=> t('Branch/Office'),
+		'#required'=>TRUE,
+		'#default_value'=>$rs->branchoffice,
+		'#options'=> getbranchoffice(),
+	);
+	
+	$form['file_author'] = array(
+	'#type' => 'textfield',
+		'#title' => t('Author'),
+		'#size' =>45,
+		'#required' => TRUE,
+		'#default_value'=>$rs->author,
+		'#maxlength' =>45,
+		'#attributes' =>array('onkeypress' => 'return alphanumeric2(event)'),
+	);
+
+	$form['expire_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Date of Expiry'),
+	'#required' => FALSE,
+	'#size' => '10',
+	'#default_value' => $rs->dateofexpire,
+	);
+	
+	$form['file_number'] = array(
+	'#type' => 'textfield',
+		'#title' => t('File No.'),
+		'#required' => TRUE,
+		'#size' => 45,
+		'#default_value' => $rs->fileno,
+		'#maxlength' =>45,
+		'#attributes' =>array('onkeypress' => 'return alphanumeric2(event)'),
+	);
+
+	$form['file_keywords'] = array(
+	'#type' => 'textarea',
+		'#title' => t('Keywords'),
+		'#default_value' => $rs->keywords,
+		'#required' => FALSE,
+		'#maxlength' =>200,
+		'#attributes' => array('onkeypress' =>'return keywords(event,"edit-file-keywords",100)'),
+	);
+
+	$form['access_level'] = array(
+	'#type' => 'select',
+	'#title' => t('Access Level'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->accesslevel,
+	'#options' => array('0'=>'--Select--','1'=>'Public Document','2'=>'Organization Document','3'=>'Departmental Document','4'=>'Role Specific Document','5'=>'User Specific Document'), 
+	);
+	
+
+$form['user_list'] = array(
+	'#type' => 'select',
+	'#title' => t('Users'),
+	'#required' => FALSE,
+	'#default_value' =>explode(",",$rs->selectuser),
+	'#options' => getduserlist(), 
+	'#multiple' => TRUE,
+	);
+$form['role_list'] = array(
+	'#type' => 'select',
+	'#title' => t('Roles'),
+	'#required' => FALSE,
+	'#default_value' =>explode(",",$rs->selectrole),
+	'#options' => getdrolelist(), 
+	'#multiple' => TRUE,
+	);
+return $form;
+} 
+
+
+function documentUpload_validate($form, &$form_state) {
+	//echo '<pre>';
+	//print_r($form);
+	//exit;
+
+	$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Document', 'documentlist');
+	if($array[0] == 'node/'.$node->nid.'/edit'){
+	$breadcrumb[] = l('Edit Upload Document', 'node/'.$node->nid.'/edit');
+	}
+	if($array[0] == 'node/add/documentUpload'){
+	$breadcrumb[] = l('Document Entry Form', 'node/add/documentUpload');
+	}
+	
+	
+
+	drupal_set_breadcrumb($breadcrumb);
+$datee= substr($form->expire_date,0,10);
+$cdate = date('Y-m-d',time());
+
+if($datee < $cdate && $datee){
+	form_set_error('expire_date','Expiry Date should be greater then to current date.');
+}
+	$accessvalue = $form->access_level;
+	
+	foreach($form->user_list as $key => $val){
+		$newuserid .= $val.',';
+		}
+	foreach($form->role_list as $key => $val){
+		 $newrole .= $val.',';
+	}
+	
+	if($accessvalue == 0){
+		form_set_error('access_level',t('Please select Access Level.'));
+	}
+	if($accessvalue == 5 && $newuserid == ',' ){
+		form_set_error('user_list',t('Please select the User from user list.'));
+	}
+	if($accessvalue == 4 && $newrole == ',' ){
+		form_set_error('role_list',t('Please select the Role from user list.'));
+	}
+
+	$fsql ="select fileno FROM {tbl_upload_document} where nid != '".$form->nid."'";
+	$fres = db_query($fsql);
+	$error = 0;
+	while($frs = db_fetch_object($fres)){
+		if($frs->fileno == $form->file_number){
+			$error = 1;
+		}
+	}
+	if($error == 1){
+		$msg = t(getMessage('documentupload', 'code06', array("0"=>$form->file_number)));
+		form_set_error('file_number',$msg);
+	}
+}
+
+function getbranchoffice(){
+ $sqloffice = "select corporation_id,corporation_name  from {tbl_corporations} where status ='1' ORDER BY corporation_name ASC";
+	$resoffice =db_query($sqloffice);
+	if($resoffice){
+      $officearray[''] = '--Select--'; 
+	  while($rsoffice = db_fetch_object($resoffice)){
+	    $officearray[$rsoffice->corporation_id] = ucwords($rsoffice->corporation_name);
+	  }
+	}
+	return $officearray;
+}
+
+function getdepartment(){
+
+$kk= "SELECT lookupType_id,lookupType_name  FROM {tbl_lookupTypes} WHERE lookupType_id=19";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM {tbl_lookups} WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressender= db_query($sqlsender);
+$senderarray['']= '--Select--';
+if($ressender){
+
+while($rssender = db_fetch_object($ressender)){
+
+$senderarray[$rssender->lookup_id] = ucwords($rssender->lookup_name);
+
+}
+
+}
+return $senderarray;
+}
+
+function getduserlist(){
+$sql = " select uid,name from {users} WHERE status=1 ORDER BY name ASC";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+$senderarray['']= '--Select--';
+if($res){
+
+while($rs = db_fetch_object($res)){
+
+$senderarray[$rs->uid] = ucwords($rs->name);
+
+}
+
+}
+return $senderarray;
+}
+
+function getdrolelist(){
+$sql = " select rid,name from {role} ORDER BY name ASC";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+$senderarray['']= '--Select--';
+if($res){
+
+while($rs = db_fetch_object($res)){
+
+$senderarray[$rs->rid] = ucwords($rs->name);
+
+}
+
+}
+return $senderarray;
+}
+
+function documentUpload_insert($node){
+	//echo '<pre>';
+	//print_r($node);
+	//exit;
+	global $user;
+foreach($node->user_list as $key => $val){
+	$newuserid .= $val.',';
+}
+foreach($node->role_list as $key => $val){
+	$newrole .= $val.',';
+}
+$totleuser = strlen($newuserid);
+$newuserid = substr($newuserid,0,$totleuser-1);
+$totlerole = strlen($newrole);
+$newrole = substr($newrole,0,$totlerole-1);
+ 
+	$nodeid = $node->nid;
+	 // $userid = $node->uid;
+	 $userid= $user->uid;
+	$createdate = date('d-m-Y :H:m:s',$node->created);
+	$versionid = $node->vid;
+	$title = $node->file_title;
+	$uploadfile = $node->field_documentupload_file[0]['filepath'];
+	$discription = $node->file_discription;
+	$depatment = $node->department;
+	 $branchoffice = $node->branchoffice;
+	$author = $node->file_author;
+	$expdate = $node->expire_date;
+	$file_number = $node->file_number;
+	$keywords = parseData($node->file_keywords);
+	$accesslevel = $node->access_level;
+	$selecteduser = $newuserid;
+	$selectedrole = $newrole;
+	$updatetime =time();
+if($accesslevel==4){$selecteduser='';}
+if($accesslevel==5){$selectedrole = '';}
+
+  $hod = employeeHOD($userid);
+
+   /** Send mail to hod **/
+	
+	$uload = user_load($hod);
+	$username = $uload->name;
+	$usermail = $uload->mail;
+
+	$parameter = '';
+	$to = $usermail;
+	$parameter = json_encode(array('0'=>$username,'1'=>$file_number,'2'=>$title,'3'=>$author));
+	createMail('uploaddocumenttohod',$to,'',$parameter);
+   
+   /** End  Send mail to hod **/
+
+
+ 
+db_query("insert into {tbl_workflow_docket} (workflow_id,corp_branch) VALUES ('11','".getCorporationBranch($hod)."')");
+	
+	$doc_id = db_last_insert_id('tbl_workflow_docket','doc_id');
+	//db_query("insert into tbl_resignation (emp_id,reason,regdate,effectdate,status,resigndate,doc_id) VALUES ('".$empid."','".$reson."','".$date."','".$edate."','9','".$resigndate."','".$doc_id."')");
+
+	db_query("insert into {tbl_upload_document} (vid,uid,nid,title,discription,uploadfile,departmant,branchoffice,dateofupload,author,dateofexpire,fileno,keywords,accesslevel,selectrole,selectuser,status,doc_id,hod,updatedate) values ('".$versionid."','".$userid."','".$nodeid."','".$title."','".$discription."','".$uploadfile."','".$depatment."','".$branchoffice."','".$createdate."','".$author."','".$expdate."','".$file_number."','".$keywords."','".$accesslevel."','".$selectedrole."','".$selecteduser."',0,'".$doc_id."','".$hod."','".$updatetime."')");
+//db_query("insert into {tbl_workflow_task} (level,status,doc_id) VALUES (1,0,'".$doc_id."')");
+	db_query("insert into {tbl_workflow_task} (uid,status,doc_id) VALUES ('".$hod."',0,'".$doc_id."')");
+
+
+//drupal_goto('documentlist');
+	
+
+}
+
+
+
+
+function documentUpload_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  
+  if($node->type == 'documentUpload'){
+ 
+  switch ($op) {
+    
+    case 'insert':
+		//$node = node_load($nid);
+
+      //  node_save($node);
+		$msg = t(getMessage('documentupload', 'code05', array("0"=>$node->file_title)));
+		drupal_set_message($msg);
+		drupal_goto('documentlist');
+		break;
+    case 'update':
+				//$node = node_load($nid);
+
+       // node_save($node);
+		$msg = t(getMessage('documentupload', 'code10', array("0"=>$node->file_title)));
+	    drupal_set_message($msg);
+		drupal_goto('documentlist');
+      break;
+
+
+  }
+  }
+}
+
+
+/*function documentUpload_delete($nid){
+	 $noden = node_load($nid);
+ print_r($noden);
+  db_query("DELETE FROM {tbl_upload_document} WHERE nid ='".$noden->nid."'");
+  drupal_set_message('Document has been disabled successfully.');
+  drupal_goto('documentlist');
+}
+*/
+/*function documentUpload_load($node){
+   $sql = "SELECT * FROM {tbl_upload_document} WHERE nid='".$node->nid."'";
+   $res = db_query($sql);
+  return $rs = db_fetch_object($res);
+}*/
+
+function documentUpload_form_alter(&$form, &$form_state, $form_id){
+	
+	//echo '<pre>';
+	//print_r($form);
+	//exit;
+	//$form['language']['#type'] = hidden;
+	if($form_id == 'documentUpload_node_form'){
+	
+	// $form['revision_information']['#type'] = hidden;
+	 $form['author']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+		
+	}
+}
+
+
+function documentUpload_update($node){
+	global $user;
+	
+	if($node->file_number){
+				foreach($node->user_list as $key => $val){
+					$newuserid .= $val.',';
+				}
+				foreach($node->role_list as $key => $val){
+					$newrole .= $val.',';
+				}
+
+				$totleuser = strlen($newuserid);
+				$newuserid = substr($newuserid,0,$totleuser-1);
+				$totlerole = strlen($newrole);
+				$newrole = substr($newrole,0,$totlerole-1);
+
+				$nodeid = $node->nid;
+				//$userid = $node->uid;
+				$userid = $user->uid;
+				$createdate = date('d-m-Y :H:m:s',$node->created);
+				$versionid = $node->vid;
+				$title = $node->file_title;
+				$uploadfile = $node->field_documentupload_file[0]['filepath'];
+				$discription = $node->file_discription;
+				$depatment = $node->department;
+				$branchoffice = $node->branchoffice;
+				$author = $node->file_author;
+				$expdate = $node->expire_date;
+				$file_number = $node->file_number;
+				$keywords = $node->file_keywords;
+				$accesslevel = $node->access_level;
+				$selecteduser = $newuserid;
+				$selectedrole = $newrole;
+				$updatetime =time();
+
+				 $hod = employeeHOD($userid);
+
+			   /** Send mail to hod **/
+				
+				$uload = user_load($hod);
+				$username = $uload->name;
+				$usermail = $uload->mail;
+
+				$parameter = '';
+				$to = $usermail;
+				$parameter = json_encode(array('0'=>$username,'1'=>$file_number,'2'=>$title,'3'=>$author));
+				createMail('uploaddocumenttohod',$to,'',$parameter);
+			   
+			   /** End  Send mail to hod **/
+
+
+				if($accesslevel==4){$selecteduser='';}
+			if($accesslevel==5){$selectedrole = '';}
+			$sql ="select doc_id FROM {tbl_upload_document} where nid='".$nodeid."'";
+			$res= db_query($sql);
+			$rs= db_fetch_object($res);
+			$doc_id = $rs->doc_id;
+			db_query("update {tbl_workflow_task} SET status=0 where doc_id='".$doc_id."'");
+				
+			db_query("update {tbl_upload_document} SET vid ='".$versionid."',uid='".$userid."',title='".$title."',discription='".$discription."',departmant='".$depatment."',branchoffice='".$branchoffice."',dateofupload='".$createdate."',author='".$author."',dateofexpire='".$expdate."',fileno='".$file_number."',keywords='".$keywords."',accesslevel='".$accesslevel."',selectrole='".$selectedrole."',selectuser='".$selecteduser."',uploadfile ='".$uploadfile."',status= 0,updatedate='".$$updatetime."' where nid = '".$nodeid."'");
+	}
+		
+
+}
+
+
+
+
+function documentUpload_menu(){
+
+ $items['documentlist'] = array(
+	'title' => '',
+	'page callback' => 'view_upload_document',
+	 'access arguments' => array('administer documentUpload'),
+	'type' => MENU_NORMAL_ITEM,
+);
+
+$items['search-document-list/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'search_upload_document',
+	'page arguments' => array(1),
+	'access arguments' => array('administer documentUpload'),
+);
+
+$items['view-upload-document/%'] = array(
+								'title' => t('View Upload Document'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_document',
+								'page arguments' => array(1),
+								'access arguments' => array('administer documentUpload'),
+		                        
+						);
+$items['approve/%'] = array(
+								'title' => t(''),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'approved_document',
+								'page arguments' => array(1),
+								'access arguments' => array('administer documentUpload'),
+		                        
+						);
+ $items['pending-documentlist'] = array(
+	'title' => '',
+	'page callback' => 'pending_upload_document',
+	 'access arguments' => array('administer documentUpload'),
+	'type' => MENU_NORMAL_ITEM,
+);
+return $items;
+
+}
+
+function approved_document($nodeid){
+db_query("update {tbl_upload_document} SET status=1 where nid = '".$nodeid."'");
+$sql ="select * FROM {tbl_upload_document} where nid='".$nodeid."'";
+$res= db_query($sql);
+$rs= db_fetch_object($res);
+$doc_id = $rs->doc_id;
+
+
+/** Send mail to hod **/
+	
+	$uload = user_load($rs->uid);
+	$username = $uload->name;
+	$usermail = $uload->mail;
+
+	$parameter = '';
+	$to = $usermail;
+	$parameter = json_encode(array('0'=>$username,'1'=>$rs->fileno,'2'=>$rs->title,'3'=>$rs->author));
+	createMail('Approveduploaddocument',$to,'',$parameter);
+   
+   /** End  Send mail to hod **/
+
+
+
+
+db_query("update {tbl_workflow_task} SET status=1 where doc_id='".$doc_id."' AND status = 0");
+$msg = t(getMessage('documentupload', 'code11', array("0"=>$rs->title)));
+drupal_set_message($msg);
+drupal_goto('documentlist');
+}
+
+
+function dsearch_form(){
+
+$form['search_box']=array(
+'#type' => 'textfield',
+'#title' => '',
+'#required' => TRUE,
+'#size' => 60,
+);
+
+$form['search'] = array(
+'#type' => 'submit',
+	'#value' =>t('Search'),
+);
+return $form;
+}
+
+function dsearch_form_submit($form, &$form_state){
+
+//echo '<pre>';
+//print_r($form_state);
+//exit;
+$keydata = $form_state['values']['search_box'];
+drupal_goto('search-document-list/'.$keydata);
+
+}
+
+function pending_upload_document(){
+	global $user;
+	//echo $user->uid;exit;
+if($user->uid == 1){
+ $sql = "select * FROM {tbl_upload_document} ";
+ //drupal_set_message($sql);
+}
+else{
+ $sql = "select * FROM {tbl_upload_document} WHERE status=0 AND hod='".$user->uid."' ";
+ 
+}
+
+$output = listdocument($sql);
+return $output;
+
+}
+
+function view_upload_document(){
+global $user;
+
+$currentrole = getRole($user->uid);
+if($currentrole){
+$expr = "selectrole REGEXP ('".$currentrole.",|".$currentrole."$') OR selectuser REGEXP ('".$user->uid.",|".$user->uid."$')  OR uid = '".$user->uid."' OR hod='".$user->uid."' ";
+}
+else{
+	$expr = "selectuser REGEXP ('".$user->uid.",|".$user->uid."$')  OR uid = '".$user->uid."'  OR hod='".$user->uid."' ";
+}
+if($user->uid == 1){
+ $sql = "select * FROM {tbl_upload_document} ";
+ //drupal_set_message($sql);
+}
+else{
+ $sql = "select * FROM {tbl_upload_document} WHERE ((".$expr.") AND status=1)  OR (uid = '".$user->uid."') OR hod='".$user->uid."'";
+ 
+}
+
+
+
+$output = listdocument($sql);
+return $output;
+}
+
+function search_upload_document($keydata){
+//$output = drupal_get_form('dsearch_form');
+global $user;
+$currentrole = getRole($user->uid);
+if($currentrole){
+$expr = "selectrole REGEXP ('".$currentrole.",|".$currentrole."$') OR selectuser REGEXP ('".$user->uid.",|".$user->uid."$') ";
+}
+else{
+	$expr = "selectuser REGEXP ('".$user->uid.",|".$user->uid."$')";
+}
+
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);	 
+
+if($user->uid == 1){
+
+ $sql = "select * FROM {tbl_upload_document} WHERE (title LIKE '".$val."' OR keywords REGEXP ('".$keydata.",|".$keydata."$') OR discription LIKE '".$val."' OR dateofupload LIKE '".$keydata."%') ";
+//drupal_set_message($val.$sql);
+}
+else{
+	//list($day, $month, $year) = explode('-', '27-12-2011');
+//echo mktime(0, 0, 0, $month, $day, $year);
+//echo strtotime('27-12-2011');
+	//echo $sql = "select UNIX_TIMESTAMP(dateofupload) FROM {tbl_upload_document} WHERE  ";
+   $sql = "select * FROM {tbl_upload_document} WHERE (title LIKE '".$val."' OR keywords REGEXP ('".$keydata.",|".$keydata."$') OR discription LIKE '".$val."' OR dateofupload LIKE '".$keydata."%') AND ( ((".$expr.") AND status=1)  OR (uid = '".$user->uid."') OR hod='".$user->uid."' ) ";
+//exit;
+}
+
+
+
+$output =listdocument($sql);
+return $output;
+//echo $keydata;
+}
+
+function listdocument($sqlquery){
+global $user;
+$limit =(int)getMessage('documentupload', 'code04', NULL);
+$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Title'), 'field' => 'tbl_upload_document .title', 'sort' => 'asc'),
+	array('data' => t('Created On'), 'field' => 'tbl_upload_document .dateofupload', 'sort' => 'asc'),
+	array('data' => t('Description'), 'field' => 'tbl_upload_document .discription', 'sort' => 'asc'),
+	array('data' => t('Actions'), 'class' => 'addeditview'),
+	
+	);
+ $currentrole = getRole($user->uid);
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Document', 'documentlist'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+
+//selectuser
+//REGEXP  '(98,)|98$'
+
+$sql=$sqlquery.tablesort_sql($header);
+$count_query = "SELECT COUNT(*) as mycount FROM (" . $sql . ") AS count_query ORDER BY updatedate DESC";
+$cres = db_query($count_query);
+$crs = db_fetch_object($cres);
+$totalcount = $crs->mycount;
+
+$result = pager_query($sql, $limit, 0, $count_query);
+if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+
+if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		 $userid = $rs->uid;
+		 $vsql = "select COUNT(vid) as vcount from {node_revisions} where nid='".$rs->nid."'";
+		 $vres = db_query($vsql);
+		 $vrs = db_fetch_object($vres);
+		 $vcount = $vrs->vcount;
+		
+		// $hod = employeeHOD($userid);
+					$links = l('View','view-upload-document/'.$rs->nid);
+					$nodden = node_load($rs->nid);
+					//echo '<pre>'; 
+					//print_r($nodden);
+					
+					 $links .= ' | '.l(t('Download'),$nodden->field_documentupload_file[0]['filepath'], array('attributes' => array('target' => '_blank')));
+					//					else{$dlink = "";}
+					//exit;
+					//echo $rs->hod; exit;
+					if($rs->hod == $user->uid && $rs->status == 0){
+						$links .= ' | '.l('Approve','approve/'.$rs->nid,array('attributes'=>array('onclick'=>'return confirm("Are you sure you want to approve?");')));
+						 $links .= ' | '.l('Edit',t('node/'.$rs->nid.'/edit'));
+						 if($vcount>1){
+						 $links .=' | '.l('Revisions','node/'.$rs->nid.'/revisions');
+						 }
+					}
+					if($rs->uid == $user->uid && $rs->hod != $user->uid){
+					   $links.= ' | '.l('Edit',t('node/'.$rs->nid.'/edit'));
+						if($vcount > 1){
+						   $links .=' | '.l('Revisions','node/'.$rs->nid.'/revisions');
+						   }
+					}
+		 
+		  
+						//$newdate = date("d-m-Y" ,strtotime($rs->dateofupload));
+						$newdate = substr($rs->dateofupload,0,10);
+						if($rs->discription){
+							$desc = substr($rs->discription.'..',0,50);
+                        }else{
+						    $desc = 'NA';  
+						}
+						$rows[] = array(
+							array('data' => $counter),
+							array('data' => ucwords($rs->title)),
+							array('data' => $newdate),
+							array('data' =>$desc ),
+							array('data' => $links),
+						  
+						);
+						
+		  
+			
+	  }
+}
+
+ if($rows== NULL)
+	$header=NULL;
+	 
+	 //$output .='<div class="uploadcss">';
+	 if(arg(0)=='search-document-list'){
+	 $output .='<table  id="wrapper" class="searchrecord"><tr><td>'.t(getMessage('documentupload', 'code03', array("0"=>$totalcount))).' | '.l('View All','documentlist').'</td></tr></table>';
+	 }
+	$output .='<table id="wrapper"><tr><td class="tblHeaderLeft">List of Documents <span class="addrecord">'.l('Add Document','node/add/documentUpload').'</span></td><td class="tblHeaderRight">'.drupal_get_form('dsearch_form').'</td></tr></table>';
+	//$output .='<table class="dhead"><tr><td align="left"><h3>List of Documents</h3></td><td align="right">'.l('Add Document','node/add/documentUpload').'</td></tr></table>';
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, $limit,0);
+
+// $output .='<div>';
+   //$output .= $rscounter->countno;
+	return $output;
+  }
+
+
+
+function view_document($nid){
+global $user,$base_url;
+
+$array = explode(',',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Document', 'documentlist');
+  $breadcrumb[] = l('View Upload Document', 'view-upload-document/'.$nid);
+  
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * FROM {tbl_upload_document}  where nid = '".$nid."'";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+ $userarray = explode(',',$rs->selectuser);
+ $usersize = sizeof($userarray);
+ $count = 0;
+
+ foreach($userarray as $key => $val){
+	 $count++;
+	 
+	 $usql = "select name from {users} where uid='".$val."'";
+	 $ures = db_query($usql);
+	 $urs = db_fetch_object($ures);
+	 $userslist .= $urs->name;
+	
+	 if($count < $usersize){
+		$userslist .=' | ';
+	 }
+ }
+
+
+ $rolearray = explode(',',$rs->selectrole);
+ $rolesize = sizeof($rolearray);
+ $count = 0;
+ 
+ foreach($rolearray as $key => $val){
+	 $count++;
+	 
+	 $rsql = "select name from {role} where rid='".$val."'";
+	 $rres = db_query($rsql);
+	 $rrs = db_fetch_object($rres);
+	 $rolelist .= $rrs->name;
+	
+	 if($count < $rolesize){
+		$rolelist .=' | ';
+	 }
+ }
+ if( $rs->dateofexpire == ''){
+$dexp = 'NA';
+ }
+else{
+$dexp =date('d-m-Y',strtotime($rs->dateofexpire));
+}
+ if( $rs->keywords == ''){
+$key = 'NA';
+ }
+else{
+$key =$rs->keywords;
+}
+$nodden = node_load($nid);
+$output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="form_container">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Upload Document Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">File:</td><td class="normal">'.l('Download',$base_url.'/'.$nodden->field_documentupload_file[0]['filepath'],array('attributes'=>array('target'=>'_blank'))).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">File No.:</td><td class="normal"> '.$rs->fileno.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">File Title:</td><td class="normal">'.ucwords($rs->title).'</td></tr>';
+if($rs->discription){
+  $desc= ucwords($rs->discription);
+
+}else{
+  $desc = 'NA';
+}
+$output .='<tr class="oddrow"><td width="50%">File Description:</td><td class="normal">'.$desc.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Department:</td><td class="normal">'.ucwords(getLookupName($rs->departmant)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Branch/Office:</td><td class="normal">'.ucwords(getCorporationName($rs->branchoffice)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Author:</td><td class="normal">'.ucwords($rs->author).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date of Expiry:</td><td class="normal">'.$dexp.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Keywords:</td><td class="normal">'.$key.'</td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">Access Level:t:</td><td class="normal">'.$rs->accesslevel.'</td></tr>';
+if($rs->accesslevel == 5){
+$output .='<tr class="oddrow"><td width="50%">Users:</td><td class="normal">'.$userslist.'</td></tr>';
+}
+if($rs->accesslevel == 4){
+$output .='<tr class="oddrow"><td width="50%">Roles:</td><td class="normal">'.$rolelist.'</td></tr>';
+}
+$output .='<tr class="evenrow"><td colspan="2" class="back" align="center">'.l(t('Back'), 'documentlist').'</td></tr>';
+$output .='</table>';
+
+
+
+return $output ;
+}
+
+function documentUpload_theme() {
+	
+	return array(
+				 
+		'documentUpload_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'documentUpload_form',
+			),
+        
+
+				 );
+}
+
+
+
+
+
+
+

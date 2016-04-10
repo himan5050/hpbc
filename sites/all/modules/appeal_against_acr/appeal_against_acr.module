@@ -1,0 +1,363 @@
+<?php
+
+function appeal_against_acr_init() {
+	drupal_add_css(drupal_get_path('module', 'appeal_against_acr') .'/appeal_against_acr.css');
+	drupal_add_js(drupal_get_path('module', 'appeal_against_acr') .'/appeal_against_acr.js');
+
+	
+}
+
+function appeal_against_acr_perm() {
+	return array('edit Appeal Against ACR','administer Appeal Against ACR', 'create Appeal Against ACR', 'view Appeal Against ACR');
+}
+
+function appeal_against_acr_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit Appeal Against ACR', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create Appeal Against ACR', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view Appeal Against ACR', $account);
+	}
+}
+
+function appeal_against_acr_menu() {
+	
+	
+	$items['appeal-against-acr-form'] = array(
+										'title' => t('Appeal Against ACR'),
+										'description' => 'Appeal Against ACR',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'appeal_against_acr_page',
+										//'page arguments' => array(1),
+										'access arguments' => array('administer Appeal Against ACR'),
+										
+													 
+									  );
+	$items['appeal-against-acrlist'] = array(
+										'title' => t('Appeal Against ACR List'),
+										'description' => 'Appeal Against ACR',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'appeal_against_acr_list',
+										//'page arguments' => array(1),
+										'access arguments' => array('administer Appeal Against ACR'),
+													 
+									  );
+	
+	$items['appeal-against-acrsearch/%'] = array(
+										'title' => t('Appeal Against ACR List'),
+										'description' => 'Appeal Against ACR',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'appeal_against_acr_search_page',
+										'page arguments' => array(1),
+										'access arguments' => array('administer Appeal Against ACR'),
+													 
+									  );
+	$items['appeal-against-detail/%'] = array(
+										'title' => t('Appeal Against ACR Details'),
+										'description' => 'Appeal Against ACR Details',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewacrpage',
+										'page arguments' => array(1),
+										'access arguments' => array('administer Appeal Against ACR'),
+													 
+									  );
+	
+	
+
+	return $items;
+}
+
+
+/** listing states */
+//function viewcast(){
+	
+	
+	
+function acr_appeal_form(){
+	//session_start();
+//$form['emp_id']=array(
+//'#type' => 'hidden',
+//'#value'=>$emp_id,
+
+//);
+global $user,$base_url;
+$emp_id = getuidtoempID($user->uid);
+
+$form['year']=array(
+'#type'=>'select',
+'#title'=>t('Year'),
+'#required'=>TRUE,
+'#default_value'=>'',
+'#options'=>selectapprisalyear(),
+'#attributes' => array('onchange' =>'return acrdetail(this.value,"'.$base_url.'","'.$emp_id.'")'),
+
+);
+
+$form['acr_no']=array(
+'#type' => 'textfield',
+'#title' => t('ACR NO.'),
+'#required' => TRUE,
+'#size' => 55,
+'#default_value'=>'',
+'#attributes' =>array('readonly' => 'readonly'),
+);
+$form['acr_status']=array(
+'#type' => 'textfield',
+'#title' => t('ACR Status'),
+'#required' => TRUE,
+'#size' => 55,
+'#default_value'=>'',
+'#attributes' =>array('readonly' => 'readonly'),
+);
+
+$form['discription'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Description'),
+	'#required' => TRUE,
+	'#default_value' =>$node->discription,
+	'#maxlength' =>200,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-discription",200)'),
+	);
+
+
+$form['submit'] = array(
+'#type' => 'submit',
+'#value' =>t('Submit'),
+);
+return $form;
+}
+
+
+
+function acr_appeal_form_validate($form,&$form_state){
+ 
+
+}
+function acr_appeal_form_submit($form, &$form_state){
+global $user;
+$emp_id = getuidtoempID($user->uid);
+$year = $form_state['values']['year'];
+$acr_no = $form_state['values']['acr_no'];
+$acr_status = $form_state['values']['acr_status'];
+$discription = $form_state['values']['discription'];
+$ctime = date("d-m-Y",time());
+
+db_query("insert into tbl_appeal_against_acr (acr_no,emp_id,year,acr_status,discription,submitdate,status) VALUES ('".$acr_no."','".$emp_id."','".$year."','".$acr_status."','".$discription."','".$ctime."',0)");
+
+$hod = employeeHOD($user->uid);
+$uload = user_load($hod);
+$username = $uload->name;
+$usermail = $uload->mail;
+$parameter = '';
+$to = $usermail;
+$parameter = json_encode(array('0'=>$username));
+createMail('appeal_against_acr',$to,'',$parameter);
+
+drupal_set_message("Appeal has been send successfully.");
+drupal_goto('appeal-against-acrlist');
+
+//tbl_appeal_against_acr;
+
+}
+
+
+function appeal_against_acr_page(){
+
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Appeal Against ACR List', 'appeal-against-acrlist');
+	$breadcrumb[] = l('Appeal Against ACR Form', 'appeal-against-acr-form');
+	drupal_set_breadcrumb($breadcrumb);
+	
+
+
+$output = drupal_get_form('acr_appeal_form');
+return $output;
+}
+
+function appeal_against_acr_list(){
+	global $user;
+$sql ="select * from tbl_appeal_against_acr where emp_id='".getuidtoempID($user->uid)."'";
+$output = acrlist($sql);
+return $output;
+}
+
+function appeal_against_acr_search_page($keydata){
+global $user;
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);
+$sql ="select * from tbl_appeal_against_acr INNER JOIN tbl_joinings ON(tbl_appeal_against_acr.emp_id = tbl_joinings.employee_id) where emp_id='".getuidtoempID($user->uid)."' AND(tbl_joinings.employee_name LIKE '".$val."' OR tbl_appeal_against_acr.acr_no='".$keydata."' OR tbl_appeal_against_acr.year='".$keydata."' OR tbl_appeal_against_acr.acr_status LIKE '".$val."' OR tbl_appeal_against_acr.discription LIKE '".$val."' OR tbl_appeal_against_acr.submitdate='".$keydata."')";
+$output = acrlist($sql);
+return $output;
+}
+
+function acrlist($sqlquery){
+global $user;
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Appeal Against ACR List', 'appeal-against-acrlist');
+	
+	drupal_set_breadcrumb($breadcrumb);
+
+$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Employee Name'), 'field' => 'tbl_appeal_against_acr .emp_id', 'sort' => 'asc'),
+	array('data' => t('ACR No.'), 'field' => 'tbl_appeal_against_acr .acr_no', 'sort' => 'asc'),
+	array('data' => t('Year'), 'field' => 'tbl_appeal_against_acr .year', 'sort' => 'asc'),
+	array('data' => t('ACR Status'), 'field' => 'tbl_appeal_against_acr .acr_status', 'sort' => 'asc'),
+	array('data' => t('Discription'), 'field' => 'tbl_appeal_against_acr .discription', 'sort' => 'asc'),
+	array('data' => t('Submit Date'), 'field' => 'tbl_appeal_against_acr .submitdate', 'sort' => 'asc'),
+	array('data' => t('Action')),
+	
+	);
+	$sql = $sqlquery.tablesort_sql($header);
+	$count_query = "SELECT COUNT(*) as mycount FROM (" . $sql . ") AS count_query";
+	$cres = db_query($count_query);
+	$crs = db_fetch_object($cres);
+	$totalcount = $crs->mycount;
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	$result = pager_query($sql,10,0,$count_query);
+if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$links = l('View','appeal-against-detail/'.$rs->appeal_id);
+		
+		$lnewdate = date("d-m-Y" ,strtotime($rs->submitdate));
+		$rows[] = array(
+		array('data' => $counter),
+		array('data' => empname($rs->emp_id).'('.$rs->emp_id.')'),
+		array('data' => $rs->acr_no),
+		array('data' => $rs->year),
+		array('data' => $rs->acr_status),
+		array('data' => $rs->discription),
+		array('data' => $lnewdate),
+		array('data' => $links),
+    //acr_no,emp_id,year,acr_status,discription,submitdate,status        
+          
+		);
+	  }
+}
+if($rows== NULL)
+	$header=NULL;
+
+    if(arg(0)=='appeal-against-acrsearch'){
+		$output .='<table  id="wrapper" class="searchrecord"><tr><td>'.$totalcount.' Record(s) Found | '.l('View All','appeal-against-acrlist').'</td></tr></table>';
+	}
+	 $output .='<table id="wrapper"><tr><td class="tblHeaderLeft">List of Appeal Against ACR <span class="addrecord">'.l('New Appeal','appeal-against-acr-form').'</span></td><td class="tblHeaderRight">'.drupal_get_form('acrsearch_form').'</td></tr></table>';
+	 
+
+	$output .=theme_table($header,$rows);
+	 $output .=theme('pager', NULL, 20,0 );
+
+  
+	return $output;
+
+}
+
+function acrsearch_form(){
+
+$form['search_box']=array(
+	'#type' => 'textfield',
+	'#title' => '',
+	'#required' => FALSE,
+	'#size' => 60,
+	'#prefix' => '<div class="listsearchieappeal7">',
+);
+
+$form['search'] = array(
+	'#type' => 'submit',
+	'#value' =>t('Search'),
+	'#suffix' => '</div>'
+);
+return $form;
+}
+
+function acrsearch_form_submit($form,&$form_state){
+	$keydata = $form_state['values']['search_box'];
+drupal_goto('appeal-against-acrsearch/'.$keydata);
+
+}
+
+
+
+
+ function appeal_against_acr_theme() {
+	
+	return array(
+		
+		'acr_appeal_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'acr_appeal_form',
+                                 ),
+		
+		
+								 
+ );
+        
+}
+
+
+
+function selectapprisalyear(){
+global $user;
+$emp_id = getuidtoempID($user->uid);
+if($user->uid == 1){
+$sql ="select appraisal_year from tbl_apraisal";
+}
+else{
+$sql ="select appraisal_year from tbl_apraisal where employee_id='".$emp_id."' AND appraisal_year NOT IN (select year from tbl_appeal_against_acr  where emp_id='".$emp_id."')";
+}
+$res = db_query($sql);
+$yeararray['']= '--Select--';
+	if($res){
+		while($rs = db_fetch_object($res)){
+			$yeararray[$rs->appraisal_year]=$rs->appraisal_year;
+		}
+	}
+	return $yeararray;
+}
+
+
+function viewacrpage($appeal_id){
+
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Appeal Against ACR List', 'appeal-against-acrlist');
+	$breadcrumb[] = l('Appeal Against ACR Details', 'appeal-against-detail/'.$appeal_id);
+	drupal_set_breadcrumb($breadcrumb);
+
+
+$sql ="select * from tbl_appeal_against_acr INNER JOIN tbl_joinings ON(tbl_appeal_against_acr.emp_id = tbl_joinings.employee_id) where appeal_id ='".$appeal_id ."'";
+
+$res = db_query($sql);
+$rs=db_fetch_object($res);
+
+
+$output = "<table cellspacing='2' cellpadding='1' border='0' id='form-container'>";
+	 $output .= "<tr class='evenrow'><td colspan=2 align='center'><h2>Appeal Against ACR Detail</h2></td></tr>";
+	 $output .= "<tr class='oddrow'><td width='50%'>Employee ID:</td><td>" .$rs->emp_id. "</td></tr>";
+    $output .= "<tr class='evenrow'><td>Employee Name:</td><td>" . ucwords($rs->employee_name). "</td></tr>";
+	 $output .= "<tr class='oddrow'><td>ACR No.:</td><td>" .$rs->acr_no. "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Year:</td><td>" .$rs->year. "</td></tr>";
+	$output .= "<tr class='oddrow'><td>ACR Status:</td><td>" .$rs->acr_status. "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Discription:</td><td>".ucwords($rs->discription). "</td></tr>";
+     $output .= "<tr class='oddrow'><td>Submitted Date:</td><td>" . date("d-m-Y",strtotime($rs->submitdate )). "</td></tr>";
+	$output .= '<tr class="evenrow"><td colspan="2" class="back" align="center">'.l('Back','appeal-against-acrlist').'</td></tr>';
+    $output .= "</table>";
+
+return $output;
+
+}

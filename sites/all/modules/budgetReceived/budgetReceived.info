@@ -1,0 +1,6 @@
+;$id 
+name="Budget Received"
+description="Budget Received"
+core =6.x
+version = 6.x-1
+package="Dsje"

@@ -1,0 +1,458 @@
+<?php
+function rec_department_init() {
+}
+
+
+
+function rec_department_perm() {
+	return array('edit rec_department','administer rec_department', 'create rec_department', 'view rec_department');
+}
+
+function rec_department_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit rec_department', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create rec_department', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view rec_department', $account);
+	}
+}
+
+function rec_department_menu() {
+	$items['admin/rec/listdepartment'] = array(
+										'title' => t('List of Departments'),
+										'description' => 'Allow user to View Department',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewdepartment',
+										'access arguments' => array('administer rec_department'),		 
+									  );
+	$items['admin/rec/listdepartment/viewdepart/%'] = array(
+										'title' => t('View Department'),
+										'description' => 'Allow user to View Department',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'view_depart',
+		                                'page arguments' => array(4),
+										'access arguments' => array('administer rec_department'),		 
+									  );
+	
+	$items['admin/rec/listdepartment/adddepartment'] = array(
+										'title' => t('Add Department'),
+										'description' => 'Allow user to add Department',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_adddepartment',
+										'access arguments' => array('administer rec_department'),		 
+									  );
+   	$items['admin/rec/listdepartment/edit/department/%'] = array(
+								
+										'title' => t('Edit Department'),
+										'description' => 'Allow user to add Department',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_adddepartmentedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer rec_department'),	 
+									  );
+    $items['admin/rec/del/department/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'department_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_department'),			 
+									  );
+   $items['admin/rec/enable/department/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'department_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_department'),			 
+									  );
+	return $items;
+}
+
+
+/** Listing department */
+function viewdepartment(){
+global $user;
+global $base_url;
+global $xpathObj;
+$limit = (int)getMessage( 'recDepartment', 'code04', NULL);
+
+$header = array(
+array('data' => t('S.No')),
+array('data' => t('Department Name'), 'field' => 'department_name', 'sort' => 'asc'),
+array('data' => t('Status')),
+array('data' => t('Action')),
+);
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List department', 'admin/dsje/listdepartment/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	$query = "SELECT department_id, department_name, remarks, status FROM tbl_departments  where UPPER(department_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count FROM  tbl_departments  where UPPER(department_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	}else{
+	$query = "SELECT department_id, department_name, remarks, status FROM tbl_departments ".tablesort_sql($header);
+	}
+$output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'recDepartment', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/rec/listdepartment');
+	}
+
+$output .='</td><td colspan="3" class="tblHeaderRight">
+<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+<input type="submit" name="search" value="Go"></td></tr>';
+
+$addurl = l(getMessage( 'recDepartment', 'code01', NULL),"admin/rec/listdepartment/adddepartment");
+$lising = getMessage( 'recDepartment', 'code02', NULL);
+
+$output .='<tr>
+<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+</tr>
+</table></form>';
+$result = pager_query($query,$limit);
+
+if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+}
+	while($row=db_fetch_object($result)) {
+	$counter++;
+	$editurl = l("Edit","admin/rec/listdepartment/edit/department/".$row->department_id);
+	$viewurl = l("View","admin/rec/listdepartment/viewdepart/".$row->department_id);
+	
+	if($row->status=='1'){
+	  $deleteurl = l("Disable","admin/rec/del/department/".$row->department_id."/".$row->department_name);
+	}else{
+	  $deleteurl = l("Enable","admin/rec/enable/department/".$row->department_id."/".$row->department_name);
+	}
+	if($row->status=='1'){
+	   $st='Enabled';
+	}else{
+	   $st ='Disabled';
+	}
+	$rows[] = array(
+		array('data' => $counter),
+		array('data' => ucwords($row->department_name)),
+		array('data' => $st),
+		array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+$output .= theme('pager', NULL, $limit,0 );
+return $output;
+}
+
+
+function rec_adddepartmentedit($department_id){
+ return drupal_get_form('rec_department_form_edit',$department_id);
+}
+
+function rec_department_form_edit(&$form_states,$department_id) {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of Departments', 'admin/rec/listdepartment');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Department', 'admin/rec/listdepartment/edit/department/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+	
+	$sqldepartment = "select * from tbl_departments where department_id=$department_id";
+	$resdepartment = db_query($sqldepartment);
+	$rsdepartment = db_fetch_object($resdepartment);
+	
+	$form['department_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Department Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsdepartment->department_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+    $form['prev_department_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' => $rsdepartment->department_name,
+	);
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>$rsdepartment->remarks,
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+    
+	$form['id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsdepartment->department_id,
+	);
+
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listdepartment'),
+);
+	return $form;
+}
+
+
+function rec_department_form_edit_submit($form, &$form_state) {
+	
+	global $user;
+    $values = $form_state['values'];
+	$id = $values['id'];
+	$department_name = parseData(trim($values['department_name']));
+	$prev_department_name = parseData(trim($values['prev_department_name']));
+	$remarks = parseData($values['remarks']);
+
+
+   $s = textonlyn('department_name',$department_name,'Department Name');
+   $s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+   if($s == 0 && $s1 == 0){
+
+		$status = $values['status'];
+		$createdon = time();
+		$createdby = $user->uid;
+		////Amit : Function to validate the duplicate  value while editing//
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_departments} where LOWER(department_name)= '".strtolower($department_name)."' GROUP BY department_id"));
+	$count = $countObj->count;
+	if( strcmp(strtolower($prev_department_name), strtolower($department_name))==0){
+			db_query("UPDATE `tbl_departments` set `department_name` = '".$department_name."' ,`remarks` ='".$remarks."' ,`updatedby`='".$createdby."' ,`updatedon`='".$createdon."' where department_id='".$id."'"
+	);
+	$message = getMessage('recDepartment', 'code05', array("0"=>$department_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listdepartment");	
+			}else{
+			if($count==0){
+				db_query("UPDATE `tbl_departments` set `department_name` = '".$department_name."' ,`remarks` ='".$remarks."' ,`updatedby`='".$createdby."' ,`updatedon`='".$createdon."' where department_id='".$id."'"
+	);
+				$message = getMessage('recDepartment', 'code05', array('0'=>$department_name));
+				drupal_set_message($message);
+				drupal_goto("admin/rec/listdepartment");	
+			
+				}else{
+				db_query("UPDATE `tbl_departments` set `remarks` ='".$remarks."' ,`updatedby`='".$createdby."' ,`updatedon`='".$createdon."' where department_id='".$id."'"
+	);
+				
+				$message = getMessage('recDepartment', 'code06', array("0"=>$department_name));
+				form_set_error('department_name', $message);
+			 }	
+		}
+   }
+
+}	
+
+function rec_adddepartment(){
+ return drupal_get_form('rec_department_form');
+}
+function rec_department_form() {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of Departments', 'admin/rec/listdepartment');
+  if($array[2] == 'listdepartment'){
+     $breadcrumb[] = l('Add Department', 'admin/rec/listdepartment/adddepartment');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	
+   $form['department_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Department Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>'',
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listdepartment'),
+);
+	return $form;
+}
+
+//Amit : Function to validate the duplicate  value while addition//
+function rec_department_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $department_name = parseData($values['department_name']);
+  $remarks = parseData(trim($values['remarks']));
+
+  $s = textonlyn('department_name',$department_name,'Department Name');
+  $s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+  if($s == 0 && $s1 == 0){
+	  $sql = "SELECT * FROM {tbl_departments} where UCASE(department_name)= '".strtoupper($department_name)."' AND status =1";
+	   $res = db_query($sql);
+	  
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('recDepartment', 'code06', array("0"=>$department_name));
+			form_set_error('department_name', $message);
+	   }
+  }
+	
+}
+function rec_department_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $department_name = parseData(trim($values['department_name']));
+    $remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+    $sql = "SELECT * FROM {tbl_departments} where UCASE(department_name)= '".strtoupper($department_name)."' AND status !=1";
+   $res = db_query($sql);
+  
+   if($rs = db_fetch_object($res)){
+      db_query("UPDATE tbl_departments SET status=1 where department_id=$rs->department_id");
+   }else{
+	  db_query("INSERT INTO `tbl_departments` (`department_name` ,`remarks`,`status` ,`createdby` ,`createdon`) VALUES('".$department_name."','".$remarks."','".$status."','".$createdby."','".$createdon."') ");
+			
+   }
+$message = getMessage('recDepartment', 'code05', array("0"=>$department_name));
+	drupal_set_message($message);
+	drupal_goto('admin/rec/listdepartment');
+   
+
+}
+
+
+function rec_department_theme() {
+	
+	return array(
+				 
+		'rec_department_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_department_form',
+                                 ),
+        'rec_department_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_department_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function rec_department_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='rec_department_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='rec_department_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+ function department_delete($sid,$name){
+  $department_id = $sid;
+  db_query("UPDATE {tbl_departments} SET status=0 WHERE department_id ='".$department_id."'");
+  $message = getMessage('recDepartment', 'code07', array("0"=>$name));
+drupal_set_message($message);
+drupal_goto("admin/rec/listdepartment");
+  //drupal_goto("admin/rec/listdepartment");
+ }
+
+ function department_enable($sid,$name){
+  $department_id = $sid;
+  db_query("UPDATE {tbl_departments} SET status=0 WHERE department_id ='".$department_id."'");
+  $message = getMessage('recDepartment', 'code09', array("0"=>$name));
+  drupal_set_message($message);
+  drupal_goto("admin/rec/listdepartment");
+  //drupal_goto("admin/rec/listdepartment");
+ }
+
+function view_depart($department_id){
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of Departments', 'admin/rec/listdepartment');
+  if($array[3] == 'viewdepart'){
+     $breadcrumb[] = l('View Department', 'admin/rec/listdepartment/viewdepart/'.$array[4].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+$sql = "select * from tbl_departments where department_id = '$department_id' ";
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+
+  if($rs->gender =='0'){
+  $status ='Disabled';
+}else{
+  $status ='Enabled';
+}
+
+
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+
+
+
+$output ='<div id="dms-agreement">';
+$output .='<table cellpadding="3" cellspacing="2" border="0" id="wrapper">';
+$output .='<tr class="oddrow"><td colspan="2"><h2>Department Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td>Department Name:</td><td>'.ucwords($rs->department_name).'</td></tr>';
+////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+$output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+//$output .='<tr class="oddrow"><td>Created On:</td><td>'.$createdon.'</td></tr>';
+//$output .='<tr class="evenrow"><td>Created By:</td><td>'.getUser($rs->createdby).'</td></tr>';
+//$output .='<tr class="oddrow"><td>Updated On:</td><td>'.$updatedon.'</td></tr>';
+//$output .='<tr class="evenrow"><td>Updated By:</td><td>'.getUser($rs->updatedby).'</td></tr>';
+
+ $output .='</table></div>';
+ $output .=  l(t('Back'), 'admin/rec/listdepartment');
+return  $output;
+}
+  
+  
+	
+	

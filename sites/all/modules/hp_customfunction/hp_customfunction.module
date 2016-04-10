@@ -1,0 +1,912 @@
+<?php
+/*function hp_customfunction_user($op, &$edit, &$account, $category = NULL) {
+ global $user,$base_url;
+  switch ($op) {
+    case 'login':
+		print_r($account);exit;
+		combineuserlogin($account->name,$account->pass);
+	    exit;	
+
+		drupal_goto($base_url."/account/includes/checklogin.php?uname=".$account->name."&upass=".$account->pass);
+		echo $_REQUEST['destination'] = 'http://google.com';exit;
+			//=$base_url."/account/includes/checklogin.php?uname=".$account->name."&upass=".$account->pass;
+	break;
+	case 'logout':
+        // combineuserlogout();
+	$_REQUEST['destination'] = $base_url."/account/combinelogout.php";
+    break;
+	default:
+	break;
+  }
+}
+*/
+
+
+function access_denied(){
+	global $base_url;
+  return 'You are not authorized to access this page. Plesae '.l('Click here for Login',$base_url);
+}
+
+function page_not_found(){
+	global $base_url;
+  //return 'You are not authorized to access this page. Plesae '.l('Click here for Login',$base_url);
+  drupal_goto('node/211');
+}
+
+ 
+ function combineuserlogout(){
+ global $base_url;
+setcookie($_COOKIE['ersess'],0);
+ /* echo "<script type='text/javascript'>window.location.href='".$base_url."/account/combinelogout.php';</script>";*/
+  drupal_goto($base_url."/account/combinelogout.php");
+} 
+
+function combineuserlogin($name,$pass){
+
+   global $base_url,$user;
+   if($user->uid > 0){
+	  $bcode = getCorporationBranch($user->uid);
+     drupal_goto($base_url."/account/includes/checklogin.php?uname=".$name."&upass=".$pass."&url=".$base_url."&bcode=".$bcode);
+   }else{
+    // exit;
+   }
+}
+
+
+
+function hp_customfunction_perm() {
+	return array('edit hp_customfunction','administer hp_customfunction', 'create hp_customfunction', 'view hp_customfunction','change hp_customfunction');
+}
+
+function hp_customfunction_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit hp_customfunction', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create hp_customfunction', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view hp_customfunction', $account);
+	}
+}
+
+
+
+function hp_customfunction_menu(){
+  $items['page_not_found'] = array(
+         'title' => t('DashBoard'),
+         'page callback' => 'page_not_found',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+
+  $items['access_denied'] = array(
+         'title' => t('Access Denied'),
+         'page callback' => 'access_denied',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+  
+  $items['Item_Master'] = array(
+         'title' => t('Item Master'),
+         'page callback' => 'Item_Master',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+  
+ $items['Purchase_Order'] = array(
+         'title' => t('Purchase Order'),
+         'page callback' => 'Purchase_Order',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['Add_Item'] = array(
+         'title' => t('Add Item'),
+         'page callback' => 'Add_Item',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+ 
+  
+  
+    $items['Purchase_Order_Detail'] = array(
+         'title' => t('Purchase Order Detail'),
+         'page callback' => 'Purchase_Order_Detail',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+     $items['Stock_Issue_Register'] = array(
+         'title' => t('Stock Issue Register'),
+         'page callback' => 'Stock_Issue_Register',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );  
+   
+       $items['Condemn_Item'] = array(
+         'title' => t('Condemn Item'),
+         'page callback' => 'Condemn_Item',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+         $items['Stock_Register'] = array(
+         'title' => t('Stock Register'),
+         'page callback' => 'Stock_Register',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+  
+          $items['Condemned_Items'] = array(
+         'title' => t('Condemned Items'),
+         'page callback' => 'Condemned_Items',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+  
+ $items['Add_A_New_Item'] = array(
+         'title' => t('Add A New Item'),
+         'page callback' => 'Add_A_New_Item',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['Select_An_Item'] = array(
+         'title' => t('Select An Item'),
+         'page callback' => 'Select_An_Item',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+    $items['Sales_Category_Maintenance'] = array(
+         'title' => t('Sales Category Maintenance'),
+         'page callback' => 'Sales_Category_Maintenance',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+     $items['Add_or_Update_Prices'] = array(
+         'title' => t('Add or Update Prices Based On Costs Or Other Price List'),
+         'page callback' => 'Add_or_Update_Prices',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+      $items['View_or_Update_Prices'] = array(
+         'title' => t('View or Update Prices Based On Costs'),
+         'page callback' => 'View_or_Update_Prices',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+       $items['Reorder_Level_By'] = array(
+         'title' => t('Reorder Level By Category/Location'),
+         'page callback' => 'Reorder_Level_By',
+	     'access arguments' => array('create hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  
+  //general ledger
+  
+       $items['Bank_Account_Payments_Entry'] = array(
+         'title' => t('Bank Account Payments Entry'),
+         'page callback' => 'Bank_Account_Payments_Entry',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+      $items['Bank_Account_Receipts_Entry'] = array(
+         'title' => t('Bank Account Receipts Entry (Cash Voucher)'),
+         'page callback' => 'Bank_Account_Receipts_Entry',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+       $items['Journal_Voucher'] = array(
+         'title' => t('Journal Entry (Journal Voucher)'),
+         'page callback' => 'Journal_Voucher',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  
+ 
+ 
+ $items['Account_Master'] = array(
+         'title' => t('GL Account (Account Master)'),
+         'page callback' => 'Account_Master',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+   $items['GL_Budgets'] = array(
+         'title' => t('GL Budgets'),
+         'page callback' => 'GL_Budgets',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+       $items['Account_Groups'] = array(
+         'title' => t('Account Groups (Account Group)'),
+         'page callback' => 'Account_Groups',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+         $items['Account_Sections'] = array(
+         'title' => t('Account Sections'),
+         'page callback' => 'Account_Sections',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+         $items['Income_Expenditure'] = array(
+         'title' => t('Income Expenditure'),
+         'page callback' => 'Income_Expenditure',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );  
+  
+ $items['Daily_Cash_Book'] = array(
+         'title' => t('Daily Cash Book'),
+         'page callback' => 'Daily_Cash_Book',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['Trial_Balance'] = array(
+         'title' => t('Trial Balance (Trial Balance)'),
+         'page callback' => 'Trial_Balance',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );  
+ 
+   $items['Account_Inquiry'] = array(
+         'title' => t('Account Inquiry'),
+         'page callback' => 'Account_Inquiry',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+     $items['Account_Listing'] = array(
+         'title' => t('Account Listing'),
+         'page callback' => 'Account_Listing',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  
+       $items['bank_Reconciliation'] = array(
+         'title' => t('Bank Account Reconciliation Statement'),
+         'page callback' => 'bank_Reconciliation',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+   $items['audit_correctivelist'] = array(
+         'title' => t('Audit List'),
+         'page callback' => 'audit_correctivelist',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['audit_report_approvelist'] = array(
+         'title' => t('Audit Approve List'),
+         'page callback' => 'audit_report_approvelist',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['audit_mylist'] = array(
+         'title' => t('Audit List.'),
+         'page callback' => 'audit_mylist',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['tour_claim'] = array(
+         'title' => t('Tour Claim'),
+         'page callback' => 'tour_claim',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['tour_claim_user'] = array(
+         'title' => t('My Claims'),
+         'page callback' => 'tour_claim_user',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['tour_claim_approve'] = array(
+         'title' => t('Approved Tour Claims'),
+         'page callback' => 'tour_claim_approve',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['medical_claim_user'] = array(
+         'title' => t('Add Medical Claims'),
+         'page callback' => 'medical_claim_user',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+   
+   $items['medical_claim_approve'] = array(
+         'title' => t('Approved Medical Claims'),
+         'page callback' => 'medical_claim_approve',
+	     'access arguments' => array('change hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+   $items['audit_plan'] = array(
+         'title' => t('Audit Plan'),
+         'page callback' => 'audit_plan',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['auditreport'] = array(
+         'title' => t('Audit C&P Report'),
+         'page callback' => 'auditreport',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+
+ $items['tour_claim_details'] = array(
+         'title' => t('TA Details'),
+         'page callback' => 'tour_claim_details',
+	     'access arguments' => array('view hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  //////////
+  
+  $items['medical_claim_details'] = array(
+         'title' => t('Medical Claim Details'),
+         'page callback' => 'medical_claim_details',
+	     'access arguments' => array('view hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+ 
+ $items['claim_detail_report'] = array(
+         'title' => t('Claim Details Report'),
+         'page callback' => 'claim_detail_report',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+ 
+ 
+ $items['claim_type'] = array(
+         'title' => t('Claim Type'),
+         'page callback' => 'claim_type',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['inventory_adjustments'] = array(
+         'title' => t('Inventory Adjustments'),
+         'page callback' => 'inventory_adjustments',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+ 
+ 
+/* $items['stock_register'] = array(
+         'title' => t('Stock Register'),
+         'page callback' => 'stock_register',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); */
+  
+  $items['issue_item'] = array(
+         'title' => t('Issue an item'),
+         'page callback' => 'issue_item',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['auditschedulereport'] = array(
+         'title' => t('Audit Schedule Report'),
+         'page callback' => 'auditschedulereport',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+ 
+ 
+  $items['payment_reconcillation'] = array(
+         'title' => t('Payment Reconcillation'),
+         'page callback' => 'payment_reconcillation',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+
+$items['receipt_reconcillation'] = array(
+         'title' => t('Receipt Reconcillation'),
+         'page callback' => 'receipt_reconcillation',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+  $items['profit_loss'] = array(
+         'title' => t('Profit and Loss Statment'),
+         'page callback' => 'profit_loss',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+  
+   $items['journal_book'] = array(
+         'title' => t('Journal Book'),
+         'page callback' => 'journal_book',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+ 
+ $items['GLTrialBalance'] = array(
+         'title' => t('Tril Balance with Budget'),
+         'page callback' => 'GLTrialBalance',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+ 
+ $items['TrialBalance'] = array(
+         'title' => t('Trial Balance'),
+         'page callback' => 'TrialBalance',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  ); 
+ 
+  
+ $items['BalanceSheet'] = array(
+         'title' => t('Balance Sheet'),
+         'page callback' => 'BalanceSheet',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+
+$items['loanapplication'] = array(
+         'title' => t('Loan Application'),
+         'page callback' => 'loanapplication',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+$items['loanadvance_detail'] = array(
+         'title' => t('Loan Advance'),
+         'page callback' => 'loanadvance_detail',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+  $items['loanadvance_user'] = array(
+         'title' => t('Loan Advance'),
+         'page callback' => 'loanadvance_user',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+
+$items['e-samadhan'] = array(
+         'title' => t('Loan Advance'),
+         'page callback' => 'e_samadhan_page',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+  
+  $items['IncomeExpenditure'] = array(
+         'title' => t('Income Expenditure'),
+         'page callback' => 'IncomeExpenditure',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+  
+ 
+   $items['advance_summery'] = array(
+         'title' => t('Advance Summery'),
+         'page callback' => 'advance_summery',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+  $items['advance_detail_report'] = array(
+         'title' => t('Advance Detail Report'),
+         'page callback' => 'advance_detail_report',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+   $items['Cashflow'] = array(
+         'title' => t('Cash Flow'),
+         'page callback' => 'Cashflow',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+   $items['billsubmit'] = array(
+         'title' => t('Online bill submission'),
+         'page callback' => 'billsubmit',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+    $items['billsubmit_detail'] = array(
+         'title' => t('Online bill submission Detail'),
+         'page callback' => 'billsubmit_detail',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+	 $items['billsubmitreport'] = array(
+         'title' => t('Bill Detail Report'),
+         'page callback' => 'billsubmitreport',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+	  $items['chequebook'] = array(
+         'title' => t('ChequeBook Report'),
+         'page callback' => 'chequebook',
+	     'access arguments' => array('administer hp_customfunction'),
+         'type' => 'MENU_CALLBACK',
+  );
+  /////
+
+return $items;
+}
+
+function chequebook(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/chequebook.php');
+	}
+
+function billsubmitreport(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/billsubmitreport.php');
+}
+
+function billsubmit_detail(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/billsubmit_detail.php');
+}
+
+function billsubmit(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/billsubmit.php');
+}
+
+function Cashflow(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/cashflow.php');
+}
+
+function advance_detail_report(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/advance_detail_report.php');
+}
+
+function advance_summery(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/advance_summery.php');
+}
+
+function IncomeExpenditure(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/incomeexp.php');
+
+}
+function e_samadhan_page(){
+drupal_goto('http://admis.hp.nic.in/esamadhan/');
+
+}
+function loanadvance_detail(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/loanadvance_detail.php');
+
+}
+
+function loanadvance_user(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/loanadvance_user.php');
+
+}
+
+function loanapplication(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/loanapplication.php');
+}
+
+function BalanceSheet2(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/GLBalanceSheet.php');
+
+}
+
+function TrialBalance(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/trialbalance.php');
+
+}
+
+
+function journal_book(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/journalbook.php');
+
+}
+
+function profit_loss(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/GLProfit_Loss.php');
+
+}
+
+function payment_reconcillation(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/BankMatching.php?Type=Payments');
+
+
+}
+
+function receipt_reconcillation(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/BankMatching.php?Type=Receipts');
+
+
+
+}
+
+function auditschedulereport(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/auditschedulereport.php');
+
+
+}
+
+function issue_item(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/assign_item.php');
+
+
+}
+
+
+function claim_detail_report(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/claim_details.php');
+
+
+}
+
+
+function inventory_adjustments(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/StockAdjustments.php');
+
+
+}
+
+function medical_claim_details(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/medical_claim_details.php');
+
+
+}
+
+function claim_type(){
+
+   global  $base_url;
+  drupal_goto($base_url.'/account/claim_type.php');
+
+
+}
+function claim_details_report(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/claim_details.php');
+
+
+}
+
+function tour_claim_details(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/tour_claim_details.php');
+
+
+}
+function auditreport(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/auditreport.php');
+}
+function audit_plan(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/audit_plan.php');
+
+}
+function medical_claim_approve(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/medical_claim_approve.php');
+  
+
+}
+function medical_claim_user(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/medical_claim_user.php');
+  
+}
+function tour_claim_approve(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/tour_claim_approve.php');
+
+
+}
+function tour_claim_user(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/tour_claim_user.php');
+
+
+}
+function tour_claim(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/tour_claim.php');
+
+}
+function audit_mylist(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/audit_mylist.php');
+
+}
+function audit_report_approvelist(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/audit_report_approvelist.php');
+
+}
+function audit_correctivelist(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/audit_correctivelist.php');
+}
+
+
+function bank_Reconciliation(){
+   global  $base_url;
+  drupal_goto($base_url.'/account/BankReconciliation.php');
+}
+
+function Account_Listing(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/GLAccountInquiry.php');
+}
+
+function Account_Inquiry(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/GLAccountInquiry.php');
+}
+
+function Trial_Balance(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/GLTrialBalance.php');
+}
+
+function Daily_Cash_Book(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/dailycashbook.php');
+}
+
+
+
+function Income_Expenditure(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/incexp.php');
+}
+
+
+function Bank_Account_Payments_Entry(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/Payments.php?NewPayment=Yes');
+}
+
+function Bank_Account_Receipts_Entry(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/CustomerReceipt.php?NewReceipt=Yes&Type=GL');
+}
+
+
+function Journal_Voucher(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/GLJournal.php?NewJournal=Yes');
+}
+
+function Account_Master(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/GLAccounts.php');
+}
+
+
+function GL_Budgets(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/GLBudgets.php');
+}
+
+
+function Account_Sections(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/AccountSections.php');
+}
+
+function Account_Groups(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/AccountGroups.php');
+}
+
+
+function Reorder_Level_By(){
+  global  $base_url;
+  drupal_goto($base_url.'/account/ReorderLevelLocation.php');
+}
+
+function View_or_Update_Prices(){
+  global $base_url;
+  drupal_goto($base_url.'/account/PricesByCost.php');
+}
+
+
+function Add_or_Update_Prices(){
+  global $base_url;
+  drupal_goto($base_url.'/account/PricesBasedOnMarkUp.php');
+}
+
+function Sales_Category_Maintenance(){
+  global $base_url;
+  drupal_goto($base_url.'/account/SalesCategories.php');
+}
+
+function Select_An_Item(){
+  global $base_url;
+  drupal_goto($base_url.'/account/SelectProduct.php');
+}
+
+function Add_A_New_Item(){
+  global $base_url;
+  drupal_goto($base_url.'/account/Stocks.php');
+}
+
+function Condemned_Items(){
+  global $base_url;
+  drupal_goto($base_url.'/account/condemned_items.php');
+}
+
+function Stock_Register(){
+  global $base_url;
+  drupal_goto($base_url.'/account/stock_register.php');
+}
+
+function Condemn_Item(){
+  global $base_url;
+  drupal_goto($base_url.'/account/condemnation.php');
+}
+
+
+function Stock_Issue_Register(){
+  global $base_url;
+  drupal_goto($base_url.'/account/stock_issue_register.php');
+}
+
+function Purchase_Order_Detail(){
+  global $base_url;
+  drupal_goto($base_url.'/account/purchase_order_detail.php');
+}
+
+
+
+function Item_Master(){
+  global $base_url;
+  drupal_goto($base_url.'/account/itemdetail.php');
+}
+
+function Purchase_Order(){
+  global $base_url;
+  drupal_goto($base_url.'/account/purchase_order.php');
+}
+
+function Add_Item(){
+  global $base_url;
+  drupal_goto($base_url.'/account/add_item.php');
+}
+ 
+ 
+
+

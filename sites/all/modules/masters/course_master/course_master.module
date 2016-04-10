@@ -1,0 +1,696 @@
+<?php
+
+/** hook_init */ 
+function course_master_init() {
+	//drupal_add_css(drupal_get_path('module', 'course_master') .'/office_master.css');
+}
+
+/** hook_node_info */
+function course_master_node_info() {
+	return array (
+					'course_master' => array (
+										'name' => t('Course Master'),
+										'module' => 'course_master',
+										// 'description' => "",
+										'has_title' => TRUE,
+										'title_label' => t('course_master'),
+										'has_body' => FALSE,
+										),
+				);
+}
+
+/** hook_perm */
+
+function course_master_perm() {
+	return array('edit course_master','administer course_master', 'create course_master', 'view course_master');
+}
+/**
+ *hook_access
+ */
+
+function course_master_access($op, $node, $account) {
+	if ($op=='create') {
+		return user_access('create course_master', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view course_master', $account);
+	}
+	if(($op == 'update' || $op == 'delete') && ($account->uid == $node->uid)) {
+		if (user_access('edit course_master', $account) ) {
+			return TRUE;
+		}
+	}
+}
+/** hook_menu */
+function course_master_menu(){
+	$items = array();
+
+	$items['cmasterlisting'] = array(
+							'title' => t('List Of REC Offices'),
+							'description' => 'Allow user to View Course Master',
+							'type' => MENU_NORMAL_ITEM,
+							'page callback' => 'cmaster_listing',
+							'access arguments' => array('administer course_master'),
+						);
+	
+	$items['deletecourcat/%/%'] = array(
+							'title' => t('Delete Course Master'),
+							'description' => 'Allow user to Delete Course Master',
+							'type' => MENU_NORMAL_ITEM,
+							'page callback' => 'delete_cmaster',
+							'page arguments' => array(1,2),
+							'access arguments' => array('administer course_master'),
+						);
+
+  	$items['enablecourcat/%/%'] = array(
+							'title' => t('Delete Course Master'),
+							'description' => 'Allow user to Delete Course Master',
+							'type' => MENU_NORMAL_ITEM,
+							'page callback' => 'enable_cmaster',
+							'page arguments' => array(1,2),
+							'access arguments' => array('administer course_master'),
+						);
+
+	$items['cmasterlisting/viewcourcat/%'] = array(
+								'title' => t('view course master'),
+								'description' => 'Allow user to view Course Master',
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_cmaster',
+								'page arguments' => array(2),
+								'access arguments' => array('administer office_master'),
+						);
+	
+	return $items;
+}
+
+
+function cmaster_listing(){
+	global $user;
+	global $base_url;
+
+	$limit = (int)getMessage('recOfficeMaster', 'code04', NULL);
+
+	$header = array(
+		array('data' => t('S.No')),
+		array('data' => t('Course Name'), 'field' => 'course.course_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+		   $val = '%'.strtoupper($_REQUEST['searchtext']).'%';
+			 $query = "SELECT course.vid, course.nid, course.course_name ,course.course_id , course.course_status FROM {tbl_courses} AS course where UPPER(course.course_name) LIKE '".$val."' ".tablesort_sql($header);
+			 $sqlcount = "SELECT COUNT(*) AS count FROM {tbl_offices} AS office where UPPER(course.course_name) LIKE '".$val."' ".tablesort_sql($header);
+			 $rscount = db_query($sqlcount);
+		     $rscounter = db_fetch_object($rscount);
+
+	}else{
+	  $query = "SELECT course.vid, course.nid, course.course_name ,course.course_id , course.course_status FROM {tbl_courses} AS course  ".tablesort_sql($header);
+	}
+	$output = '<form method="post" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+		<tr><td colspan="3" class="tblHeaderLeft">';
+		if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+		$output .= t(getMessage('recOfficeMaster', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','cmasterlisting');
+		}
+		
+		$output .='</td><td colspan="3" class="tblHeaderRight">
+		<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+		<input type="submit" name="search" value="Search" /></td></tr>';
+		
+		$addurl = l(getMessage('recOfficeMaster', 'code01', NULL),"node/add/course-master");
+		$lising = getMessage('recOfficeMaster', 'code02', NULL);
+			
+		$output .='<tr>
+		<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+		<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+		</tr>
+		</table></form>';
+	$result = pager_query($query,20);
+		if(count( $result)){
+		if($_REQUEST['page']){
+		 $counter = $_REQUEST['page']*$limit;
+		}else{
+		 $counter = 0;
+	   }
+			while($row=db_fetch_object($result)) {
+				$counter++;
+				$editurl = l("Edit","node/$row->nid/edit");
+				$viewurl = l("View","cmasterlisting/viewcourcat/".$row->course_id,array('attributes'=>array('id'=>'edit-course')));
+				if($row->course_status == 1){
+				  $deleteurl = l("Disable","deletecourcat/".$row->nid."/".$row->course_name);
+				  $compcat_status = "Enabled";
+				}else{
+				  $deleteurl = l("Enable","enablecourcat/".$row->nid."/".$row->course_name);
+				  $compcat_status = "Disabled";
+				}
+				//$compcat_status = status($row->course_status);
+				$rows[] = array(
+					array('data' => $counter),
+					array('data' => ucwords($row->course_name)),
+					array('data' => $compcat_status),
+					array('data' => $viewurl."|". $editurl."|".$deleteurl),
+				);
+			}
+		}else{
+			$rows[] = array(
+					array('data' => 'No record found.'),
+				);
+		}
+	$output .=theme_table($header,$rows);
+	$output .= theme('pager', NULL, 20,0 );
+	return $output;
+}
+
+function office_master_form(&$node){
+		$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+$breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of REC Offices', 'omasterlisting');
+  if($array[0] == 'node' && $array[2] == 'edit'){
+     $breadcrumb[] = l('Edit REC Office', 'node/'.$array[1].'/edit');
+  }
+  
+  if($array[0] == 'node' && $array[2] == 'office-master'){
+     $breadcrumb[] = l('Add REC Office', 'node/add/office-master');
+  }
+   drupal_set_breadcrumb($breadcrumb);
+	$form['office_name'] = array(
+		'#type' =>'textfield',
+		'#title' => t('Office Name'),
+		'#required' => TRUE,
+		'#default_value' =>$node->office_name,
+		'#size' =>41,
+		'#maxlength'=>200,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+		
+	);	
+	
+	$form['office_abbreviation'] = array(
+		'#type' =>'textfield',
+		'#title' => t('Office Abbreviation'),
+		'#required' => FALSE,
+		'#default_value' =>$node->office_abbreviation,
+		'#maxlength'=>20,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['office_address'] = array(
+		'#type' =>'textarea',
+		'#title' => t('Postal Address'),
+		'#required' => TRUE,
+		'#default_value' =>$node->office_address,
+		'#cols' =>30,
+		'#rows' =>5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['country_id'] = array(
+		'#type' => 'select',
+		'#title' => t('Country'),
+		'#required' => TRUE,
+		'#default_value' => $node->country_id,
+		'#options' => selectcountry(),
+		'#ahah' => array(
+											  'path' => 'admin/REC/zones',
+											  'method' => 'replace',
+											  'effect' => 'slide',
+                                              'wrapper' =>'zone',
+											  ),
+	);
+
+	if($node->nid){
+	$form['zone_id'] = array(
+		'#type' => 'select',
+		'#title' => t('Zone'),
+		'#required' => TRUE,
+		'#default_value' => $node->zone_id,
+		'#options' =>GetZoneCountryWise($node->country_id),
+		'#ahah' => array(
+						  'path' => 'admin/REC/state1',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+	$form['state_id'] = array(
+			'#type' => 'select',
+			'#title' => t('State'),
+			'#required' => TRUE,
+			'#default_value' => $node->state_id,
+			'#options' =>GetStateZoneWise($node->zone_id,$node->country_id),
+		    '#ahah' => array(
+							  'path' => 'admin/REC/city',
+							  'method' => 'replace',
+							  'effect' => 'slide',
+							  'wrapper' =>'city',
+							  ),   
+		);
+
+	$form['city_id'] = array(
+			'#type' => 'select',
+			'#title' => t('City'),
+			'#required' => TRUE,
+			'#default_value' => $node->city_id,
+			'#options' =>GetCityStateWise($node->state_id,$node->zone_id,$node->country_id),
+		   
+		); 
+
+	}else{
+	$form['zone_id'] = array(
+		'#type' => 'select',
+		'#title' => t('Zone'),
+		'#required' => TRUE,
+		'#default_value' => $node->zone_id,
+		'#options' =>array(''=>'--Select--'),
+		'#ahah' => array(
+											  'path' => 'admin/REC/state1',
+											  'method' => 'replace',
+											  'effect' => 'slide',
+                                              'wrapper' =>'state',
+											  ), 
+	);
+
+
+	$form['state_id'] = array(
+			'#type' => 'select',
+			'#title' => t('State'),
+			'#required' => TRUE,
+			'#default_value' => $node->state_id,
+			'#options' =>array(''=>'--Select--'),
+		    '#ahah' => array(
+							  'path' => 'admin/REC/city',
+							  'method' => 'replace',
+							  'effect' => 'slide',
+							  'wrapper' =>'city',
+							  ),   
+		);
+
+	$form['city_id'] = array(
+			'#type' => 'select',
+			'#title' => t('City'),
+			'#required' => TRUE,
+			'#options' =>array(''=>'--Select--'),
+			'#default_value' => $node->city_id,
+		   
+		); 
+	}
+	
+	$form['office_pincode'] = array(
+		'#type' =>'textfield',
+		'#title' => t('Pincode'),
+		'#required' => TRUE,
+		'#default_value' =>$node->office_pincode,
+		'#maxlength'=>10,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return  fononlyn(event)'),
+	);
+	
+	
+	$form['office_std'] = array(
+		'#type' =>'textfield',
+		'#title' => t(''),
+		'#required' => TRUE,
+		'#default_value' =>$node->office_std,
+		'#maxlength'=>5,
+		'#size' =>5,
+		'#attributes' => array('onkeypress' => 'return  fononlyn(event)'),
+	    
+	);
+	$form['office_phone'] = array(
+		'#type' =>'textfield',
+		'#title' => t(''),
+		'#required' => TRUE,
+		'#default_value' =>$node->office_phone,
+		'#maxlength'=>10,
+		'#size' =>30,
+		'#attributes' => array('onkeypress' => 'return  fononlyn(event)'),
+	    
+	);
+	$form['office_mobile'] = array(
+		'#type' =>'textfield',
+		'#title' => t(''),
+		'#required' => FALSE,
+		'#default_value' =>$node->office_mobile,
+		'#maxlength'=>10,
+		'#size' =>34,
+		'#attributes' => array('onkeypress' => 'return  fononlyn(event)'),
+	);
+	$form['office_email'] = array(
+		'#type' =>'textfield',
+		'#title' => t('Email'),
+		'#required' =>  TRUE,
+		'#default_value' =>$node->office_email,
+		'#maxlength'=>225,
+		'#size' =>41,
+	);
+	
+	$form['office_fax_std'] = array(
+		'#type' =>'textfield',
+		'#title' => t(''),
+		'#required' => FALSE,
+		'#default_value' =>$node->office_fax_std,
+		'#maxlength'=>5,
+		'#size' =>5,
+		'#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	);
+	$form['office_fax'] = array(
+		'#type' =>'textfield',
+		'#title' => t(''),
+		'#required' => FALSE,
+		'#default_value' =>$node->office_fax,
+		'#maxlength'=>15,
+		'#size' =>30,
+		'#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	);
+	
+	
+	
+	$form['office_website'] = array(
+		'#type' =>'textfield',
+		'#title' => t('Website Url'),
+		'#required' => FALSE,
+		'#default_value' =>$node->office_website,
+		'#description' => t('URL like http://www.test.com'),  
+		'#maxlength'=>200,
+		'#size' =>41,
+	);
+	
+	$form['office_hod'] = array(
+		'#type' =>'textfield',
+		'#title' => t(''),
+		'#required' => TRUE,
+		'#default_value' =>$node->office_hod,
+		'#maxlength'=>150,
+		'#size' =>30,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	$form['nametitle'] = array(
+	   '#type' => 'select',
+	   '#title' => t(''),
+	   '#required' => TRUE,
+	   '#default_value' =>$node->nametitle,
+       '#options' =>selectnametitle(), 
+   ); 
+	$form['designation_id'] = array(
+		'#type' =>'select',
+		'#title' => t('Designation'),
+		'#required' => TRUE,
+		'#default_value' =>$node->designation_id,
+		'#options' => selectdesignation(),
+	);
+	
+	$form['office_total_staff'] = array(
+		'#type' =>'textfield',
+		'#title' => t('Total Staff Nos'),
+		'#required' => TRUE,
+		'#default_value' =>$node->office_total_staff,
+		'#maxlength'=>5,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return  fononlyn(event)'),
+	);
+	
+  if(!$node->nid){
+	$form['office_status'] = array(
+		'#type' =>'select',
+		'#title' => t('Status'),
+		'#required' => FALSE,
+		'#default_value' =>$node->office_status,
+		'#options' =>array('1'=>'Enable','0'=>'Disable'),
+	);
+  }
+	
+return $form;
+} 
+
+/** hook_form_alter */
+
+function office_master_form_alter(&$form, &$form_state, $form_id){
+	//drupal_set_message($form_id);
+	if($form_id =='office_master_node_form'){
+	$form['revision_information']['#type'] = hidden;
+	$form['author']['#type'] = hidden;
+	$form['options']['#type'] = hidden;
+	$form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	$form['menu']['#type'] = hidden;
+	$form['comment_settings']['#type'] = hidden;
+	$form['title']['#required'] = FALSE;
+	$form['title']['#type'] = hidden;
+	}
+}
+
+function office_master_theme() {
+	return array(
+				'office_master_node_form' => array(
+							'arguments' => array('form' => NULL),
+							'template' => 'office_master_node_form',
+							 ),
+				 );
+				 
+}
+
+/** hook_validate */
+function office_master_validate($node, &$form) {
+	//isValidfax
+		$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+$breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of REC Offices', 'omasterlisting');
+  if($array[0] == 'node' && $array[2] == 'edit'){
+     $breadcrumb[] = l('Edit REC Office', 'node/'.$array[1].'/edit');
+  }
+  
+  if($array[0] == 'node' && $array[2] == 'office-master'){
+     $breadcrumb[] = l('Add REC Office', 'node/add/office-master');
+  }
+   drupal_set_breadcrumb($breadcrumb);
+	isValidEmail('office_email',$node->office_email);
+	
+	//office_name
+	//office_abbreviation
+	//office_address
+	//office_pincode
+	//office_phone
+    //office_mobile
+	//office_email
+	//office_fax
+	//office_website
+	//office_hod
+	//office_total_staff 12
+    
+	if($node->nid){
+      $sql = "select office_name from tbl_offices where LOWER(office_name)='".strtolower($node->office_name)."' and nid !='".$node->nid."'";
+	}else{
+	 $sql = "select office_name from tbl_offices where LOWER(office_name)='".strtolower($node->office_name)."'";
+	} 
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->office_name){
+	 form_set_error('office_name','The Office Name '.$node->office_name.' allready exist.');
+	}
+	textonlyn('office_name',$node->office_name,'Office Name');
+	textonlyn('office_abbreviation',$node->office_abbreviation,'Office Abbreviation');
+	textonlywithdotne('office_address',$node->office_address,'Office Address');
+	fononlyn('office_pincode',$node->office_pincode,'Pin Code');
+	fononlyn('office_mobile',$node->office_mobile,'Mobile No.');
+	mobilelength($node->office_mobile,'office_mobile');
+	fononlyn('office_std',$node->office_std,'STD Code');
+	fononlyn('office_phone',$node->office_phone,'Phone No.');
+	textonlyn('office_hod',$node->office_hod,'HOD');
+	fononlyn('office_total_staff',$node->office_total_staff,'Total Office Staff');
+
+	
+	fononlyn('office_fax_std',$node->office_fax_std,'STD Code');
+	fononlyn('office_fax',$node->office_fax,'Fax No.');
+	
+	/*if($node->office_fax !=''){
+		isValidfax('office_fax',$node->office_fax);
+	}
+		*/ 
+	
+	if($node->office_website !=''){
+	   isValidUrl('office_website',$node->office_website);
+	}
+	
+}
+
+
+/** hook_insert */
+
+function office_master_insert($node) {
+	global $user;
+	
+	$uid =$node->uid;
+    $created = $node->created;
+    $office_name = parseData($node->office_name);
+    $office_abbreviation = parseData($node->office_abbreviation);
+    $office_address = parseData($node->office_address);
+    $country_id = $node->country_id;
+    $zone_id = $node->zone_id;
+    $state_id = $node->state_id;
+    $city_id = $node->city_id;
+    $office_pincode = $node->office_pincode;
+	$office_std = $node->office_std;
+    $office_phone = $node->office_phone;
+    $office_mobile = $node->office_mobile;
+    $office_email = $node->office_email;
+	$office_fax_std = $node->office_fax_std;
+    $office_fax = $node->office_fax;
+    $office_website = $node->office_website;
+    $office_hod = parseData($node->office_hod);
+    $designation_id = $node->designation_id;
+    $office_total_staff = $node->office_total_staff;
+    $office_status = $node->office_status;
+	$vid = $node->vid;
+	$nid = $node->nid;
+    $nametitle = $node->nametitle;
+	db_query("INSERT INTO `tbl_offices` (`vid` ,`nid` ,`country_id` ,`zone_id` ,`state_id` ,`city_id` ,`designation_id` ,`office_name` ,`office_abbreviation` ,`office_address` ,`office_pincode`,  `office_std` ,`office_phone` ,`office_mobile` ,office_fax_std, `office_fax` ,`office_website` ,`office_hod` ,`office_total_staff` ,`office_status`,office_email,nametitle) VALUES('".$vid."','".$nid."','".$country_id."','".$zone_id."','".$state_id."','".$city_id."','".$designation_id."','".$office_name."','".$office_abbreviation."','".$office_address."','".$office_pincode."','".$office_std."','".$office_phone."','".$office_mobile."','".$office_fax_std."','".$office_fax."','".$office_website."','".$office_hod."','".$office_total_staff."','".$office_status."','".$office_email."','".$nametitle."')");
+   db_query("update node set uid='".$user->uid."' where nid='".$node->nid."'");
+	drupal_set_message("The Office '$office_name' have been saved successfully.");
+	drupal_goto('omasterlisting');
+}
+
+/** Updation Here */
+function office_master_update($node) {
+	global $user;
+	$uid =$node->uid;
+    $created = $node->created;
+    $office_name = parseData($node->office_name);
+    $office_abbreviation = parseData($node->office_abbreviation);
+    $office_address = parseData($node->office_address);
+    $country_id = $node->country_id;
+    $zone_id = $node->zone_id;
+    $state_id = $node->state_id;
+    $city_id = $node->city_id;
+    $office_pincode = $node->office_pincode;
+	$office_std = $node->office_std;
+    $office_phone = $node->office_phone;
+    $office_mobile = $node->office_mobile;
+    $office_email = $node->office_email;
+	$office_email = $node->office_email;
+	 $office_fax = $node->office_fax;
+    $office_fax_std = $node->office_fax_std;
+    $office_website = $node->office_website;
+    $office_hod = parseData($node->office_hod);
+    $designation_id = $node->designation_id;
+    $office_total_staff = $node->office_total_staff;
+    $office_status = $node->office_status;
+	$vid = $node->vid;
+	$nid = $node->nid;
+    $nametitle = $node->nametitle;
+	db_query("UPDATE `tbl_offices` SET `country_id` ='".$country_id."',`zone_id` ='".$zone_id."',`state_id`='".$state_id."' ,`city_id`='".$city_id."' ,`designation_id`='".$designation_id."' ,`office_name`='".$office_name."' ,`office_abbreviation`='".$office_abbreviation."' ,`office_address`='".$office_address."' ,`office_pincode`= '".$office_pincode."',`office_std`= '".$office_std."',`office_phone`= '".$office_phone."',`office_mobile`= '".$office_mobile."', `office_fax_std`='".$office_fax_std."' , `office_fax`='".$office_fax."' ,`office_website`='".$office_website."' ,`office_hod`='".$office_hod."' ,`office_total_staff` ='".$office_total_staff."',`nametitle`='".$nametitle."',office_email='".$office_email."' WHERE nid=$node->nid");
+   db_query("update node set uid='".$user->uid."' where nid='".$node->nid."'");
+	drupal_set_message("The Office '$office_name' have been saved successfully.");
+	drupal_goto('omasterlisting');	
+}
+
+function office_master_load($node){
+   $rs = db_query("select * FROM tbl_offices where nid = $node->nid");
+   $result = db_fetch_object($rs);
+   return $result;
+ }
+ 
+
+
+
+function delete_omaster($nid,$name){
+
+	$sqlUpdate = "UPDATE {tbl_offices} SET 	office_status=0 WHERE nid=$nid";
+	db_query($sqlUpdate);
+		
+	drupal_set_message("The Office '".$name."' has been disabled successfully.");
+	drupal_goto('omasterlisting');	
+}
+
+
+function enable_omaster($nid,$name){
+
+	$sqlUpdate = "UPDATE {tbl_offices} SET 	office_status=1 WHERE nid=$nid";
+	db_query($sqlUpdate);
+		
+	drupal_set_message("The Office '".$name."' has been enabled successfully.");
+	drupal_goto('omasterlisting');	
+}
+function view_omaster($office_id){
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+$breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of REC Offices', 'omasterlisting');
+  if($array[1] == 'viewcompcat'){
+     $breadcrumb[] = l('View REC Office', 'omasterlisting/viewcompcat/'.$array[2].'');
+  }
+
+   drupal_set_breadcrumb($breadcrumb);
+ $sql = "select * from tbl_offices where office_id = $office_id";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+$createdon = date('d-m-y',$rs->createdon);
+$updatedon = date('d-m-y',$rs->updatedon);
+if($rs->office_status =='0'){
+  $status ='Disabled';
+}else{
+  $status ='Enabled';
+}
+
+$office_website = $rs->office_website;
+$office_website = ucfirst($rs->office_website);
+if($office_website==''){$office_website='N/A';}
+
+
+$office_std = $rs->office_std;
+$office_phone = $rs->office_phone;
+if($office_std!='' && $office_phone !=''){$office_phone = "$office_std-$office_phone";}else{$office_phone='N/A';}
+
+$office_mobile = $rs->office_mobile;
+$office_mobile = ucfirst($rs->office_mobile);
+if($office_mobile==''){$office_mobile='N/A';}
+
+$office_pincode = $rs->office_pincode;
+$office_pincode = ucfirst($rs->office_pincode);
+if($office_pincode==''){$office_pincode='N/A';}
+
+
+
+$office_fax_std = $rs->office_fax_std;
+$office_fax = $rs->office_fax;
+if($office_fax_std!='' && $office_fax !=''){$office_fax = "$office_fax_std-$office_fax";}else{$office_fax='N/A';}
+
+//drupal_add_css(drupal_get_path('module', 'rec_office') .'/rec_office.css');
+$output ='<div id="dms-agreement">';
+$output .='<table cellpadding="3" cellspacing="2" border="0" id="wrapper">';
+$output .='<tr class="oddrow"><td colspan="2"><h2>office Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td>Country:</td><td>'.ucwords(Country($rs->country_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td>Zone:</td><td>'.ucwords(Zone($rs->zone_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td>State:</td><td>'.ucwords(State($rs->state_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td>Designation:</td><td>'.ucwords(getDesignation($rs->designation_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td>office Name:</td><td>'.ucwords($rs->office_name).'</td></tr>';
+$output .='<tr class="oddrow"><td>Abbreviation:</td><td>'.ucwords($rs->office_abbreviation).'</td></tr>';
+$output .='<tr class="evenrow"><td>Postal Address:</td><td>'.ucwords($rs->office_address).'</td></tr>';
+$output .='<tr class="oddrow"><td>Email:</td><td>'.$rs->office_email.'</td></tr>';
+$output .='<tr class="evenrow"><td>Pincode:</td><td>'.$rs->office_pincode.'</td></tr>';
+$output .='<tr class="oddrow"><td>Phone:</td><td>'.$office_phone.'</td></tr>';
+$output .='<tr class="evenrow"><td>Mobile:</td><td>'.$rs->office_mobile.'</td></tr>';
+$output .='<tr class="oddrow"><td>Fax:</td><td>'.$office_fax.'</td></tr>';
+$output .='<tr class="evenrow"><td>Website:</td><td>'.$office_website.'</td></tr>';
+$output .='<tr class="oddrow"><td>Hod:</td><td>'.ucwords(getTitle($rs->nametitle)).' '.ucwords($rs->office_hod).'</td></tr>';
+$output .='<tr class="evenrow"><td>Staff:</td><td>'.$rs->office_total_staff.'</td></tr>';
+$output .='<tr class="oddrow"><td>Status:</td><td>'.$status.'</td></tr>';
+return $output .='</table></div>';
+
+ }
+  
+
+

@@ -1,0 +1,71 @@
+<?php
+function dsje_marital_status_schema() {
+
+  //language table
+   $schema['tbl_maritals'] = array(
+							 'fields' => array(
+											   'marital_status_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'marital_status_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                    	   	   'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'marital_status_id' => array('marital_status_id'),
+												),
+							 'primary key' => array('marital_status_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_marital_status_install() {
+	drupal_install_schema('dsje_marital_status');
+}
+
+function dsje_marital_status_uninstall() {
+	drupal_uninstall_schema('dsje_marital_status');
+}

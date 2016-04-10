@@ -1,0 +1,156 @@
+<?php
+
+/**
+ *hook_perm
+ */
+ 
+ function deputationReport_init() {
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+function deputationReport_perm() {
+	return array('edit deputationReport','administer deputationReport', 'create deputationReport', 'view deputationReport');
+}
+
+function deputationReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit deputationReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create deputationReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view deputationReport', $account);
+	}
+	
+}
+
+
+function deputationReport_menu(){
+
+  $items['deputationReport'] = array(
+										'title' => t('List of employees on deputation'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'deputationReport',
+										'access arguments' => array('administer deputationReport'),
+													 
+									  );
+									  
+									  
+		$items['dsje/deputationreportitem'] = array(
+										'page callback' => 'deputationreportfunction',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+														
+														
+   
+   return $items;
+}
+
+
+function deputationreportfunction(){
+
+$deputationtype= $_POST['deputation_type'];
+
+$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('deputationReport_form', $form, $form_state);
+
+
+	if($deputationtype==203){
+
+//inbound
+$form['section'] = array(
+						'#type' => 'textfield',
+						'#title' => t('Section Name'),
+						'#name'=>'section',
+						'#id'=>'edit-section',
+												
+						);
+}else if($deputationtype==204){
+
+//outbound
+
+$form['section'] = array(
+						'#type' => 'select',
+						'#title' => t('Section Name'),
+						'#required' => FALSE,
+						'#id'=>'edit-section',
+						'#name'=>'section',
+						'#value' =>'--Select--',
+						'#options' => SelectDepartment(), 
+						);
+
+
+
+}
+
+
+$output = drupal_render($form['section']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+
+	
+	
+}
+
+
+function deputationReport(){
+  return drupal_get_form('deputationReport_form');
+}
+
+function deputationReport_form(){
+ global $base_url;
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Employees on Deputation', 'deputationReport');
+  drupal_set_breadcrumb($breadcrumb);
+ 
+ $form['deputation_type'] = array(
+                                '#type' => 'select',
+								'#title' => t('Deputation Type'),
+								'#required' => TRUE,
+								'#default_value' =>'--Select--',
+								'#options' => deputationType(), 
+'#ahah'=>array(								 
+								 'path' => 'dsje/deputationreportitem',
+				  'method' => 'replace',
+				  'effect' => 'fade',
+				  'wrapper' =>'deputationitem',
+				),  );
+	
+ 
+
+
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function deputationReport_theme() {
+	
+	return array(
+		
+		'deputationReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'deputationReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

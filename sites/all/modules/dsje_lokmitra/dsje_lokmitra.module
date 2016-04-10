@@ -1,0 +1,1481 @@
+<?php
+function dsje_lokmitra_init() {
+	//drupal_add_css(drupal_get_path('module', 'rti_management') .'/rti_management.css');
+	drupal_add_js(drupal_get_path('module', 'dsje_lokmitra') .'/dsje_lokmitra.js');
+}
+
+function dsje_lokmitra_perm() {
+	return array('edit dsje_lokmitra','administer dsje_lokmitra', 'create dsje_lokmitra', 'view dsje_lokmitra');
+}
+
+function dsje_lokmitra_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_lokmitra', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_lokmitra', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_lokmitra', $account);
+	}
+}
+ 
+ function dsje_lokmitra_menu(){
+	 $items['list/lokmitra'] = array(
+		   'title' => 'List of Lokmitra',
+		   'page callback' => 'lokmitra',
+		   'access arguments' => array('administer dsje_lokmitra'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewlokmitra/%'] = array(
+								'title' => t('view Lokmitra'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_lokmitra',
+								'page arguments' => array(1),
+								'access arguments' => array('administer dsje_lokmitra'),
+		                        
+						);
+  
+  $items['dsje/del/lokmitra/%/%'] =  array(
+	               						 'title' => t('Delete Lokmitra'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'lokmitra_delete',
+		           			             'page arguments' => array(3,4),
+		               			         'access arguments' => array('administer dsje_lokmitra'),
+													 
+	);
+ $items['dsje/enable/lokmitra/%/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'lokmitra_enable',
+		            			            'page arguments' => array(3,4),
+		                  				    'access arguments' => array('administer dsje_lokmitra'),
+											
+$items['dsje/list/edit/lokmitra/%'] = array(
+								
+										'title' => t('Edit Lokmitra'),
+										'description' => 'Allow user to add Lokmitra',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addlokmitraedit',
+                                        'page arguments' => array(4),
+		                                'access arguments' => array('administer dsje_lokmitra'),
+													 
+									  ),											
+											
+														 
+	);	
+
+$items['create_lokmitra'] = array(
+	'title' => 'Lokmitra Registration Form',
+	'type' => MENU_CALLBACK,
+	'page callback' => 'create_lokmitra',
+	'access arguments' => array('access content'),
+    'access callback' => TRUE,
+);						
+   return $items;
+ }
+  
+  
+  
+
+  
+function lokmitra(){
+	
+	global $user, $base_url;
+	$uid=$user->uid;
+	$sqlrole = "select * from role where rid='2'";
+$res = db_query($sqlrole);
+$rs = db_fetch_object($res);
+  $as = $rs->rid;
+if($uid == '1')
+{
+	
+	
+	$limit =(int)getMessage('reclokmitra', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Lokmitra Name'), 'field' => 'tbl_lokmitra.employee_name', 'sort' => 'asc'),
+	array('data' => t('Email ID'), 'field' => 'tbl_lokmitra.email', 'sort' => 'asc'),
+	array('data' => t('State'),'field'=> 'tbl_lokmitra.state_id','sort'=>'asc'),
+	array('data' => t('Status'),'field'=> 'tbl_lokmitra.statusnodal','sort'=>'asc'),
+	array('data' => t('Action'), 'class' => 'addeditview'),
+	);
+
+
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of LokMitra', 'list/lokmitra'.$array[1].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	 
+	 
+	 //////////////////
+	 if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+		$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	
+		
+		 $status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = " tbl_lokmitra.employee_name LIKE '".$val."' OR tbl_lokmitra.state_id LIKE '".$val."' OR tbl_lokmitra.email LIKE '".$val."' OR tbl_dsjestate.state_name LIKE '".$val."' ";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = " tbl_lokmitra.statusnodal='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(tbl_lokmitra.employee_name LIKE '".$val."' OR tbl_lokmitra.state_id LIKE '".$val."' OR tbl_lokmitra.email LIKE '".$val."' OR tbl_dsjestate.state_name LIKE '".$val."') AND tbl_lokmitra.statusnodal='".$status."'";
+	 }
+	
+	 /////////
+	 
+	 
+
+	//if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	//$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+		
+		/////////////state
+	
+  // $sql ="select tbl_lokmitra.lokmitra_id ,   tbl_lokmitra.employee_name,tbl_lokmitra.email,tbl_lokmitra.status2,tbl_lokmitra.state_id,tbl_lokmitra.statusnodal from tbl_lokmitra INNER JOIN tbl_dsjestate ON (tbl_lokmitra.state_id=tbl_dsjestate.state_id) 
+   //where (tbl_lokmitra.employee_name LIKE '".$val."' OR tbl_lokmitra.state_id LIKE '".$val."' OR tbl_lokmitra.email LIKE '".$val."' OR tbl_dsjestate.state_name LIKE '".$val."'  )".tablesort_sql($header);
+   
+   
+   $sql ="select tbl_lokmitra.lokmitra_id ,   tbl_lokmitra.employee_name,tbl_lokmitra.email,tbl_lokmitra.status2,tbl_lokmitra.state_id,tbl_lokmitra.statusnodal from tbl_lokmitra INNER JOIN tbl_dsjestate ON (tbl_lokmitra.state_id=tbl_dsjestate.state_id) 
+   where ".$searchquery." ".tablesort_sql($header);
+   
+   $sqlcount1 = "SELECT COUNT(*) AS count FROM tbl_lokmitra
+	INNER JOIN tbl_dsjestate  ON (tbl_lokmitra.state_id=tbl_dsjestate.state_id)
+	WHERE ".$searchquery." ".tablesort_sql($header);
+   
+		
+		
+		///////////////state
+		
+		
+	 /*$sql ="select employee_name,email,status2,state_id,statusnodal from tbl_lokmitra where (employee_name LIKE '".$val."' OR state_id LIKE '".$val."' OR email LIKE '".$val."'  )".tablesort_sql($header);
+	 */
+	  
+	
+   $sqlcount = "SELECT COUNT(*) asncount FROM (" . $sql . ") AS count_query";
+    $dbcount = db_query($sqlcount);
+   $rscount = db_fetch_object($dbcount);
+$tcount =  $rscount->asncount;
+   
+   /*$sqlcount1 = "SELECT COUNT(*) AS count_query  from tbl_lokmitra where (employee_name LIKE '".$val."' OR state_id LIKE '".$val."' OR email LIKE '".$val."')";*/
+  
+   $result = pager_query($sql,$limit,0, $sqlcount);
+	 
+	}else{
+	
+	  $sql ="select lokmitra_id ,employee_name,email,status2,state_id,statusnodal from tbl_lokmitra".tablesort_sql($header);
+	   $sqlcount = "SELECT COUNT(*) FROM (" . $sql . ") AS count_query";
+	   $result = pager_query($sql,$limit,0, $sqlcount);
+	}
+
+
+	 
+
+
+
+
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+	 
+	 $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!='' || $_REQUEST['searchtextstatus']!=''){
+	
+	$output .= t(getMessage('reclokmitra', 'code01', array("0"=>$tcount)))." | ".l('View All','list/lokmitra');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage('reclokmitra', 'code02', NULL),"create_lokmitra");
+   $lising =getMessage('reclokmitra', 'code03', NULL); 
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	
+
+<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value=0 '.$selected0.'>Disabled</option>
+	<option value=1 '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;	
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>	
+	</tr>
+	</table></form>';
+	 
+	
+	
+	if($_REQUEST['page']){
+
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		
+		$viewurl = l("View","viewlokmitra/".$rs->email,array('attributes'=>array('id'=>'edit-state')));
+		$editurl = l("Edit","dsje/list/edit/lokmitra/".$rs->lokmitra_id,array('attributes'=>array('id'=>'edit-state')));
+		//$po_working_zone_id = $rs ->po_working_zone_id;
+		/*if($po_working_zone_id){
+			$zone_name = getWorkingZone($po_working_zone_id);
+		}else{
+			$zone_name = 'N/A';
+		}*/
+		  
+		if($rs->statusnodal == 1){
+		       $st='Enable';
+		       $deleteurl = l("Disable","dsje/del/lokmitra/".$rs->email.'/'.$rs->employee_name);
+		}else{
+			   $st ='Disable';
+			   $deleteurl = l("Enable","dsje/enable/lokmitra/".$rs->email.'/'.$rs->employee_name);
+		}
+	  
+      
+		 // $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($rs->employee_name)),
+			//array('data' => ucwords($rs->employee_type)),
+            array('data' => $rs->email),
+            array('data' => getState($rs->state_id)),
+			//array('data' => ucwords($rs->designation_name)),
+			//array('data' => ucwords($zone_name)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+
+ if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, $limit,0 );
+	
+		return $output ;
+		
+}
+
+else{
+	
+	
+	
+	global $user, $base_url;
+	$uid=$user->uid;
+	$limit =(int)getMessage('reclokmitra', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Lokmitra Name'), 'field' => 'tbl_lokmitra.employee_name', 'sort' => 'asc'),
+	array('data' => t('Email ID'), 'field' => 'tbl_lokmitra.email', 'sort' => 'asc'),
+	array('data' => t('State'),'field'=> 'tbl_lokmitra.state_id','sort'=>'asc'),
+	array('data' => t('Status'),'field'=> 'tbl_lokmitra.status2','sort'=>'asc'),
+	array('data' => t('Action'), 'class' => 'addeditview'),
+	);
+
+
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of LokMitra', 'list/lokmitra'.$array[1].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+		
+		/////////////state
+	
+   $sql ="select tbl_lokmitra.lokmitra_id ,   tbl_lokmitra.employee_name,tbl_lokmitra.email,tbl_lokmitra.status2,tbl_lokmitra.state_id,tbl_lokmitra.statusnodal,users.uid from tbl_lokmitra INNER JOIN tbl_dsjestate ON (tbl_lokmitra.state_id=tbl_dsjestate.state_id) inner join users on (tbl_lokmitra.email=users.mail)
+   where (tbl_lokmitra.employee_name LIKE '".$val."' OR tbl_lokmitra.state_id LIKE '".$val."' OR tbl_lokmitra.email LIKE '".$val."' OR tbl_dsjestate.state_name LIKE '".$val."' and users.uid='$uid'   )".tablesort_sql($header);
+   
+   
+   $sqlcount1 = "SELECT COUNT(*) AS count FROM tbl_lokmitra
+	INNER JOIN tbl_dsjestate  ON (tbl_lokmitra.state_id=tbl_dsjestate.state_id) inner join users on (tbl_lokmitra.email=users.mail)
+	WHERE (tbl_lokmitra.employee_name LIKE '".$val."' OR tbl_lokmitra.state_id LIKE '".$val."' OR tbl_lokmitra.email LIKE '".$val."' OR tbl_dsjestate.state_name LIKE '".$val."' and users.uid='$uid')";
+   
+		
+		
+		///////////////state
+		
+		
+	 /*$sql ="select employee_name,email,status2,state_id,statusnodal from tbl_lokmitra where (employee_name LIKE '".$val."' OR state_id LIKE '".$val."' OR email LIKE '".$val."'  )".tablesort_sql($header);
+	 */
+	  
+	
+   $sqlcount = "SELECT COUNT(*) asncount FROM (" . $sql . ") AS count_query";
+    $dbcount = db_query($sqlcount);
+   $rscount = db_fetch_object($dbcount);
+$tcount =  $rscount->asncount;
+   
+   /*$sqlcount1 = "SELECT COUNT(*) AS count_query  from tbl_lokmitra where (employee_name LIKE '".$val."' OR state_id LIKE '".$val."' OR email LIKE '".$val."')";*/
+  
+   $result = pager_query($sql,$limit,0, $sqlcount);
+	 
+	}else{
+	
+	    $sql ="select tbl_lokmitra.lokmitra_id ,tbl_lokmitra.employee_name,tbl_lokmitra.email,tbl_lokmitra.status2,tbl_lokmitra.state_id,tbl_lokmitra.statusnodal,users.uid from tbl_lokmitra inner join users on (tbl_lokmitra.email=users.mail) where users.uid='$uid'".tablesort_sql($header);
+	   $sqlcount = "SELECT COUNT(*) FROM (" . $sql . ") AS count_query";
+	   $result = pager_query($sql,$limit,0, $sqlcount);
+	}
+
+	 $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	
+	$output .= t(getMessage('reclokmitra', 'code01', array("0"=>$tcount)))." | ".l('View All','list/lokmitra');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	//$addurl = l(getMessage('reclokmitra', 'code02', NULL),"create_lokmitra");
+   $lising =getMessage('reclokmitra', 'code03', NULL); 
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>	
+	</tr>
+	</table></form>';
+
+	
+	
+	if($_REQUEST['page']){
+
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		
+		$viewurl = l("View","viewlokmitra/".$rs->email,array('attributes'=>array('id'=>'edit-state')));
+		$editurl = l("Edit","dsje/list/edit/lokmitra/".$rs->lokmitra_id,array('attributes'=>array('id'=>'edit-state')));
+		//$po_working_zone_id = $rs ->po_working_zone_id;
+		/*if($po_working_zone_id){
+			$zone_name = getWorkingZone($po_working_zone_id);
+		}else{
+			$zone_name = 'N/A';
+		}*/
+		  
+		if($rs->statusnodal == 1){
+		       $st='Enable';
+		       $deleteurl = l("Disable","dsje/del/lokmitra/".$rs->email.'/'.$rs->employee_name);
+		}else{
+			   $st ='Disable';
+			   $deleteurl = l("Enable","dsje/enable/lokmitra/".$rs->email.'/'.$rs->employee_name);
+		}
+
+      
+		 // $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($rs->employee_name)),
+			//array('data' => ucwords($rs->employee_type)),
+            array('data' => $rs->email),
+            array('data' => getState($rs->state_id)),
+			//array('data' => ucwords($rs->designation_name)),
+			//array('data' => ucwords($zone_name)),
+			array('data' => $st),
+			//array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+			array('data' => $viewurl." | ".$editurl),
+		);
+		
+	  }
+	  
+	}
+
+ if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	$output .=theme('pager', NULL, $limit,0 );
+	
+		return $output ;
+		
+
+	
+}
+  }
+
+function lokmitra_delete($emailid,$name){
+  
+  db_query("UPDATE {users} SET status=0 WHERE mail ='".$emailid."'");
+  db_query("UPDATE {tbl_lokmitra } SET statusnodal=0 ,status2='Inactive User' WHERE email ='".$emailid."'");
+  drupal_set_message('User '.$name.' has been disabled successfully.');
+  drupal_goto("list/lokmitra");
+ }
+
+function lokmitra_enable($emailid,$name){
+  
+  db_query("UPDATE {users} SET status=1 WHERE mail ='".$emailid."'");
+  db_query("UPDATE {tbl_lokmitra } SET statusnodal=1 ,status2='Active User' WHERE email ='".$emailid."'");
+  drupal_set_message('User '.$name.' has been enabled successfully.');
+  drupal_goto("list/lokmitra");
+
+//email will be sent on enabling and disabling if required later on
+ }
+
+
+function create_lokmitra(){
+  return drupal_get_form('lokmitra_form');
+}
+
+function lokmitra_form(){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	
+     $breadcrumb[] = l('List of LokMitra', 'list/lokmitra'.$array[1].'');
+	
+	$breadcrumb[] = l('Lokmitra Registration Form', 'create_lokmitra');
+	
+	drupal_set_breadcrumb($breadcrumb);
+   
+  
+	
+    $form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Name'),
+	'#required' => TRUE,
+    //'#maxlength'=>45,
+	'#size' =>45,
+	'#default_value' => $node->employee_name,
+	'#id' => 'edit-employee-name',
+	 '#attributes' => array('onkeypress' => 'return textnospeno(event,"edit-employee-name",45)'),
+	);
+	
+	$form['dob'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Birth',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $node->dob,
+	);
+	
+
+$applicaint= "SELECT lookupType_id FROM tbl_lookuptypes WHERE lookupType_id=1";
+
+$ttt= db_query($applicaint);
+$rstt=db_fetch_object($ttt);
+$sqlsenderr = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rstt->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressenderr= db_query($sqlsenderr);
+$senderarrayy['']= '--Select--';
+if($ressenderr){
+
+while($rssenderr = db_fetch_object($ressenderr)){
+
+$senderarrayy[$rssenderr->lookup_name] = ucwords($rssenderr->lookup_name);
+
+}
+
+}
+
+
+
+
+
+		
+	$form['gender'] = array(
+	'#type' => 'select',
+	'#title' => t('Gender'),
+	'#required' => TRUE,
+	'#default_value' => $node->gender,
+	'#options' => $senderarrayy,
+	);
+	
+	
+	
+
+ $form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	 '#required' =>TRUE,
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $node->email,
+	 '#id' =>'email_vali',
+	  '#attributes' => array('onkeypress' =>'return emailvali(event)'),
+  );
+  
+
+
+
+$form['add_type'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Address Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $node->add_type,
+		 '#options' => AddressType(),
+		  '#attributes' => array('onchange' => 'return changeMenu1234(this)'),
+
+);
+
+  $form['add_line1'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 1'),
+	'#required' => TRUE,
+	'#default_value' =>$node->add_line1,
+	'#size' =>25,
+	 '#maxlength'=>100,
+	  '#id' =>'add_line1',
+	  '#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"add_line1",100)'),
+	);
+	
+  $form['add_line2'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 2'),
+	'#required' => TRUE,
+	'#default_value' =>$node->add_line2,
+	'#size' =>25,
+	 '#maxlength'=>100,
+	  '#id' =>'add_line2',
+	 '#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"add_line2",25)'),
+	);
+	
+$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	
+	
+
+	  $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' =>GetDistrictStateWise($node->state_id),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => '',
+			'#options' =>GetTehsilDistrictWise($node->dsitrict_id,$node->state_id),
+			'#ahah' => array(
+					  'path' => 'dsje/block',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'block_test',
+					  ), 
+		   
+		);
+	//end;
+	
+	
+	
+	$statearray1[''] = '--Select--';
+	$form['block_name'] = array(
+		'#type' => 'select',
+		'#title' => t('Block'),
+		'#required' => TRUE,
+		'#default_value' => $form->block,
+		'#options' => $statearray1,
+		'#ahah' => array(
+					  'path' => 'dsje/panchayt',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'panchayt_test',
+					  ), 
+		
+		
+	);
+		
+  /*$form['block'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Block'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#size' =>20,
+	);*/
+	
+$statearray2[''] = '--Select--';		
+  $form['panchayt_name'] = array(
+	'#type' =>'select',
+	'#title' => t('Panchayat'),
+	'#required' => False,
+	'#default_value' =>'',
+	'#options' => $statearray2,
+	);
+	
+		
+  	
+ $form['pincode'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('PIN Code'),
+	 '#required' =>FALSE,
+	 '#size' =>15, 
+	 '#maxlength'=>6,
+	 '#minlength'=>6,
+	 '#default_value' => $node->pincode,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+
+	
+		$form['logindetails'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('<b>Login Info</b>'),
+		'#tree' => TRUE,
+		);
+		$form['logindetails']['username'] = array(
+		'#type' =>'textfield',
+		'#title' => t('User Name'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		 '#maxlength'=>60,
+		'#default_value' => '',
+		);
+		
+		$form['logindetails']['password'] = array(
+		'#type' =>'password',
+		'#title' => t('Password'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		 '#maxlength'=>60,
+		'#id' => 'da_password', 
+		'#attributes' => array('onkeyup' => 'checkPassword()'), 
+	    '#description' =>'<div id="test"></div>',	
+		);
+		
+		$form['logindetails']['cpassword'] = array(
+		'#type' =>'password',
+		'#title' => t('Confirm Password'),
+		'#required' =>TRUE,
+		'#size' =>40,
+		 '#maxlength'=>60,
+			 '#description' =>'The Password contains, Must be at least 8 characters,
+     Must contain at least one lower case letter, one upper case letter, one digit and one special character,
+    Valid special characters are -   @#$%^&+=',	
+		); 
+
+	   //$form['logindetails']['my_captcha'] = array(
+       //'#type' => 'captcha',
+       //'#captcha_type' => 'captcha/Math',
+   // );
+		
+
+$form['submit'] = array(
+	'#type' => "submit",
+	'#value' => t('Register'),
+);
+return $form;
+} 
+
+function lokmitra_form_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+
+	//echo '<pre>';
+	//  print_r($values);
+   // echo '<pre>';exit;
+    $array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	
+     $breadcrumb[] = l('List of LokMitra', 'list/lokmitra'.$array[1].'');
+	
+	$breadcrumb[] = l('Lokmitra Registration Form', 'create_lokmitra');
+	
+	drupal_set_breadcrumb($breadcrumb);
+	
+	$name = $values['employee_name'];
+	$dob = $values['dob'];
+	$gender = $values['gender'];
+	$mailid = $values['email'];
+	$addtype = $values['add_type'];
+	
+	$stateid= $values['state_id'];
+	$districtid = $values['district_id'];
+	$tehsilid = $values['tehsil_id'];
+	$block = $values['block'];
+	$panchayt_name = $values['panchayt_name'];
+	$pincode = $values['pincode'];
+	$userdetails =  $values['logindetails'];
+	$username = $userdetails['username'];
+	$userpassword = $userdetails['password'];
+	$usercpassword = $userdetails['cpassword'];
+	
+	
+  alphanumeric('block',$block,'Block');
+  alphabet('employee_name',$employee_name,'Guest Name');
+  alphanumeric ('add_line1',$add_line1,'Address Line 1');
+  alphanumeric ('add_line2',$add_line2,'Address Line 2');
+  pincodelength($pincode,'pincode');
+  $date2 =  substr($dob,0,10);
+  date('Y-m-d');
+  $year = dateDiff($date2,date('Y-m-d'), $precision = 6);
+  if($year[0] < 18){
+	  form_set_error('dob','DOB Can not be less than 18 Years.');
+  }
+ fononlyn('pincode',$pincode,'Pin Code');
+ if($usercpassword != 1){
+   custom_user_validate_name($username,'username');
+   if($userpassword){
+   custom_Password_validate_name( $userpassword,'password');
+   }
+      $password = $userpassword;
+   $cpassword = $usercpassword;
+	  
+			  if($password != $cpassword){
+				form_set_error('', t('Password Missmatch.'));
+			  }
+	 
+  }
+  $email = $mailid;
+  if($form->program_uid){
+  }else{
+		$statusemail = getEmail($email); 
+		if($statusemail){
+		form_set_error('email',$email.t(' Email address already exist.'));
+		}
+		
+		if($username){
+				$statususername = getUsername($username);
+				if($statususername){
+				form_set_error('username',$username.t(' already exist.'));
+				}
+		}
+		//else{
+			//form_set_error('username',t(' Please enter User Name.'));
+		//}
+  }
+
+ 
+  if($email !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (eregi($pattern, $email)){
+          return true;
+       }
+       else {
+          form_set_error('email', t('You must enter valid Email Id.'));
+       }    
+	}
+	
+	if($addtype == '175')
+	{
+		if($panchayt_name == '')
+		{
+			form_set_error('panchayt_name','Please Select Panchayat.');		
+		}
+		
+		if($panchayt_name == '0')
+		{
+			form_set_error('panchayt_name','Please Select Panchayat.');		
+		}
+	
+	
+	}
+	
+	
+	
+	
+	
+	
+}
+
+
+
+
+function lokmitra_form_submit($form,&$form_state){
+   global $user;
+   $values = $form_state['values'];
+ // echo '<pre>';
+    //print_r($values);
+//echo '<pre>';exit;
+   
+	$name = $values['employee_name'];
+	$dob = $values['dob'];
+	$gender = $values['gender'];
+	$mailid = $values['email'];
+	$addtype = $values['add_type'];
+	$addressline1 = $values['add_line1'];
+	$addressline2 = $values['add_line2'];
+	$stateid= $values['state_id'];
+	$districtid = $values['district_id'];
+	$tehsilid = $values['tehsil_id'];
+	$block = $values['block_name'];
+	$panchayt_name = $values['panchayt_name'];
+	$pincode = $values['pincode'];
+	$userdetails =  $values['logindetails'];
+	$username = $userdetails['username'];
+	$userpassword = $userdetails['password'];
+	$usercpassword = $userdetails['cpassword'];
+
+	$statusnodal =  1;  
+	db_query("INSERT INTO tbl_lokmitra (employee_name,gender,dob,add_type,add_line1,add_line2,district_id,tehsil_id,state_id,block,panchayat,pincode,email,username,password,statusnodal,status2) VALUES ('".$name."','".$gender."','".$dob."','".$addtype."','".$addressline1."','".$addressline2."','".$districtid."','".$tehsilid."','".$stateid."','".$block."','".$panchayt_name."','".$pincode."','".$mailid."','".$username."','".md5($userpassword)."','".$statusnodal."','Active User')");
+
+	//user table
+	db_query("INSERT INTO users (name,pass,mail,status,force_password_change) VALUES('".$username."','".md5($userpassword)."','".$mailid."','0','1')");
+	
+	//mailing system
+	
+	//custom_mail($user->uid,$username,$password,$email,$employee_name);
+
+	$sql ="SELECT MAX(uid) as uid FROM users";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	$uid = $rs->uid;
+
+	db_query("insert into users_roles (uid,rid) values ('".$uid."','16')");
+
+	$created = time();
+	db_query("INSERT INTO force_password_change_users SET uid='".$uid."',last_force='".$created."'");
+  
+    $message = getMessage('reclokmitra', 'code05', array("0"=>$name));
+
+    $parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$name,1=>$username,2=>$userpassword)); 	
+
+
+createMail('lokmitra', $mailid,'',$parameter);
+     
+  
+    drupal_set_message($message);
+	drupal_goto('list/lokmitra');
+
+ 
+ }
+
+
+
+function dsje_lokmitra_theme() {
+	
+	return array(
+				 
+		'lokmitra_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_lokmitra_form',
+                                 ),
+       
+	   
+	   'dsje_lokmitra_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_lokmitra_form_edit',
+                                 ),
+
+				 );
+}
+
+
+  
+function view_lokmitra($emailid){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lokmitra', 'list/lokmitra');
+       $breadcrumb[] = l('View Users', 'viewlokmitra/'.$array[1].'');
+  
+  drupal_set_breadcrumb($breadcrumb);
+  
+
+ $sql = "select * from tbl_lokmitra where email = '".$emailid."'";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+ if($rs->gender == 'Female'){
+  $gender ='Female';
+}else{
+  $gender ='Male';
+}
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+
+
+if($rs->pincode ==''){
+  $pincode = 'NA';
+}else{
+  $pincode = $rs->pincode;
+}
+
+if($rs->panchayat){
+	$panchayt = ucwords(getpanchayt($rs->panchayat));
+  
+}else{
+  $panchayt = 'NA';
+}
+
+$addsql = "select lookup_name from tbl_lookups where lookup_id = '".$rs->add_type."' AND lookupType_id = 27";
+$addres = db_query($addsql);
+$addrs = db_fetch_object($addres);
+
+$output .='<table width="100%" cellpadding="2" cellspacing="1" border="0" id="form_container">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Lokmitra Details</h2></td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">UID:</td><td class="normal">'.$unique.'</td></tr>';
+//$rid = getRole($rs->program_uid);
+$output .='<tr class="evenrow"><td width="50%">User Name:</td><td class="normal">'.ucwords($rs->employee_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date of Birth:</td><td class="normal">'.date('d-m-Y',strtotime(substr($rs->dob,0,10))).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.ucwords($rs->status2).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Gender:</td><td class="normal">'.ucwords($gender).'</td></tr>';
+//$output .='<tr class="evenrow"><td width="50%">Address:</td><td>';
+$output .='<tr class="evenrow"><td width="50%">Address Type:</td><td class="normal">'.ucwords($addrs->lookup_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Addresss Line 1:</td><td class="normal">'.ucwords($rs->add_line1).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Addresss Line 2:</td><td class="normal">'.ucwords($rs->add_line2).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">State:</td><td class="normal">'.ucwords(getState($rs->state_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">District:</td><td class="normal">'.ucwords(getdistrict($rs->district_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Tehsil:</td><td class="normal">'.ucwords(gettehsil($rs->tehsil_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Block:</td><td class="normal">'.ucwords(getblock($rs->block)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Panchayat:</td><td class="normal">'.$panchayt.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Pin Code:</td><td class="normal">'.$pincode.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Email Id:</td><td class="normal">'.$rs->email.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.$statusnodal.'</td></tr>';
+if(getRole($user->uid) == 16){
+$output .='<tr class="oddrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'welcome-deshboard').'</td></tr>';
+}else{
+$output .='<tr class="oddrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'list/lokmitra').'</td></tr>';	
+}
+ $output .='</table>';
+return $output ;
+}
+
+
+function dsje_addlokmitraedit($lokmitra_id){
+ return drupal_get_form('dsje_lokmitra_form_edit',$lokmitra_id);
+}
+
+function dsje_lokmitra_form_edit(&$form_states,$lokmitra_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lokmitra', 'list/lokmitra');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Lokmitra', 'dsje/list/edit/lokmitra/'.$array[4].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+  
+ 
+	  
+  
+	$sqlcorporation = "select * from tbl_lokmitra where lokmitra_id=$lokmitra_id";
+	$rescorporation = db_query($sqlcorporation);
+	$rscorporation = db_fetch_object($rescorporation);
+	
+	$form['lokmitra_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscorporation->lokmitra_id,
+	);
+	
+	
+	$form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Name'),
+	'#required' => TRUE,
+    //'#maxlength'=>45,
+	'#size' =>45,
+	'#default_value' => $rscorporation->employee_name,
+	'#id' => 'edit-employee-name',
+	 '#attributes' => array('onkeypress' => 'return textnospeno(event,"edit-employee-name",45)'),
+	);
+	
+	$form['dob'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Birth',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rscorporation->dob,
+	);
+	
+
+$applicaint= "SELECT lookupType_id FROM tbl_lookuptypes WHERE lookupType_id=1";
+
+$ttt= db_query($applicaint);
+$rstt=db_fetch_object($ttt);
+$sqlsenderr = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rstt->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressenderr= db_query($sqlsenderr);
+$senderarrayy['']= '--Select--';
+if($ressenderr){
+
+while($rssenderr = db_fetch_object($ressenderr)){
+
+$senderarrayy[$rssenderr->lookup_name] = ucwords($rssenderr->lookup_name);
+
+}
+
+}
+
+
+
+
+
+		
+	$form['gender'] = array(
+	'#type' => 'select',
+	'#title' => t('Gender'),
+	'#required' => TRUE,
+	'#default_value' => $rscorporation->gender,
+	'#options' => $senderarrayy,
+	);
+	
+	
+	
+
+ $form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	 '#required' =>TRUE,
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $rscorporation->email,
+	 '#id' =>'email_vali',
+	  '#attributes' => array('onkeypress' =>'return emailvali(event)'),
+  );
+  
+
+
+
+$form['add_type'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Address Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rscorporation->add_type,
+		 '#options' => AddressType(),
+		  '#attributes' => array('onchange' => 'return changeMenu1234(this)'),
+
+);
+
+  $form['add_line1'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 1'),
+	'#required' => TRUE,
+	'#default_value' =>$rscorporation->add_line1,
+	'#size' =>25,
+	 '#maxlength'=>100,
+	  '#id' =>'add_line1',
+	  '#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"add_line1",100)'),
+	);
+	
+  $form['add_line2'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 2'),
+	'#required' => TRUE,
+	'#default_value' =>$rscorporation->add_line2,
+	'#size' =>25,
+	 '#maxlength'=>100,
+	  '#id' =>'add_line2',
+	 '#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"add_line2",25)'),
+	);
+	
+$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>$rscorporation->state_id,
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	
+	
+
+	  $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $rscorporation->district_id,
+		'#options' =>GetTehsilDistrictWise($rscorporation->district_id,$rscorporation->state_id),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $rscorporation->tehsil_id,
+			'#options' =>GetTehsilDistrictWise($rscorporation->district_id,$rscorporation->state_id),
+			'#ahah' => array(
+					  'path' => 'dsje/block',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'block_test',
+					  ), 
+		   
+		);
+	//end;
+	
+	
+	
+	$statearray1[''] = '--Select--';
+	$form['block_name'] = array(
+		'#type' => 'select',
+		'#title' => t('Block'),
+		'#required' => TRUE,
+		'#default_value' => $rscorporation->block,
+		'#options' => GetTehsilDistrictWise($node->district_id,$node->state_id),
+		'#ahah' => array(
+					  'path' => 'dsje/panchayt',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'panchayt_test',
+					  ), 
+		
+		
+	);
+		
+  /*$form['block'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Block'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#size' =>20,
+	);*/
+	
+$statearray2[''] = '--Select--';		
+  $form['panchayt_name'] = array(
+	'#type' =>'select',
+	'#title' => t('Panchayat'),
+	'#required' => False,
+	'#default_value' =>$rscorporation->panchayat,
+	'#options' => $statearray2,
+	);
+	
+		
+  	
+ $form['pincode'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('PIN Code'),
+	 '#required' =>FALSE,
+	 '#size' =>15, 
+	 '#maxlength'=>6,
+	 '#default_value' => $rscorporation->pincode,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+  
+  
+  $form['prev_employee_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscorporation->employee_name,
+	);
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/lokmitra'),
+);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+
+function dsje_lokmitra_form_edit_validate($form, &$form_state) {
+	
+	
+	
+	$array = explode('/',$_GET['q']);
+/*echo '<pre>';
+print_r($form);
+echo '<pre>';*/
+
+   $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lokmitra', 'list/lokmitra');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Lokmitra', 'dsje/list/edit/lokmitra/'.$array[4].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+  
+	
+	$values = $form_state['values'];
+	
+	
+	$name = $values['employee_name'];
+	$dob = $values['dob'];
+	$gender = $values['gender'];
+	$mailid = $values['email'];
+	$addtype = $values['add_type'];
+
+	$stateid= $values['state_id'];
+	$districtid = $values['district_id'];
+	$tehsilid = $values['tehsil_id'];
+	$block = $values['block_name'];
+	$panchayt_name = $values['panchayt_name'];
+
+	$pincode = $values['pincode'];
+	$userdetails =  $values['logindetails'];
+	$username = $userdetails['username'];
+	$userpassword = $userdetails['password'];
+	$usercpassword = $userdetails['cpassword'];
+	
+	
+	
+	
+	
+	
+	
+  alphanumeric('block',$block,'Block');
+  alphabet('employee_name',$employee_name,'Guest Name');
+  alphanumeric ('add_line1',$add_line1,'Address Line 1');
+  alphanumeric ('add_line2',$add_line2,'Address Line 2');
+  pincodelength($pincode,'pincode');
+  if($addtype == 175)
+	{
+		
+		if($panchayt_name=='' || $panchayt_name==0){
+			form_set_error('panchayt_name','Please Select Panchayat.');		
+		}
+		
+			
+	}
+	
+	if($block == 0 || $block == '')
+	{
+		form_set_error('block_name','Please Select Block.');	
+		
+	}
+	
+	if($tehsilid == 0 || $tehsilid == '')
+	{
+		form_set_error('tehsil_id','Please Select Tehsil.');	
+		
+	}
+	
+	if($districtid == 0 || $districtid == '')
+	{
+		form_set_error('district_id','Please Select District.');	
+		
+	}
+	
+	if($stateid == 0 || $stateid == '')
+	{
+		form_set_error('state_id','Please Select State.');	
+		
+	}
+  
+  $date2 =  substr($dob,0,10);
+  date('Y-m-d');
+  $year = dateDiff($date2,date('Y-m-d'), $precision = 6);
+  if($year[0] < 18){
+	  form_set_error('dob','DOB Can not be less than 18 Years.');
+  }
+ fononlyn('pincode',$pincode,'Pin Code');
+ if($usercpassword != 1){
+   custom_user_validate_name($username,'username');
+   if($userpassword){
+   custom_Password_validate_name( $userpassword,'password');
+   }
+      $password = $userpassword;
+   $cpassword = $usercpassword;
+	  
+			  if($password != $cpassword){
+				form_set_error('', t('Password Missmatch.'));
+			  }
+	 
+  }
+  $email = $mailid;
+ /* if($form->program_uid){
+  }else{
+		$statusemail = getEmail($email); 
+		if($statusemail){
+		form_set_error('email',$email.t(' Email address already exist.'));
+		}
+		
+		if($username){
+				$statususername = getUsername($username);
+				if($statususername){
+				form_set_error('username',$username.t(' already exist.'));
+				}
+		}
+		//else{
+			//form_set_error('username',t(' Please enter User Name.'));
+		//}
+  }
+*/
+ 
+  if($email !=''){
+	  $pattern = "^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$";
+     
+       if (eregi($pattern, $email)){
+          return true;
+       }
+       else {
+          form_set_error('email', t('You must enter valid Email Id.'));
+       }    
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+}
+
+
+
+
+
+function dsje_lokmitra_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+	
+	
+    $status = $values['status'];
+	$lokmitra_id = $values['lokmitra_id'];
+	$employee_name = $values['employee_name'];
+	$dob = $values['dob'];
+	$gender = $values['gender'];
+	$mailid = $values['email'];
+	$addtype = $values['add_type'];
+	$addressline1 = $values['add_line1'];
+	$addressline2 = $values['add_line2'];
+	$stateid= $values['state_id'];
+	$districtid = $values['district_id'];
+	$tehsilid = $values['tehsil_id'];
+	$block = $values['block_name'];
+	//$panchayt_name = $values['panchayt_name'];
+	$pincode = $values['pincode'];
+	
+	if($addtype=='72')
+	{
+	$panchayt_name =='';	
+		
+	}
+	
+	else if($addtype=='172')
+	{
+	$panchayt_name = $values['panchayt_name'];	
+	}
+	
+	else if($addtype)
+	{
+	$panchayt_name = $values['panchayt_name'];	
+	}
+	
+
+	$statusnodal =  1;  
+	
+	
+	
+	
+			db_query("UPDATE `tbl_lokmitra` set `employee_name` = '".$employee_name."' ,`gender`='".$gender."',`dob`='".$dob."',`add_type`='".$addtype."',`add_line1`='".$addressline1."',`add_line2`='".$addressline2."',`state_id`='".$stateid."',`district_id`='".$districtid."',`tehsil_id`='".$tehsilid."',`block`='".$block."',`panchayat`='".$panchayt_name."',`pincode`='".$pincode."' where lokmitra_id='".$lokmitra_id."'");
+			
+			$message = getMessage('reclokmitra', 'code06', array("0"=>$employee_name));
+			drupal_set_message($message);
+			
+			if(getRole($user->uid) == 16){
+			drupal_goto("welcome-deshboard");		
+			}else{
+			drupal_goto("list/lokmitra");	
+			
+			}
+		
+	
+}

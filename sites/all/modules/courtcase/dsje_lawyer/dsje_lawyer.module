@@ -1,0 +1,910 @@
+<?php
+
+function dsje_lawyer_init() {
+	drupal_add_js(drupal_get_path('module', 'dsje_lawyer') .'/dsje_lawyer.js');
+	
+}
+
+function dsje_lawyer_perm() {
+	return array('edit dsje_lawyer','administer dsje_lawyer', 'create dsje_lawyer', 'view dsje_lawyer');
+}
+
+function dsje_lawyer_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_lawyer', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_lawyer', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_lawyer', $account);
+	}
+	
+}
+
+function dsje_lawyer_menu() {
+
+
+	
+	
+	
+//bank branch Details Menu
+
+  $items['dsje/listlawyer'] = array(
+										'title' => t('List of Lawyer'),
+										'description' => 'Allow user to View Lawyer',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewlawyer',
+										'access arguments' => array('administer dsje_lawyer'),
+													 
+									  );
+	
+	$items['dsje/listlawyer/addlawyer'] = array(
+										'title' => t('Create Lawyer'),
+										'description' => 'Allow user to add Lawyer',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_lawyer',
+										'access arguments' => array('administer dsje_lawyer'),
+													 
+									  );
+   	$items['dsje/listlawyer/edit/lawyer/%'] = array(
+										'title' => t('Edit Lawyer'),
+										'description' => 'Allow user to add Lawyer',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addlawyeredit',
+                                        'page arguments' => array(4),
+		                                'access arguments' => array('administer dsje_lawyer'),
+													 
+									  );
+  	$items['dsje/listlawyer/view/lawyer/%'] = array(
+										'title' => t('View Lawyer'),
+										'description' => 'Allow user to add Lawyer',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addlawyerview',
+                                        'page arguments' => array(4),
+		                                'access arguments' => array('administer dsje_lawyer'),
+													 
+									  );
+   $items['dsje/del/lawyer/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'lawyer_delete',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer dsje_lawyer'),
+													 
+									  );
+   $items['dsje/enable/lawyer/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'lawyer_enable',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer dsje_lawyer'),
+													 
+									  );
+	return $items;
+}
+
+
+
+
+ function viewlawyer(){
+    global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage( 'dsjelawyer', 'code04', NULL);
+  
+ $header = array(
+		array('data' => t('S. No.')),
+ array('data' => t('Lawyer Name'), 'field' => 'tbl_lawyer.lawyer_name', 'sort' => 'asc'),
+ array('data' => t('Court Name'), 'field' => 'tbl_lawyer.court_name_id', 'sort' => 'asc'),
+	     array('data' => t('District'),'field' => 'tbl_lawyer.district_id', 'sort' => 'asc'),
+		  array('data' => t('Tehsil'),'field' => 'tbl_lawyer.tehsil_id', 'sort' => 'asc'),
+		   array('data' => t('Specialization'),'field' => 'tbl_lawyer.specialization', 'sort' => 'asc'),
+         array('data' => t('Status'),'field' => 'tbl_lawyer.status', 'sort' => 'asc'),
+		array('data' => t('Action'), 'class' => 'addeditview',),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Lawyer', 'dsje/listlawyer'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext'] || $_REQUEST['searchtextstatus']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';
+	 $status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = " UPPER(tbl_lawyer.lawyer_name) LIKE '".$val."' OR UPPER(tbl_district.district_name) LIKE '".$val."' OR UPPER(tbl_tehsil.tehsil_name) LIKE '".$val."' OR UPPER(tbl_lawyer.specialization) LIKE '".$val."' OR UPPER(tbl_court_names.court_name_name) LIKE '".$val."' ";
+	 }
+	 
+	 else if( $val=='' && $status){
+	 $searchquery = " tbl_lawyer.status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = " (UPPER(tbl_lawyer.lawyer_name) LIKE '".$val."' OR UPPER(tbl_district.district_name) LIKE '".$val."' OR UPPER(tbl_tehsil.tehsil_name) LIKE '".$val."' OR UPPER(tbl_lawyer.specialization) LIKE '".$val."' OR UPPER(tbl_court_names.court_name_name) LIKE '".$val."') AND tbl_lawyer.status='".$status."'";
+	 }
+	
+		 
+	 $query = "SELECT tbl_lawyer.lawyer_id, tbl_lawyer.lawyer_name,tbl_lawyer.district_id,tbl_lawyer.specialization,tbl_lawyer.status,tbl_district.district_name,tbl_tehsil.tehsil_name,tbl_court_names.court_name_name FROM {tbl_lawyer} INNER JOIN tbl_district ON (tbl_lawyer.district_id=tbl_district.district_id) INNER JOIN tbl_tehsil ON (tbl_lawyer.tehsil_id=tbl_tehsil.tehsil_id) INNER JOIN tbl_court_names  ON (tbl_lawyer.court_name_id=tbl_court_names.court_name_id) where ".$searchquery." ".tablesort_sql($header);
+
+ $sqlcount = "SELECT COUNT(*) AS count FROM {tbl_lawyer} INNER JOIN tbl_district ON (tbl_lawyer.district_id=tbl_district.district_id) INNER JOIN tbl_tehsil ON (tbl_lawyer.tehsil_id=tbl_tehsil.tehsil_id) INNER JOIN tbl_court_names  ON (tbl_lawyer.court_name_id=tbl_court_names.court_name_id) where ".$searchquery." ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	$_REQUEST['page']=0;
+ 
+ }else{
+    $query = "SELECT tbl_lawyer.lawyer_id, tbl_lawyer.lawyer_name,tbl_lawyer.specialization,tbl_lawyer.status,tbl_district.district_name,tbl_tehsil.tehsil_name,tbl_court_names.court_name_name FROM {tbl_lawyer} INNER JOIN tbl_district ON (tbl_lawyer.district_id=tbl_district.district_id) INNER JOIN tbl_tehsil ON (tbl_lawyer.tehsil_id=tbl_tehsil.tehsil_id) INNER JOIN tbl_court_names  ON (tbl_lawyer.court_name_id=tbl_court_names.court_name_id)   ".tablesort_sql($header);
+ }
+ 
+ global $base_url;
+$action = $base_url.'/dsje/listlawyer';
+
+ $t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+ 
+ $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'dsjelawyer', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','dsje/listlawyer');
+	}
+	$addurl = l(getMessage( 'dsjelawyer', 'code01', NULL),"dsje/listlawyer/addlawyer");
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	</td></tr>';
+	 
+   	$lising = getMessage( 'dsjelawyer', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","dsje/listlawyer/edit/lawyer/".$row->lawyer_id);
+		$viewurl = l("View","dsje/listlawyer/view/lawyer/".$row->lawyer_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","dsje/del/lawyer/".$row->lawyer_id."/".$row->lawyer_name);
+		}else{
+		  $deleteurl = l("Enable","dsje/enable/lawyer/".$row->lawyer_id."/".$row->lawyer_name);
+		}
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->lawyer_name)),
+			array('data' => ucwords($row->court_name_name)),
+			array('data' => ucwords($row->district_name)),
+			array('data' => ucwords($row->tehsil_name)),
+			array('data' => ucwords($row->specialization)),
+                        array('data' => $st), 
+			
+			//array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+			//array('data' => $viewurl." | ".$editurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function dsje_lawyer(){
+ return drupal_get_form('dsje_lawyer_form');
+}
+function dsje_lawyer_form() {
+			$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lawyer', 'dsje/listlawyer');
+  if($array[2] == 'addlawyer'){
+     $breadcrumb[] = l('Add Lawyer', 'dsje/listlawyer/addlawyer');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  
+   $form['lawyer_name'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Lawyer Name',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#maxlength'=>45,	
+	  '#attributes' => array('onkeypress' => 'return alphabet(event)'),
+	);
+	
+	
+	
+	
+	$form['practicing_since'] = array(
+	  '#type' =>'date_popup',
+	  '#date_format' => 'd-m-Y',
+	  '#title' => 'Practicing Since',
+	  '#required' =>TRUE,
+	  '#default_value' =>'',
+	  '#maxlength'=>45,	
+	  
+	);
+	
+	$sqllawyer2 = "select * from {tbl_court_names} where status =1 ORDER BY court_name_name ASC";
+	$rescountry2 =db_query($sqllawyer2);
+	if($rescountry2){
+		$countryarray2[''] = '--Select--';
+		while($rscountry2 = db_fetch_object($rescountry2)){
+			$countryarray2[$rscountry2->court_name_id] = ucwords($rscountry2->court_name_name);
+		}
+	}
+	
+	
+	$form['court_name_id'] = array(
+	  '#type' =>'select',
+	  '#title' =>'Court Name',
+	  '#required' =>TRUE,
+	  '#default_value' => $node->court_name_id,
+	  '#options' => $countryarray2, 
+	  '#maxlength'=>45,	
+	  
+	);
+	
+	
+	$form['specialization'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Specialization',
+	  '#required' =>TRUE,
+	  '#size' => 41,	
+	  '#maxlength'=>45,	
+	  '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),	
+	);
+	
+	$form['fee_charge'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Fee',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	 '#maxlength'=> 11,
+	 '#default_value' => '',
+	 	
+	  '#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"edit-fee-charge",11)'),		
+	);
+	
+	$form['category_id'] = array(
+	    '#type' =>'select',
+		'#title' => t('Category Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#options' => selectcategorycourt(),
+		'#maxlength'=>45,	
+	);
+	
+	
+	$sqlcountry = "select * from {tbl_dsjestate} WHERE status='1' ORDER BY state_name";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--Select--'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->state_id] = ucfirst($rscountry->state_name);
+	  }
+	}
+	$form['state_id'] = array(
+		'#type' => 'select',
+		'#title' => t('State'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		'#ahah' => array(
+					  'path' => 'rec/district',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'zone',
+					  ),
+	);
+	
+	
+	
+    $zonearray[''] = '--Select--';
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' =>$zonearray,
+		'#ahah' => array(
+					  'path' => 'rec/tehsil',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'state',
+					  ), 
+	);
+    
+    $statearray[''] = '--Select--';
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => '',
+			'#options' => $statearray,
+		);
+
+	$form['address'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Address'),
+		'#required' => TRUE,
+		'#rows' =>5,
+		'#cols' =>30,
+		'#maxlength'=>199,
+		'#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-address",199)'),	
+	);
+	
+	
+	$form['phone_no'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Phone No',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#maxlength'=>15,
+	 '#minlenght'=>10,	
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),	
+	);
+	
+	$form['email'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Email',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#maxlength'=>40,
+	  '#attributes' => array('onkeypress' => 'return emailvali(event)'),			
+	);
+	
+	$form['lawyerother_detail'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Other Detail'),
+		'#rows' =>5,
+		'#cols' =>30,
+		'#maxlength'=>150,
+		'#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-lawyerother-detail",150)'),		
+	);
+	
+	
+    $form['cancel'] = array(
+        '#type' => "markup",
+        '#value' => l(t('Back'), 'dsje/listlawyer'),
+);
+	
+	
+
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	
+	
+	
+	return $form;
+}
+//Amit : Function to validate the duplicate  value while addition//
+function dsje_lawyer_form_validate($form, &$form_state) {
+  
+  $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lawyer', 'dsje/listlawyer');
+  if($array[2] == 'addlawyer'){
+     $breadcrumb[] = l('Add Lawyer', 'dsje/listlawyer/addlawyer');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  
+  $values = $form_state['values'];
+
+$lawyer_name = $form->lawyer_name;
+ //$lawyer_name = textonlynw1($values['lawyer_name']);
+  $lawyer_name = parseData(trim($values['lawyer_name']));
+  
+    $practicingsince = parseData(trim($values['practicing_since']));
+  //$remarks = parseData(trim($values['remarks']));
+  $phone_no = parseData(trim($values['phone_no']));
+  $address = parseData(trim($values['address']));
+  $email = parseData(trim($values['email']));
+  $fee_charge = parseData(trim($values['fee_charge']));
+  
+ $curda=date("Y-m-d h:i:s");
+
+ alphabet('lawyer_name',$lawyer_name,'Lawyer Name');
+ 
+	  $sql = "SELECT * FROM {tbl_lawyer} where UCASE(lawyer_name)= '".strtoupper($lawyer_name)."' AND status =1";
+	   $res = db_query($sql);
+	  
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjelawyer', 'code06', array("0"=>$lawyer_name));
+			form_set_error('lawyer_name', $message);
+	   }
+ 
+	phonelength($phone_no,'phone_no');
+	paypay('fee_charge',$fee_charge,'Fee Charge');
+	fononlyn('phone_no',$phone_no,'Phone No.');
+	isValidEmail('email',$email,'Email.');
+	textonlywithdotne('address',$address,'Address.');
+	
+	
+	if($practicingsince >  $curda)
+	{
+	form_set_error('practicing_since',"Practicing since date should be less then Current date");	
+		
+	}
+  
+		
+	
+	
+}
+
+function dsje_lawyer_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+
+	$lawyer_name = parseData($values['lawyer_name']);
+	$practicing_since = $values['practicing_since'];
+	$court_name_id = $values['court_name_id'];
+	$specialization = $values['specialization'];
+	$fee_charge = $values['fee_charge'];
+	$category_id = $values['category_id'];
+	
+    $state_id = $values['state_id'];
+    $district_id = $values['district_id'];
+    $tehsil_id = $values['tehsil_id'];
+	$address = parseData($values['address']);
+	$phone_no = $values['phone_no'];
+	$email = $values['email'];
+	$lawyerother_detail = parseData($values['lawyerother_detail']);
+    //$city_id = $values['city_id'];
+    
+    
+    $status = 1;
+    //$remarks = parseData($values['remarks']);
+
+	$sql = "INSERT INTO {tbl_lawyer} (`lawyer_name` ,`practicing_since` ,`court_name_id` ,`specialization` ,`fee_charge` ,`category_id`,`state_id`,`district_id`,`tehsil_id`,`address`,`phone_no`,`email`,`lawyerother_detail`,`status` ,`createdby` ,`createdon` ,`updatedby` ,`updatedon`) values('".$lawyer_name."','".$practicing_since."','".$court_name_id."','".$specialization."','".$fee_charge."','".$category_id."','".$state_id."','".$district_id."','".$tehsil_id."','".$address."','".$phone_no."','".$email."','".$lawyerother_detail."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."')";
+	db_query($sql);
+	$message = getMessage('dsjelawyer', 'code05', array("0"=>$lawyer_name));
+	drupal_set_message($message);
+	drupal_goto('dsje/listlawyer');
+
+}
+
+function lawyer_delete($sid, $sno){
+	 $lawyer_id = $sid;
+	 
+	  db_query("UPDATE {tbl_lawyer} SET status=0 WHERE lawyer_id ='".$lawyer_id."'");
+  $message = getMessage('dsjelawyer', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("dsje/listlawyer");
+ }
+
+function lawyer_enable($sid,$sno){
+	 $lawyer_id = $sid;
+	 db_query("UPDATE {tbl_lawyer} SET status=1 WHERE lawyer_id ='".$lawyer_id."'");
+  
+    $message = getMessage('dsjelawyer', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("dsje/listlawyer");
+}
+
+function dsje_addlawyerview($id){
+				$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lawyer', 'dsje/listlawyer');
+  if($array[2] == 'view'){
+     $breadcrumb[] = l('View Lawyer', 'dsje/listlawyer/view/lawyer/'.$array[4].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  $sql = "select * FROM {tbl_lawyer} where lawyer_id=$id";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+
+  if($rs->status ==1){
+   $status ='Enabled';
+ }else{
+   $status ='Disabled';
+ }
+ 
+ if($rs->lawyerother_detail){
+   $detail =$rs->lawyerother_detail;
+ }else{
+   $detail ='N/A';
+ }
+
+ $sd=$rs->practicing_since;
+	 $dsd=date('d-m-Y',strtotime($sd));
+	 
+	 
+ $address = str_replace('<p>','',$rs->address);
+ $address = str_replace('</p>','',$address);	 
+
+ $output .='<div id="form-container"><table cellpadding="2" cellspacing="1" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Lawyer Details</h2></td></tr>';
+
+ $output .='<tr class="evenrow"><td width="50%">Lawyer Name:</td><td class="normal">'.ucwords($rs->lawyer_name).'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Practicing Since:</td><td class="normal">'.$dsd.'</td></tr>';
+  $output .='<tr class="evenrow"><td width="50%">Court Name:</td><td class="normal">'.ucwords(getcourtname($rs->court_name_id)).'</td></tr>';
+ 
+ $output .='<tr class="oddrow"><td width="50%">Specialization:</td><td class="normal">'.ucwords($rs->specialization).'</td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Fee:</td><td class="normal">'.round($rs->fee_charge).'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Category Name:</td><td class="normal">'.ucwords(getcategoryname($rs->category_id)).'</td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Address:</td><td class="normal">'.ucwords($address).'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">State:</td><td class="normal">'.ucwords(getState($rs->state_id)).'</td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">District:</td><td class="normal">'.ucwords(getdistrict($rs->district_id)).'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Tehsil:</td><td class="normal">'.ucwords(gettehsil($rs->tehsil_id)).'</td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Phone No:</td><td class="normal">'.$rs->phone_no.'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Email:</td><td class="normal">'.$rs->email.'</td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Other Detail:</td><td class="normal">'.$detail.'</td></tr>';
+ 
+ //$output .='<tr class="oddrow"><td>Remarks:</td><td class="normal">'.$remarks.'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+  $output .='<tr class="evenrow"><td class="back" colspan="2" align="center">'.l(t('Back'), 'dsje/listlawyer').'</td></tr>';
+ $output .='</table></div>';
+ return $output;
+
+}
+
+
+//edit section 
+
+
+function dsje_addlawyeredit($lawyer_id){
+ return drupal_get_form('dsje_addlawyeredit_form',$lawyer_id);
+}
+function dsje_addlawyeredit_form(&$form_state,$lawyer_id) {
+			$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lawyer', 'dsje/listlawyer');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Lawyer', 'dsje/listlawyer/edit/lawyer/'.$array[4].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+$sql = "select * FROM {tbl_lawyer} where lawyer_id='".$lawyer_id."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+
+
+$form['lawyer_name'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Lawyer Name',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#default_value' => $rs->lawyer_name,
+	  '#maxlength'=>45,
+	  '#attributes' => array('onkeypress' => 'return alphabet(event)'),		
+	);
+	
+	$sd=$rs->practicing_since;
+	 $dsd=substr($sd,0,10);
+	 
+	 
+	 $form['practicing_since'] = array(
+	  '#type' =>'date_popup',
+	  '#date_format' => 'd-m-Y',
+	  '#title' =>'Practicing Since',
+	  '#required' =>TRUE,
+	  '#default_value' => $dsd,
+	  '#maxlength'=>45,	
+	  
+	);
+	
+	
+$sqllawyer2 = "select * from {tbl_court_names} where status =1 ORDER BY court_name_name ASC";
+	$rescountry2 =db_query($sqllawyer2);
+	if($rescountry2){
+		$countryarray2[''] = '--Select--';
+		while($rscountry2 = db_fetch_object($rescountry2)){
+			$countryarray2[$rscountry2->court_name_id] = ucwords($rscountry2->court_name_name);
+		}
+	}	
+	
+	
+$form['court_name_id'] = array(
+	    '#type' =>'select',
+		'#title' => t('Court Name'),
+		'#required' => TRUE,
+		'#default_value' => $rs->court_name_id,
+		'#options' => $countryarray2,
+		'#maxlength'=>45,	
+	);	
+	
+$form['specialization'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Specialization',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#default_value' => $rs->specialization,	
+	  '#maxlength'=>45,	
+	  '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),	
+	);
+	
+$form['fee_charge'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Fee',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#default_value' => round($rs->fee_charge,2),
+	  '#maxlength'=>11,
+	  '#attributes' => array('onkeypress' => 'return paypaymain_custom(event,"edit-fee-charge",11)'),		
+	  		
+	);
+	
+ $form['category_id'] = array(
+	    '#type' =>'select',
+		'#title' => t('Category Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rs->category_id,
+		'#options' => selectcategorycourt(),
+	);	
+
+
+	
+	$form['lawyer_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rs->lawyer_id,
+	
+	);
+	
+		//location details
+  
+	$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->state_id,
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	  $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => $rs->district_id,
+		'#options' =>GetDistrictStateWise($rs->state_id),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => $rs->tehsil_id,
+			'#options' =>GetTehsilDistrictWise($rs->dsitrict_id,$rs->state_id),
+		   
+		);
+	//end
+
+	
+	$form['address'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Address'),
+		'#rows' =>5,
+		'#cols' =>30,
+		'#required' =>TRUE,
+		'#default_value' => $rs->address,
+		'#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-address",199)'),	
+		
+					
+	);
+	
+	$form['phone_no'] = array(
+	    '#type' => 'textfield',
+		'#title' => t('Phone No'),
+		'#rows' =>5,
+		'#cols' =>30,
+		'#required' =>TRUE,
+		'#default_value' => $rs->phone_no,
+		'#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),			
+	);
+	
+	
+	$form['email'] = array(
+	    '#type' => 'textfield',
+		'#title' => t('Email'),
+		'#rows' =>5,
+		'#cols' =>30,
+		'#maxlength'=>40,
+		'#required' =>TRUE,
+		'#default_value' => $rs->email,	
+		'#attributes' => array('onkeypress' => 'return emailvali(event)'),		
+	);
+
+	$form['lawyerother_detail'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Other Detail'),
+		'#rows' =>5,
+		'#cols' =>30,
+		'#maxlength'=>150,
+		'#default_value' => $rs->lawyerother_detail,
+		'#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-lawyerother-detail",150)'),	
+	);
+	
+	$form['status'] = array(
+		'#type' => 'hidden',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	);
+    
+	$form['cancel'] = array(
+        '#type' => "markup",
+        '#value' => l(t('Back'), 'dsje/listlawyer'),
+);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	
+	
+	
+	return $form;
+}
+
+function dsje_addlawyeredit_form_validate($form, &$form_state) {
+
+
+  $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lawyer', 'dsje/listlawyer');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Lawyer', 'dsje/listlawyer/edit/lawyer/'.$array[4].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  $values = $form_state['values'];
+$lawyer_name = $form->lawyer_name;
+ //$lawyer_name = textonlynw1($values['lawyer_name']);
+  $lawyer_name = parseData(trim($values['lawyer_name']));
+  //$remarks = parseData(trim($values['remarks']));
+   $practicingsince = parseData(trim($values['practicing_since']));
+  $phone_no = parseData(trim($values['phone_no']));
+  $email = parseData(trim($values['email']));
+  $fee_charge = parseData(trim($values['fee_charge']));
+  $state_id = $values['state_id'];
+    $district_id = $values['district_id'];
+    $tehsil_id = $values['tehsil_id'];
+$curda=date("Y-m-d h:i:s");
+     alphabet('lawyer_name',$lawyer_name,'Lawyer Name');
+ 
+	
+	phonelength($phone_no,'phone_no');
+	paypay('fee_charge',$fee_charge,'Fee Charge');
+	fononlyn('phone_no',$phone_no,'Phone No.');
+	isValidEmail('email',$email,'Email.');
+	
+	if($practicingsince >  $curda)
+	{
+	form_set_error('practicing_since',"Practicing since date should be less then Current date");	
+		
+	}
+	
+  if($district_id =='' || $district_id=='0')
+  {
+	
+	form_set_error('district_id',"District field is required");	  
+	  
+  }
+  
+  if($tehsil_id =='' || $tehsil_id=='0')
+  {
+	
+	form_set_error('tehsil_id',"Tehsil field is required");	  
+	  
+  }
+		
+	
+	
+}
+
+
+function dsje_addlawyeredit_form_submit($form, &$form_state) {
+	
+	
+	global $user;
+	$values = $form_state['values'];
+    $status = 1;
+	$updatedby = $user->uid;
+	$updatedon = time();
+    $lawyer_id=$values['lawyer_id'];  
+	
+	$lawyer_name = parseData($values['lawyer_name']);
+	$practicing_since = $values['practicing_since'];
+	$court_name_id = $values['court_name_id'];
+	$specialization = $values['specialization'];
+	$fee_charge = $values['fee_charge'];
+	$category_id = $values['category_id'];
+	$state_id = $values['state_id'];
+    $district_id = $values['district_id'];
+    $tehsil_id = $values['tehsil_id'];
+	$address = parseData($values['address']);
+	$phone_no = $values['phone_no'];
+	$email = $values['email'];
+	$lawyerother_detail = parseData($values['lawyerother_detail']);
+    //$city_id = $values['city_id'];
+    
+    
+    $status = $values['status'];
+
+	$sql = "UPDATE {tbl_lawyer} set `lawyer_name` ='".$lawyer_name."',`practicing_since`='".$practicing_since."' ,`court_name_id`='".$court_name_id."' ,`specialization`='".$specialization."' ,`fee_charge` ='".$fee_charge."',`category_id`='".$category_id."' ,`state_id`='".$state_id."',`district_id`='".$district_id."',`tehsil_id`='".$tehsil_id."',`address`='".$address."',`phone_no`='".$phone_no."',`email`='".$email."',`lawyerother_detail`='".$lawyerother_detail."',`updatedby` ='".$updatedby."',`updatedon`='".$updatedon."' where lawyer_id='".$lawyer_id."'"; 	
+    db_query($sql);
+	
+	$message = getMessage('dsjelawyer', 'code10', array('0'=>$lawyer_name));
+				drupal_set_message($message);
+	
+		//drupal_set_message($lawyer_name .' has been updated successully.');
+	drupal_goto('dsje/listlawyer');
+
+}
+
+
+
+function dsje_lawyer_theme() {
+	
+	return array(
+				 
+		'dsje_lawyer_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_lawyer_form',
+                                 ),
+        'dsje_addlawyeredit_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_lawyer_form_edit',
+                                 ),
+
+				 );
+}

@@ -1,0 +1,6 @@
+; $Id$
+name = CourseMaster
+description = "Education Loan Course Master"
+core = 6.x
+version =6.x-1
+package = "REC Masters"

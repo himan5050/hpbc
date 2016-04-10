@@ -1,0 +1,6 @@
+;$id 12/14/2010 Neshat khan
+name = "Designation"
+description ="Designation master"
+core = 6.x
+version =6.x-1
+package="REC Masters"

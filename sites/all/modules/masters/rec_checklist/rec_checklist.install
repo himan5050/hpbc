@@ -1,0 +1,78 @@
+<?php
+function rec_checklist_schema() {
+
+  //mou table
+   $schema['tbl_checklist_master'] = array(
+							 'fields' => array(
+											   'checklist_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'checklist_item_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+												'checklist_item_details' => array(
+															  'type' => 'varchar',
+															  'length' => '900',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '900',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'checklist_id' => array('checklist_id'),
+												),
+							 'primary key' => array('checklist_id'),
+							 );
+	
+	return $schema;
+}
+
+function rec_checklist_install() {
+	drupal_install_schema('rec_checklist');
+}
+
+function rec_checklist_uninstall() {
+	drupal_uninstall_schema('rec_checklist');
+}
+

@@ -1,0 +1,5 @@
+;$id 3/24/2011 Neshat khan
+name = "nodal_designation"
+description ="nodal_designation"
+core = 6.x
+version =6.x-1

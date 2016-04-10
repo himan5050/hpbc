@@ -1,0 +1,9 @@
+function showwork(){
+  var val=document.getElementById("role").value;
+  if(val > 0){
+    document.getElementById("workflowfiled").style.display="none";
+  }else{
+    
+  }
+}
+

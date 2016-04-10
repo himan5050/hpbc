@@ -1,0 +1,945 @@
+<?php
+
+session_start();
+function resignation_init() {
+	drupal_add_js(drupal_get_path('module', 'resignation') .'/resignation.js');
+	drupal_add_css(drupal_get_path('module', 'resignation') .'/resignation.css');
+	
+}
+function resignation_perm() {
+	return array('edit resignation','administer resignation', 'create resignation', 'view resignation');
+}
+
+function resignation_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit resignation', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create resignation', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view resignation', $account);
+	}
+}
+
+function resignation_menu(){
+
+$items['cresignation/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'cresignation_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer resignation'),
+);
+$items['aresignation/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'aresignation_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer resignation'),
+);
+
+	$items['resignation/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'resignation_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer resignation'),
+);
+	$items['viewprofile/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'profile_page',
+	'page arguments' => array(1),
+	'access arguments' => array('edit resignation'),
+	'file' =>'viewprofile.inc',
+);
+
+$items['resignationlist'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'resignation_list_page',
+	//'page arguments' => array(1),
+	'access arguments' => array('administer resignation'),
+		'file' =>'resignationsearch.inc',
+);
+$items['resignation-search-list/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'resignation_search_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer resignation'),
+	'file' =>'resignationsearch.inc',
+);
+
+$items['comment-list/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'comment_list_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer resignation'),
+	'file'=>'comment.inc',
+);
+$items['comment-search-list/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'comment_search_page',
+	'page arguments' => array(1,2),
+	'access arguments' => array('administer resignation'),
+	'file'=>'comment.inc',
+);
+
+$items['close-comment/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'close_comment',
+	'page arguments' => array(1),
+	'access arguments' => array('administer resignation'),
+	'file'=>'comment.inc',
+);
+$items['comment-reply-form/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'comment_creply_page',
+	'page arguments' => array(1,2),
+	'access arguments' => array('administer resignation'),
+	'file'=>'comment.inc',
+);
+$items['rviewprofile/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'rviewpage',
+	'page arguments' => array(1),
+	'access arguments' => array('edit resignation'),
+	
+);
+$items['send-query/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'send_query_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer resignation'),
+	
+);
+$items['send-comment/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'send_comment_page',
+	'page arguments' => array(1,2),
+	'access arguments' => array('administer resignation'),
+	'file'=>'comment.inc',
+);
+	$items['pending-comment-list'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'pending_comment_page',
+	//'page arguments' => array(1,2),
+	'access arguments' => array('administer resignation'),
+		'file'=>'comment.inc',
+);
+	$items['viewquery/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'resignation_query_page',
+	'page arguments' => array(1,2),
+	'access arguments' => array('administer resignation'),
+);
+
+$items['viewreply/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'resignation_reply_page',
+	'page arguments' => array(1,2),
+	'access arguments' => array('administer resignation'),
+);
+$items['view-all-comments-list/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'all_list_comment_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer resignation'),
+);
+
+
+	
+	$items['view-pending-comment/%/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'view_pending_query',
+	'page arguments' => array(1,2),
+	'access arguments' => array('administer resignation'),
+	'file'=>'comment.inc',
+);
+	
+	$items['emp-forward/%'] = array(
+	'title' => '',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'emp_forward_page',
+	'page arguments' => array(1),
+	'access arguments' => array('administer resignation'),
+);
+//emp-forward/
+
+
+return $items;
+
+}
+
+
+
+ 
+
+function resignation_form($form_state,$empid){
+
+	
+	
+     $form['emp_id'] = array(
+	'#type' => 'hidden',
+	'#value' =>$empid,
+	
+	); 
+	
+	 $form['resignation_detail'] = array(
+	'#type' => 'fieldset', 
+    '#title' => t('Resignation Detail'), 
+     '#collapsible' => FALSE, 
+	'#collapsed' => FALSE,
+    );
+	$form['resignation_detail']['reason'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Reason'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#maxlength' =>500,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-reason",500)'),
+	);
+	
+	$form['resignation_detail']['efc_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Effective Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' =>'',
+	);
+	$form['resignation_detail']['resignation_date'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => t('Last Working Date'),
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' =>'',
+	);
+	
+	$form['submit'] = array(
+	'#type' => 'submit',
+		'#value' =>t('Save'),
+	);
+return $form;
+} 
+
+function resignation_form_validate($form,&$form_state){
+	$date= substr($form_state['values']['resignation_date'],0,10);
+	 $edate= substr($form_state['values']['efc_date'],0,10);
+	$ctime = date("Y-m-d",time());
+	
+	if($edate && $date && $date<$edate){
+			form_set_error('resignation_date','Last working date should be greater than Effective date.');
+		   }
+	
+	if($edate && $edate <$ctime){
+		form_set_error('efc_date','Effective date should be greater then to Current date.');
+	}
+
+
+	if($date && $date <$ctime){
+		form_set_error('resignation_date','Last working date should be greater then to Current date.');
+	}
+
+}
+
+
+
+function resignation_form_submit($form,&$form_state){
+	//echo '<pre>';
+	//print_r($form_state);
+	
+	global $user;
+	$empid= $form_state['values']['emp_id'];
+	$reson= $form_state['values']['reason'];
+	$resigndate = time();
+	$edate= $form_state['values']['efc_date'];
+	$date= $form_state['values']['resignation_date'];
+	
+ /** Send mail to hod **/
+	//Employee
+
+	
+	$uload = user_load($user->uid);
+	$username = $uload->name;
+	$usermail = $uload->mail;
+
+	$parameter = '';
+	$to = $usermail;
+	$parameter = json_encode(array('0'=>$username,'1'=>$empid,'2'=>$edate,'3'=>$date));
+	createMail('resignationemployee',$to,'',$parameter);
+
+
+	//HOD
+	$hod = employeeHOD($user->uid);
+	$uload = user_load($hod);
+	$username = $uload->name;
+	$usermail = $uload->mail;
+
+	$parameter = '';
+	$to = $usermail;
+	$parameter = json_encode(array('0'=>$username,'1'=>$empid,'2'=>date('d-m-Y',strtotime($resigndate)) ,'3'=>$edate,'4'=>$date));
+	createMail('resignationHOD',$to,'',$parameter);
+	   
+/** End  Send mail to hod **/
+
+
+	if(getRole($user->uid)== 13 || getRole($user->uid)==6 || getRole($user->uid)==19){
+		$branch = '';
+		if(getRole($user->uid)== 13)
+			$level = 2;
+		if(getRole($user->uid)== 19)
+			$level = 3;
+	}else{
+		$branch = getCorporationBranch($user->uid);
+		$level = 1;
+	}
+	db_query("insert into tbl_workflow_docket (workflow_id,corp_branch) VALUES ('8','".$branch."')");
+	
+	$doc_id = db_last_insert_id('tbl_workflow_docket','doc_id');
+	db_query("insert into tbl_resignation (emp_id,reason,regdate,effectdate,status,resigndate,doc_id) VALUES ('".getempidtouid($empid)."','".$reson."','".$date."','".$edate."','9','".$resigndate."','".$doc_id."')");
+
+	db_query("insert into tbl_workflow_task (level,status,doc_id,uid) VALUES ($level,0,'".$doc_id."','".$user->uid."')");
+
+	$message = getMessage('resignation', 'code05', array("0"=>$empid));
+	drupal_set_message($message);
+	drupal_goto("viewprofile/".$empid);
+
+
+	//drupal_set_message('Resignation Form has been saved successfully');
+	//drupal_goto("viewprofile/".$empid);
+
+}
+
+function emp_forward_page($doc_id){
+	global $user;
+
+
+db_query("insert into tbl_workflow_task (level,status,doc_id) VALUES (1,0,'".$doc_id."')");
+db_query("update tbl_workflow_task  SET status=1 where doc_id='".$doc_id."' AND uid='".docidtoempid($doc_id)."'");
+//$message = getMessage('resignation', 'code05', array("0"=>$empid));
+			//drupal_set_message($message);
+	drupal_set_message('Resignation Form has been Forwarded successfully');
+	
+	
+	/*
+	  getting employee id  from here
+	*/
+	
+	
+	//drupal_goto("viewprofile/".docidtoempid($doc_id));
+	drupal_goto("viewprofile/".getuidtoempID($user->uid));
+			
+}
+function resignation_page($empid){
+//$sql = "";
+//$res=db_query($sql);
+//$rs = db_fetch_object($res);
+if(getRole($user->uid) == 6)
+{
+	drupal_set_message('You can not resign.');
+	drupal_go_to('viewprofile/'.$empid);
+}
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	//$breadcrumb[] = l('View Profile', 'viewprofile/'.$empid);
+	$breadcrumb[] = l('Resignation Form', 'resignation/'.$empid);
+	drupal_set_breadcrumb($breadcrumb);
+$output = drupal_get_form('resignation_form',$empid);
+
+return $output;
+}
+
+function cresignation_page($empid){
+global $user;
+$sql ="select * from tbl_resignation where emp_id='".getempidtouid($empid)."'";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	$doc_id = $rs->doc_id;
+
+$empname = docidtoempname($doc_id);
+db_query("delete from tbl_resignation where emp_id='".getempidtouid($empid)."' ");
+db_query("delete from tbl_workflow_task where doc_id='".$doc_id."'");
+if(getempidtouid($empid) == $user->uid)
+	$message = getMessage('resignation', 'code09', array("0"=>$empid));
+else
+	$message = getMessage('resignation', 'code10', array("0"=>$empname));
+drupal_set_message($message);
+if(getRole($user->uid)== 13 || getRole($user->uid)==6 || getRole($user->uid)==19){
+
+/** Send mail to hod **/
+//$sql = "select employee_id from tbl_joinings where program_uid='".$user->uid."'";
+//$res = db_query($sql);
+//$rs=db_fetch_object($res);
+	
+	$hodname = getRoleName(getRole($user->uid));
+
+	//$uload = user_load($rs->program_uid);
+	$uload = user_load($user->uid);
+	$username = $uload->name;
+	$usermail = $uload->mail;
+
+	$parameter = '';
+	$to = $usermail;
+	$parameter = json_encode(array('0'=>$username,'1'=>$hodname));
+	createMail('cresignationtoEMP',$to,'',$parameter);
+			   
+/** End  Send mail to hod **/
+
+drupal_goto('resignationlist');
+}
+else{
+	/** Send mail to hod **/
+	//Employee
+
+	
+	$uload = user_load($user->uid);
+	$username = $uload->name;
+	$usermail = $uload->mail;
+
+	$parameter = '';
+	$to = $usermail;
+	$parameter = json_encode(array('0'=>$username));
+	createMail('cresignationEMP',$to,'',$parameter);
+
+
+	//HOD
+	$hod = employeeHOD($user->uid);
+	$uload = user_load($hod);
+	$username = $uload->name;
+	$usermail = $uload->mail;
+
+	$parameter = '';
+	$to = $usermail;
+	$parameter = json_encode(array('0'=>$username,'1'=>$empid));
+	createMail('cresignationHOD',$to,'',$parameter);
+			   
+/** End  Send mail to hod **/
+
+//drupal_set_message('Resignation Form has been canceled successfully');
+drupal_goto("viewprofile/".$empid);
+}
+			
+}
+
+
+function rviewpage($empid){
+
+	 $array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Resignation', 'resignationlist');
+	$breadcrumb[] = l('Employee Details', 'rviewprofile/'.$empid);
+	drupal_set_breadcrumb($breadcrumb);
+
+
+	$sql = "select tbl_resignation.effectdate as effectdate,tbl_resignation.reason as reason,tbl_resignation.orderno as orderno ,tbl_resignation.regdate as regdate,tbl_joinings.doj as doj,tbl_joinings.employee_name as empname,tbl_joinings.employee_type as emptype,tbl_joinings.current_officeid as officeid,tbl_joinings.dob as dob from tbl_resignation INNER JOIN tbl_joinings ON (tbl_resignation.emp_id = tbl_joinings.program_uid) where tbl_resignation.emp_id = '".getempidtouid($empid)."'";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	
+	$output = "<table cellspacing='2' cellpadding='1' border='0' id='form-container'>";
+	 $output .= "<tr class='evenrow'><td colspan=2 align='center'><h2>Employee Detail</h2></td></tr>";
+	 $output .= "<tr class='oddrow'><td width='50%'>Employee ID:</td><td class='normal'>" . $empid. "</td></tr>";
+    $output .= "<tr class='evenrow'><td>Employee Name:</td><td class='normal'>" . $rs->empname . "</td></tr>";
+	 $output .= "<tr class='oddrow'><td>Date of Birth:</td><td class='normal'>" . date("d-m-Y",strtotime($rs->dob)). "</td></tr>";
+	$output .= "<tr class='evenrow'><td>Date of Joining:</td><td class='normal'>" . date("d-m-Y",strtotime($rs->doj)). "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Office:</td><td class='normal'>" . getCorporationName($rs->officeid). "</td></tr>";
+	 $output .= "<tr class='evenrow'><td>Employee Type:</td><td class='normal'>" .getLookupName($rs->emptype). "</td></tr>";
+	$output .= "<tr class='oddrow'><td>Reason:</td><td class='normal'>" . $rs->reason. "</td></tr>";	
+	 $output .= "<tr class='evenrow'><td>Effective Date:</td><td class='normal'>".date("d-m-Y",strtotime($rs->effectdate)). "</td></tr>";
+	 $output .= "<tr class='oddrow'><td>Last Working Date:</td><td class='normal'>" . date("d-m-Y",strtotime($rs->regdate)). "</td></tr>";
+	 $output .= '<tr class="evenrow"><td colspan="2" class="back" align="center">'.l('Back','resignationlist').'</td></tr>';
+	 $output .= "</table>";
+
+return $output;
+}
+
+function aresignation_page($doc_id){
+	global $user;
+				$level = getclevel($user->uid);
+				$nextlevel = getnlevel($user->uid);
+	       // db_query("update tbl_resignation SET status=1 where emp_id='".$empid."'");
+			db_query("update tbl_workflow_task  SET status=2 where doc_id='".$doc_id."' AND level='".$level."'");
+			if(getRole($user->uid) != 6){
+			db_query("insert into tbl_workflow_task (level,status,doc_id) VALUES ('".$nextlevel."',0,'".$doc_id."')");
+			}
+			if(getRole($user->uid) == 6){
+			db_query("update tbl_resignation SET status=15 where doc_id='".$doc_id."'");
+			}
+			
+			if(getRole($user->uid)==6){
+			/** Send mail to hod **/
+	
+				$uload = user_load($user->uid);
+				$username = $uload->name;
+				$usermail = $uload->mail;
+
+				$parameter = '';
+				$to = $usermail;
+				$parameter = json_encode(array('0'=>$username));
+				createMail('approvedresignation',$to,'',$parameter);
+				
+				$sqlapp = "select tbl_resignation.comment as comment,tbl_resignation.doc_id as doc_id,tbl_resignation.effectdate as effectdate,tbl_joinings.employee_id as emp_id ,tbl_resignation.regdate as regdate,tbl_resignation.status as status,tbl_joinings.employee_name as empname ,tbl_workflow_task.status as wstatus,tbl_resignation.emp_id as myid,tbl_joinings.program_uid from tbl_resignation INNER JOIN tbl_joinings ON (tbl_resignation.emp_id = tbl_joinings.program_uid) LEFT JOIN tbl_workflow_task ON (tbl_resignation.doc_id=tbl_workflow_task.doc_id) where tbl_resignation.doc_id = '".$doc_id."'";
+					
+					$resapp=db_query($sqlapp);
+					$rsapp=db_fetch_object($resapp);
+				
+				db_query("update users set status=0 where uid='".$rsapp->program_uid."'");
+					
+					$userphno="select mobile,employee_id from tbl_joinings where program_uid='".$user->uid."'";
+					$userphnoq=db_query($userphno);
+					$userphnor=db_fetch_array($userphnoq);
+					$smsmobno='91'.$userphnor['mobile'];
+					
+					$empresd="select effectdate from tbl_resignation where emp_id='".$user->uid."'";
+					$empresdq=db_query($empresd);
+					$empresdr=db_fetch_array($empresdq);
+					$resda=$empresdr['effectdate'];
+					
+					$smsmessage='Your Resignation has been accepted with Effective From '.$resda;
+					
+				customsendsms($smsmobno,$smsmessage);		   
+			/** End  Send mail to hod **/
+						
+			}
+			
+$empid = docidtoempid($doc_id);
+			if(getRole($user->uid)==6){
+			db_query("update tbl_loan_comment SET status=1 where doc_id='".$doc_id."'");
+
+			$message = getMessage('resignation', 'code08', array("0"=>docidtoempname($doc_id)));
+				}
+				else{
+					$dd = ucwords(getrolenames(getrolebylevel($nextlevel)));
+				//$message = getMessage('resignation', 'code14', array("0"=>$empid,"1"=>$dd));
+				$message ="The Resignation has been forwarded to ".$dd;
+				}
+			drupal_set_message($message);
+			drupal_goto('resignationlist');
+}
+
+
+function send_query_form($form_state,$doc_id){
+
+
+ $array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Resignation', 'resignationlist');
+	$breadcrumb[] = l('Write Your Query', 'send-query/'.$doc_id);
+	drupal_set_breadcrumb($breadcrumb);
+
+
+$_SESSION['edoc_id']=$doc_id;
+
+$form['doc_id'] = array(
+	'#type' => 'hidden',
+	'#value'=> $doc_id,
+	);
+
+$form['query'] = array(
+'#type' =>'textarea',
+	'#title' => t('Write Your Query'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#maxlength' =>200,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-query",200)'),
+	);
+	$form['submit'] = array(
+	'#type' => 'submit',
+		'#value' =>t('Send'),
+	);
+return $form;
+
+}
+
+function send_query_form_submit($form,&$form_state){
+global $user;
+
+$query = $form_state['values']['query'];
+ $doc_id = $form_state['values']['doc_id'];
+
+ $to = getllevel($user->uid);
+$by = getclevel($user->uid);
+//echo docidtoempid($doc_id);
+//echo "insert into tbl_workflow_task (status,comment,doc_id,uid) values (0,'".$query."','".$doc_id."','".docidtoempid($doc_id)."')";
+//exit;
+db_query("update tbl_workflow_task SET status=1 where doc_id='".$doc_id."' AND level='".$by."'");
+if(getRole($user->uid) == 13){
+db_query("update tbl_resignation SET status=10 where doc_id='".$doc_id."'");
+ db_query("insert into tbl_workflow_task (status,comment,doc_id,uid) values (0,'".$query."','".$doc_id."','".docidtoempid($doc_id)."')");
+
+}
+else {
+	db_query("insert into tbl_workflow_task (level,status,comment,doc_id) values ('".$to."',0,'".$query."','".$doc_id."')");
+db_query("update tbl_resignation SET status=12 where doc_id='".$doc_id."'");
+}
+$msgto =getrolebylevel($to); 
+$message = getMessage('resignation', 'code06', array("0"=>getrolenames($msgto)));
+drupal_set_message($message);
+unset($_SESSION['edoc_id']);
+drupal_goto('resignationlist');
+
+
+}
+
+
+
+
+function send_query_page($doc_id){
+
+$output = drupal_get_form('send_query_form',$doc_id);
+return $output;
+
+}
+
+
+
+function query_form($form_state,$doc_id){
+global $user;
+    $array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	if(getRole($user->uid) == 13 || getRole($user->uid) == 6 || getRole($user->uid) == 19){
+	$breadcrumb[] = l('List of Resignation', 'resignationlist');
+	}
+	else{
+	//$breadcrumb[] = l('View Profile', 'viewprofile/'.$level);
+	//$breadcrumb[] = l('View Query','viewquery/'.$doc_id.'/'.$level);
+	}
+	$breadcrumb[] = l('View Query','viewquery/'.$doc_id.'/'.$level);
+	
+	drupal_set_breadcrumb($breadcrumb);
+
+ $form['doc_id'] = array(
+	'#type' => 'hidden',
+	'#value'=>$doc_id,
+	);
+	
+	$form['comment'] = array(
+	'#type' =>'textarea',
+	'#title' => t('Reply'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#maxlength' =>200,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-comment",200)'),
+	);
+	
+	$form['submit'] = array(
+	'#type' => 'submit',
+		'#value' =>t('Send'),
+	);
+return $form;
+} 
+
+
+function resignation_query_page($doc_id,$empid){
+ global $user;
+
+
+$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Resignation', 'resignationlist/');
+	$breadcrumb[] = l('Query Detail', 'viewquery/'.$doc_id.'/'.$empid);
+	drupal_set_breadcrumb($breadcrumb);
+global $user;
+	
+	$getclevel = getclevel($user->uid);
+	$output = "<table cellspacing='2' cellpadding='1' border='0' id='form-container'>";
+ $output .= "<tr class='evenrow'><td colspan=4 align='center'><h2>Query Detail</h2></td></tr>";
+$output .= '<tr><th>S. No.</th><th>Queries</th><th>Query Send Date</th><th>Query Send By</th></tr>';
+
+$sql="select * from tbl_workflow_task where doc_id='".$doc_id."' AND uid='".docidtoempid($doc_id)."' ORDER BY task_date DESC ";
+$res = db_query($sql);
+$counter = 1;
+while($rs = db_fetch_object($res)){
+	
+	 $query = "SELECT r.* FROM tbl_workflow w, tbl_workflow_details wdetail, role r WHERE w.workflow_id = wdetail.workflow_id AND r.rid = wdetail.role AND w.workflow_name = 'resignation' "; 
+	$qres = db_query($query);
+	while($row = db_fetch_object($qres))
+	{
+		$role[$row->rid] = $row->name;
+	} 
+$reply = $rs->comment;
+$roleby=$role[13];
+
+if($reply){
+	if($counter%2==0){$cl="even";}else{$cl="odd";}
+$output .= "<tr class='".$cl."'><td>".$counter."</td><td>" . $reply. "</td><td>".date('d-m-Y',strtotime($rs->task_date))."</td><td>".$roleby."</td></tr>";
+$counter++;
+}
+}
+ $fsql = "select * from tbl_workflow_task where doc_id='".$doc_id."' AND uid='".getempidtouid($empid)."' ORDER BY task_date DESC ";
+//exit;
+$fres = db_query($fsql);
+$frs = db_fetch_object($fres);
+if($frs->status==0){
+	$forword = l('Forward','emp-forward/'.$doc_id);
+	}
+	else{
+	$forword='';
+	}
+$output .= "<tr class='evenrow'><td colspan='4' align='center' class='back'>".l('Back','resignationlist/').''.l('Write Comment','comment-list/'.$doc_id).''.$forword."</td></tr>";
+     $output .= '</table>';
+return $output;
+
+}
+
+function query_form_submit($form,&$form_state){
+global $user;
+
+$doc_id = $form_state['values']['doc_id'];
+$reply = $form_state['values']['comment'];
+
+$to = getnlevel($user->uid);
+$by = getclevel($user->uid);
+
+if(getRole($user->uid)==13 || getRole($user->uid)==6 || getRole($user->uid)==19){
+db_query("insert into tbl_workflow_task (level,status,comment,doc_id) values ('".$to."',0,'".$reply."','".$doc_id."')");
+db_query("update tbl_workflow_task  SET status=1 where doc_id='".$doc_id."' AND level='".$by."'");
+}
+else{
+	db_query("insert into tbl_workflow_task (level,status,comment,doc_id) values (1,0,'".$reply."','".$doc_id."')");
+
+}
+
+db_query("update tbl_resignation  SET status=13 where doc_id='".$doc_id."'");
+$msgto =getrolebylevel($to); 
+$message = getMessage('resignation', 'code07', array("0"=>getrolenames($msgto)));
+drupal_set_message($msg);
+	
+	if(getRole($user->uid)==13 || getRole($user->uid)==6 || getRole($user->uid)==19){
+		drupal_goto('resignationlist');
+		}
+	else{
+		drupal_goto('viewprofile/'.getuidtoempID($user->uid));
+		}
+
+}
+
+
+function resignation_reply_page($doc_id,$level){
+
+	$array = explode(',',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Resignation', 'resignationlist');
+	$breadcrumb[] = l('Query Detail', 'viewreply/'.$doc_id.'/'.$level);
+	drupal_set_breadcrumb($breadcrumb);
+global $user;
+	
+	$getclevel = getclevel($user->uid);
+	$output = "<table cellspacing='2' cellpadding='1' border='0' id='form-container'>";
+ $output .= "<tr class='evenrow'><td colspan=4 align='center'><h2>Query Detail</h2></td></tr>";
+$output .= '<tr><th>S. No.</th><th>Queries</th><th>Query Send Date</th><th>Query Send By</th></tr>';
+
+$sql="select * from tbl_workflow_task where doc_id='".$doc_id."' ORDER BY task_date ASC ";
+
+
+$res = db_query($sql);
+$counter = 1;
+while($rs = db_fetch_object($res)){
+	 $query = "SELECT r.* FROM tbl_workflow w, tbl_workflow_details wdetail, role r WHERE w.workflow_id = wdetail.workflow_id AND r.rid = wdetail.role AND w.workflow_name = 'resignation' "; 
+	$qres = db_query($query);
+	while($row = db_fetch_object($qres))
+	{
+		$role[$row->rid] = $row->name;
+	} 
+$reply = $rs->comment;
+if($rs->level==1){
+	$roleby = $role[19];
+}
+else if($rs->level==2){
+	
+	$roleby = $role[6];	
+}
+else if( $rs->level==3){
+}
+else if($rs->level='' && $rs->uid){
+$roleby=$role[13];
+
+}
+if($reply){
+	if($counter%2==0){$cl="even";}else{$cl="odd";}
+$output .= "<tr class='".$cl."'><td>".$counter."</td><td>" . $reply. "</td><td>".date('d-m-Y',strtotime($rs->task_date))."</td><td>".$roleby."</td></tr>";
+$counter++;
+}
+}
+/*$by=getllevel($user->uid);	
+ if(getRole($user->uid)==6 || getRole($user->uid)==19){
+$wfsql="select comment as rply from tbl_workflow_task where doc_id='".$doc_id."' AND level='".$by."' ORDER BY task_date DESC  ";
+ $wfres = db_query($wfsql);
+ $wfrs = db_fetch_object($wfres);
+$comment = $wfrs->rply;
+
+ }
+ else{
+ $wfsql="select comment as rply from tbl_workflow_task where doc_id='".$doc_id."' AND uid=10 ORDER BY task_date DESC  ";
+ $wfres = db_query($wfsql);
+ $wfrs = db_fetch_object($wfres);
+$comment = $wfrs->rply;
+ }
+ $output .= "<tr class='evenrow'><td>Reply:</td><td>".$reply."</td></tr>";
+*/
+  
+	
+	 
+	  
+$output .= "<tr class='evenrow'><td colspan='4' align='center' class='back'>".l('Back','resignationlist')."</td></tr>";
+     $output .= '</table>';
+return $output;
+
+}
+
+
+function resignation_theme() {
+	
+	return array(
+				 
+		'resignation_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'resignation',
+			),
+       'send_query_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'send_query_form',
+			),
+        'query_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'query_form',
+			),
+		'send_comment_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'send_comment_form',
+			),
+		
+		'reply_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'reply_form',
+			),
+				 );
+}
+
+function getclevel($uid){
+
+	if(getRole($uid) == 13){
+	$level = 1;
+	}
+	else if(getRole($uid) == 19){
+	$level = 2;
+	}
+	else if(getRole($uid) == 6){
+	$level = 3;
+	}
+
+return $level;
+}
+
+function getnlevel($uid){
+
+	if(getRole($uid) == 13){
+	$level = 2;
+	}
+	else if(getRole($uid) == 19){
+	$level = 3;
+	}
+
+return $level;
+}
+function getllevel($uid){
+
+	if(getRole($uid) == 13){
+		
+		
+	 $sql= "select emp_id from tbl_resignation where doc_id='".$_SESSION['edoc_id']."'";
+		$res = db_query($sql);
+		$rs = db_fetch_object($res);
+	
+	
+	//$level = $re->employee_name.'('.$rs->employee_id.')';
+	 $level =$rs->emp_id;
+	}
+	else if(getRole($uid) == 19){
+	$level = 1;
+	}
+	else if(getRole($uid) == 6){
+	$level = 2;
+	}
+
+return $level;
+}
+
+function getrolebylevel($level){
+
+if($level == 1){
+	$role = 13;
+	}
+else if($level == 2){
+	$role = 19;
+	}
+else if($level == 3){
+	$role = 6;
+	}
+	else{
+	 $role = $level;
+	}
+	
+return $role;
+}
+
+
+function getrolenames($rid){
+
+ $query = "SELECT r.* FROM tbl_workflow w, tbl_workflow_details wdetail, role r WHERE w.workflow_id = wdetail.workflow_id AND r.rid = wdetail.role AND w.workflow_name = 'resignation' "; 
+	$res = db_query($query);
+	while($row = db_fetch_object($res))
+	{
+		$role[$row->rid] = $row->name;
+	} 
+if($role[$rid]){ return $role[$rid];}
+else{ return 'Employee ID('.$rid.')';}
+}
+
+
+/*function docidtoempid($doc_id){
+$sql = "select emp_id from tbl_resignation where doc_id='".$doc_id."'";
+$res= db_query($sql);
+$rs= db_fetch_object($res);
+return $rs->emp_id;
+
+}*/
+function docidtoempid($doc_id){
+$sql = "select emp_id from tbl_resignation where doc_id='".$doc_id."'";
+$res= db_query($sql);
+$rs= db_fetch_object($res);
+return $rs->emp_id;
+
+}
+function docidtoempname($doc_id){
+$sql = "select employee_name from tbl_resignation r,tbl_joinings j where r.emp_id = j.program_uid AND r.doc_id='".$doc_id."'";
+$res= db_query($sql);
+$rs= db_fetch_object($res);
+
+return $rs->employee_name;
+
+}

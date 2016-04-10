@@ -1,0 +1,6 @@
+;$id:
+name = "online statement"
+description ="Online statement"
+core = 6.x
+version =6.x-1
+package="Loanee Details module"

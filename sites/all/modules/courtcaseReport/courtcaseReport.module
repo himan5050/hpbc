@@ -1,0 +1,149 @@
+<?php
+//global $base_url;
+
+/**
+ *hook_perm
+ 
+ 
+ */
+ 
+ function courtcaseReport_init() {
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+ 
+function courtcaseReport_perm() {
+	return array('edit courtcaseReport','administer courtcaseReport', 'create courtcaseReport', 'view courtcaseReport');
+}
+
+function courtcaseReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit courtcaseReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create courtcaseReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view courtcaseReport', $account);
+	}
+	
+}
+
+
+function courtcaseReport_menu(){
+
+  $items['report_courtcase'] = array(
+										'title' => t('Court Case Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'report_courtcase',
+										'access arguments' => array('administer courtcaseReport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function report_courtcase(){
+  return drupal_get_form('courtcaseReport_form');
+}
+
+function courtcaseReport_form(){
+
+global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Court Case Report', 'report_courtcase');
+  drupal_set_breadcrumb($breadcrumb);
+ 
+ $form['case_no'] = array(
+                                '#type' => 'textfield',
+								
+								'#size' => '30',
+ );
+ 
+ $sqllawyer2 = "select * from {tbl_court_names} where status =1 ORDER BY court_name_name ASC";
+	$rescountry2 =db_query($sqllawyer2);
+	if($rescountry2){
+		$countryarray2[''] = '--Select--';
+		while($rscountry2 = db_fetch_object($rescountry2)){
+			$countryarray2[$rscountry2->court_name_id] = ucwords($rscountry2->court_name_name);
+		}
+	}
+ 
+ 
+ $form['court_name_name'] = array(
+       '#type' =>'select',
+	
+	  '#required' =>false,
+	  '#default_value' => '',
+	  '#options' => $countryarray2, 
+	  '#maxlength'=>45,	
+ );
+ 
+  $form['loan_account'] = array(
+                                '#type' => 'textfield',
+						
+								'#size' => '30',
+ );
+ 
+   $form['page'] = array(
+                                '#type' => 'hidden',
+						
+								'#default_value' => 0,
+ );
+ $form['lawyer_name'] = array(
+                                '#type' => 'textfield',
+								
+								'#size' => '30',
+ );
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						  
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function courtcaseReport_theme() {
+	
+	return array(
+		
+		'courtcaseReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'courtcaseReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

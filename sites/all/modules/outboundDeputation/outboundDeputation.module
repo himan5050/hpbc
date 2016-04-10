@@ -1,0 +1,1054 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/outboundDeputation.inc');
+function outboundDeputation_init() {
+	drupal_add_js(drupal_get_path('module', 'transferPromotion') .'/transferPromotion.js');
+	
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+
+function outboundDeputation_node_info() {
+        return array (
+                                        'outboundDeputation' => array (
+                                                                                'name' => t('List of Outbound Deputations'),
+                                                                                'module' => 'outboundDeputation',
+                                                                                'description' => "Creates Outbound Deputations",
+                                                                                'has_title' => TRUE,
+                                                                                'title_label' => t('Outbound Deputations'),
+                                                                                'has_body' => FALSE,
+                                                                                ),
+                                );
+}
+/**
+ *hook_perm
+ */
+
+function outboundDeputation_perm() {
+        return array('edit outboundDeputation','administer outboundDeputation', 'create outboundDeputation', 'view outboundDeputation');
+}
+
+function outboundDeputation_access($op, $node, $account) {
+        if($op == 'update' || $op == 'delete') {
+                //&& ($account->uid == $node->uid)
+                if (user_access('edit outboundDeputation', $account) ) {
+                        return TRUE;
+                }
+        }
+        if (($op=='create') && ($op='list')) {
+                return user_access('create outboundDeputation', $account);
+        }
+        if (($op=='view') or ($op=='list')) {
+                return user_access('view outboundDeputation', $account);
+        }
+}
+ 
+ function outboundDeputation_menu(){
+         $items['list/outboundDeputationList'] = array(
+                   'title' => 'List of Outbound Deputations',
+                   'page callback' => 'outboundDeputation_list',
+                   'access arguments' => array('administer outboundDeputation'),
+                   'type' => MENU_NORMAL_ITEM,
+
+           );
+$items['viewoutboundDeputation/%'] = array(
+                                                                'title' => t('view Outbound Deputations'),
+                                                                'type' => MENU_CALLBACK,
+                                                                'page callback' => 'view_outboundDeputation',
+                                                                'page arguments' => array(1),
+                                                                'access arguments' => array('administer outboundDeputation'),
+                                        
+                                                );
+  
+  $items['admin/dsje/del/outboundDeputation/%'] =  array(
+                                                                        'title' => t('Delete Outbound Deputations'),
+                                                                                 'type' => MENU_CALLBACK,
+                                                                                 'page callback' => 'outboundDeputation_delete',
+                                                                'page arguments' => array(4),
+                                                  'access arguments' => array('administer outboundDeputation'),
+                                                                                                         
+        );
+ $items['admin/dsje/enable/outboundDeputation/%'] =  array(
+                                                                                        'type' => MENU_CALLBACK,
+                                                                                        'page callback' => 'outboundDeputation_enable',
+                                                                'page arguments' => array(4),
+                                                          'access arguments' => array('administer outboundDeputation'),
+                                                                                                                 
+        );        
+        
+        
+     
+                                                
+   return $items;
+ }
+  
+  
+  
+
+  
+function outboundDeputation_list(){
+        global $user; //$base_url;
+        $limit =(int)getMessage('dsjeoutboundDeputation', 'code04', NULL);
+        
+        $header = array(
+        array('data' => t('S. No.')),
+        array('data' => t('Deputation Order No.'), 'field' =>
+'tbl_outbounddeputation.order_no', 'sort' => 'asc'),
+        array('data' => t('Employee Id'), 'field' =>
+'tbl_outbounddeputation.employee_id', 'sort' => 'asc'),
+        array('data' => t('Joining Date'), 'field' => 'tbl_outbounddeputation.date_joining',
+'sort' => 'asc'),
+        
+        array('data' => t('Action'), 'class' => 'addeditview'),
+        );
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Outbound Deputations',
+'list/outboundDeputationList'.$array[2].'');
+         }  
+         drupal_set_breadcrumb($breadcrumb);
+
+        if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+			
+        $val = '%'.strtoupper($_REQUEST['searchtext']).'%'; 
+		
+		 $datewa=date('Y-m-d',strtotime($_REQUEST['searchtext']));
+			 
+		$val=addslashes($val);         
+                
+         $sql = "SELECT  node.nid,node.uid, tbl_outbounddeputation.order_no,
+tbl_outbounddeputation.employee_id,tbl_outbounddeputation.date_joining
+FROM {node}
+         INNER JOIN tbl_outbounddeputation ON (node.nid=tbl_outbounddeputation.nid)
+         WHERE node.uid='".$user->uid."' AND( tbl_outbounddeputation.order_no LIKE
+'".$val."' OR tbl_outbounddeputation.employee_id LIKE '".$val."' OR
+tbl_outbounddeputation.date_joining LIKE '".$datewa."'  ) ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+        INNER JOIN tbl_outbounddeputation ON (node.nid=tbl_outbounddeputation.nid)
+         
+         WHERE node.uid='".$user->uid."' AND( tbl_outbounddeputation.order_no LIKE
+'".$val."' OR tbl_outbounddeputation.employee_id LIKE '".$val."' OR
+tbl_outbounddeputation.date_joining LIKE '".$datewa."'  ) ".tablesort_sql($header);
+         
+           $rscount = db_query($sqlcount);
+           $rscounter = db_fetch_object($rscount);
+		   $_REQUEST['page']=0;
+        }else{
+        
+          $sql = "SELECT 
+node.nid,node.uid,tbl_outbounddeputation.order_no,tbl_outbounddeputation.employee_id,
+tbl_outbounddeputation.date_joining  FROM {node}
+         INNER JOIN tbl_outbounddeputation ON (node.nid=tbl_outbounddeputation.nid)
+         WHERE node.uid='".$user->uid."'".tablesort_sql($header);
+        }
+global $base_url;
+$action = $base_url.'/list/outboundDeputationList';
+         $output = '<form method="post" action="'.$action.'"><table width="100%" border="0"
+cellspacing="1" cellpadding="1" id="wrapper">
+        <tr><td colspan="3" class="searchrecord">';
+        if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+        $output .= t(getMessage('dsjeoutboundDeputation', 'code03',
+array("0"=>$rscounter->count)))." | ".l('View All','list/outboundDeputationList');
+        }
+        
+        $output .='</td>
+		
+		</tr>';
+        
+        $addurl = l(getMessage('dsjeoutboundDeputation', 'code01',
+NULL),"node/add/outboundDeputation");
+           $lising = getMessage('dsjeoutboundDeputation', 'code02', NULL);
+                
+        $output .='<tr>
+		        <td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+        <td colspan="3" class="tblHeaderRight">
+        <input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+        <input type="submit" name="search" value="Search" /></td>
+		</tr>
+        </table></form>';
+
+        $result = pager_query($sql,10);
+        
+        if($_REQUEST['page']){
+        $counter = $_REQUEST['page']*$limit;
+        }else{
+        $counter = 0;
+        }
+        
+        if($result){
+        
+          while($rs = db_fetch_object($result)){
+            $counter++;
+                $editurl =
+l("Edit","node/$rs->nid/edit");
+                $viewurl =
+l("View","viewoutboundDeputation/".$rs->nid);
+                //$deleteurl =
+l("Delete","node/$rs->nid/delete");
+                if($rs->statusnodal=='1'){
+                       $st='Enabled';
+                       $deleteurl = l("Delete","admin/dsje/del/outboundDeputation/".$rs->nid."/");
+                }else{
+                           $st ='Disabled';
+                           $deleteurl = l("Delete","admin/dsje/enable/outboundDeputation/".$rs->nid."/");
+                }
+
+      
+                  $cnode = node_load($rs->nid);
+  
+
+                $rows[] = array(
+                        array('data' => $counter),
+                        array('data' => $rs->order_no),
+                        array('data' => $rs->employee_id),
+                        array('data' => date('d-m-Y',strtotime($rs->date_joining))),
+                  //array('data' => $st),
+                        array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+                );
+                
+          }
+          
+        }
+if($rows== NULL)
+	$header=NULL;
+	
+        $output .=theme_table($header,$rows);
+        return $output .=theme('pager', NULL, 20,0 );
+  }
+
+function outboundDeputation_delete($nid){
+   $node = node_load($nid);
+
+ // db_query("Delete from {tbl_outbounddeputation} WHERE courtcase_id='".$courtcase_id."'");
+  db_query("DELETE from {tbl_outbounddeputation} WHERE nid ='".$node->nid."'");
+  drupal_set_message('Outbound Deputation {0} has been disabled successfully.');
+  drupal_goto("list/outboundDeputationList");
+ }
+
+function outboundDeputation_enable($nid){
+  
+  $node = node_load($nid);
+  
+  $sad=db_query("select * from {tbl_outbounddeputation} where nid ='".$node->nid."'");
+  $azs=db_fetch_object($sad);
+  $saq= $azs->employee_id;
+  
+  
+  
+  //echo $azs->employee_id;exit;
+  db_query("UPDATE {tbl_joinings} set status2='111' where tbl_joinings.employee_id='".$azs->employee_id."'");
+ 
+  db_query("DELETE from {tbl_outbounddeputation} WHERE nid ='".$node->nid."'");
+ // drupal_set_message(' Outbound Deputation has been deleted successfully.');
+  
+  $message=getMessage('dsjeoutboundDeputation','code07',array("0" => $saq));
+  drupal_set_message($message);
+  
+  //db_query("UPDATE {tbl_outbounddeputation} SET         statusnodal =1 WHERE nid
+//='".$node->nid."'");
+  //drupal_set_message('Outbound Deputation has been enabled successfully.');
+  drupal_goto("list/outboundDeputationList");
+ }
+
+
+function outboundDeputation_form(&$node){
+        global $user, $base_url;
+        $uid = $user->uid;
+        $rid = getRole($uid);        //$rid = getRole($user->uid);
+        $array = explode('/',$_GET['q']);
+        $breadcrumb = array();
+        $breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Outbound Deputations', 'list/outboundDeputationList');
+        if($array[0] == 'node' && $array[2] == 'edit'){
+         $breadcrumb[] = l('Edit Outbound Deputation', 'node/'.$array[1].'/edit');
+        }
+  
+if(is_numeric(arg(1))){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_outbounddeputation ON
+(node.nid=tbl_outbounddeputation.nid) WHERE node.nid='".arg(1)."'";
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+}
+
+        //if($array[1] == 'add' && $array[2] == 'rec-program'){
+         else{
+         $breadcrumb[] = l('Add Outbound Deputation',
+'node/add/outboundDeputation/'.$array[3].'');
+        }
+        drupal_set_breadcrumb($breadcrumb);
+   
+    $sqlcheck = "select count(*) as count from {users_roles} INNER JOIN users
+ON(users.uid=users_roles.uid) where users_roles.rid=5";
+   $rescheck = db_query($sqlcheck);
+   $rscheck = db_fetch_object($rescheck);
+  
+        
+                
+        ////////////////////////////////////
+        
+        
+        $form['prev_order_no'] = array(
+	'#type' =>'hidden',
+	'#default_value'=> $rs->order_no,
+	);
+        
+        
+        $form['order_no'] = array(
+        '#type' =>'textfield',
+        '#title' => t('Deputation Order No.'),
+        '#required' => TRUE,
+        '#default_value' =>$rs->order_no,
+        '#maxlength'=>20,
+        '#size' =>25,
+		'#attributes' => array('onkeypress' => 'return alphanumeric1(event)')	
+        
+        );
+        
+	  $form['date_order'] = array(
+        '#type' => 'date_popup',
+        '#date_format' => 'd-m-Y',
+        '#title' => 'Deputation Order Date',
+        '#required' => TRUE,
+        '#size' => '10',
+        '#default_value' => $rs->date_order,
+        );
+		
+		
+	  $form['date_joining'] = array(
+        '#type' => 'date_popup',
+        '#date_format' => 'd-m-Y',
+        '#title' => 'Joining Date(at new dept.)',
+        '#required' => TRUE,
+        '#size' => '10',
+        '#default_value' => $rs->date_joining,
+        );
+		
+		 
+		 
+	if($node->prev_officeid=='')
+	{
+	$form['employee_id'] = array(
+	'#type' =>'select',
+	'#title' => t('Employee'),
+	'#required' =>TRUE,
+	'#default_value' =>$rs->employee_id, 
+	'#options' => selectEmployee(),
+	'#attributes' => array('onchange'=> 'return showUser(this.value,"'.$base_url.'")'),
+		
+	);
+	
+	
+	
+	
+	$form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Employee Name'),
+	'#required' => TRUE,
+	'#id' => 'employee_id',
+	'#default_value' =>$rs->employee_name,
+	'#attributes' => array('onkeypress' => 'return textcoursename(event)','readonly' => 'readonly'),
+	'#size' =>45,
+	);
+	
+	$do=getCorporationName($rs->prev_officeid);
+	
+	$form['prev_officeid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'office_id',
+	'#title' => t('Previous Office'),
+	'#required' => TRUE,
+	'#default_value' =>$do,
+	'#attributes' => array('onkeypress' => 'return alphanumeric1(event)','readonly' => 'readonly')
+	);
+	
+	
+	
+	$form['prev_officeaddress'] = array(
+	'#type' => 'textarea',
+	'#id' => 'officeaddresspreid',
+	'#title' => t('Previous Office Address'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->prev_officeaddress,
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+		
+	
+	$dd=getLookupName($rs->prev_designationid);
+	
+	$form['prev_designationid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'designation_id',
+	'#title' => t('Previous Designation'),
+	'#required' => TRUE,
+	'#default_value' =>$dd,
+	'#attributes' => array('onkeypress' => 'return alphanumeric1(event)' ,'readonly' => 'readonly')
+	
+	); 
+	
+	
+	$dD=getLookupName($rs->prev_Departmentid);	
+	
+	
+	$form['prev_Departmentid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'department_id',
+	'#title' => t('Previous Department'),
+	'#required' => TRUE,
+	'#default_value' =>$dD,
+	'#attributes' => array('onkeypress' => 'return alphanumeric1(event)' ,'readonly' => 'readonly')
+	);
+}
+  
+  else
+  {
+  
+  $form['employee_id'] = array(
+	'#type' =>'select',
+	'#title' => t('Employee'),
+	'#required' =>TRUE,
+	'#default_value' =>$rs->employee_id, 
+	'#options' => selectEmployee(),
+	'#attributes' => array('onchange'=> 'return showUser(this.value,"'.$base_url.'")'),
+		
+	);
+	
+	
+	
+	
+	$form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Employee Name'),
+	'#required' => TRUE,
+	'#id' => 'employee_id',
+	'#default_value' =>$rs->employee_name,
+	'#size' =>45,
+	'#attributes' => array('onkeypress' => 'return textcoursename(event)','readonly' => 'readonly')
+	);
+	
+	
+	$do=getCorporationName($rs->prev_officeid);
+	
+	$form['prev_officeid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'office_id',
+	'#title' => t('Previous Office'),
+	'#required' => TRUE,
+	'#default_value' =>$do,
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+	
+	$form['prev_officeaddress'] = array(
+	'#type' => 'textfield',
+	'#id' => 'officeaddresspreid',
+	'#title' => t('Previous Office'),
+	'#required' => TRUE,
+	'#default_value' =>$do,
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+		
+	
+	$dd=getLookupName($rs->prev_designationid);
+	
+	$form['prev_designationid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'designation_id',
+	'#title' => t('Previous Designation'),
+	'#required' => TRUE,
+	'#default_value' =>$dd,
+	'#attributes' => array('readonly' => 'readonly'), 
+	); 
+	
+	
+		
+	$dD=getLookupName($rs->prev_Departmentid);
+	
+	$form['prev_Departmentid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'department_id',
+	'#title' => t('Previous Department'),
+	'#required' => TRUE,
+	'#default_value' =>$dD,
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+	
+  
+  
+  }
+	
+	$form['email'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Email Id'),
+	 '#size' =>40,
+	 '#maxlength'=>40,
+	 '#default_value' => $rs->email,	
+	 '#attributes' => array('onkeypress' => 'return  emailonly(event)' ,'readonly' => 'readonly')
+
+  );
+  
+
+  $form['mobile'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Mobile No.'),
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $rs->mobile,
+	'#attributes' => array('readonly' => 'readonly'),
+  );
+
+  $form['phone'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Phone No.'),
+	 '#size' =>15,
+	 '#maxlength'=>15,
+	 '#minlenght'=>10,
+	 '#default_value' => $rs->phone,
+	'#attributes' => array('onkeypress' => 'return fononlyn(event)')
+  );
+  
+ 
+		
+		/*$form['date_from'] = array(
+        '#type' => 'date_popup',
+        '#date_format' => 'd-m-Y',
+        '#title' => 'Starting From',
+        '#required' => TRUE,
+        '#size' => '10',
+        '#default_value' => $node->date_from,
+        );*/
+		
+		$form['new_organization'] = array(
+ 
+                '#type' => 'select',
+                '#title' => t('External Organization'),
+                 '#required' =>TRUE,
+                  '#default_value' => $rs->new_organization,
+                 '#options' => NewOrganization(),
+
+);
+		
+		
+		
+		
+		 $form['new_corporation_office'] = array(
+        '#type' =>'textfield',
+        '#title' => t('New Corporation Office'),
+        '#required' =>TRUE,
+        '#size' =>45,
+        '#maxlength'=>45,  
+        '#default_value' =>$rs->new_corporation_office,
+		'#attributes' => array('onkeypress' => 'return alphabet(event)') 
+        );
+		
+		 $form['new_corporation_address'] = array(
+        '#type' =>'textarea',
+        '#title' => t('New Corporation Office Address'),
+        '#required' =>TRUE,
+        '#size' =>45,
+        '#maxlength'=>200,  
+        '#default_value' =>$rs->new_corporation_address,
+		'#attributes' => array('onkeypress' => 'return textonlywithdotne(event)') 
+        );
+		
+        $form['new_department'] = array(
+        '#type' =>'textfield',
+        '#title' => t('New Department'),
+        '#required' =>TRUE,
+        '#size' =>45,
+        '#maxlength'=>45,  
+        '#default_value' =>$rs->new_department, 
+		'#attributes' => array('onkeypress' => 'return alphabet(event)') 
+        );
+        
+        $form['new_designation'] = array(
+        '#type' =>'textfield',
+        '#title' => t('New Designation'),
+        '#required' =>TRUE,
+        '#size' =>45,
+        '#maxlength'=>45,  
+        '#default_value' =>$rs->new_designation, 
+		'#attributes' => array('onkeypress' => 'return alphabet(event)') 
+        );
+        
+		
+		
+		
+      
+        
+       $form['duration_years'] = array(
+ 
+                '#type' => 'textfield',
+                '#title' => t('Years'),
+                 '#required' =>TRUE,
+                  '#default_value' => $rs->duration_years,
+                 '#maxlength'=> 2,
+				 '#length'=>4,
+				 '#attributes' => array('onkeypress' => 'return fononlyn(event)')
+
+);
+
+$form['duration_months'] = array(
+ 
+                '#type' => 'textfield',
+                '#title' => t('Months'),
+                 '#required' =>TRUE,
+                  '#default_value' => $rs->duration_months,
+				  '#length'=>4,
+                 '#maxlength' => 2,
+				 '#attributes' => array('onkeypress' => 'return fononlyn(event)')
+
+);
+/*
+$form['duration_days'] = array(
+ 
+                '#type' => 'select',
+                '#title' => t('Duration in Days'),
+                 '#required' =>TRUE,
+                  '#default_value' => $node->duration_days,
+                 '#options' => DurationDays(),
+
+);*/
+         
+       
+    
+        
+        $form['cancel'] = array(
+        '#type' => "markup",
+        '#value' => l(t('Back'), 'list/outboundDeputationList'),
+);
+
+return $form;
+} 
+
+function getOrder_No($order_no){
+  $sql = "select * from {tbl_outbounddeputation} where order_no='".$order_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->order_no=='')
+  return 0;
+  else
+  return $rs;
+   
+}
+
+function getOrder_No_edit($order_no,$prev_order_no){
+  $sql = "select * from {tbl_outbounddeputation} where order_no='".$order_no."' AND order_no != '".$prev_order_no."'  ";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  $nid=$node->nid;
+ 
+  if ($rs->order_no=='' )
+  return 0;
+  else
+  return $rs;
+   
+}
+
+
+
+function outboundDeputation_validate($form, &$form_state) {
+//Home » List of Outbound Deputations » Add Outbound Deputation
+         $values = $form_state['values'];
+                
+        $rd=arg(1);
+		//drupal_set_message($rd);
+		
+			
+			//   $array = explode('/',$_GET['q']);
+		
+		
+        $breadcrumb = array();
+        $breadcrumb[] = l('Home', '<front>');
+        $breadcrumb[] = l('List of Outbound Deputations', 'list/outboundDeputationList');
+        if(arg(1) !='add'){
+		  $breadcrumb[] = l('Edit Outbound Deputation', 'node/'.arg(1).'/outboundDeputation');	
+		}else{
+         $breadcrumb[] = l('Add Outbound Deputation', 'node/add/outboundDeputation');
+      
+		}
+        //if($array[1] == 'add' && $array[2] == 'rec-program'){
+		//echo '<pre>';print_r ($form);exit;
+         //echo $form->date_joining;exit;
+        drupal_set_breadcrumb($breadcrumb);
+		$employee_id= $form->employee_id;
+		$joiningdatenew=date('Y-m-d',strtotime($form->date_joining));
+	$joining_olddate=db_query("select doj from tbl_joinings where employee_id='".$employee_id."'");
+	$joining_old=db_fetch_object($joining_olddate);
+	
+	$joining_old=$joining_old->doj;
+	//echo $joining_old.'--'.$joiningdatenew;exit;
+	if($joining_old>$joiningdatenew){form_set_error(date_from,t('Joining Date at the new department should be greater than the current joining date of the employee'));}
+        
+        
+  $order_no=$form->order_no;
+	if($form->prev_order_no == ''){
+	 $statusid = getOrder_No($order_no); 
+		if($statusid){
+		form_set_error('order_no',$order_no.t(' Deputation Order No. already exist.'));
+		
+		}
+		}
+		else {
+	 $statusid = getOrder_No_edit($order_no,$form->prev_order_no); 
+		if($statusid){
+		form_set_error('order_no',$order_no.t(' Deputation Order No. already exist.'));
+		
+		}
+		
+		}
+  alphanumeric('order_no',$form->order_no,'Deputation Order No.');
+  
+       
+        alphanumeric ('employee_id',$form->employee_id,'Employee Id');
+        alphabet ('new_corporation_office',$form->new_corporation_office,'New Corporation Office');
+	  textonlywithdotne('new_corporation_address',$form->new_corporation_address,'New Corporation Address');
+        alphabet ('new_department',$form->new_department,'New Department');
+        alphabet ('new_designation',$form->new_designation,'New Designation');
+        fononlyn('duration_years',$form->duration_years,'Years');
+	fononlyn('duration_months',$form->duration_months,'Months');
+        ////
+       if($form->date_order > $form->date_joining )
+    {
+	   form_set_error(date_order,t('Deputation Order Date should be less than the Joining Date'));
+	
+	
+	}
+        $mon=$form->duration_months;
+	if($mon > 11)
+	{
+	form_set_error('duration_months', t('Number of Months should not be more than 11.'));
+	}	
+        
+        
+         
+}
+
+/**
+ *hook_form_alter
+ */
+function outboundDeputation_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+        //echo '<pre>';
+        //print_r($form);
+         
+        
+        if($form_id =='outboundDeputation_node_form'){
+        
+
+            $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+         $form['author_information']['#type'] = hidden;
+         $form['attachments']['#type'] = hidden;
+          $form['path']['#type'] = hidden;
+         
+         $form['revision_information']['#type'] = hidden;
+         $form['options']['#type'] = hidden;
+         $form['buttons']['preview']['#type'] = hidden;
+         $form['buttons']['delete']['#type'] = hidden;
+         $form['menu']['#type'] = hidden;
+         $form['comment_settings']['#type'] = hidden;
+         $form['title']['#required'] = FALSE;
+         $form['title']['#type'] = hidden;
+         $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+        }
+        
+ }
+
+
+function outboundDeputation_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+  $order_no= $node->order_no;
+  $date_order = $node->date_order;
+  $date_joining = $node->date_joining;
+   $date_from = $node->date_from; 
+ $employee_id = $node->employee_id;
+ $new_organization=$node->new_organization;
+ $new_corporation_office= $node->new_corporation_office;
+ $new_corporation_address= $node->new_corporation_address;
+ $new_department= $node->new_department;
+ $new_designation= $node->new_designation;
+ $employee_name=$node->employee_name;
+ $prev_officeid= $node->prev_officeid;
+  $prev_officeaddress= $node->prev_officeaddress;
+ $prev_designationid=$node->prev_designation_id;
+ $prev_Departmentid=$node->prev_Department_id;
+ 
+ $duration_months = $node->duration_months;
+ $duration_years = $node->duration_years;
+ $duration_days = $node->duration_days;
+$phone=$node->phone;
+$mobile=$node->mobile;
+$email=$node->email;         
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$corp_id=db_query("select corporation_id from {tbl_corporations} where corporation_name='".$node->prev_officeid."'");
+  $ccc=db_fetch_object($corp_id);
+   $prev_officeid =$ccc->corporation_id;
+    $prev_designationid = getLookupId($node->prev_designationid); 
+    $prev_Departmentid = getLookupId($node->prev_Departmentid);
+   
+	
+	
+        $nid = $node->nid;
+        $vid = $node->vid;
+        $ras1=db_query("select lookup_name from {tbl_lookups} where lookup_id=112");
+		$ras=$ras1->lookup_name;
+		
+db_query("UPDATE {tbl_joinings} SET status2='112' where employee_id='".$employee_id."'");
+
+
+
+db_query ("INSERT into {tbl_outbounddeputation} (`vid`,`nid`,`order_no`,`date_order`, `date_joining`,`employee_id`,`employee_name`,`prev_designationid`,`prev_Departmentid`,`prev_officeid`,`prev_officeaddress`,`new_organization`,`new_corporation_office`,`new_corporation_address`,`new_department`,`new_designation`,`phone`,`mobile`,`email`,`date_from`,`duration_years`,`duration_months`,`duration_days`,`statusnodal`)VALUES
+('".$vid."','".$nid."','".$order_no."','".$date_order."','".$date_joining."','".$employee_id."','".$employee_name."','".$prev_designationid."','".$prev_Departmentid."','".$prev_officeid."','".$prev_officeaddress."','".$new_organization."','".$new_corporation_office."','".$new_corporation_address."','".$new_department."','".$new_designation."','".$phone."','".$mobile."','".$email."','".$date_from."','".$duration_years."','".$duration_months."','".$duration_days."','".$statusnodal."')");
+
+
+		
+	$parameter = '';
+//$to = $u->mail;
+$parameter = json_encode(array(0=>$employee_name,1=>$employee_id,2=>$employee_name,3=>$orderno,4=>getCorporationName($prev_officeid),5=>getLookupName($prev_designationid),6=>getLookupName($prev_Departmentid),7=>$new_corporation_office,8=>$new_department,9=>$new_designation,10=>$new_organization,11=>$date_joining)); 
+
+$mob='91'.$mobile;
+$sms="You have been deputed to an external organization with effective from '.$date_joining.'";
+customsendsms($mob,$sms);
+
+createMail('outboundDeputation', $email,'',$parameter,'');
+
+$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto))
+{
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$employee_id,2=>$employee_name,3=>$orderno,4=>getCorporationName($prev_officeid),5=>getLookupName($prev_designationid),6=>getLookupName($prev_Departmentid),7=>$new_corporation_office,8=>$new_department,9=>$new_designation,10=>$new_organization,11=>$date_joining)); 
+
+createMail('outboundDeputation', $ms->mail,'',$parameter,'');
+}
+
+}
+
+
+
+
+
+
+        
+   // drupal_set_message('Outbound Deputation Entry has been saved successfully.');
+     
+	   $message=getMessage('dsjeoutboundDeputation','code05',array("0"=>$node->employee_id));
+  drupal_set_message($message);
+  
+	    drupal_goto("list/outboundDeputationList");
+
+ 
+ 
+ }
+
+function outboundDeputation_update($node){
+        
+         global $user;
+   
+  //all values
+  
+  
+  $order_no= $node->order_no;
+  $date_order = $node->date_order;
+  $date_joining = $node->date_joining;
+   $date_from = $node->date_from; 
+ $employee_id = $node->employee_id;
+ $new_organization=$node->new_organization;
+ $new_corporation_office= $node->new_corporation_office;
+  $new_corporation_address= $node->new_corporation_address;
+ $new_department= $node->new_department;
+ $new_designation= $node->new_designation;
+ 
+ $duration_months = $node->duration_months;
+ $duration_years = $node->duration_years;
+ $duration_days = $node->duration_days;
+  /////////
+  
+ $employee_name=$node->employee_name;
+ $prev_officeid= $node->prev_officeid;
+ $prev_officeaddress= $node->prev_officeaddress;
+ $prev_designationid=$node->prev_designationid;
+ $prev_Departmentid=$node->prev_Departmentid;
+    $phone=$node->phone;
+$mobile=$node->mobile;
+$email=$node->email;     
+
+        $statusnodal = $node->statusnodal;
+        $nid = $node->nid;
+        $vid = $node->vid;
+        $uid=$node->uid;
+        
+		
+		$corp_id=db_query("select corporation_id from {tbl_corporations} where corporation_name='".$node->prev_officeid."'");
+  $ccc=db_fetch_object($corp_id);
+   $prev_officeid =$ccc->corporation_id;
+    $prev_designationid = getLookupId($node->prev_designationid); 
+    $prev_Departmentid = getLookupId($node->prev_Departmentid);
+   
+		
+         $ras1=db_query("select lookup_name from {tbl_lookups} where lookup_id=112");
+		$ras=$ras1->lookup_name;
+		$ras=getLookupName(112);
+db_query("UPDATE {tbl_joinings} SET status2='112' where employee_id='".$employee_id."'");
+
+        
+        db_query("update {tbl_outbounddeputation} SET
+`order_no`='".$order_no."',`date_order`='".$date_order."',`date_joining`='".$date_joining."',`employee_id`='".$employee_id."',`employee_name`='".$employee_name."',`prev_officeid`='".$prev_officeid."',`prev_officeaddress`='".$prev_officeaddress."',`prev_designationid`='".$prev_designationid."',`prev_Departmentid`='".$prev_Departmentid."',`duration_years`='".$duration_years."',`duration_months`='".$duration_months."',`new_organization`='".$new_organization."',`new_corporation_office`='".$new_corporation_office."',`new_corporation_address`='".$new_corporation_address."',`phone`='".$phone."',`mobile`='".$mobile."',`email`='".$email."',`new_department`='".$new_department."',`new_designation`='".$new_designation."',`statusnodal`='".$statusnodal."' WHERE `nid`='".$nid."'");
+        
+        
+      //  drupal_set_message('Outbound Deputations have been updated successfully.');
+        
+		  $message=getMessage('dsjeoutboundDeputation','code06',array("0"=>$node->employee_id));
+  drupal_set_message($message);
+  
+		drupal_goto("list/outboundDeputationList");
+        
+        
+}
+
+
+function outboundDeputation_theme() {
+        
+        return array(
+                                 
+                'outboundDeputation_node_form' => array(
+                                                                'arguments' => array('form' => NULL),
+                                                                'template' => 'outboundDeputation_node_form',
+                                 ),
+       
+
+                                 );
+}
+
+/**
+ *hook_validate
+ 
+
+
+
+ 
+function outboundDeputation_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_outbounddeputation ON
+(node.nid=tbl_outbounddeputation.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+*/  
+function view_outboundDeputation($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Outbound Deputations', 'list/outboundDeputationList');
+   if($array[0] == 'viewoutboundDeputation'){
+     $breadcrumb[] = l('View Outbound Deputation',
+'viewoutboundDeputation/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from {tbl_outbounddeputation} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+ if($rs->statusnodal =='0'){
+  $statusnodal ='Disabled';
+}else{
+  $statusnodal ='Enabled';
+}
+
+
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from {users} where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+$dko=db_query("select * from {tbl_joinings} where tbl_joinings.employee_id='".$rs->employee_id."'");
+$rso=db_fetch_object($dko);
+/*db_query("UPDATE {tbl_joinings} set current_corporation_office='".$new_corporation_office."',current_designation='".$new_designation."',current_department='".$new_department."'");
+*/
+$new_organization=getLookupName($rs->new_organization);
+$prev_officeid =getCorporationName($rs->prev_officeid);
+     $prev_designationid = getLookupName($rs->prev_designationid); 
+    $prev_Departmentid = getLookupName($rs->prev_Departmentid);
+if($rso->mobile){
+  $mobile = $rso->mobile;
+}else{
+  $mobile ='N/A';
+}
+
+if($rso->phone){
+  $phone = $rso->phone;
+}else{
+  $phone ='N/A';
+}
+
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="wrapper2">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Outbound Deputation </h2></td></tr>';
+
+
+$output .='<tr class="evenrow"><td width="50%">Deputation Order No. :</td><td class="normal">'.$rs->order_no.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Deputation Order Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date_order)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Joining Date(at new dept.):</td><td class="normal">'.date('d-m-Y',strtotime($rs->date_joining)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Employee Id:</td><td class="normal">'.$rs->employee_id.'</td></tr>';
+
+$output .='<tr class="evenrow"><td width="50%">Employee Name:</td><td class="normal">'.$rso->employee_name.'</td></tr>';
+
+$output .='<tr class="oddrow"><td width="50%">Previous Corporation Office:</td><td class="normal">'.$prev_officeid.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Previous Office Address:</td><td class="normal">'.ucwords($rs->prev_officeaddress).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Previous Department:</td><td class="normal">'.$prev_Departmentid.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Previous Designation:</td><td class="normal">'.$prev_designationid.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">External Organization:</td><td class="normal">'.ucwords($new_organization).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">New Corporation Office:</td><td class="normal">'.ucwords($rs->new_corporation_office).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">New Office Address:</td><td class="normal">'.ucwords($rs->new_corporation_address).'</td></tr>';
+
+$output .='<tr class="evenrow"><td width="50%">New Department:</td><td class="normal">'.ucwords($rs->new_department).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">New Designation:</td><td class="normal">'.ucwords($rs->new_designation).'</td></tr>';
+
+$output .='<tr class="evenrow"><td width="50%">Phone No.:</td><td class="normal"> '.$phone.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Mobile No.:</td><td class="normal"> '.$mobile.'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Email Id:</td><td class="normal"> '.$rso->email.'</td></tr>';
+//$output .='<tr class="oddrow"><td width="50%">Starting From:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date_from)).'</td></tr>';
+$output .='<tr class="oddrow"><td colspan="2" align="left">Duration</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Years:</td><td class="normal"> '.$rs->duration_years.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Months:</td><td class="normal">'.$rs->duration_months.'</td></tr>';
+//$output .='<tr class="oddrow"><td width="50%">Days:</td><td class="normal">'.$rs->duration_days.'</td></tr>';
+$output .= '<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'list/outboundDeputationList').'</td></tr>';
+
+$output .='</table>';
+//$output .=  l(t('Back'), 'list/outboundDeputationList');
+
+
+return $output ;
+}

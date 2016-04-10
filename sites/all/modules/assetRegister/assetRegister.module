@@ -1,0 +1,124 @@
+<?php
+
+/**
+ *hook_perm
+ */
+      
+ function assetRegister_init() {
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+function assetRegister_perm() {
+	return array('edit assetRegister','administer assetRegister', 'create assetRegister', 'view assetRegister');
+}
+
+function assetRegister_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit assetRegister', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create assetRegister', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view assetRegister', $account);
+	}
+	
+}
+
+
+function assetRegister_menu(){
+
+  $items['assetRegister'] = array(
+										'title' => t('Asset Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'assetRegister',
+										'access arguments' => array('administer assetRegister'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function assetRegister(){
+  return drupal_get_form('assetRegister_form');
+}
+
+function assetRegister_form(){
+ global $base_url;
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Asset Register', 'assetRegister');
+  drupal_set_breadcrumb($breadcrumb);
+ 
+ 
+ 
+ 
+ $form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+				'#title'=>'',
+						   
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+				'#title'=>'',
+						   
+						   '#size' => '30',
+						   
+ );
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+function assetRegister_form_validate($form, &$form_state){
+	
+	$values = $form_state['values'];
+	
+	$from_date = $values['from_date'];
+	$to_date = $values['to_date'];
+	
+	if($from_date == ''){
+		
+	form_set_error('from_date','Form Date is required.');	
+		
+	}
+	
+	if($to_date == ''){
+		
+	form_set_error('to_date','To Date is required.');	
+		
+	}
+	
+}
+
+/**
+ *@ hook_theme 
+*/
+
+ function assetRegister_theme() {
+	
+	return array(
+		
+		'assetRegister_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'assetRegister_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

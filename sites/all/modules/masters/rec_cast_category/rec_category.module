@@ -1,0 +1,465 @@
+<?php
+function rec_category_init() {
+	//drupal_add_css(drupal_get_path('module', 'rec_language') .'/rec_language.css');
+	
+}
+
+
+function rec_category_perm() {
+	return array('edit rec_category','administer rec_category', 'create rec_category', 'view rec_category');
+}
+
+function rec_category_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit rec_category', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create rec_category', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view rec_category', $account);
+	}
+	
+}
+
+function rec_category_menu() {
+	
+	
+	$items['admin/rec/listcategory'] = array(
+										'title' => t('List of Caste Category'),
+										'description' => 'Allow user to View category',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewcategory',
+										'access arguments' => array('administer rec_category'),
+													 
+									  );
+	
+	$items['admin/rec/listcategory/addcategory'] = array(
+										'title' => t('Create Caste Category'),
+										'description' => 'Allow user to add category',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_category',
+										'access arguments' => array('administer rec_category'),
+													 
+									  );
+   	$items['admin/rec/listcategory/edit/category/%'] = array(
+								
+										'title' => t('Edit Caste Category'),
+										'description' => 'Allow user to add category',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addcategoryedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer rec_category'),
+													 
+									  );
+   $items['admin/rec/listcategory/view/category/%'] = array(
+								
+										'title' => t('View Caste Category'),
+										'description' => 'Allow user to add category',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addcategoryview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer rec_category'),
+													 
+									  );
+     $items['admin/rec/del/category/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'category_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_category'),
+													 
+									  );
+    $items['admin/rec/enable/category/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'category_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer rec_category'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing category
+ */
+
+function viewcategory(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'recCastCategory', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('Category'), 'field' => 'cast_category_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List Cast category', 'admin/rec/listcategory/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT cast_category_id, cast_category_name, status FROM tbl_cast_categories where UPPER(cast_category_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_cast_categories where UPPER(cast_category_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT cast_category_id, cast_category_name, status FROM tbl_cast_categories ".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'recCastCategory', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/rec/listcategory');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'recCastCategory', 'code01', NULL),"admin/rec/listcategory/addcategory");
+   	$lising = getMessage( 'recCastCategory', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/rec/listcategory/edit/category/".$row->cast_category_id,array('attributes'=>array('id'=>'edit-cast_category-id')));
+		$viewurl = l("View","admin/rec/listcategory/view/category/".$row->cast_category_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/rec/del/category/$row->cast_category_id/$row->cast_category_name");
+        }else{
+		  $deleteurl = l("Enable","admin/rec/enable/category/$row->cast_category_id/$row->cast_category_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->cast_category_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function rec_category(){
+ return drupal_get_form('rec_category_form');
+}
+
+function rec_category_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of Caste Category', 'admin/rec/listcategory');
+  if($array[3] == 'addcategory'){
+     $breadcrumb[] = l('Add Caste Category', 'admin/rec/listcategory/addcategory');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['cast_category_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Category Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listcategory'),
+);
+	return $form;
+}
+
+function rec_category_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $cast_category_name = trim($values['cast_category_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('cast_category_name',$cast_category_name,'Cast Category');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_cast_categories` (`cast_category_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$cast_category_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('recCastCategory', 'code05', array("0"=>$cast_category_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/rec/listcategory');
+	}
+}
+
+function rec_category_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$cast_category_name = trim($values['cast_category_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('cast_category_name',$cast_category_name,'Cast Category');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_cast_categories} where UCASE(cast_category_name)= '".strtoupper($cast_category_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('recCastCategory', 'code06', array("0"=>$cast_category_name));
+			form_set_error('cast_category_name', $message);
+		}
+	}	
+}
+
+function rec_addcategoryedit($cast_category_id){
+ return drupal_get_form('rec_category_form_edit',$cast_category_id);
+}
+
+function rec_category_form_edit(&$form_states,$cast_category_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Caste Category', 'admin/rec/listcategory');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Caste Category', 'admin/rec/listcategory/edit/category/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlcategory = "select * from tbl_cast_categories where cast_category_id=$cast_category_id";
+	$rescategory = db_query($sqlcategory);
+	$rscategory = db_fetch_object($rescategory);
+	
+	$form['cast_category_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscategory->cast_category_id,
+	);
+	
+	$form['cast_category_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Category Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rscategory->cast_category_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['prev_cast_category_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscategory->cast_category_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rscategory->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/rec/listcategory'),
+);
+	return $form;
+}
+
+function rec_category_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$cast_category_id = $values['cast_category_id'];
+	$cast_category_name = ParseData($values['cast_category_name']);
+	$prev_cast_category_name = ParseData($values['prev_cast_category_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('cast_category_name',$cast_category_name,'Cast Category');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_cast_categories} where LOWER(cast_category_name)= '".strtolower($cast_category_name)."' GROUP BY cast_category_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_cast_category_name), strtolower($cast_category_name))==0){
+			db_query("UPDATE `tbl_cast_categories` set `cast_category_name` = '".$cast_category_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where cast_category_id='".$cast_category_id."'");
+			
+			$message = getMessage('recCastCategory', 'code05', array("0"=>$cast_category_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listcategory");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_cast_categories` set `cast_category_name` = '".$cast_category_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where cast_category_id='".$cast_category_id."'");
+				
+				$message = getMessage('recCastCategory', 'code05', array("0"=>$cast_category_name));
+				drupal_set_message($message);
+				drupal_goto("admin/rec/listcategory");	
+			
+			}else{
+				db_query("UPDATE `tbl_cast_categories` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where cast_category_id='".$cast_category_id."'");
+				
+				$message = getMessage('recCastCategory', 'code06', array("0"=>$cast_category_name));
+				form_set_error('cast_category_name', $message);
+			}
+		}
+	}
+}
+
+function rec_category_theme() {
+	
+	return array(
+				 
+		'rec_category_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_category_form',
+                                 ),
+        'rec_category_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rec_category_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function rec_category_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='rec_category_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='rec_category_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function category_delete($sid, $sno){
+  $cast_category_id =  $sid;
+  db_query("UPDATE {tbl_cast_categories} SET status=0 WHERE cast_category_id ='".$cast_category_id."'");
+  $message = getMessage('recCastCategory', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/rec/listcategory");
+ }
+
+
+  function category_enable($sid, $sno){
+    $cast_category_id =  $sid;
+    db_query("UPDATE {tbl_cast_categories} SET status=1 WHERE cast_category_id ='".$cast_category_id."'");
+  
+    $message = getMessage('recCastCategory', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/rec/listcategory");
+  }
+
+  function rec_addcategoryview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Caste Category', 'admin/rec/listcategory');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Caste Category', 'admin/rec/listcategory/view/category/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from tbl_cast_categories where cast_category_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>Cast Category Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td>Caste Category:</td><td>'.ucwords($rs->cast_category_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='</table></div>';
+$output .=  l(t('Back'), 'admin/rec/listcategory');
+ return $output;
+  }
+	
+	

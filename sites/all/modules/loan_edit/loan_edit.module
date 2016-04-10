@@ -1,0 +1,422 @@
+<?php
+
+function loan_edit_init() {
+	//drupal_add_css(drupal_get_path('module', 'loan_repayment') .'/loan_repayment.css');
+	drupal_add_js(drupal_get_path('module', 'loan_repayment') .'/loan_repayment.js');
+}
+
+
+function loan_edit_perm() {
+	return array('edit loan_edit','administer loan_edit', 'create loan_edit', 'view loan_edit');
+}
+
+function loan_edit_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit loan_edit', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create loan_edit', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view loan_edit', $account);
+	}	
+}
+
+function loan_edit_menu() {	  
+    $items['edit-personal/%'] = array(
+	'title' => 'Edit Personal Details',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'edit_personaldetails',
+        'page arguments' => array(1),
+	'access arguments' => array('administer loan_edit'),
+    );					  
+    
+    return $items;
+}
+ 
+
+function loan_edit_theme() {
+	return array(
+            'edit_personaldetails_form' => array(
+		'arguments' => array('form' => NULL),
+		'template' => 'edit_personaldetails_form',
+             ),
+        );   
+}
+
+
+
+
+
+function edit_personaldetails(){
+  return drupal_get_form('edit_personaldetails_form');
+}
+
+function edit_personaldetails_form(){
+        $loan_id = arg(1);
+        global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('Edit - Personal details form', 'edit-personal/'.$loan_id);
+	
+	drupal_set_breadcrumb($breadcrumb);
+        
+        
+        $query = "SELECT
+           tbl_loan_detail.scheme_name,
+           tbl_loan_detail.capital_subsidy,
+           tbl_loan_detail.project_cost,
+           tbl_loan_detail.loan_requirement,
+           tbl_loan_detail.work_place,tbl_loan_detail.loan_amount,
+           tbl_loan_detail.reg_number,
+           tbl_loan_detail.application_date,
+           tbl_loan_detail.application_date,
+           tbl_loan_detail.physical_verification_date,
+           tbl_loan_detail.sanction_date,
+           tbl_loan_detail.aggrement_date,
+           tbl_loan_detail.licenseno,
+           tbl_loan_detail.licenseexpiry,
+           tbl_loan_detail.loan_status,
+           tbl_loan_detail.agreement,
+           tbl_loan_detail.documents,
+           tbl_loan_detail.disbursed_amount,
+           tbl_loan_detail.disbursed_date,
+           tbl_loan_detail.bank_acc_no,
+           tbl_loan_detail.bank,
+           tbl_loan_detail.bank_branch,
+           tbl_loan_detail.b_ROI,
+       
+           tbl_loanee_detail.loanee_id, 
+           tbl_loanee_detail.refno, 
+           tbl_loanee_detail.account_id,      
+           tbl_loanee_detail.fname,
+           tbl_loanee_detail.lname,
+           tbl_loanee_detail.fh_name,
+           tbl_loanee_detail.phone,
+           tbl_loanee_detail.dob,
+           tbl_loanee_detail.gender,
+           tbl_loanee_detail.education,
+           tbl_loanee_detail.religion,
+           tbl_loanee_detail.category,
+           tbl_loanee_detail.address1,
+           tbl_loanee_detail.address2,
+           tbl_loanee_detail.caste,
+           tbl_loanee_detail.disability,
+           tbl_loanee_detail.family_income,
+           tbl_loanee_detail.income_cat,
+           tbl_loanee_detail.UID,
+           tbl_loanee_detail.email,
+           tbl_loanee_detail.mobile,      
+           tbl_loanee_detail.landline,
+           tbl_loanee_detail.address_type,
+           tbl_loanee_detail.address1,
+           tbl_loanee_detail.village,
+           tbl_loanee_detail.post_office,
+           tbl_loanee_detail.state,    
+           tbl_loanee_detail.district,
+           tbl_loanee_detail.tehsil,      
+           tbl_loanee_detail.block,
+           tbl_loanee_detail.panchayat,
+           tbl_loanee_detail.pincode,
+           tbl_loanee_detail.corp_branch,
+	   tbl_dsjestate.state_name,
+           tbl_tehsil.tehsil_name,
+           tbl_cast.cast_name,
+           tbl_district.district_name,
+           tbl_block.block_name,
+           tbl_scheme_master.scheme_name,
+           tbl_scheme_master.loan_type,
+           tbl_corporations.corporation_name
+
+        FROM tbl_loanee_detail
+        INNER JOIN tbl_loan_detail ON (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+        INNER JOIN tbl_tehsil ON (tbl_loanee_detail.tehsil=tbl_tehsil.tehsil_id)
+        INNER JOIN tbl_cast ON  (tbl_loanee_detail.caste=tbl_cast.cast_id)
+        INNER JOIN tbl_district ON  (tbl_loanee_detail.district=tbl_district.district_id)
+        INNER JOIN tbl_block ON  (tbl_loanee_detail.block=tbl_block.block_id)
+        INNER JOIN tbl_scheme_master ON (tbl_loan_detail.scheme_name=tbl_scheme_master.loan_scheme_id)
+        INNER JOIN tbl_corporations  ON (tbl_loanee_detail.corp_branch=tbl_corporations.corporation_id)
+        INNER JOIN tbl_dsjestate  ON    (tbl_loanee_detail.state=tbl_dsjestate.state_id)
+
+        where tbl_loan_detail.loan_id ='".$loan_id."'";
+        
+        $res = db_query($query);
+	$row = db_fetch_object($res);
+        
+        
+        // first name
+        $form['f_name'] = array(
+		'#type' => 'textfield',
+		'#title' => t('First Name'),
+		'#required' => TRUE,
+		'#default_value' => $row->fname,
+                //'#attributes' => array('readonly'=> 'readonly'),
+	);
+        
+        
+        // last name
+        $form['l_name'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Last Name'),
+		'#required' => TRUE,
+		'#default_value' => $row->lname,
+                //'#attributes' => array('readonly'=> 'readonly'),
+	);
+        
+        // Father/Husband Name
+        $form['fh_name'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Father/Husband Name'),
+		'#required' => TRUE,
+		'#default_value' => $row->fh_name,
+                //'#attributes' => array('readonly'=> 'readonly'),
+	);
+        
+        // Registration No.
+        $form['reg_no'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Registration No.'),
+		'#required' => TRUE,
+		'#default_value' => $row->reg_number,
+                '#attributes' => array('readonly'=> 'readonly'),
+	);
+        
+        //Date of Birth
+        $form['dob'] = array(
+                    '#type' =>'date_popup',
+	            '#date_format' => 'd-m-Y',
+                    '#title' => t('Date of Birth'),
+                    '#required' => false,
+                    '#size' => '30',
+                    '#maxlength'=>10,
+                    '#default_value' => $row->dob,
+        );
+        
+        // Gender 
+        $form['gender'] = array(
+		 '#type' => 'select',
+                 '#title' => t('Gender'),
+                 '#default_value' => $row->mode_payment,
+                // '#required' => TRUE,
+                 '#options' =>array('' => '--Select--', 'cash'=>'Male','cheque'=>'Female'),
+                 '#attributes' => array('onchange' => 'return changeMenulonee(this)'),
+	);
+        
+        
+        // Education.
+        $form['education'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Education.'),
+		'#required' => TRUE,
+		'#default_value' => $row->education,
+                //'#attributes' => array('readonly'=> 'readonly'),
+	);
+        
+        
+        // Disability 
+        $form['disability'] = array(
+		 '#type' => 'select',
+                 '#title' => t('Disability'),
+                 '#default_value' => $row->mode_payment,
+                // '#required' => TRUE,
+                 '#options' =>array('' => '--Select--', 'cash'=>'Male','cheque'=>'Female'),
+                 '#attributes' => array('onchange' => 'return changeMenulonee(this)'),
+	);
+        
+        // Category
+        $form['category'] = array(
+		 '#type' => 'textfield',
+                 '#title' => t('Category'),
+                 '#default_value' => 'OBC',
+                 '#required' => TRUE,
+                 '#attributes' => array('readonly'=> 'readonly'),
+	);
+        
+        // Annual Family Income
+        $form['family_income'] = array(
+		 '#type' => 'textfield',
+                 '#title' => t('Annual Family Income'),
+                 '#default_value' => $row->family_income,
+                 '#required' => TRUE,
+                 //'#attributes' => array('readonly'=> 'readonly'),
+	);
+        
+        // Income Category
+        $form['income_cat'] = array(
+		 '#type' => 'select',
+                 '#title' => t('Income Category'),
+                 '#default_value' => $row->family_income,
+               //  '#required' => TRUE,
+                 '#options' =>array('' => '--Select--', 'cash'=>'Male','cheque'=>'Female'),
+                 '#attributes' => array('onchange' => 'return changeMenulonee(this)'),
+                 //'#attributes' => array('readonly'=> 'readonly'),
+	);
+        
+        // Religion
+        $form['religion'] = array(
+		 '#type' => 'select',
+                 '#title' => t('Religion'),
+                 '#default_value' => $row->family_income,
+                 //'#required' => TRUE,
+                 '#options' =>array('' => '--Select--', 'cash'=>'Male','cheque'=>'Female'),
+                 '#attributes' => array('onchange' => 'return changeMenulonee(this)'),
+                 //'#attributes' => array('readonly'=> 'readonly'),
+	);
+        
+        // Caste
+        $form['caste'] = array(
+		 '#type' => 'select',
+                 '#title' => t('Caste'),
+                 '#default_value' => $row->family_income,
+                 //'#required' => TRUE,
+                 '#options' =>array('' => '--Select--', 'cash'=>'Male','cheque'=>'Female'),
+                 '#attributes' => array('onchange' => 'return changeMenulonee(this)'),
+                 //'#attributes' => array('readonly'=> 'readonly'),
+	);
+        
+        // Aadhar card
+        $form['aadhar_card'] = array(
+                   '#type' => 'textfield',
+                   '#title' => t('UID(Aadhar Card No.)'),
+                   '#required' => false,
+                   '#size' => '30',
+                   '#maxlength'=>12,
+                   '#default_value' => $row->UID,
+                   '#id' => 'chequeno',
+                   '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	);
+        
+        // Email
+        $form['email'] = array(
+                   '#type' => 'textfield',
+                   '#title' => t('Email'),
+                   '#required' => false,
+                   '#size' => '30',
+                   '#maxlength'=>12,
+                   '#default_value' => $row->email,
+                   '#id' => 'chequeno',
+                   '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	);
+        
+        
+         // Mobile no
+        $form['mobile_no'] = array(
+                   '#type' => 'textfield',
+                   '#title' => t('Mobile'),
+                   '#required' => false,
+                   '#size' => '30',
+                   '#maxlength'=>12,
+                   '#default_value' => $row->mobile,
+                   '#id' => 'chequeno',
+                   '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	);
+        
+        
+         // Phone No.
+        $form['phone_no'] = array(
+                   '#type' => 'textfield',
+                   '#title' => t('Phone'),
+                   '#required' => false,
+                   '#size' => '30',
+                   '#maxlength'=>12,
+                   '#default_value' => $row->phone,
+                   '#id' => 'chequeno',
+                   '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	);
+      	
+	
+        $form['submit'] = array(
+                    '#type' => 'submit',
+                    '#default_value' => t('Save')
+        );				   
+						   							 									 				 
+        return $form;
+}
+
+
+
+function edit_personaldetails_form_submit($form,&$form_state){
+   global $user;
+   $values = $form_state['values'];
+   $uid=$user->uid;
+   $loan_id = arg(1);
+   //print_r($loan_id); exit;
+   
+   $query = "SELECT * FROM `tbl_loanee_detail`
+            INNER JOIN tbl_loan_detail ON (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+            WHERE tbl_loan_detail.loan_id = '".$loan_id."'";
+   
+   $res = db_query($query);
+   $row = db_fetch_object($res);
+   
+   //print_r($query); exit;
+   
+	$f_name = $values['f_name'];
+	$l_name = $values['l_name'];
+	$fh_name = $values['fh_name'];
+        $reg_no = $values['reg_no'];
+	$dob = $values['dob'];
+	$gender = $values['gender'];
+	$education = $values['education'];
+	$disability = $values['disability'];
+	$category = $values['category'];
+	$family_income = $values['family_income'];
+	$income_cat = $values['income_cat'];
+        
+        $religion = $values['religion'];
+	$caste = $values['caste'];
+	$aadhar_card = $values['aadhar_card'];
+	$email = $values['email'];
+        
+        $mobile_no = $values['mobile_no'];
+	$phone_no = $values['phone_no'];
+        
+        
+        $update_query = "UPDATE `tbl_loanee_detail` 
+                  SET `fname`='".$f_name."',
+                      `lname`='".$l_name."',
+                      `fh_name`='".$fh_name."',
+                      `dob`='".$dob."',
+                      `gender`='".$gender."',
+                      `education`='".$education."',
+                      `religion`='".$religion."',
+                      `category`='".$category."',
+                      `caste`='".$caste."',
+                      `disability`='".$disability."',
+                      `family_income`='".$family_income."',
+                      `income_cat`='".$income_cat."',
+                      `UID`='".$aadhar_card."',
+                      `email`='".$email."',
+                      `mobile`='".$mobile_no."',
+                      `phone`='".$phone_no."',
+                      `landline`='".$phone_no."'
+                       WHERE loanee_id = '".$row->loanee_id."'";
+        
+        //print_r($update_query); exit;
+        db_query($update_query);
+	
+        /*
+        db_query("INSERT INTO tbl_loaneerepayment (loan_account,loanee_name,loanee_address,mode_payment,cash_amount,cheque_no,cheque_date,infavour,bank_name,cheque_amount,createdby,createdon) VALUES 
+	('".$loan_account."','".$loanee_name."','".$loanee_address."','".$mode_payment."','".$cash_amount."','".$cheque_no."','".$cheque_date."','".$infavour."','".$bank_name."','".$cheque_amount."','".$uid."','".$created."')");
+
+	
+         * 
+         */
+	
+
+	$created = time();
+	
+    $message = getMessage('loanrepayment', 'code05', array("0"=>$loanee_name));
+
+  
+    drupal_set_message($message);
+    drupal_goto('loan/repaymentform/repayment/'.$loan_id);
+
+ 
+ }

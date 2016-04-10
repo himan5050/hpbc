@@ -1,0 +1,454 @@
+<?php
+function bankname_dsje_init() {
+}
+
+
+function bankname_dsje_perm() {
+	return array('edit bankname_dsje','administer bankname_dsje', 'create bankname_dsje', 'view bankname_dsje');
+}
+
+function bankname_dsje_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit bankname_dsje', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create bankname_dsje', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view bankname_dsje', $account);
+	}
+	
+}
+
+function bankname_dsje_menu() {
+	
+	
+	$items['admin/rec/listbank'] = array(
+										'title' => t('List of Designation'),
+										'description' => 'Allow user to View Bank Name',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewbankname',
+										'access arguments' => array('administer bankname_dsje'),
+													 
+									  );
+	
+	$items['admin/rec/listbank/addbank'] = array(
+										'title' => t('Add Bank'),
+										'description' => 'Allow user to add Bank',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addbankname',
+										'access arguments' => array('administer bankname_dsje'),
+													 
+									  );
+   	$items['admin/rec/listbank/edit/bankname/%'] = array(
+								
+										'title' => t('Edit Bank Name'),
+										'description' => 'Allow user to add bank',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addbanknameedit',
+		                                'page arguments' => array(5),
+		                                'access arguments' => array('administer bankname_dsje'),
+													 
+									  );
+		 $items['admin/rec/listbank/view/bankname/%'] = array(
+								
+										'title' => t('view Bank'),
+										'description' => 'Allow user to view Bank',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_viewbankname',
+		                                'page arguments' => array(5),
+		                                'access arguments' => array('administer bankname_dsje'),
+													 
+									  );
+    $items['admin/rec/del/bankname/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'bankname_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer bankname_dsje'),
+													 
+									  );
+  $items['admin/rec/enable/bankname/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'bankname_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer bankname_dsje'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing designation
+ */
+ function viewbankname(){
+ global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage('recbankname', 'code04', NULL);
+
+   
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('Bank Name'), 'field' => 'bank_name', 'sort' => 'asc'),
+		array('data' => t('Remarks')),
+	    array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+		$val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+		$query = "SELECT bankname_id, bank_name, remarks, status FROM tbl_bankname where  UPPER(bank_name) LIKE '".$val."'".tablesort_sql($header);
+        $sqlcount = "SELECT COUNT(*) AS count FROM tbl_bankname where  UPPER(bank_name) LIKE '".$val."'".tablesort_sql($header);
+		$rscount = db_query($sqlcount);
+		$rscounter = db_fetch_object($rscount);
+	}else{
+	  	$query = "SELECT bankname_id, bank_name, remarks, status FROM tbl_bankname".tablesort_sql($header);
+	}
+
+	$output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('bankname', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/rec/listbank');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage('bankname', 'code01', NULL),"admin/rec/listbank/addbank");
+   	$lising = getMessage('bankname', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query,$limit);
+	
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/rec/listbank/edit/bankname/".$row->bankname_id,array('attributes'=>array('id'=>'edit-bankname')));
+		$viewurl = l("View","admin/rec/listbank/view/bankname/".$row->bankname_id,array('attributes'=>array('id'=>'edit-bankname')));
+     if($row->status=='1'){
+		$deleteurl = l("Disable","admin/rec/del/bankname/".$row->bankname_id."/".$row->bank_name);
+     }else{
+		$deleteurl = l("Enable","admin/rec/enable/bankname/".$row->bankname_id."/".$row->bank_name);
+     }
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->bank_name)),
+			array('data' => ucwords($row->remarks)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function rec_addbanknameedit($bankname_id){
+ return drupal_get_form('bankname_dsje_form_edit',$bankname_id);
+}
+
+function bankname_dsje_form_edit(&$form_states,$bankname_id) {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of Bank', 'admin/rec/listbank');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Bank', 'admin/rec/listbank/edit/bankname/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+	$sqldesignation = "select * from tbl_bankname where bankname_id='$bankname_id'";
+	$resdesignation = db_query($sqldesignation);
+	$rsdesignation = db_fetch_object($resdesignation);
+	
+	$form['bankname_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsdesignation->bankname_id,
+	);
+	
+	$form['bank_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Bank Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsdesignation->bank_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+
+	$form['prev_bank_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsdesignation->bank_name,
+	);
+
+
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>$rsdesignation->remarks,
+		'#cols' =>30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+  
+  $form['status'] = array(
+		'#type' => 'hidden',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rsdesignation->status,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+function bankname_dsje_form_edit_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $bank_name = parseData(trim($values['bank_name']));
+  $remarks = parseData(trim($values['remarks']));
+  $bankname_id = $values['bankname_id'];
+$s = textonlyn('bank_name',$bank_name,'Bank Name');
+$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+if($s == 0 && $s1 == 0){
+  $sql = "SELECT * FROM {tbl_bankname} where UCASE(bank_name)= '".strtoupper($bank_name)."'  and bankname_id !='".$bankname_id."'";
+   $res = db_query($sql);
+  
+  if($rs = db_fetch_object($res)){
+		$message = getMessage('recbankname', 'code06', array("0"=>$bank_name));
+		form_set_error('bank_name', $message);
+   }
+}
+	
+}
+function bankname_dsje_form_edit_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+	
+    $remarks = trim($values['remarks']);
+    $status = $values['status'];
+	$createdby = $user->uid;
+	$bankname_id = $values['bankname_id'];
+	$bank_name = parseData(trim($values['bank_name']));
+	$prev_bank_name = parseData($values['prev_bank_name']);
+	$createdon = time();
+	$s = textonlyn('bank_name',$bank_name,'Bank Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_bankname} where LOWER(bank_name)= '".strtolower($bank_name)."' GROUP BY bankname_id"));
+$count = $countObj->count;
+
+if( strcmp(strtolower($prev_bank_name), strtolower($bank_name))==0){
+		db_query("UPDATE `tbl_bankname` set `bank_name` = '".$bank_name."' ,`status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."'  ,`remarks`='".$remarks."' where bankname_id='".$bankname_id."'");
+		$message = getMessage('recbankname', 'code05', array("0"=>$bank_name));
+		drupal_set_message($message);
+		drupal_goto("admin/rec/listbank");	
+		}
+		else
+		{
+		if($count==0){
+			db_query("UPDATE `tbl_bankname` set `bank_name` = '".$bank_name."' ,`status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`remarks`='".$remarks."' where bankname_id='".$bankname_id."'");
+			$message = getMessage('recbankname', 'code05', array('0'=>$bank_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listbank");	
+		
+			}else{
+			db_query("UPDATE `tbl_bankname` set `status`='".$status."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."'  ,`remarks`='".$remarks."' where bankname_id='".$bankname_id."'");
+			$message = getMessage('recbankname', 'code06', array("0"=>$bank_name));
+			form_set_error('bank_name', $message);
+		 }	
+	}
+	}
+
+}
+function rec_addbankname(){
+ return drupal_get_form('bankname_dsje_form');
+}
+function bankname_dsje_form() {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of Bank', 'admin/rec/listbank');
+  if($array[2] == 'listbankname'){
+     $breadcrumb[] = l('Add Bank Name', 'admin/rec/listbank/addbank');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['bank_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Bank Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+        '#attributes' => array('onkeypress' => 'return textonlyn(event)'), 
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>'',
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+function bankname_dsje_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $bank_name = parseData(trim($values['bank_name']));
+  $remarks = parseData(trim($values['remarks']));
+  
+	$s = textonlyn('bank_name',$bank_name,'Bank Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	  $sql = "SELECT * FROM {tbl_bankname} where UCASE(bank_name)= '".strtoupper($bank_name)."' AND status =1";
+	   $res = db_query($sql);
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('recbankname', 'code06', array("0"=>$bank_name));
+			form_set_error('bank_name', $message);
+	   }
+ }	
+}
+
+
+function bankname_dsje_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $bank_name = parseData(trim($values['bank_name']));
+    $remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$createdby = $user->uid;
+	$createdon = time();
+    $sql = "SELECT * FROM {tbl_bankname} where UCASE(bank_name)= '".strtoupper($bank_name)."' AND status !=1";
+    $res = db_query($sql);
+  
+    if($rs = db_fetch_object($res)){
+      db_query("UPDATE tbl_bankname SET status=1 where bankname_id=$rs->bankname_id");
+    }else{
+	  db_query("INSERT INTO `tbl_bankname` (`bank_name` ,`remarks`,`status` ,`createdby` ,`createdon`) VALUES('".$bank_name."','".$remarks."','".$status."','".$createdby."','".$createdon."') ");
+     }
+	  $message = getMessage('recbankname', 'code05', array('0'=>$bank_name));
+			drupal_set_message($message);
+			drupal_goto("admin/rec/listbank");	
+
+}
+
+
+function bankname_dsje_theme() {
+	
+	return array(
+				 
+		'bankname_dsje_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'bankname_dsje_form',
+                                 ),
+        'bankname_dsje_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'bankname_dsje_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function bankname_dsje_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='bankname_dsje_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='bankname_dsje_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+  function bankname_delete($sid,$name){
+	  $bankname_id = $sid;
+   db_query("UPDATE `tbl_bankname` set `status`=0 where bankname_id='".$bankname_id."'");
+ $message = getMessage('recbankname', 'code07', array("0"=>$name));
+ drupal_set_message($message);
+ drupal_goto('admin/rec/listbank');
+ }
+
+   function bankname_enable($sid,$name){
+	  $bankname_id = $sid;
+   db_query("UPDATE `tbl_bankname` set `status`=1 where bankname_id='".$bankname_id."'");
+ $message = getMessage('recbankname', 'code09', array("0"=>$name));
+ drupal_set_message($message);
+ drupal_goto('admin/rec/listbank');
+ }
+
+function rec_viewbankname($bankname_id){
+	$sql = "select * from tbl_bankname where bankname_id = '$bankname_id' ";
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+ if($rs->status =='0'){
+  $status ='Disabled';
+}else{
+  $status ='Enabled';
+}
+
+
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+
+
+
+$output ='<div id="form-container">';
+$output .='<table cellpadding="3" cellspacing="2" border="0" id="wrapper">';
+$output .='<tr class="oddrow"><td colspan="2"><h2>Bank Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td>Bank Name:</td><td>'.ucwords($rs->bank_name).'</td></tr>';
+//$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+$output .='<tr class="evenrow"><td>Status :</td><td>'.$status.'</td></tr>';
+return $output .='</table></div>';
+  }
+
+
+
+  
+  
+	
+	

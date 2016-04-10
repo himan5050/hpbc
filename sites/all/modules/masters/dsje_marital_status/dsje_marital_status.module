@@ -1,0 +1,465 @@
+<?php
+function dsje_marital_status_init() {
+	//drupal_add_css(drupal_get_path('module', 'rec_language') .'/rec_language.css');
+	
+}
+
+
+function dsje_marital_status_perm() {
+	return array('edit dsje_marital_status','administer dsje_marital_status', 'create dsje_marital_status', 'view dsje_marital_status');
+}
+
+function dsje_marital_status_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_marital_status', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_marital_status', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_marital_status', $account);
+	}
+	
+}
+
+function dsje_marital_status_menu() {
+	
+	
+	$items['admin/dsje/listmarital_status'] = array(
+										'title' => t('List of marital_status'),
+										'description' => 'Allow user to View marital_status',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewmarital_status',
+										'access arguments' => array('administer dsje_marital_status'),
+													 
+									  );
+	
+	$items['admin/dsje/listmarital_status/addmarital_status'] = array(
+										'title' => t('Create marital_status'),
+										'description' => 'Allow user to add marital_status',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_marital_status',
+										'access arguments' => array('administer dsje_marital_status'),
+													 
+									  );
+   	$items['admin/dsje/listmarital_status/edit/marital_status/%'] = array(
+								
+										'title' => t('Edit marital_status'),
+										'description' => 'Allow user to add marital_status',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addmarital_statusedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_marital_status'),
+													 
+									  );
+   $items['admin/dsje/listmarital_status/view/marital_status/%'] = array(
+								
+										'title' => t('View marital_status'),
+										'description' => 'Allow user to add marital_status',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'rec_addmarital_statusview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_marital_status'),
+													 
+									  );
+     $items['admin/dsje/del/marital_status/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'marital_status_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_marital_status'),
+													 
+									  );
+    $items['admin/dsje/enable/marital_status/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'marital_status_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_marital_status'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing marital_status
+ */
+
+function viewmarital_status(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjemarital_status', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S.No')),
+        array('data' => t('marital_status'), 'field' => 'marital_status_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action')),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List marital_status', 'admin/dsje/listmarital_status/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT marital_status_id, marital_status_name, status FROM tbl_maritals where UPPER(marital_status_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM tbl_maritals where UPPER(marital_status_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT marital_status_id, marital_status_name, status FROM tbl_maritals ".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjemarital_status', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listmarital_status');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjemarital_status', 'code01', NULL),"admin/dsje/listmarital_status/addmarital_status");
+   	$lising = getMessage( 'dsjemarital_status', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listmarital_status/edit/marital_status/".$row->marital_status_id,array('attributes'=>array('id'=>'edit-marital_status-id')));
+		$viewurl = l("View","admin/dsje/listmarital_status/view/marital_status/".$row->marital_status_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/marital_status/$row->marital_status_id/$row->marital_status_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/marital_status/$row->marital_status_id/$row->marital_status_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->marital_status_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_marital_status(){
+ return drupal_get_form('dsje_marital_status_form');
+}
+
+function dsje_marital_status_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List Of marital_status', 'admin/dsje/listmarital_status');
+  if($array[3] == 'addmarital_status'){
+     $breadcrumb[] = l('Add marital_status', 'admin/dsje/listmarital_status/addmarital_status');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['marital_status_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('marital_status Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listmarital_status'),
+);
+	return $form;
+}
+
+function dsje_marital_status_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $marital_status_name = trim($values['marital_status_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('marital_status_name',$marital_status_name,'marital_status');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_maritals` (`marital_status_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$marital_status_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjemarital_status', 'code05', array("0"=>$marital_status_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listmarital_status');
+	}
+}
+
+function dsje_marital_status_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$marital_status_name = trim($values['marital_status_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('marital_status_name',$marital_status_name,'marital_status');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_maritals} where UCASE(marital_status_name)= '".strtoupper($marital_status_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjemarital_status', 'code06', array("0"=>$marital_status_name));
+			form_set_error('marital_status_name', $message);
+		}
+	}	
+}
+
+function rec_addmarital_statusedit($marital_status_id){
+ return drupal_get_form('dsje_marital_status_form_edit',$marital_status_id);
+}
+
+function dsje_marital_status_form_edit(&$form_states,$marital_status_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List marital_status', 'admin/dsje/listmarital_status');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit marital_status', 'admin/dsje/listmarital_status/edit/marital_status/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlmarital_status = "select * from tbl_maritals where marital_status_id=$marital_status_id";
+	$resmarital_status = db_query($sqlmarital_status);
+	$rsmarital_status = db_fetch_object($resmarital_status);
+	
+	$form['marital_status_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsmarital_status->marital_status_id,
+	);
+	
+	$form['marital_status_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('marital_status Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsmarital_status->marital_status_name,
+		'#size' =>41,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['prev_marital_status_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsmarital_status->marital_status_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsmarital_status->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listmarital_status'),
+);
+	return $form;
+}
+
+function dsje_marital_status_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$marital_status_id = $values['marital_status_id'];
+	$marital_status_name = ParseData($values['marital_status_name']);
+	$prev_marital_status_name = ParseData($values['prev_marital_status_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('marital_status_name',$marital_status_name,'marital_status');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_maritals} where LOWER(marital_status_name)= '".strtolower($marital_status_name)."' GROUP BY marital_status_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_marital_status_name), strtolower($marital_status_name))==0){
+			db_query("UPDATE `tbl_maritals` set `marital_status_name` = '".$marital_status_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where marital_status_id='".$marital_status_id."'");
+			
+			$message = getMessage('dsjemarital_status', 'code05', array("0"=>$marital_status_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listmarital_status");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_maritals` set `marital_status_name` = '".$marital_status_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where marital_status_id='".$marital_status_id."'");
+				
+				$message = getMessage('dsjemarital_status', 'code05', array("0"=>$marital_status_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listmarital_status");	
+			
+			}else{
+				db_query("UPDATE `tbl_maritals` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where marital_status_id='".$marital_status_id."'");
+				
+				$message = getMessage('dsjemarital_status', 'code06', array("0"=>$marital_status_name));
+				form_set_error('marital_status_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_marital_status_theme() {
+	
+	return array(
+				 
+		'dsje_marital_status_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_marital_status_form',
+                                 ),
+        'dsje_marital_status_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_marital_status_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_marital_status_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_marital_status_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_marital_status_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function marital_status_delete($sid, $sno){
+  $marital_status_id =  $sid;
+  db_query("UPDATE {tbl_maritals} SET status=0 WHERE marital_status_id ='".$marital_status_id."'");
+  $message = getMessage('dsjemarital_status', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listmarital_status");
+ }
+
+
+  function marital_status_enable($sid, $sno){
+    $marital_status_id =  $sid;
+    db_query("UPDATE {tbl_maritals} SET status=1 WHERE marital_status_id ='".$marital_status_id."'");
+  
+    $message = getMessage('dsjemarital_status', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listmarital_status");
+  }
+
+  function rec_addmarital_statusview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List marital_status', 'admin/dsje/listmarital_status');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View marital_status', 'admin/dsje/listmarital_status/view/marital_status/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * from tbl_maritals where marital_status_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2"><h2>marital_status Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td>marital_status:</td><td>'.ucwords($rs->marital_status_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td>'.$status.'</td></tr>';
+ $output .='</table></div>';
+$output .=  l(t('Back'), 'admin/dsje/listmarital_status');
+ return $output;
+  }
+	
+	

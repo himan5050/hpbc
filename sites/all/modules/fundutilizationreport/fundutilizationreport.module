@@ -1,0 +1,137 @@
+<?php
+//global $base_url;
+
+/**
+ *hook_perm
+ 
+ 
+ */
+ 
+ function fundutilizationreport_init() {
+	//drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+ 
+function fundutilizationreport_perm() {
+	return array('edit fundutilizationreport','administer fundutilizationreport', 'create fundutilizationreport', 'view fundutilizationreport');
+}
+
+function fundutilizationreport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit fundutilizationreport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create fundutilizationreport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view fundutilizationreport', $account);
+	}
+	
+}
+
+
+function fundutilizationreport_menu(){
+
+  $items['fundutilizationreport'] = array(
+										'title' => t('Fund Utilization Report'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'fundutilizationreport',
+										'access arguments' => array('administer fundutilizationreport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function fundutilizationreport(){
+  return drupal_get_form('fundutilizationreport_form');
+}
+
+function fundutilizationreport_form(){
+	
+global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Fund Utilization Report', 'fundutilizationreport');
+  drupal_set_breadcrumb($breadcrumb);
+
+
+ 	
+$sqlcountry = "select * from tbl_headmaster ORDER BY name1";
+	$rescountry =db_query($sqlcountry);
+	$countryarray[''] = array();
+	$countryarray[''] = '--Select--'; 
+	if($rescountry){
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->name1] = ucwords($rscountry->name1);
+	  }
+	}
+	
+
+	$form['head_name'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => false,
+		'#default_value' => '',
+		'#options' => $countryarray,
+	);
+    
+ 
+ $sqlscheme = "select * from tbl_scheme_master ORDER BY scheme_name";
+	$resscheme =db_query($sqlscheme);
+	$schemearray[''] = array();
+	$schemearray[''] = '--Select--'; 
+	if($rescountry){
+	  while($rsscheme = db_fetch_object($resscheme)){
+	    $schemearray[$rsscheme->scheme_name] = ucwords($rsscheme->scheme_name);
+	  }
+	}
+	
+
+	$form['scheme_name'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => false,
+		'#default_value' => '',
+		'#options' => $schemearray,
+	);
+    
+
+ 
+ 
+						   
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function fundutilizationreport_theme() {
+	
+	return array(
+		
+		'fundutilizationreport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'fundutilizationreport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

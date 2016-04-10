@@ -1,0 +1,103 @@
+<?php
+function dsje_block_schema() {
+
+	
+	//block table
+   $schema['tbl_block'] = array(
+							 'fields' => array(
+											   'block_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+														  
+															  
+											   'block_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 
+											 
+											   'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '900',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+	                                           'description' => array(
+															  'type' => 'varchar',
+															  'length' => '900',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+	                                          'state_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											  'district_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+															  
+												'tehsil_id' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),					  			  
+															  
+	                                          
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'block_id' => array('block_id'),
+												),
+							 'primary key' => array('block_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_block_install() {
+	drupal_install_schema('dsje_block');
+}
+
+function dsje_block_uninstall() {
+	drupal_uninstall_schema('dsje_block');
+}

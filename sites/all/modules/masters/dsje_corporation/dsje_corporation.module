@@ -1,0 +1,1069 @@
+<?php
+function dsje_corporation_init() {
+	//drupal_add_css(drupal_get_path('module', 'dsje_language') .'/dsje_language.css');
+	
+}
+
+
+function dsje_corporation_perm() {
+	return array('edit dsje_corporation','administer dsje_corporation', 'create dsje_corporation', 'view dsje_corporation');
+}
+
+function dsje_corporation_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_corporation', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_corporation', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_corporation', $account);
+	}
+	
+}
+
+function dsje_corporation_menu() {
+
+
+
+	
+	
+	$items['admin/dsje/listcorporation'] = array(
+										'title' => t('List of Office'),
+										'description' => 'Allow user to View Office',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewcorporation',
+										'access arguments' => array('administer dsje_corporation'),
+													 
+									  );
+	
+	$items['admin/dsje/listcorporation/addcorporation'] = array(
+										'title' => t('Create Office'),
+										'description' => 'Allow user to add Office',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_corporation',
+										'access arguments' => array('administer dsje_corporation'),
+													 
+									  );
+   	$items['admin/dsje/listcorporation/edit/corporation/%'] = array(
+								
+										'title' => t('Edit Office'),
+										'description' => 'Allow user to add corporation',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addcorporationedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_corporation'),
+													 
+									  );
+   $items['admin/dsje/listcorporation/view/corporation/%'] = array(
+								
+										'title' => t('View Office'),
+										'description' => 'Allow user to add corporation',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addcorporationview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_corporation'),
+													 
+									  );
+     $items['admin/dsje/del/corporation/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'corporation_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_corporation'),
+													 
+									  );
+    $items['admin/dsje/enable/corporation/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'corporation_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_corporation'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing corporation
+ */
+
+function viewcorporation(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjecorporation', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Office'), 'field' => 'corporation_name', 'sort' => 'asc'),
+		array('data' => t('Status'), 'field' => 'status', 'sort' => 'asc'),
+		array('data' => t('Action'), 'class' => 'addeditview',),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Office', 'admin/dsje/listcorporation/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+   
+    if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	
+	
+	$status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "UPPER(corporation_name) LIKE '".$val."' ";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(corporation_name) LIKE '".$val."'  AND status='".$status."')";
+	 }
+	
+	 
+	 $query = "SELECT corporation_id, corporation_name, status FROM {tbl_corporations} where ".$searchquery." ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM {tbl_corporations} where ".$searchquery." ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	 //$_REQUEST['page']=0;
+ }else{
+    $query = "SELECT corporation_id, corporation_name, status FROM {tbl_corporations} ".tablesort_sql($header);
+ }
+ 
+ global $base_url;
+$action = $base_url.'/admin/dsje/listcorporation';
+ $t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+
+ $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'dsjecorporation', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listcorporation');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';	
+	$addurl = l(getMessage( 'dsjecorporation', 'code01', NULL),"admin/dsje/listcorporation/addcorporation");
+   	$lising = getMessage( 'dsjecorporation', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listcorporation/edit/corporation/".$row->corporation_id);
+		$viewurl = l("View","admin/dsje/listcorporation/view/corporation/".$row->corporation_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/corporation/$row->corporation_id/$row->corporation_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/corporation/$row->corporation_id/$row->corporation_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->corporation_name)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+	}
+	
+	if($rows== NULL)
+	$header=NULL;
+	
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_corporation(){
+ return drupal_get_form('dsje_corporation_form');
+}
+
+function dsje_corporation_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Office', 'admin/dsje/listcorporation');
+  if($array[3] == 'addcorporation'){
+     $breadcrumb[] = l('Add Office', 'admin/dsje/listcorporation/addcorporation');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['corporation_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Office Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>45,
+		'#maxlength'=>45,
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['BO_code'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('Branch Office Code'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#maxlength'=>2,
+		'#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	);
+	
+	
+		$form['corporation_type'] = array(
+ 		'#type' => 'select',
+		'#title' => t('Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => '',
+		 '#options' => CorporationType(),
+
+);
+
+$form['add_type'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Address Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => '',
+		 '#options' => AddressType(),
+		 '#attributes' => array('onchange' => 'return changeMenu1234(this)'),
+
+);
+
+
+	$form['add_line1'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 1'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#size' =>100,
+	'#maxlength' =>100,
+	'#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-add-line1",100)'),	
+	);
+	
+  $form['add_line2'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 2'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#size' =>100,
+	'#maxlength' =>100,
+	'#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-add-line2",100)'),
+	);
+	
+$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	
+	
+
+	  $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' => '',
+		'#options' =>GetDistrictStateWise($node->state_id),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' => '',
+			'#options' =>GetTehsilDistrictWise($node->dsitrict_id,$node->state_id),
+			'#ahah' => array(
+					  'path' => 'dsje/block',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'block_test',
+					  ), 
+		   
+		);
+	//end;
+	
+	
+	
+	$statearray1[''] = '--Select--';
+	$form['block_name'] = array(
+		'#type' => 'select',
+		'#title' => t('Block'),
+		'#required' => TRUE,
+		'#default_value' => $form->block,
+		'#options' => $statearray1,
+		'#ahah' => array(
+					  'path' => 'dsje/panchayt',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'panchayt_test',
+					  ), 
+		
+		
+	);
+		
+  /*$form['block'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Block'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#size' =>20,
+	);*/
+	
+$statearray2[''] = '--Select--';		
+  $form['panchayt_name'] = array(
+	'#type' =>'select',
+	'#title' => t('Panchayat'),
+	'#required' => false,
+	'#default_value' =>'',
+	'#options' => $statearray2,
+	);
+	
+	
+ $form['pincode'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('PIN Code'),
+	 '#required' =>FALSE,
+	 '#size' =>15, 
+	 '#maxlength'=>6,
+	  '#minlength'=>6,
+	 '#default_value' => '',
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+	
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+    $form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listcorporation'),
+);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dsje_corporation_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $corporation_name = trim($values['corporation_name']);
+	$BO_code = $values['BO_code'];
+	 $corporation_type = trim($values['corporation_type']);
+	//$corporation_type= $form->corporation_type;
+	 //$add_line1 = trim($values['add_line1']);
+	//$add_line2 = trim($values['add_line2']);
+  //  $country_id = $form->country_id;
+    $district_id = $values['district_id'];
+    $state_id = $values['state_id'];
+   $tehsil_id = $values['tehsil_id'];
+	$block= trim($values['block_name']);
+	$panchayat = trim($values['panchayt_name']);
+    $pincode = $values['pincode'];
+	$add_type= trim($values['add_type']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+	//echo '<pre>';
+	//print_r($form);exit;
+	
+   fononlyn('pincode',$form->pincode,'Pin Code');
+  alphanumeric('block',$block,'Block');
+  alphanumeric('panchayat',$panchayat,'Panchayat');
+	//$kd=alphanumeric ('add_line1',$add_line1,'Address Line 1');
+	//	$bd=alphanumeric ('add_line2',$add_line2,'Address Line 2');
+	$s = textonlyn('corporation_name',$corporation_name,'corporation');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	
+	$add_line1=$values['add_line1'];
+	$add_line2=$values['add_line2'];
+	
+	
+	//echo "INSERT INTO {tbl_corporations} (`corporation_name`,`BO_code`,`corporation_type`,`add_type`,add_line1,add_line2,`district_id`,`tehsil_id`,`state_id`,`block`,`panchayat`,`pincode`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$corporation_name."','".$BO_code."','".$corporation_type."','".$add_type."','".$add_line1."','".$add_line2."','".$district_id."','".$tehsil_id."','".$state_id."','".$block."','".$panchayat."','".$pincode."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ";exit;
+	
+	if($s == 0 && $s1 == 0 && $kd==0 && $bd==0){
+		db_query("INSERT INTO {tbl_corporations} (`corporation_name`,`BO_code`,`corporation_type`,`add_type`,add_line1,add_line2,`district_id`,`tehsil_id`,`state_id`,`block`,`panchayat`,`pincode`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$corporation_name."','".$BO_code."','".$corporation_type."','".$add_type."','".$add_line1."','".$add_line2."','".$district_id."','".$tehsil_id."','".$state_id."','".$block."','".$panchayat."','".$pincode."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	
+	   
+		$message = getMessage('dsjecorporation', 'code05', array("0"=>$corporation_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listcorporation');
+	}
+}
+
+function dsje_corporation_form_validate($form, &$form_state) {
+	
+	$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Office', 'admin/dsje/listcorporation');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Office', 'admin/dsje/listcorporation/edit/corporation/'.$array[5].'');
+  }
+else{
+ $breadcrumb[] = l('Add Office', 'admin/dsje/listcorporation/add/corporation/'.$array[5].'');
+}
+  drupal_set_breadcrumb($breadcrumb);
+	
+	$values = $form_state['values'];
+	$corporation_name = trim($values['corporation_name']);
+	$BO_code = $values['BO_code'];
+	$remarks = parseData(trim($values['remarks']));
+	$block= trim($values['block']);
+	$panchayat = $values['panchayt_name'];
+    $pincode = $values['pincode'];
+	$addtype = $values['add_type'];
+	 $district_id = $values['district_id'];
+    $state_id = $values['state_id'];
+   $tehsil_id = $values['tehsil_id'];
+	//$add1=trim($values['add_line1']);
+	//$add2=trim($values['add_line2']);
+	  $add1=$form->add_line1;
+	$add2=$form->add_line2;
+	//////////////
+	  
+	  fononlyn('pincode',$form->pincode,'Pin Code');
+  alphanumeric('block',$block,'Block');
+  alphanumeric('panchayat',$panchayat,'Panchayat');
+	textonlywithdotne('add_line1',$add1,'Address Line 1');
+	textonlywithdotne('add_line2',$add2,'Address Line 2');
+	
+pincodelength($pincode,'pincode');
+
+
+	 fononlyn('BO_code',$BO_code,'Branch Office Code');
+	 
+	$s = textonlyn('corporation_name',$corporation_name,'corporation');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	$s = textonlyn('corporation_name',$corporation_name,'corporation');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if((strlen($BO_code))!=2){
+		 $message = 'Length of Branch Office code should be two.';	
+		form_set_error('BO_code', $message);
+	}
+	
+	$sqlu = "SELECT * FROM {tbl_corporations} where BO_code='$BO_code' ";
+	$resu = db_query($sqlu);
+	if($rsu = db_fetch_object($resu)){
+		$message = 'Sorry! Branch Office Code already in use.';	
+		form_set_error('BO_code', $message);
+	}
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_corporations} where UCASE(corporation_name)= '".strtoupper($corporation_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjecorporation', 'code06', array("0"=>$corporation_name));
+			form_set_error('corporation_name', $message);
+		}
+	}
+	
+if($addtype == '175')
+	{
+		if($panchayat == '')
+		{
+			form_set_error('panchayt_name','Please Select Panchayat.');		
+		}
+	
+	}	
+	
+		
+}
+
+function dsje_addcorporationedit($corporation_id){
+ return drupal_get_form('dsje_corporation_form_edit',$corporation_id);
+}
+
+function dsje_corporation_form_edit(&$form_states,$corporation_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Office', 'admin/dsje/listcorporation');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Office', 'admin/dsje/listcorporation/edit/corporation/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlcorporation = "select * FROM {tbl_corporations} where corporation_id=$corporation_id";
+	$rescorporation = db_query($sqlcorporation);
+	$rscorporation = db_fetch_object($rescorporation);
+	
+	$form['corporation_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscorporation->corporation_id,
+	);
+	
+	$form['prev_corporation_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscorporation->corporation_name,
+	);
+	$form['corporation_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Office Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rscorporation->corporation_name,
+		'#size' =>45,
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['BO_code'] = array(
+		'#type' => 'textfield',
+		'#size' => '45',
+		'#title' => t('Branch Office Code'),
+		'#required' => TRUE,
+		'#default_value' => $rscorporation->BO_code,
+		'#maxlength'=>2,
+		'#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+	);
+	
+			$form['corporation_type'] = array(
+ 		'#type' => 'select',
+		'#title' => t('Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rscorporation->corporation_type,
+		 '#options' => CorporationType(),
+
+);
+
+$form['add_type'] = array(
+ 
+		'#type' => 'select',
+		'#title' => t('Address Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rscorporation->add_type,
+		 '#options' => AddressType(),
+		 '#attributes' => array('onchange' => 'return changeMenu1234(this)'),
+
+);
+
+
+	$form['add_line1'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 1'),
+	'#required' => TRUE,
+	'#default_value' =>$rscorporation->add_line1,
+	'#size' =>100,
+	'#maxlength' =>100,
+	);
+	
+  $form['add_line2'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Address Line 2'),
+	'#required' => TRUE,
+	'#default_value' =>$rscorporation->add_line2,
+	'#size' =>100,
+	'#maxlength'=>100,
+	);
+	
+$form['state_id'] = array(
+	'#type' => 'select',
+	'#title' => t('State'),
+	'#required' => TRUE,
+	'#default_value' =>$rscorporation->state_id,
+	'#options' => selectstate(),
+	'#ahah' => array(
+				  'path' => 'rec/district',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'zone',
+				  ),
+	);
+	
+	
+
+	  $form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t('District'),
+		'#required' => TRUE,
+		'#default_value' =>$rscorporation->district_id,
+		'#options' =>GetDistrictStateWise($node->state_id),
+		'#ahah' => array(
+						  'path' => 'rec/tehsil',
+						  'method' => 'replace',
+						  'effect' => 'slide',
+						  'wrapper' =>'state',
+						  ), 
+	);
+
+	
+
+	$form['tehsil_id'] = array(
+			'#type' => 'select',
+			'#title' => t('Tehsil'),
+			'#required' => TRUE,
+			'#default_value' =>$rscorporation->tehsil_id,
+			'#options' =>GetTehsilDistrictWise($node->dsitrict_id,$node->state_id),
+			'#ahah' => array(
+					  'path' => 'dsje/block',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'block_test',
+					  ), 
+		   
+		);
+	//end;
+	
+	
+		
+  $form['block_name'] = array(
+	'#type' =>'select',
+	'#title' => t('Block'),
+	'#required' => TRUE,
+	'#default_value' =>$rscorporation->block,
+	'#options' => GetCityStateWise($rs->tehsil_id,$rs->dsitrict_id,$rs->state_id),
+	'#ahah' => array(
+					  'path' => 'dsje/panchayt',
+					  'method' => 'replace',
+					  'effect' => 'slide',
+					  'wrapper' =>'panchayt_test',
+					  ), 
+	);
+	
+	$statearray2[''] = '--Select--';	
+  $form['panchayt_name'] = array(
+	'#type' =>'select',
+	'#title' => t('Panchayat'),
+	'#required' => false,
+	'#default_value' =>$rscorporation->panchayat,
+	'#options' => $statearray2,
+	);
+	
+	
+ $form['pincode'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('PIN Code'),
+	 '#required' =>FALSE,
+	 '#size' =>15, 
+	 '#maxlength'=>6,
+	 '#default_value' => $rscorporation->pincode,
+	 '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+  );
+  
+	
+	
+	
+	
+	$form['prev_corporation_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rscorporation->corporation_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rscorporation->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listcorporation'),
+);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+
+//edit
+
+function dsje_corporation_form_edit_validate($form, &$form_state) {
+	
+	
+	
+	$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Office', 'admin/dsje/listcorporation');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Office', 'admin/dsje/listcorporation/edit/corporation/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	
+	$values = $form_state['values'];
+	$corporation_name = trim($values['corporation_name']);
+	$BO_code = trim($values['BO_code']);
+	$prev_corporation_name = trim($values['prev_corporation_name']);
+	$remarks = parseData(trim($values['remarks']));
+	 $district_id = $values['district_id'];
+    $state_id = $values['state_id'];
+   $tehsil_id = $values['tehsil_id'];
+	$block= trim($values['block_name']);
+	$panchayat = trim($values['panchayt_name']);
+    $pincode = $values['pincode'];
+	$addtype = $values['add_type'];
+	$add1=$form->add_line1;
+	$add2=$form->add_line2;
+	  fononlyn('pincode',$form->pincode,'Pin Code');
+  alphanumeric('block',$block,'Block');
+  alphanumeric('panchayat',$panchayat,'Panchayat');
+   fononlyn('BO_code',$BO_code,'Branch Office Code');
+	textonlywithdotne('add_line1',$add1,'Address Line 1');
+	textonlywithdotne('add_line2',$add2,'Address Line 2');
+	
+	$s = textonlyn('corporation_name',$corporation_name,'corporation');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	$s = textonlyn('corporation_name',$corporation_name,'corporation');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if((strlen($BO_code))!=2){
+		 $message = 'Length of Branch Office code should be two.';	
+		form_set_error('BO_code', $message);
+	}
+	
+	/*$sqlu = "SELECT * FROM {tbl_corporations} where BO_code='$BO_code' ";
+	$resu = db_query($sqlu);
+	if($rsu = db_fetch_object($resu)){
+		$message = 'Sorry! Branch Office Code already in use.';	
+		form_set_error('BO_code', $message);
+	}*/
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_corporations} where UCASE(corporation_name)= '".strtoupper($corporation_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res) && $prev_corporation_name!=$corporation_name){
+			$message = getMessage('dsjecorporation', 'code06', array("0"=>$corporation_name));
+			form_set_error('corporation_name', $message);
+		}
+	}
+	
+	if($addtype == 175)
+	{
+		
+		if($panchayat=='' || $panchayat==0){
+			form_set_error('panchayt_name','Panchayat field is required');		
+		}
+		
+			
+	}
+	
+	if($block == 0 || $block == '')
+	{
+		form_set_error('block_name','Block field is required');	
+		
+	}
+	
+	
+}
+
+//
+
+
+
+function dsje_corporation_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$corporation_id = $values['corporation_id'];
+	$corporation_name = ParseData($values['corporation_name']);
+	$BO_code = trim($values['BO_code']);
+	$prev_corporation_name = ParseData($values['prev_corporation_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	////////////////
+	
+	 $corporation_type = trim($values['corporation_type']);
+	//$corporation_type= $form->corporation_type;
+	 $add_line1 = trim($values['add_line1']);
+	$add_line2 = trim($values['add_line2']);
+  //  $country_id = $form->country_id;
+    $district_id = $values['district_id'];
+    $state_id = $values['state_id'];
+   $tehsil_id = $values['tehsil_id'];
+	$block= $values['block_name'];
+	//$panchayat = $values['panchayt_name'];
+    $pincode = $values['pincode'];
+	$add_type= $values['add_type'];
+	$add_line1= $values['add_line1'];
+	$add_line2= $values['add_line2'];
+	//////////////
+	
+	// fononlyn('pincode',$form->pincode,'Pin Code');
+  //alphanumeric('block',$block,'Block');
+ // alphanumeric('panchayat',$panchayat,'Panchayat');
+	//alphanumeric ('add_line1',$add_line1,'Address Line 1');
+	//	alphanumeric ('add_line2',$add_line2,'Address Line 2');
+	//$s = textonlyn('corporation_name',$corporation_name,'corporation');
+	//$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	
+	if($add_type=='72')
+	{
+	$panchayat =='';	
+		
+	}
+	
+	else if($add_type=='172')
+	{
+	$panchayat = $values['panchayt_name'];	
+	}
+	
+	else if($add_type)
+	{
+	$panchayat = $values['panchayt_name'];	
+	}
+	
+
+	$statusnodal =  1;  
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_corporations} where LOWER(corporation_name)= '".strtolower($corporation_name)."' GROUP BY corporation_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_corporation_name), strtolower($corporation_name))==0){
+			db_query("UPDATE {tbl_corporations} set `corporation_name` = '".$corporation_name."' ,`BO_code` = '".$BO_code."' ,`corporation_type`='".$corporation_type."',`add_type`='".$add_type."',`add_line1`='".$add_line1."',`add_line2`='".$add_line2."',`district_id`='".$district_id."',`tehsil_id`='".$tehsil_id."',`state_id`='".$state_id."',`block`='".$block."',`panchayat`='".$panchayat."',`pincode`='".$pincode."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',`remarks`='".$remarks."' where corporation_id='".$corporation_id."'");
+			
+			$message = getMessage('dsjecorporation', 'code11', array("0"=>$corporation_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listcorporation");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE {tbl_corporations} set `corporation_name` = '".$corporation_name."',`BO_code` = '".$BO_code."', `corporation_type`='".$corporation_type."',add_type='".$add_type."',add_line1='".$add_line1."',add_line2='".$add_line2."',district_id='".$district_id."',tehsil_id='".$tehsil_id."',state_id='".$state_id."',block='".$block."',panchayat='".$panchayat."',pincode='".$pincode."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where corporation_id='".$corporation_id."'");
+				
+				$message = getMessage('dsjecorporation', 'code11', array("0"=>$corporation_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listcorporation");	
+			
+			}else{
+				db_query("UPDATE {tbl_corporations} set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where corporation_id='".$corporation_id."'");
+				
+				$message = getMessage('dsjecorporation', 'code06', array("0"=>$corporation_name));
+				form_set_error('corporation_name', $message);
+			}
+		}
+	}
+	
+	
+	
+}
+
+function dsje_corporation_theme() {
+	
+	return array(
+				 
+		'dsje_corporation_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_corporation_form',
+                                 ),
+        'dsje_corporation_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_corporation_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_corporation_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_corporation_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_corporation_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function corporation_delete($sid, $sno){
+  $corporation_id =  $sid;
+  db_query("UPDATE {tbl_corporations} SET status=0 WHERE corporation_id ='".$corporation_id."'");
+  $message = getMessage('dsjecorporation', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listcorporation");
+ }
+
+
+  function corporation_enable($sid, $sno){
+    $corporation_id =  $sid;
+    db_query("UPDATE {tbl_corporations} SET status=1 WHERE corporation_id ='".$corporation_id."'");
+  
+    $message = getMessage('dsjecorporation', 'code10', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listcorporation");
+  }
+
+  function dsje_addcorporationview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Office', 'admin/dsje/listcorporation');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Office', 'admin/dsje/listcorporation/view/corporation/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * FROM {tbl_corporations} where corporation_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ $add_type=getLookupName($rs->add_type);
+ $corporation_type=getLookupName($rs->corporation_type);
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ if($rs->panchayat){
+	$panchayt = ucwords(getpanchayt($rs->panchayat));
+  
+}else{
+  $panchayt = 'NA';
+}
+ 
+$output .='<div id="form-container"><table cellpadding="2" cellspacing="1" border="0" id="wrapper2">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Office Details</h2></td></tr>';
+
+$output .='<tr class="evenrow"><td width="50%">Office:</td><td class="normal">'.ucwords($rs->corporation_name).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Branch Office Code:</td><td class="normal">'.ucwords($rs->BO_code).'</td></tr>';
+
+$output .='<tr class="evenrow"><td width="50%">Type:</td><td class="normal">'.ucwords($corporation_type).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Address Type:</td><td class="normal">'.ucwords($add_type).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Addresss Line 1:</td><td class="normal">'.ucwords($rs->add_line1).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Addresss Line 2:</td><td class="normal">'.ucwords($rs->add_line2).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">State:</td><td class="normal">'.ucwords(getState($rs->state_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">District:</td><td class="normal">'.ucwords(getdistrict($rs->district_id)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Tehsil:</td><td class="normal">'.ucwords(gettehsil($rs->tehsil_id)).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Block:</td><td class="normal">'.ucwords(getblock($rs->block)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Panchayat:</td><td class="normal">'.$panchayt.'</td></tr>';
+if($rs->pincode){
+$output .='<tr class="oddrow"><td width="50%">Pin code:</td><td class="normal">'.$rs->pincode.'</td></tr>';
+   }else{
+   $output .='<tr class="oddrow"><td width="50%">Pin code:</td><td class="normal">N/A</td></tr>';
+
+   }
+ ////$output .='<tr class="oddrow" width="50%"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+ $output .='<tr class="oddrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'admin/dsje/listcorporation').'</td></tr>';
+ $output .='</table></div>';
+ return $output;
+  }
+  
+  
+ 

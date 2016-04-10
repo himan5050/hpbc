@@ -1,0 +1,6 @@
+;$id:
+name = "Loan Issue Details"
+description ="Loan Issue Details Report"
+core = 6.x
+version =6.x-1
+package="Loanee Details module"

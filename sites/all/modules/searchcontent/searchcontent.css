@@ -1,0 +1,38 @@
+#lestednews{position: relative;}
+#lestednews #edit-search-box-wrapper{display:inline-block; width:320px;}
+#lestednews #edit-search-box-wrapper #edit-search-box{width:300px;}
+#lestednews .newses{border-bottom:1px solid #9D9D9D; padding-bottom:10px;}
+#lestednews .newses h2{padding-left:0;margin-top:10px;}
+#lestednews .newses h2 a{ color:#0099FF; font-size:18px; font-family:Arial, Helvetica, sans-serif; }
+#lestednews .newses span{ color:#333333; font-size:12px; font-family:Arial, Helvetica, sans-serif;}
+#lestednews .newses p{padding-bottom:0;}
+
+#block-searchcontent-0 input[type="text"]{
+color: #424242;
+width: 160px;
+/*height: 26px;*/
+padding: 2px 2px 0 5px;
+line-height: 19px;
+border: 0;
+margin-right:5px;
+}
+#csearch-form{position: relative;}
+#csearch-form-1{position: relative;}
+#block-searchcontent-0 input[type="submit"] {
+	background-image:url(../../themes/scst/images/search.gif);
+    border:none;
+    display: block;
+    height:23px;
+	float:right;
+    width:70px;
+	margin:0;
+	padding:0;
+	color:#006;
+	font-size:12px;
+	font-weight:bold;
+}
+
+
+
+#lestednews #contdiv{margin-top:30px;}
+#lestednews .count_no{position: absolute;left: 0;top: 40px;}

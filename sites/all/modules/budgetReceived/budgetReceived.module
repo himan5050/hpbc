@@ -1,0 +1,669 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/fdrCheque.inc');
+
+function budgetReceived_node_info() {
+	return array (
+					'budgetReceived' => array (
+										'name' => t('List of Budget Received'),
+										'module' => 'budgetReceived',
+										'description' => "Creates Budget Received",
+										'has_title' => TRUE,
+										'title_label' => t('Budget Received'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function budgetReceived_perm() {
+	return array('edit budgetReceived','administer budgetReceived', 'create budgetReceived', 'view budgetReceived');
+}
+
+function budgetReceived_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit budgetReceived', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create budgetReceived', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view budgetReceived', $account);
+	}
+}
+ 
+ function budgetReceived_menu(){
+	 $items['list/budgetReceivedList'] = array(
+		   'title' => 'List of Budget Received',
+		   'page callback' => 'budgetReceived_list',
+		   'access arguments' => array('administer budgetReceived'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewbudgetReceived/%'] = array(
+								'title' => t('view Budget Received'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_budgetReceived',
+								'page arguments' => array(1),
+								'access arguments' => array('administer budgetReceived'),
+		                        
+						);
+  
+  $items['admin/dsje/del/budgetReceived/%'] =  array(
+	               						 'title' => t('Delete Budget Received'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'budgetReceived_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer budgetReceived'),
+													 
+	);
+ $items['admin/dsje/enable/budgetReceived/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'budgetReceived_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer budgetReceived'),
+														 
+	);	
+	
+	
+	
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+  
+function budgetReceived_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjebudgetReceived', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	//array('data' => t('Due Date'), 'field' => 'tbl_budgetreceived.date_due', 'sort' => 'asc'),
+	array('data' => t('Head'), 'field' => 'head2', 'sort' => 'asc'),
+	array('data' => t('Amount'), 'field' => 'amount', 'sort' => 'asc'),
+	
+	array('data' => t('Action'),'class'=>'addeditview'),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Budget Received', 'list/budgetReceivedList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid, tbl_budgetreceived.head2,tbl_budgetreceived.amount FROM {node}
+	 INNER JOIN tbl_budgetreceived ON (node.nid=tbl_budgetreceived.nid)
+	 INNER JOIN tbl_headmaster ON (tbl_budgetreceived.head2= tbl_headmaster.vid)
+	  WHERE UPPER(tbl_headmaster.name1) LIKE '".$val."' OR amount LIKE '".$val."'  ".tablesort_sql($header);
+  
+     $sqlcount = "SELECT COUNT(*) AS count FROM {node}
+	INNER JOIN tbl_budgetreceived ON (node.nid=tbl_budgetreceived.nid)
+	 INNER JOIN tbl_headmaster ON (tbl_budgetreceived.head2= tbl_headmaster.vid)
+	 WHERE   UPPER(tbl_headmaster.name1) LIKE '".$val."' OR amount LIKE '".$val."' ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	  //  $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid, head2,amount FROM {node}
+	 INNER JOIN tbl_budgetreceived ON (node.nid=tbl_budgetreceived.nid)".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/budgetReceivedList';
+	 $output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjebudgetReceived', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/budgetReceivedList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage('dsjebudgetReceived', 'code01', NULL),"node/add/budgetReceived");
+   	$lising = getMessage('dsjebudgetReceived', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit");
+		$viewurl = l("View","viewbudgetReceived/".$rs->nid);
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/budgetReceived/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/budgetReceived/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+$no=db_query("select name1 from {tbl_headmaster} where vid='".$rs->head2."'");
+$noo=db_fetch_object($no);
+
+
+		$rows[] = array(
+			array('data' => $counter),
+			//array('data' => date('d-m-Y',strtotime($rs->date_due)),
+			array('data' => ucwords($noo->name1)),
+			array('data' => round($rs->amount)),
+           
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	return $output .=theme('pager', NULL, 20,0 );
+  }
+
+function budgetReceived_delete($nid){
+   $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("Delete FROM {tbl_budgetreceived} WHERE courtcase_id ='".$courtcase_id."'");
+  db_query("DELETE FROM {tbl_budgetreceived} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  $message=getMessage('dsjebudgetReceived','code07',array("0"=>ucwords(getHeadName($node->head2))));
+  drupal_set_message($message);
+  
+  drupal_goto("list/budgetReceivedList");
+ }
+
+function budgetReceived_enable($nid){
+  
+  $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("UPDATE {tbl_budgetreceived} SET 	statusnodal =1 WHERE nid ='".$node->nid."'");
+  //drupal_set_message('Vehicle Insurance has been enabled successfully.');
+  //drupal_goto("list/budgetReceivedList");
+ 
+ db_query("DELETE FROM {tbl_budgetreceived} WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  
+  $message=getMessage('dsjebudgetReceived','code07',array("0"=>ucwords(getHeadName($node->head2))));
+  drupal_set_message($message);
+  
+  drupal_goto("list/budgetReceivedList");
+ }
+
+
+function budgetReceived_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Budget Received', 'list/budgetReceivedList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Budget Received ', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Budget Received ', 'node/add/budgetReceived'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+  if(is_numeric(arg(1)))
+	 {
+	$sql = "SELECT * FROM {node} INNER JOIN tbl_budgetreceived ON (node.nid=tbl_budgetreceived.nid) WHERE node.nid='".arg(1)."'";
+     $res = db_query($sql);
+     $rs = db_fetch_object($res);
+	 }
+		
+	////////////////////////////////////
+	
+	
+	
+	
+$form['prev_code']=array(
+		'#type'=>'hidden',
+		'#required'=>FALSE,
+		'#default_value'=> $rs->code,
+		); 
+	 
+	
+	$form['head2'] = array(
+	'#type' => 'select',
+	'#title' => t('Head'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->head2,
+	'#options' => HeadValue(), 
+	);
+
+		$form['date1'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rs->date1,
+	);
+$form['prev_amount'] = array(
+     '#type' =>'hidden',
+	
+	 '#required' =>FALSE,
+	 
+	 '#default_value' => $rs->amount,
+	 
+  );
+	
+ $form['amount'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Amount'),
+	 '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $rs->amount,
+	 '#attributes' => array('onkeypress' => 'return  paypay(event)'),	
+  );
+
+$form['fin_year'] = array(
+	'#type' => 'select',
+	'#title' => t('Financial Year'),
+	'#required' => TRUE,
+	'#default_value' =>$rs->fin_year,
+	'#options' => FinancialYear(), 
+	);
+	
+
+
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/budgetReceivedList'),	
+);
+
+
+return $form;
+} 
+
+
+
+
+
+
+function budgetReceived_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Budget Received', 'list/budgetReceivedList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Budget Received ', 'node/'.$array[1].'/edit');
+	}else{
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add Budget Received ', 'node/add/budgetReceived');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+	
+
+	paypay('amount',$form->amount,'Amount');
+	
+	
+
+
+	
+	 
+}
+
+/**
+ *hook_form_alter
+ */
+function budgetReceived_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);
+	 
+	
+	if($form_id =='budgetReceived_node_form'){
+	 
+	 $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	 
+	 
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function budgetReceived_insert($node){
+   global $user;
+   
+  //all values
+  /////////
+ $amount=$node->amount;
+ $fin_year=$node->fin_year;
+	$head=$node->head2;
+	$date=$node->date1;
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   $ht=db_query("select type1 from {tbl_headmaster} where vid='".$head."'");
+   $headtype=db_fetch_object($ht);
+
+db_query ("INSERT INTO {tbl_budgetreceived} (`vid`, `nid`,`head2`, `date1`,`amount`,`fin_year`,`headtype`) VALUES ('".$vid."','".$nid."','".$head."','".$date."','".$amount."','".$fin_year."','".$headtype->type1."')");
+
+//echo "select budget,total_remaining from {tbl_budgetdistribution} where `headtype`='".$head."' and `fin_year`='".$fin_year."'";
+$osis=db_query("select budget,total_remaining from {tbl_budgetdistribution} where `headtype`='".$head."' and `fin_year`='".$fin_year."'");
+
+$asis=db_fetch_object($osis);
+
+$upbudget=$asis->budget + $amount;
+$uptotal=$asis->total_remaining + $amount;
+
+//echo $uptotal;exit;
+
+db_query("update {tbl_budgetdistribution} set `budget`='".$upbudget."',`total_remaining`='".$uptotal."'  where headtype='".$head."' and `fin_year`='".$fin_year."'");
+	
+  //  drupal_set_message('Vehicle Insurance Entry has been saved successfully.');
+	$message=getMessage('dsjebudgetReceived','code05',array("0"=>ucwords(getHeadName($node->head2))));
+  drupal_set_message($message);
+	drupal_goto("list/budgetReceivedList");
+
+ 
+ 
+ }
+
+function budgetReceived_update($node){
+	$prev_amount=$node->prev_amount;
+	 $amount=$node->amount;
+ $fin_year=$node->fin_year;
+	$head=$node->head2;
+	$date=$node->date1;
+	
+ 
+    
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   
+	$ht=db_query("select type1 from {tbl_headmaster} where vid='".$head."'");
+   $headtype=db_fetch_object($ht);
+	
+	db_query("UPDATE {tbl_budgetreceived} SET `head2`='".$head."',`date1`='".$date."',`amount`='".$amount."',`fin_year`='".$fin_year."',headtype='".$headtype->type1."' WHERE nid='".$nid."'");
+	
+	
+	if($prev_amount != $amount){
+	
+	$osis=db_query("select budget,total_remaining from {tbl_budgetdistribution} where `headtype`='".$head."' and `fin_year`='".$fin_year."'");
+
+$asis=db_fetch_object($osis);
+
+$upbudget=$asis->budget + $amount;
+$uptotal=$asis->total_remaining + $amount;
+
+//echo $uptotal;exit;
+
+db_query("update {tbl_budgetdistribution} set `budget`='".$upbudget."',`total_remaining`='".$uptotal."'  where headtype='".$head."' and `fin_year`='".$fin_year."'");
+	
+	}
+	
+	
+	//drupal_set_message('Budget Received have been updated successfully.');
+	
+	$message=getMessage('dsjebudgetReceived','code06',array("0"=>ucwords(getHeadName($node->head2))));
+  drupal_set_message($message);
+	drupal_goto("list/budgetReceivedList");
+	
+	
+}
+
+
+function budgetReceived_theme() {
+	
+	return array(
+				 
+		'budgetReceived_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'budgetReceived_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+
+
+/*function budgetReceived_cron(){
+
+//$curr_date=date();
+$start=date('Y-m-d');
+
+$selDate=db_query("select * FROM {tbl_budgetreceived} ");
+
+while($rs=db_fetch_object($selDate)){
+
+$date_diff=dateDiffByDays($start,$rs->date_to);
+
+if($date_diff==15 && $rs->remind_mail==0 && $rs->notification==84){
+
+
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+//$to = $u->mail;
+	$finduid=db_query("select * from {users_roles} where rid=13");
+$reg_no=db_fetch_object($reg);
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+if(createMail('budgetReceived', $ms->mail,'',$parameter,''))
+{
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_budgetreceived} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+
+}
+}
+}
+
+else if($date_diff==3 && $rs->remind_mail==1 && $rs->notification==84){
+
+
+
+
+//$to = $u->mail;
+	
+	$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+	$reg_no=db_fetch_object($reg);
+	$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('budgetReceived', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_budgetreceived} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+}}
+
+}
+
+
+else if($date_diff==0 && $rs->remind_mail <= 3 && $rs->notification==84){
+
+
+
+
+
+
+//$to = $u->mail;
+$reg=db_query("select reg_no from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+$reg_no=db_fetch_object($reg);
+$finduid=db_query("select * from {users_roles} where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from {users} where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('budgetReceived_today', $ms->mail,'',$parameter,'')){
+$reminder= $rs->remind_mail + 1;
+db_query("UPDATE {tbl_budgetreceived} set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+} 
+
+}
+}}
+
+
+}
+
+
+*/
+
+
+
+
+
+
+
+
+
+ 
+/*function budgetReceived_load($node){
+$sql = "SELECT * FROM {node} INNER JOIN tbl_budgetreceived ON (node.nid=tbl_budgetreceived.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}*/
+  
+function view_budgetReceived($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Budget Received', 'list/budgetReceivedList');
+   if($array[0] == 'viewbudgetReceived'){
+     $breadcrumb[] = l('View Budget Received', 'viewbudgetReceived/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * FROM {tbl_budgetreceived} where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from {users} where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+//$add_type=getLookupName($rs->add_type);
+//$regnowa=db_query("select * from {tbl_vehicles} where vehicle_id='".$rs->reg_no."'");
+//$regno= db_fetch_object($regnowa);
+//$notification=getLookupName($rs->notification);
+$ks=db_query("select name1 from {tbl_headmaster} where vid='".$rs->head2."'");
+$head=db_fetch_object($ks);
+
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-conatiner">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Budget Received</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Head:</td><td class="normal"> '.ucwords($head->name1).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date1)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Amount:</td><td class="normal"> '.round($rs->amount).'</td></tr>';
+//$output .='<tr class="oddrow" colspan="2"><td>PERIOD</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Financial Year:</td><td class="normal"> '.(getLookupName($rs->fin_year)).'</td></tr>';
+$output .='<tr class="evenrow"><td align="center" class="back" colspan="2">'.l(t('Back'), 'list/budgetReceivedList').'</td></tr>'; 
+ $output .='</table>';
+return $output ;
+}

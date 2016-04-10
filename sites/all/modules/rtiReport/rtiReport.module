@@ -1,0 +1,170 @@
+<?php
+//global $base_url;
+
+/**
+ *hook_perm
+ 
+ 
+ */
+ 
+ function rtiReport_init() {
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+ 
+function rtiReport_perm() {
+	return array('edit rtiReport','administer rtiReport', 'create rtiReport', 'view rtiReport');
+}
+
+function rtiReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit rtiReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create rtiReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view rtiReport', $account);
+	}
+	
+}
+
+
+function rtiReport_menu(){
+
+  $items['report_rti'] = array(
+										'title' => t('RTI Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'report_rti',
+										'access arguments' => array('administer rtiReport'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function report_rti(){
+  return drupal_get_form('rtiReport_form');
+}
+
+function rtiReport_form(){
+	
+	global $base_url;
+
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('RTI Report', 'report_rti');
+  drupal_set_breadcrumb($breadcrumb);
+
+
+
+$form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t(''),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+						   
+		);				   
+ 	
+$sqlDepartmentsquery= "SELECT lookupType_id FROM tbl_lookuptypes WHERE lookupType_id='19'";
+
+$sqlDepartments= db_query($sqlDepartmentsquery);
+$rsDepartments=db_fetch_object($sqlDepartments);
+$sqlDepartmentslookquery = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rsDepartments->lookupType_id."' ORDER BY lookup_name ASC";
+
+$resDepartmentslookquery= db_query($sqlDepartmentslookquery);
+$Departmentslookquery['']= '--Select--';
+if($resDepartmentslookquery){
+
+while($rssender1 = db_fetch_object($resDepartmentslookquery)){
+
+$Departmentslookquery[$rssender1->lookup_id] = ucwords($rssender1->lookup_name);
+
+}
+
+}						   
+ 
+ $form['section'] = array (
+							 '#type' => 'select',
+							 '#title' => t(''),
+							 '#options' =>$Departmentslookquery,
+							 
+							 );
+							 
+							 
+$sqlcountry = "select * from tbl_district WHERE status='1' ORDER BY district_name";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--Select--'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->district_id] = ucfirst($rscountry->district_name);
+	  }
+	}
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => false,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		
+	);							 
+ 
+ 
+$form['status'] = array (
+							 '#type' => 'select',
+							 '#title' => t(''),
+							 '#options' =>array(''=> '--Select--', 'Pending' => 'Pending', 'close' => 'close'),
+							 
+							 );
+ 
+
+ 
+ 
+
+ 
+ 
+						   
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function rtiReport_theme() {
+	
+	return array(
+		
+		'rtiReport_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'rtiReport_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

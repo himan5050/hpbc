@@ -1,0 +1,10 @@
+name = Simplify node add
+description = Module that makes it easier to edit and add nodes. It removes unneccesary field from the forms
+package = Usability
+core = 6.x
+; Information added by drupal.org packaging script on 2011-03-25
+version = "6.x-1.5"
+core = "6.x"
+project = "simplify_node_add"
+datestamp = "1301055969"
+

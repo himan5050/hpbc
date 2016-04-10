@@ -1,0 +1,6 @@
+;$id 
+name="Outbound Deputation"
+description="Outbound Deputation Module"
+core =6.x
+version = 6.x-1
+package="Dsje"

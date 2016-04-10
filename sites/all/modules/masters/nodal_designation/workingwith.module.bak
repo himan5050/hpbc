@@ -1,0 +1,395 @@
+<?php
+
+function workingwith_perm() {
+	return array('edit workingwith','administer workingwith', 'create workingwith', 'view workingwith');
+}
+
+function workingwith_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit workingwith', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create workingwith', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view workingwith', $account);
+	}
+	
+}
+
+function workingwith_menu() {
+	
+	
+	$items['workingwith_list'] = array(
+										'title' => t('List of Franchisee Company (Working With)'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'list_workingwith',
+										'access arguments' => array('administer workingwith'),
+													 
+									  );
+	
+	$items['workingwith_list/add'] = array(
+										'title' => t('Add Franchise Company Name'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'add_company_franchisee',
+										'access arguments' => array('administer workingwith'),
+													 
+									  );
+   	$items['workingwith_list/edit/%'] = array(
+								
+										'title' => t('Edit Franchisee Company Name'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'edit_company_franchisee',
+                                        'page arguments' => array(2),
+		                                'access arguments' => array('administer workingwith'),
+													 
+									  );
+  $items['workingwith_list/view/%'] = array(
+										'title' => t('View Franchisee Company'),
+										'type' => MENU_CALLBACK,
+										'page callback' => 'view_company_franchisee',
+                                        'page arguments' => array(2),
+		                                'access arguments' => array('administer workingwith'),
+													 
+									  );
+     $items['workingwith_list/disable/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'company_franchisee_delete',
+		                                'page arguments' => array(2,3),
+		                                'access arguments' => array('administer workingwith'),
+													 
+									  );
+   $items['workingwith_list/enable/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'company_franchisee_enable',
+		                                'page arguments' => array(2,3),
+		                                'access arguments' => array('administer workingwith'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing Company Franchisee
+ */
+ function list_workingwith(){
+    global $user;
+	global $base_url;
+	$limit = 20;
+    $utility_id = getUserUtility($user->uid);
+	$header = array(
+			array('data' => t('S.No')),
+			array('data' => t('Franchisee Company'), 'field' => 'workingwith_name', 'sort' => 'asc'),
+			array('data' => t('Status')),
+			array('data' => t('Action')),
+	);
+	
+	
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	$query = "SELECT workingwith_id, workingwith_name, status FROM tbl_workingwith where UPPER(workingwith_name) LIKE '".$val."' AND utility_id='".$utility_id."'".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count FROM tbl_workingwith where UPPER(workingwith_name) LIKE '".$val."' AND utility_id='".$utility_id."'".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT workingwith_id, workingwith_name, status FROM tbl_workingwith where utility_id='".$utility_id."'".tablesort_sql($header);
+ }
+ $output = '<form method="POST" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="tblHeaderLeft">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t($rscounter->count .'record(s) found.')." | ".l('View All','workingwith_list');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight">
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Go"></td></tr>';
+	
+	$addurl = l('Add Franchisee Company',"workingwith_list/add");
+   	$lising = t( 'List of Franchisee Company');
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+	<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","workingwith_list/edit/".$row->workingwith_id);
+		$viewurl = l("View","workingwith_list/view/".$row->workingwith_id);
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","workingwith_list/disable/".$row->workingwith_id."/".$row->workingwith_name);
+		}else{
+		  $deleteurl = l("Enable","workingwith_list/enable/".$row->workingwith_id."/".$row->workingwith_name);
+		}
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->workingwith_name)),
+			array('data' => $st),
+			array('data' => $viewurl."|".$editurl."|".$deleteurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function edit_company_franchisee($workingwith_id){
+ return drupal_get_form('workingwith_form_edit',$workingwith_id);
+}
+
+function workingwith_form_edit(&$form_states,$workingwith_id) {
+				  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Franchisee Company (Working With) ', 'workingwith_list');
+  if($array[1] == 'edit'){
+     $breadcrumb[] = l('Edit Franchisee Company (Working With) ', 'workingwith_list/edit/'.$array[2].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);	
+	$sqlworkingwith = "select * from tbl_workingwith where workingwith_id=$workingwith_id";
+	$resworkingwith = db_query($sqlworkingwith);
+	$rsworkingwith = db_fetch_object($resworkingwith);
+	
+	$form['workingwith_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Working With (Franchisee Comapny)'),
+		'#required' => TRUE,
+		'#default_value' =>$rsworkingwith->workingwith_name,
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlynw(event)'),
+	);
+   
+	$form['prev_workingwith_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsworkingwith->workingwith_name,
+	);
+	
+	$form['workingwith_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsworkingwith->workingwith_id,
+	);
+    
+	
+	$form['status'] = array(
+		'#type' => 'hidden',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rsworkingwith->status,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+function workingwith_form_edit_validate($form, &$form_state) {
+   $values = $form_state['values'];
+   textonlynw('workingwith_name',$values['workingwith_name'],'Working With (Franchisee Comapny)');
+}
+
+function workingwith_form_edit_submit($form, &$form_state) {
+	global $user;
+	$utility_id = getUserUtility($user->uid);
+
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$workingwith_id = $values['workingwith_id'];
+	$workingwith_name = parseData(trim($values['workingwith_name']));
+	$prev_workingwith_name = parseData(trim($values['prev_workingwith_name']));
+
+ $countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_workingwith} where LOWER(workingwith_name)= '".strtolower($workingwith_name)."' AND workingwith_id !='".$workingwith_id."' GROUP BY workingwith_id" ));
+		$count = $countObj->count;
+     
+			if( strcmp(strtolower($prev_workingwith), strtolower($workingwith_name))==0){
+			db_query("UPDATE `tbl_workingwith` set `workingwith_name` = '".$workingwith_name."' ,`status`='".$status."' ,`utility_id`='".$utility_id."' where workingwith_id='".$workingwith_id."'");
+			
+			$message = 'Working With (Franchisee Company) '.$workingwith_name.' has been updated successfully.';
+			drupal_set_message($message);
+			drupal_goto("workingwith_list");	
+				
+				}
+				
+				else
+					{
+			if($count==0){
+				db_query("UPDATE `tbl_workingwith` set `workingwith_name` = '".$workingwith_name."' ,`status`='".$status."' ,`utility_id`='".$utility_id."' where workingwith_id='".$workingwith_id."'");
+				
+			$message = 'Working With (Franchisee Company) '.$workingwith_name.' has been updated successfully.';
+			drupal_set_message($message);
+			drupal_goto("workingwith_list");	
+				}
+				else{
+				db_query("UPDATE `tbl_workingwith` set `workingwith_name` = '".$workingwith_name."' ,`status`='".$status."' ,`utility_id`='".$utility_id."' where workingwith_id='".$workingwith_id."'");
+				$message = 'Working With (Franchisee Company) '.$workingwith_name.' already exist.';
+				form_set_error('workingwith_name', $message);
+		}
+	  }
+}
+function add_company_franchisee(){
+ return drupal_get_form('workingwith_form');
+}
+function workingwith_form() {
+							  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Franchisee Company (Working With) ', 'workingwith_list');
+  if($array[1] == 'add'){
+     $breadcrumb[] = l('Add Franchisee Company (Working With) ', 'workingwith_list/add');
+  }
+  drupal_set_breadcrumb($breadcrumb);	
+   $form['workingwith_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Working With (Franchisee Comapny)'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+	    '#attributes' => array('onkeypress' => 'return textonlynw(event)'),
+	);
+   
+		
+	$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	return $form;
+}
+
+function workingwith_form_validate($form, &$form_state) {
+     $values = $form_state['values'];
+	 $workingwith_name = ParseData(trim($values['workingwith_name']));
+      textonlynw('workingwith_name',$values['workingwith_name'],'Working With (Franchisee Comapny)');
+      $sql = "SELECT * FROM {tbl_workingwith} where UCASE(workingwith_name)= '".strtoupper($workingwith_name)."' ";
+	  $res = db_query($sql);
+	 if($rs = db_fetch_object($res)){
+			$message = 'Working With (Franchisee Company) '.$workingwith_name.' already exist.';
+			form_set_error('workingwith_name', $message);
+		}
+	
+}
+function workingwith_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $workingwith_name = ParseData(trim($values['workingwith_name']));
+    $status = $values['status'];
+	$utility_id = getUserUtility($user->uid);
+    
+	$sql = "SELECT * FROM {tbl_workingwith} where UCASE(workingwith_name)= '".strtoupper($workingwith_name)."' AND status !=1";
+    $res = db_query($sql);
+    if($rs = db_fetch_object($res)){
+		  db_query("UPDATE tbl_workingwith SET status=1 where workingwith_id=$rs->workingwith_id");
+	}else{
+
+	db_query("INSERT INTO `tbl_workingwith` (`workingwith_name`,`status` ,`utility_id`) VALUES('".$workingwith_name."','".$status."','".$utility_id."') ");
+   }
+   $message = 'Working With (Franchisee Company) '.$workingwith_name.' has been saved successfully.';
+			drupal_set_message($message);
+			drupal_goto("workingwith_list");	
+}
+
+
+function workingwith_theme() {
+	
+	return array(
+				 
+		'workingwith_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'workingwith_form',
+                                 ),
+        'workingwith_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'workingwith_form_edit',
+                                 ),
+
+				 );
+}
+
+function company_franchisee_delete($sid,$name){
+  $workingwith_id = $sid;
+  $sql = "SELECT workingwith_id FROM tbl_participant_master where workingwith_id='".$workingwith_id."' AND status=1";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+  if($rs->workingwith_id){
+    form_set_error('','The Working With (Franchisee Company) '.$workingwith_name.' cannot be disabled as it has other entities mapped to it.');
+  }else{
+	  db_query("UPDATE `tbl_workingwith` SET status=0 WHERE workingwith_id='".$workingwith_id."'");
+	  $message = 'Working With (Franchisee Company) '.$workingwith_name.' has been disabled successfully.';
+	  drupal_set_message($message);
+	  
+  }
+  drupal_goto('workingwith_list');
+}
+
+function company_franchisee_enable($sid,$name){
+	  $workingwith = $sid;
+      db_query("UPDATE `tbl_workingwith` SET status=1 WHERE workingwith_id='".$workingwith."'");
+	  $message = 'Working With (Franchisee Company) '.$workingwith_name.' has been enabled successfully.';
+	  drupal_set_message($message);
+	  drupal_goto('workingwith_list');
+ }
+  
+  function view_company_franchisee($id){
+				  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Franchisee Company (Working With) ', 'workingwith_list');
+  if($array[1] == 'edit'){
+     $breadcrumb[] = l('View Franchisee Company (Working With) ', 'workingwith_list/view/'.$array[2].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);	
+    $sql = "select * from tbl_workingwith where workingwith_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+      $status ='Enabled';
+	}else{
+	   $status ='Disabled';
+	}
+ 
+	 $output .='<div id="dms-agreement"><table cellpadding="0" cellspacing="0" border="0" id="wrapper">';
+	 $output .='<tr class="oddrow"><td colspan="2"><h2>Working With (Franchisee Company) Details</h2></td></tr>';
+	 $output .='<tr class="evenrow"><td>Working With (Franchisee Company):</td><td>'.ucwords($rs->workingwith_name).'</td></tr>';
+	 $output .='<tr class="oddrow"><td>Status:</td><td>'.$status.'</td></tr>';
+	 $output .='</table></div>';
+	 return $output;
+  }
+	
+	

@@ -1,0 +1,1062 @@
+<?php
+function dsje_court_init() {
+	drupal_add_js(drupal_get_path('module', 'dsje_court') .'/dsje_court.js');
+	drupal_add_js(drupal_get_path('module', 'dsje_lawyer') .'/dsje_lawyer.js');
+	
+}
+
+function dsje_court_perm() {
+	return array('edit dsje_court','administer dsje_court', 'create dsje_court', 'view dsje_court');
+}
+
+function dsje_court_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_court', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_court', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_court', $account);
+	}
+	
+}
+
+function dsje_court_menu() {
+
+
+	
+	
+	
+//bank branch Details Menu
+
+
+
+  $items['dsje/listcourtcase/%'] = array(
+										'title' => t('List of Court Case Hearing'),
+										'description' => 'Allow user to View Hearing',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewcourt',
+										'page arguments' => array(2),
+										'access arguments' => array('administer dsje_court'),
+													 
+									  );
+	
+	$items['dsje/listcourtcase/addcourt/%'] = array(
+										'title' => t('Create Court Case Hearing'),
+										'description' => 'Allow user to add Court Case Hearing',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addcourt',
+										 'page arguments' => array(3),
+										'access arguments' => array('administer dsje_court'),
+													 
+									  );
+   	$items['dsje/listcourtcase/edit/courtcase/%'] = array(
+										'title' => t('Edit Court Case Hearing'),
+										'description' => 'Allow user to add Court',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addcourtcaseedit',
+                                        'page arguments' => array(4),
+		                                'access arguments' => array('administer dsje_court'),
+													 
+									  );
+  	$items['dsje/listcourtcase/view/courtcase/%'] = array(
+										'title' => t('View Court Case Hearing'),
+										'description' => 'Allow user to add Court',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addcourtcaseview',
+                                        'page arguments' => array(4),
+		                                'access arguments' => array('administer dsje_court'),
+													 
+									  );
+   $items['dsje/del/court/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'courtcase_delete',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer dsje_court'),
+													 
+									  );
+   $items['dsje/enable/court/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'courtcase_enable',
+		                                'page arguments' => array(3,4),
+		                                'access arguments' => array('administer dsje_court'),
+													 
+									  );
+	return $items;
+}
+
+
+
+
+ function viewcourt($x){
+    global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage( 'dsjehearingcourtcase', 'code04', NULL);
+	
+if($x != 'nt')
+{
+  
+ $header = array(
+		array('data' => t('S. No.')),
+	     array('data' => t('Court Case No.'), 'field' => 'case_no', 'sort' => 'asc'),
+        //array('data' => t('Lawyer Address'), 'field' => 'case_no', 'sort' => 'asc'),
+		array('data' => t('Status'), 'field' => 'tbl_courtcase.status', 'sort' => 'asc'),
+		array('data' => t('Action'),'class' => 'addeditview'),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Court Case Hearing', 'dsje/listcourtcase/nt'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	
+	
+	
+	 $query = "SELECT tbl_courtcase.courtcase_id, tbl_courtcase.case_no,tbl_courtcase.status,tbl_lookups.lookup_name 
+FROM {tbl_courtcasehearing}
+LEFT JOIN tbl_courtcase ON ( tbl_courtcasehearing.courtcase_id = tbl_courtcase.case_no )
+LEFT JOIN tbl_lookups on (tbl_lookups.lookup_id = tbl_courtcase.status) 
+ where (tbl_courtcase.case_no LIKE '".$val."' OR tbl_lookups.lookup_name LIKE '".$val."') and tbl_courtcasehearing.nid='".$x."' ".tablesort_sql($header);
+
+	 $sqlcount = "SELECT COUNT(*) AS count FROM {tbl_courtcasehearing}
+LEFT JOIN tbl_courtcase ON ( tbl_courtcasehearing.courtcase_id = tbl_courtcase.case_no ) 
+LEFT JOIN tbl_lookups on (tbl_lookups.lookup_id = tbl_courtcase.status)  where (tbl_courtcase.case_no LIKE '".$val."' OR tbl_lookups.lookup_name LIKE '".$val."') and tbl_courtcasehearing.nid='".$x."'  ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	$_REQUEST['page']=0;
+ 
+ }else{
+ 
+ 
+    $query = "SELECT tbl_courtcase.courtcase_id, tbl_courtcase.case_no,tbl_courtcase.status,tbl_lookups.lookup_name ,tbl_courtcasehearing.court_states 
+FROM {tbl_courtcasehearing}
+inner JOIN tbl_courtcase ON ( tbl_courtcasehearing.courtcase_id = tbl_courtcase.case_no ) 
+LEFT JOIN tbl_lookups on (tbl_lookups.lookup_id = tbl_courtcase.status) 
+WHERE tbl_courtcasehearing.nid='".$x."'  ".tablesort_sql($header);
+ }
+  global $base_url;
+$action = $base_url.'/dsje/listcourtcase/nt';
+ 
+ $output = '<form method="post" action = "'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjehearingcourtcase', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','dsje/listcourtcase/nt');
+	}
+	
+	$sqlc = "select * FROM {tbl_courtcasehearing} where nid='".$x."' and court_states=144";
+	$resc = db_query($sqlc);
+	$rsc = db_fetch_object($resc);
+	if($rsc->nid){}else{
+	$addurl = l(getMessage( 'dsjehearingcourtcase', 'code01', NULL),"dsje/listcourtcase/addcourt/$x");
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	 
+   	$lising = getMessage( 'dsjehearingcourtcase', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		
+		if($row->court_states != 144){
+		$editurl = l("Edit","dsje/listcourtcase/edit/courtcase/".$row->courtcase_id);
+		$viewurl = l("View","dsje/listcourtcase/view/courtcase/".$row->courtcase_id);
+		$deleteurl = l("Delete","dsje/del/court/".$row->courtcase_id."/".$row->case_no);
+		$action = $viewurl." | ".$editurl." | ".$deleteurl;
+		}
+		else{
+		$viewurl = l("View","dsje/listcourtcase/view/courtcase/".$row->courtcase_id);
+		$action = $viewurl;
+		}
+		//$deleteurl = l("Delete","dsje/del/court/".$row->courtcase_id."/".$row->case_no);
+		/*if($row->status=='1'){
+		  $deleteurl = l("Disable","dsje/del/court/".$row->courtcase_id."/".$row->case_no);
+		}else{
+		  $deleteurl = l("Enable","dsje/enable/court/".$row->courtcase_id."/".$row->case_no);
+		}*/
+		if($row->status==39){
+		       $st=getLookupName($row->status);
+		    }
+
+             else if($row->status==40){
+			   $st=getLookupName($row->status);
+			}
+
+            else if($row->status=='288')
+			{
+
+              $st=getLookupName($row->status);
+
+               }
+
+        else if($row->status==144){
+
+           $st=getLookupName($row->status);
+
+        }
+
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => $row->case_no),
+			//array('data' => $row->address),
+			
+			array('data' => $st),
+			array('data' => $action),
+			//array('data' => $viewurl."|".$editurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+ 
+ else
+ {
+ 
+  $header = array(
+		array('data' => t('S. No.')),
+	     array('data' => t('Court Case No.'), 'field' => 'tbl_courtcase.case_no', 'sort' => 'asc'),
+        //array('data' => t('Lawyer Address'), 'field' => 'case_no', 'sort' => 'asc'),
+		array('data' => t('Status'), 'field' => 'tbl_courtcase.status', 'sort' => 'asc'),
+		array('data' => t('Action'),'class' => 'addeditview'),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Court Case Hearing', 'dsje/listcourtcase/nt'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	
+ if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	
+	
+	
+	$query = "SELECT tbl_courtcase.courtcase_id, tbl_courtcase.case_no,tbl_courtcase.status,tbl_lookups.lookup_name  FROM {tbl_courtcase}
+	LEFT JOIN tbl_lookups on (tbl_lookups.lookup_id = tbl_courtcase.status) 	
+	 where tbl_courtcase.case_no LIKE '".$val."' OR tbl_lookups.lookup_name LIKE '".$val."' ".tablesort_sql($header);
+	 $sqlcount = "SELECT COUNT(*) AS count FROM {tbl_courtcase} LEFT JOIN tbl_lookups on (tbl_lookups.lookup_id = tbl_courtcase.status)	 where tbl_courtcase.case_no LIKE '".$val."' OR tbl_lookups.lookup_name LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	$_REQUEST['page']=0;
+ 
+ }else{
+     $query = "SELECT tbl_courtcase.courtcase_id, tbl_courtcase.case_no,tbl_courtcase.status,tbl_lookups.lookup_name FROM {tbl_courtcase} 
+	LEFT JOIN tbl_lookups on (tbl_lookups.lookup_id = tbl_courtcase.status) 
+	".tablesort_sql($header);
+ }
+ $output = '<form method="post" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage( 'dsjehearingcourtcase', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','dsje/listcourtcase/nt');
+	}
+	
+	$addurl = l(getMessage( 'dsjehearingcourtcase', 'code01', NULL),"dsje/listcourtcase/addcourt/er");
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	 
+   	$lising = getMessage( 'dsjehearingcourtcase', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query, $limit);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+
+		$sqle = "select court_states FROM {tbl_courtcasehearing}  where courtcase_id='".$row->case_no."'";
+		$rese = db_query($sqle);
+		$rse = db_fetch_object($rese);
+		
+		if($rse->court_states == 144){
+		  $viewurl = l("View","dsje/listcourtcase/view/courtcase/".$row->courtcase_id);
+		  $editurl = l("Edit","dsje/listcourtcase/edit/courtcase/".$row->courtcase_id);
+		  $deleteurl = l("Delete","dsje/del/court/".$row->courtcase_id."/".$row->case_no);
+		  $actions = $viewurl;
+		   
+		}else{
+		 $viewurl = l("View","dsje/listcourtcase/view/courtcase/".$row->courtcase_id);
+		  $editurl = l("Edit","dsje/listcourtcase/edit/courtcase/".$row->courtcase_id);
+		  $deleteurl = l("Delete","dsje/del/court/".$row->courtcase_id."/".$row->case_no);
+		  $actions = $viewurl.' | '.$editurl.' | '.$deleteurl;
+		}
+		
+		
+		
+		
+		if($row->status==39){
+		       $st=getLookupName($row->status);
+		    }
+
+             else if($row->status==40){
+			   $st=getLookupName($row->status);
+			}
+
+            else if($row->status=='288')
+			{
+
+              $st=getLookupName($row->status);
+
+               }
+
+        else if($row->status==144){
+
+           $st=getLookupName($row->status);
+
+        }
+
+
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => $row->case_no),
+			//array('data' => $row->address),
+			
+			array('data' => $st),
+			array('data' => $actions),
+			//array('data' => $viewurl."|".$editurl),
+		);
+	}
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ 
+ 
+ }
+ }
+ 
+
+
+function dsje_addcourt($x){
+ return drupal_get_form('dsje_court_form',$x);
+}
+function dsje_court_form($form1,$x) {
+			$array = explode('/',$_GET['q']);
+			global $base_url;
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of CourtCase', 'dsje/listcourtcase/nt');
+  
+  if($array[2] == 'addcourt'){
+     $breadcrumb[] = l('Add Hearing', 'dsje/listcourtcase/addcourt');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  
+  $ed=db_query("select status FROM {tbl_courtcasehearing} where status=144");
+  if($r=db_fetch_object($ed))
+  {
+  
+  }
+  
+  else
+  {
+  
+   $sqlcountry = "select courtcase_id FROM {tbl_courtcasehearing} where court_states !=144";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+		$countryarray[''] = '--Select--';
+		while($rscountry = db_fetch_object($rescountry)){
+			$countryarray[$rscountry->courtcase_id] = $rscountry->courtcase_id;
+					
+			 
+		}
+	}
+	
+ }
+	
+	//drupal_set_message($sqlcountry);
+	
+	
+	
+$form['nid'] = array(
+	  '#type' =>'hidden',
+	 
+	  '#default_value' => $x,
+	
+	  
+	);
+	
+  if($x == 'er')
+  {
+  
+  
+  
+   
+	 $form['case_no'] = array(
+	  '#type' =>'select',
+	  '#title' =>'Case No.',
+	  '#required' =>TRUE,
+	  '#maxlength'=>15,
+	  '#default_value' => $node->courtcase_id,
+	  '#options' => $countryarray,
+	  '#attributes' => array('onchange'=> 'return showcourthearing(this.value,"'.$base_url.'")'),
+	  
+	);	
+	
+	$form['hearing_date'] = array(
+	  '#type' =>'textfield',
+	  //'#date_format' => 'd-m-Y',
+	  '#title' =>'Hearing Date',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#maxlength'=>10,
+	  '#id' => 'hearing_id',
+	  '#default_value' => $node->next_hearing_date,
+	  '#attributes' => array('readonly' => 'readonly'),	
+	);
+	
+	}
+	else
+	{
+	
+  $er="select * FROM {tbl_courtcasehearing} where nid='".$x."'";
+	$tey=db_query($er);
+	$y=db_fetch_object($tey);
+	
+	$form['case_no'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Case No.',
+	  '#required' =>TRUE,
+	   '#maxlength'=>15,
+	  '#default_value' => $y->courtcase_id,
+	  '#attributes' => array('readonly' => 'readonly'),
+	  
+	);	
+	
+	
+	   /* $sql = "select max(courtcase_id) as maxid FROM {tbl_courtcase} where case_no='".$y->courtcase_id."'";
+		$res = db_query($sql);
+		if($rs = db_fetch_object($res)){
+		   $sqld = "select next_hearing_date FROM {tbl_courtcase} where courtcase_id='".$rs->maxid."'";
+		   $resd = db_query($sqld);
+		   $rsd = db_fetch_object($resd);
+		   $hearing_date = $rsd->next_hearing_date;
+		 }*/
+		 
+		
+   $sql = "select max(courtcase_id) as maxid FROM {tbl_courtcase} where case_no='".$y->courtcase_id."'";
+   $res = db_query($sql);
+   $rs = db_fetch_object($res);
+   if($rs->maxid){
+		  $sqld = "select next_hearing_date FROM {tbl_courtcase} where courtcase_id='".$rs->maxid."'";
+		   $resd = db_query($sqld);
+		   $rsd = db_fetch_object($resd);
+		   $hearing_date = date('d-m-Y',strtotime($rsd->next_hearing_date));
+		    //$hearing_date =  $rsd->next_hearing_date;
+	}else{
+	  $sql="SELECT * FROM {tbl_courtcasehearing} WHERE courtcase_id = '".$y->courtcase_id."'";
+	  $res = db_query($sql);
+	  if($rs=db_fetch_object($res)){
+	
+		 $hearing_date =  date('d-m-Y',strtotime($rs->hearing_date));
+	  }
+   } 	
+ 
+		 
+	
+	 $form['hearing_date'] = array(
+	  '#type' =>'textfield',
+	   '#title' =>'Hearing Date',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	   '#maxlength'=>10,
+	  '#id' => 'hearing_id',
+	  '#default_value' => $hearing_date,
+	  '#attributes' => array('readonly' => 'readonly'),
+	  	
+	);
+
+	
+	
+	}
+	
+	
+	$form['current_hearing_date'] = array(
+	  '#type' =>'textarea',
+	  '#title' =>'Action Comment on Current Hearing Date',
+	  '#required' =>TRUE,
+	   '#cols' => 60,
+       '#rows' => 5,
+	   '#maxlength'=>200,	
+	   '#default_value' =>'',	
+	   '#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-current-hearing-date",200)'),	
+	   
+	);
+	
+	
+	
+	
+	
+	$form['next_hearing_date'] = array(
+	  '#type' =>'date_popup',
+	  '#date_format' => 'd-m-Y',
+	  '#title' =>'Next Hearing Date',
+	  '#required' =>False,
+	  '#size' => 41,
+	   '#maxlength'=>10,
+	   '#default_value' => $_REQUEST['next_hearing_date']['date'],		
+	);
+	
+	$applicaint= "SELECT lookupType_id FROM {tbl_lookuptypes} WHERE lookupType_id='10'";
+
+$ttt= db_query($applicaint);
+$rstt=db_fetch_object($ttt);
+$sqlsenderr = "SELECT * FROM {tbl_lookups} WHERE status=1 AND lookupType_id= '".$rstt->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressenderr= db_query($sqlsenderr);
+$senderarrayy['']= '--Select--';
+if($ressenderr){
+
+while($rssenderr = db_fetch_object($ressenderr)){
+
+$senderarrayy[$rssenderr->lookup_id] = ucwords($rssenderr->lookup_name);
+
+}
+
+}
+
+	
+	
+	$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => true,
+		'#default_value' => 0,
+		'#options' => $senderarrayy,
+		/*'#options' => array(''=>'---Select Status---',39=>'Hearing',40=>'Argument','288'=>'Pending For Decision',144=>'Decision'),*/
+	);
+    
+	/*$form['cancel'] = array(
+        '#type' => "markup",
+        '#value' => l(t('Back'), 'dsje/listcourtcase/nt'),
+);    */
+	
+
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save'),
+	);
+	return $form;
+}
+//Amit : Function to validate the duplicate  value while addition//
+function dsje_court_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+
+
+  $case_no = parseData(trim($values['case_no']));
+  $employee_id = $form->employee_id;
+  //$remarks = parseData(trim($values['remarks']));
+  $hearing_date =  parseData(trim($values['hearing_date']));
+  
+  //$hearing_date=substr($hearing_date1,0,10);
+  
+  
+  
+	$current_hearing_date =trim($values['current_hearing_date']);
+	
+    $next_hearing_date = parseData(trim($values['next_hearing_date']));
+	
+	
+   $status =$values['status'];
+   
+  
+  
+  
+   if($status==144)
+   { 
+	$next_hearing_date="";	 
+	}
+	else {
+     if($next_hearing_date  == "")
+		 {
+	    form_set_error('next_hearing_date',t('Next Hearing Date should not be empty'));
+	 }
+	 
+            else if(strtotime($hearing_date) >= strtotime($next_hearing_date))
+               {
+              form_set_error('next_hearing_date', t('Next Hearing Date should be more than Hearing Date'));
+             }
+	
+	
+	}
+	
+	
+	
+	/*else if($status==1)
+	{
+	
+	}
+	
+	else if($status==2)
+	{
+	 
+	}
+	else
+	{
+	form_set_error(next_hearing_date, t('Please Fill Next Hearing Date'));
+	}*/
+
+	
+    
+ 
+	 
+	   
+	   alphanumeric('current_hearing_date',$current_hearing_date,'Action Comment on Current Hearing Date');
+       datemore('next_hearing_date','$next_hearing_date','date');
+	
+}
+
+function dsje_court_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+
+	$case_no = parseData($values['case_no']);
+	$hearing_date = $values['hearing_date'];
+	//$hearing_date = date(Y-m-d,strtotime($hearing_date1));
+	$current_hearing_date = $values['current_hearing_date'];
+	//$next_hearing_date = $values['next_hearing_date'];
+	
+	$status = $values['status'];
+	
+	if($status == 144)
+	{
+	$next_hearing_date = '';	
+		
+	}else{
+		
+	$next_hearing_date = $values['next_hearing_date'];	
+		
+	}
+
+	$sql = "INSERT INTO `tbl_courtcase` (`case_no` ,`hearing_date` ,`current_hearing_date` ,`next_hearing_date` ,`status`,`createdby` ,`createdon` ,`updatedby` ,`updatedon`) values('".$case_no."','".$hearing_date."','".$current_hearing_date."','".$next_hearing_date."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."')";
+	db_query($sql);
+	//print_r($values);exit;
+	
+	$message = getMessage('dsjehearingcourtcase', 'code05', array("0"=>$case_no));
+	
+if($values['nid'] != 'er'){
+ $sql = "UPDATE `tbl_courtcasehearing` set `court_states` ='".$status."',`hearing_date` ='".$hearing_date."' where nid='".$values['nid']."'";
+}else{
+$sql = "UPDATE `tbl_courtcasehearing` set `court_states` ='".$status."',`hearing_date` ='".$hearing_date."' where courtcase_id='".$case_no."'";
+}
+
+
+db_query($sql);
+
+$courtmail=db_query("SELECT *
+FROM {tbl_courtcasehearing}
+INNER JOIN tbl_court_names ON ( tbl_courtcasehearing.court_name_id = tbl_court_names.court_name_id )
+INNER JOIN tbl_lawyer ON ( tbl_courtcasehearing.lawyer_id = tbl_lawyer.lawyer_id ) where courtcase_id='".$case_no."'");
+
+$azx=db_fetch_object($courtmail);
+
+$email_address = $azx->email;
+$lawyer_name = $azx->lawyer_name;
+$court_name_name = $azx->court_name_name;
+$hearing_date = $azx->hearing_date;
+$title_case = $azx->title_case;
+$case_detail = $azx->case_detail;
+$phone_no = '91'.$azx->phone_no;
+$name_opposite = $azx->name_opposite;
+$smsmessage = 'Hearing Date of Case No '.$case_no.' has been scheduled on Date '.$next_hearing_date; 
+
+$parameter = '';
+//$to = $u->mail;
+
+$parameter = json_encode(array(0=>"$lawyer_name",1=>"$case_no",2=>"$hearing_date",3=>"$case_no",4=>"$name_opposite",5=>"$lawyer_name",6=>"$next_hearing_date",7=>"$status"));	
+//print_r($parameter);exit;
+
+createMail('courtcase', $email_address,'',$parameter);
+
+customsendsms($phone_no,$smsmessage);
+
+
+
+drupal_set_message($message);
+drupal_goto('dsje/listcourtcase/nt');
+
+}
+
+function courtcase_delete($sid, $sno){
+	 $courtcase_id = $sid;
+	 
+	 db_query("Delete FROM {tbl_courtcase} WHERE courtcase_id ='".$courtcase_id."'");
+  
+$message = getMessage('dsjehearingcourtcase', 'code07', array("0"=>$courtcase_id));
+  drupal_set_message($message);
+  drupal_goto("dsje/listcourtcase/nt");
+}
+ 
+
+function courtcase_enable($sid,$sno){
+	 $courtcase_id = $sid;
+	 db_query("UPDATE {tbl_courtcase} SET status=1 WHERE courtcase_id ='".$courtcase_id."'");
+  
+    $message = getMessage('dsjehearingcourtcase', 'code09', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("dsje/listcourtcase/nt");
+}
+
+function dsje_addcourtcaseview($id){
+				$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Court Case Hearing', 'dsje/listcourtcase/nt');
+  if($array[2] == 'view'){
+     $breadcrumb[] = l('View Hearing', 'dsje/listcourtcase/view/courtcase/'.$array[4].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+  $sql = "select * FROM {tbl_courtcase} where courtcase_id=$id";
+  $res = db_query($sql);
+  $rs = db_fetch_object($res);
+
+ if($rs->status==39){
+		       $st=getLookupName($rs->status);
+		    }
+
+             else if($rs->status==40){
+			   $st=getLookupName($rs->status);
+			}
+
+            else if($rs->status=='288'){
+
+                $st=getLookupName($rs->status);
+
+               }
+
+        else if($rs->status==144){
+
+            $st=getLookupName($rs->status);
+
+        }
+		
+		$hear=date('d-m-Y',strtotime($rs->next_hearing_date));
+		
+		if($hear == '01-01-1970')
+		{
+		$hear1 = 'N/A';	
+		}
+		else{
+		$hear1 = date('d-m-Y',strtotime($rs->next_hearing_date));	
+			
+		}
+		
+		
+
+
+ $output .='<table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+ $output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Court Case Hearing Details</h2></td></tr>';
+ $output .='<tr class="evenrow"><td style="width:50%;">Case No.:</td><td class="normal">'.ucwords($rs->case_no).'</td></tr>';
+ $output .='<tr class="oddrow"><td>Hearing Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->hearing_date)).'</td></tr>';
+ $output .='<tr class="evenrow"><td>Action Comment on Current Hearing Date:</td><td class="normal">'.ucwords($rs->current_hearing_date).'</td></tr>';
+ $output .='<tr class="oddrow"><td>Next Hearing Date:</td><td class="normal">'.$hear1.'</td></tr>';
+ $output .='<tr class="evenrow"><td>Status:</td><td class="normal">'.$st.'</td></tr>';
+ $output .='<tr class="oddrow"><td align="center" class="back" colspan="2">'.l(t('Back'), 'dsje/listcourtcase/nt').'</td></tr>';
+ $output .='</table>';
+ 
+ return $output;
+
+}
+
+
+//edit section 
+
+
+function dsje_addcourtcaseedit($courtcase_id){
+ return drupal_get_form('dsje_addcourtcaseedit_form',$courtcase_id);
+}
+function dsje_addcourtcaseedit_form(&$form_state,$courtcase_id) {
+			$array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Court Case Hearing', 'dsje/listcourtcase/nt');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Court Case Hearing', 'dsje/listcourtcase/edit/courtcase/'.$array[4].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+$sql = "select * FROM {tbl_courtcase} where courtcase_id='".$courtcase_id."'";
+$res = db_query($sql);
+$rs = db_fetch_object($res);
+
+$sqlcountry = "select courtcase_id FROM {tbl_courtcasehearing}";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+		$countryarray[''] = '--Select--';
+		while($rscountry = db_fetch_object($rescountry)){
+			$countryarray[$rscountry->courtcase_id] = $rscountry->courtcase_id;
+		}
+	}
+
+$form['case_no'] = array(
+	  '#type' =>'select',
+	  '#title' =>'Case No.',
+	  '#required' =>TRUE,
+	  '#default_value' => $rs->case_no,
+	  '#options' => $countryarray,
+	  
+	);	
+	
+	
+	
+	
+	
+/*$form['case_no'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Case No',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#default_value' => $rs->hearing_date,		
+	);*/
+	
+	
+	
+	
+	$form['hearing_date'] = array(
+	  '#type' =>'textfield',
+	  '#title' =>'Hearing Date',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#maxlength'=>10,
+	  '#default_value' => $rs->hearing_date,	
+	  '#attributes' => array('readonly' => 'readonly'),
+	);
+	
+	$form['current_hearing_date'] = array(
+	  '#type' =>'textarea',
+	  '#title' =>'Action Comment on Current Hearing Date',
+	  '#required' =>TRUE,
+	  '#size' => 41,
+	  '#maxlength'=>100,		
+	  '#default_value' => $rs->current_hearing_date,
+	  '#attributes' => array('onkeypress' => 'return textonlywithdotnemax(event,"edit-current-hearing-date",200)'),		
+	);
+	
+	$form['courtcase_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rs->courtcase_id,
+	
+	);
+	
+	$form['next_hearing_date'] = array(
+	  '#type' =>'date_popup',
+	   '#date_format' => 'd-m-Y',
+	  '#title' =>'Next Hearing Date',
+	  '#required' =>false,
+	  '#size' => 41,
+	   '#maxlength'=>10,
+	  '#default_value' => $rs->next_hearing_date,	
+	);
+
+ $applicaint= "SELECT lookupType_id FROM {tbl_lookuptypes} WHERE lookupType_id='10'";
+
+$ttt= db_query($applicaint);
+$rstt=db_fetch_object($ttt);
+$sqlsenderr = "SELECT * FROM {tbl_lookups} WHERE status=1 AND lookupType_id= '".$rstt->lookupType_id."' ORDER BY lookup_name ASC";
+
+$ressenderr= db_query($sqlsenderr);
+$senderarrayy['']= '--Select--';
+if($ressenderr){
+
+while($rssenderr = db_fetch_object($ressenderr)){
+
+$senderarrayy[$rssenderr->lookup_id] = ucwords($rssenderr->lookup_name);
+
+}
+
+}
+
+
+      $form['status'] = array(
+	  '#type' =>'select',
+	  
+	  '#title' =>'Status',
+	  '#required' =>TRUE,
+      '#default_value' => $rs->status,
+	  '#options' => $senderarrayy,
+	  
+	  /*'#options' => array(''=>'---Select Status---',39=>'Hearing',40=>'Argument','288'=>'Pending For Decision',144=>'Decision'),*/
+	);
+	
+	$form['cancel'] = array(
+        '#type' => "markup",
+        '#value' => l(t('Back'), 'dsje/listcourtcase/nt'),
+);    
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);	
+	
+	return $form;
+}
+
+
+function dsje_addcourtcaseedit_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+
+
+  $case_no = parseData(trim($values['case_no']));
+  $employee_id = $form->employee_id;
+  //$remarks = parseData(trim($values['remarks']));
+  $hearing_date =  parseData(trim($values['hearing_date']));
+  
+  //$hearing_date=substr($hearing_date1,0,10);
+  
+  
+  
+	$current_hearing_date =trim($values['current_hearing_date']);
+	
+    $next_hearing_date = parseData(trim($values['next_hearing_date']));
+	
+	
+   $status =$values['status'];
+   
+  
+  
+  
+   if($status==144)
+   { 
+	$next_hearing_date="";	 
+	}
+	else {
+     if($next_hearing_date  == "")
+		 {
+	    form_set_error('next_hearing_date',t('Next Hearing Date should not be empty'));
+	 }
+	 
+            else if(strtotime($hearing_date) >= strtotime($next_hearing_date))
+               {
+              form_set_error('next_hearing_date', t('Next Hearing Date should be more than Hearing Date'));
+             }
+	
+	
+	}
+	
+	
+	
+	/*else if($status==1)
+	{
+	
+	}
+	
+	else if($status==2)
+	{
+	 
+	}
+	else
+	{
+	form_set_error(next_hearing_date, t('Please Fill Next Hearing Date'));
+	}*/
+
+	
+    
+ 
+	 
+	   
+	   alphanumeric('current_hearing_date',$current_hearing_date,'Action Comment on Current Hearing Date');
+       datemore('next_hearing_date','$next_hearing_date','date');
+	
+}
+
+
+function dsje_addcourtcaseedit_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    //$status = 1;
+	$updatedby = $user->uid;
+	$updatedon = time();
+
+	$courtcase_id = $values['courtcase_id'];
+	$case_no = parseData($values['case_no']);
+	$hearing_date = $values['hearing_date'];
+	$current_hearing_date = $values['current_hearing_date'];
+	//$next_hearing_date = $values['next_hearing_date'];
+	
+	$status = $values['status'];
+	
+	if($status == 144)
+	{
+	$next_hearing_date = '';	
+		
+	}else{
+		
+	$next_hearing_date = $values['next_hearing_date'];	
+		
+	}
+
+
+	$sql = "UPDATE `tbl_courtcase` set `case_no` ='".$case_no."',`hearing_date`='".$hearing_date."' ,`current_hearing_date`='".$current_hearing_date."' ,`next_hearing_date`='".$next_hearing_date."',`status`='".$status."',`updatedby` ='".$updatedby."',`updatedon`='".$updatedon."' where courtcase_id='".$courtcase_id."'"; 	
+db_query($sql);
+
+
+				
+	
+
+ $sql1 = "UPDATE `tbl_courtcasehearing` set `court_states` ='".$status."',`hearing_date` ='".$hearing_date."' where courtcase_id='".$case_no."'";
+
+$message = getMessage('dsjehearingcourtcase', 'code10', array('0'=>$case_no));
+				drupal_set_message($message);
+db_query($sql1);			
+				
+		
+	drupal_goto('dsje/listcourtcase/nt');
+	
+	
+
+}
+
+function dsje_court_theme() {
+	
+	return array(
+				 
+		'dsje_court_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_court_form',
+                                 ),
+								 
+        'dsje_addcourtcaseedit_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_court_form_edit',
+                                 ),
+
+				 );
+}
+
+

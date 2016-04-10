@@ -1,0 +1,6 @@
+;$id 
+name="Upload Document"
+description="Uplaod the Document "
+core =6.x
+version = 6.x-1
+package="Udocument"

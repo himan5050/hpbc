@@ -1,0 +1,6 @@
+;$id 
+name = "Status of Debt Repayment"
+description ="Status of debt repayment Master"
+core = 6.x
+version =6.x-1
+package="Dsje Masters"

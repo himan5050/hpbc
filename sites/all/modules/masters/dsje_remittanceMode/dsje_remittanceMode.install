@@ -1,0 +1,71 @@
+<?php
+function dsje_remittanceMode_schema() {
+
+  //language table
+   $schema['tbl_remittanceModes'] = array(
+							 'fields' => array(
+											   'remittanceMode_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'remittanceMode_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                    	   	   'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'remittanceMode_id' => array('remittanceMode_id'),
+												),
+							 'primary key' => array('remittanceMode_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_remittanceMode_install() {
+	drupal_install_schema('dsje_remittanceMode');
+}
+
+function dsje_remittanceMode_uninstall() {
+	drupal_uninstall_schema('dsje_remittanceMode');
+}

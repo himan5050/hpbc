@@ -1,0 +1,729 @@
+<?php
+function lookup_init() {
+}
+
+function lookup_perm() {
+        return array('edit lookup','administer lookup', 'create lookup', 'view lookup');
+}
+
+function lookup_access($op, $node, $account) {
+        if($op == 'update' || $op == 'delete') {
+                //&& ($account->uid == $node->uid)
+                if (user_access('edit lookup', $account) ) {
+                        return TRUE;
+                }
+        }
+        if (($op=='create') && ($op='list')) {
+                return user_access('create lookup', $account);
+        }
+        if (($op=='view') or ($op=='list')) {
+                return user_access('view lookup', $account);
+        }
+} 
+
+function lookup_menu() {
+        
+        
+        $items['dsje/listlookup'] = array(
+                                                                                'title' => t('List of Lookups'),
+                                                                                'description' => 'Allow user to View Lookup',
+                                                                                'type' => MENU_NORMAL_ITEM,
+                                                                                'page callback' => 'viewlookup',
+                                                                                'access arguments' => array('administer lookup'),
+                                                                                                         
+                                                                          );
+        
+        $items['dsje/listlookup/addlookup'] = array(
+                                                                                'title' => t('Add Lookup'),
+                                                                                'description' => 'Allow user to add Lookup',
+                                                                                'type' => MENU_CALLBACK,
+                                                                                'page callback' => 'dsje_addlookup',
+                                                                                'access arguments' => array('administer lookup'),
+                                                                                                         
+                                                                          );
+           $items['dsje/listlookup/edit/lookup/%'] = array(
+                                                                
+                                            'title' => t('Edit Lookup'),
+                                                                                'description' => 'Allow user to add Lookup',
+                                                                                'type' => MENU_CALLBACK,
+                                                                                'page callback' => 'dsje_addlookupedit',
+                                        'page arguments' => array(4),  
+                                                'access arguments' => array('administer lookup'),
+                                                                                                         
+                                                                          );
+             $items['dsje/listlookup/view/lookup/%'] = array(
+                                                                
+                                            'title' => t('View Lookup'),
+                                                                                'description' => 'Allow user to add Lookup',
+                                                                                'type' => MENU_CALLBACK,
+                                                                                'page callback' => 'dsje_addlookupview',
+                                        'page arguments' => array(4), 
+                                                'access arguments' => array('administer lookup'),
+                                                                                                         
+                                                                          );
+
+      $items['dsje/del/lookup/%'] =  array(
+                                                                                'type' => MENU_CALLBACK,
+                                                                                'page callback' => 'lookup_delete',
+                                                'page arguments' => array(3),
+                                                'access arguments' => array('administer lookup'),
+                                                                                                         
+                                                                          );
+      $items['dsje/enable/lookup/%'] =  array(
+                                                                                'type' => MENU_CALLBACK,
+                                                                                'page callback' => 'lookup_enable',
+                                                'page arguments' => array(3),
+                                                'access arguments' => array('administer lookup'),
+                                                                                                         
+                                                                          );
+        return $items;
+}
+
+
+/** listing lookupTypes */
+function viewlookup(){
+global $user;
+global $base_url;
+global $xpathObj;
+$limit = (int)getMessage( 'dsjelookup', 'code04', NULL);
+$lising = 'List of Lookups';
+$addurl = l("Add Lookup","dsje/listlookup/addlookup");
+
+$output = '<table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+<tr>
+<td colspan="3" class="tblHeaderLeft">'.$lising.'</td>
+<td colspan="3" class="tblHeaderRight">'.$addurl.'</td>
+</tr>
+</table>';
+ 
+  $header = array(
+                array('data' => t('S. No.')),
+        array('data' => t('Lookup'), 'field' => 'tbl_lookups.lookup_name', 'sort' =>'asc'),
+//array('data' => t('Zone'), 'field' => 'tbl_zones.zone_name', 'sort' => 'asc'),
+            array('data' => t('Lookup Type'), 'field' => 'tbl_lookuptypes.lookupType_name','sort' => 'asc'),
+                ////array('data' => t('Remarks')),
+            array('data' => t('Status'), 'field' => 'tbl_lookups.status', 'sort' => 'asc'),
+                array('data' => t('Action'),'class'=>'addeditview'),
+        );
+        
+        $breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Lookups', 'dsje/listlookup/'.$array[3].'');
+         }  
+         drupal_set_breadcrumb($breadcrumb);
+        if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+        $val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);  
+		
+		 $status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "UPPER(tbl_lookuptypes.lookupType_name) LIKE '".$val."' OR
+UPPER(tbl_lookups.lookup_name) LIKE '".$val."'";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "tbl_lookups.status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(tbl_lookuptypes.lookupType_name) LIKE '".$val."' OR
+UPPER(tbl_lookups.lookup_name) LIKE '".$val."') AND tbl_lookups.status='".$status."'";
+	 }
+		
+		       
+        $query = "SELECT tbl_lookups.lookup_id,tbl_lookups.lookup_name,
+tbl_lookuptypes.lookupType_id, tbl_lookuptypes.lookupType_name, tbl_lookups.status
+FROM {tbl_lookups} INNER JOIN tbl_lookuptypes ON
+(tbl_lookuptypes.lookupType_id=tbl_lookups.lookupType_id) where ".$searchquery."
+ ".tablesort_sql($header);
+        
+      $sqlcount = "SELECT COUNT(*) AS count FROM {tbl_lookups} INNER JOIN
+tbl_lookuptypes ON (tbl_lookuptypes.lookupType_id=tbl_lookups.lookupType_id)
+where ".$searchquery."".tablesort_sql($header);
+         $rscount = db_query($sqlcount);
+         $rscounter=db_fetch_object($rscount);
+		 //$_REQUEST['page']=0;
+        }else{
+          $query = "SELECT tbl_lookups.lookup_id,tbl_lookups.lookup_name ,
+tbl_lookuptypes.lookupType_id,tbl_lookuptypes.lookupType_name, tbl_lookups.status
+FROM {tbl_lookups} INNER JOIN tbl_lookuptypes ON
+(tbl_lookuptypes.lookupType_id=tbl_lookups.lookupType_id) 
+".tablesort_sql($header);
+        }
+
+global $base_url;
+$action = $base_url.'/dsje/listlookup';
+
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+
+        $output = '<form method="post" action="'.$action.'"><table width="100%" border="0"
+cellspacing="1" cellpadding="1" id="wrapper">
+        <tr><td colspan="3" class="searchrecord">';
+        if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+        $output .= t(getMessage( 'dsjelookup', 'code03', array("0"=>$rscounter->count)))."
+| ".l('View All','dsje/listlookup');
+        }        
+        $output .='</td><td colspan="3">
+        </td></tr>';        
+        $addurl = l(getMessage( 'dsjelookup', 'code01', NULL),"dsje/listlookup/addlookup");
+           $lising = getMessage( 'dsjelookup', 'code02', NULL);
+                
+        $output .='<tr>
+        <td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+        <td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+        <input type="submit" name="search" value="Search" />
+		</td>
+        </tr>
+        </table></form>';
+        $result = pager_query($query,$limit);
+
+        
+        if($_REQUEST['page']){
+                 $counter = $_REQUEST['page']*$limit;
+                }else{
+                 $counter = 0;
+        }
+        while($row=db_fetch_object($result)) {
+                $counter++;
+                $editurl =
+l("Edit","dsje/listlookup/edit/lookup/".$row->lookup_id);
+                $viewurl = l("View","dsje/listlookup/view/lookup/".$row->lookup_id);
+                if($row->status=='1'){
+                  $deleteurl = l("Disable","dsje/del/lookup/$row->lookup_id");
+                }else{
+                  $deleteurl = l("Enable","dsje/enable/lookup/$row->lookup_id");
+                }
+                if($row->status=='1'){
+                       $st='Enabled';
+                    }else{
+                           $st ='Disabled';
+                        }
+                //$lookupType_union_territory = $row->lookupType_union_territory;
+                
+                
+                $rows[] = array(
+                        
+                        array('data' => $counter),
+                        array('data' => ucwords($row->lookup_name)),
+            //array('data' => ucwords($row->zone_name)),
+            array('data' => ucwords($row->lookupType_name)),
+                        ////array('data' => $row->remarks),
+                        array('data' => $st),
+                        array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+                );
+        }
+		if($rows== NULL)
+	$header=NULL;
+		
+        $output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+        $output .= theme('pager', NULL, $limit,0 );		
+        return $output;
+ }
+ 
+ 
+ 
+function dsje_addlookup(){
+ return drupal_get_form('lookup_form');
+}
+
+/**
+ *form creation
+ */
+
+function lookup_form() {
+        $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lookups', 'dsje/listlookup');
+  if($array[2] == 'addlookup'){
+     $breadcrumb[] = l('Add Lookup', 'dsje/listlookup/addlookup');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+
+        
+        $sqlcountry = "select * from {tbl_lookuptypes} WHERE status='1' ORDER BY
+lookupType_name ASC";
+        $rescountry =db_query($sqlcountry);
+        $countryarray[''] = array();
+        $countryarray[''] = '--Select--'; 
+        if($rescountry){
+          while($rscountry = db_fetch_object($rescountry)){
+            $countryarray[$rscountry->lookupType_id] = ucwords($rscountry->lookupType_name);
+          }
+        }
+		
+        $countryarray1[''] = '--Select--'; 
+        $form['lookupType_id'] = array(
+                '#type' => 'select',
+                '#title' => t('Lookup Type'),
+                '#required' => TRUE,
+                '#default_value' => '',
+                '#options' => $countryarray,
+                
+        );
+        
+        
+    
+        
+        /*$form['lookup_uid'] = array(
+                '#type' => 'textfield',
+                '#size' => '41',
+                '#title' => t('Unicode'),
+                '#required' => TRUE,
+                '#default_value' => '',
+                '#attributes' => array('onkeypress' => 'return fononlyn(event)'),
+                '#maxlength'=>2,
+        );*/
+        
+        $form['lookup_name'] = array(
+                '#type' => 'textfield',
+                '#size' => '45',
+				'#maxlength'=>45,
+                '#title' => t('Lookup Name'),
+                '#required' => TRUE,
+                '#default_value' => '',
+                '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+        );
+        
+        
+        
+        /*$form['remarks'] = array(
+            '#type' =>'textarea',
+                '#title' => t('Remarks'),
+                '#required' => FALSE,
+                '#default_value' =>'',
+                '#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return 
+textonlywithdotne(event)'),
+        ); */
+        /*$form['status'] = array(
+                '#type' => 'select',
+                '#title' => t('Status'),
+                '#required' => False,
+                '#default_value' => 1,
+                '#options' => array('0'=>'Disable','1'=>'Enable'),
+        ); */
+		
+		$form['cancel'] = array(
+        '#type' => "markup",
+        '#value' => l(t('Back'), 'dsje/listlookup'),
+		
+);
+		
+        $form['submit'] = array(
+                '#type' => 'submit',
+                '#default_value' => t('Save')
+        );
+                
+        return $form;
+}
+
+/**
+ *submit handler
+ */
+
+function lookup_form_submit($form, &$form_lookupType) {
+        global $user;
+        $values = $form_lookupType['values'];
+    $lookupType_id =$values['lookupType_id'];
+    //$zone_id = $values['zone_id'];
+    $lookup_name = trim($values['lookup_name']);
+//        $lookup_uid = trim($values['lookup_uid']);
+        //$lookupType_union_territory =
+parseData(trim($values['lookupType_union_territory']));
+   // $remarks = parseData(trim($values['remarks']));
+   // $status = $values['status'];
+        $status = 1;
+        $createdby = $user->uid;
+        $createdon = time();
+        $updatedby = $user->uid;
+        $updatedon = $createdon;
+     
+   db_query("INSERT INTO {tbl_lookups} (`lookup_name`,`lookupType_id` , `status`
+,`createdby` ,`createdon` ,`updatedby` ,`updatedon`)
+VALUES('".$lookup_name."','".$lookupType_id."','".$status."','".$createdby."','".$createdon."','".$updatedby."','".$updatedon."')
+");
+        $message = getMessage('dsjelookup', 'code05', array("0"=>$lookup_name));
+        drupal_set_message($message);
+        drupal_goto('dsje/listlookup');
+}
+
+function lookup_form_validate($form, &$form_lookupType) {
+        $values = $form_lookupType['values'];
+        $lookupType_id = $values['lookupType_id'];
+        //$zone_id = $values['zone_id'];
+        $lookup_name = trim($values['lookup_name']);
+        //$lookup_uid = trim($values['lookup_uid']);
+        $remarks = trim($values['remarks']);
+        
+        /*if((int)$lookup_uid <=0){
+                $message = 'Unicode should be numeric only.';        
+                form_set_error('lookup_uid', $message);
+        }*/
+        
+        /*$sqlu = "SELECT * FROM {tbl_lookups} where lookup_uid='$lookup_uid' ";
+        $resu = db_query($sqlu);
+        if($rsu = db_fetch_object($resu)){
+                $message = 'Sorry! Unicode already in use.';        
+                form_set_error('lookup_uid', $message);
+        }
+        */
+        
+        $s = textonlyn('lookup_name',$lookup_name,'Lookup Name');
+        $s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+        if($s == 0 && $s1 == 0){
+        
+                $sql = "SELECT * FROM {tbl_lookups} where lookupType_id='$lookupType_id' AND
+LOWER(lookup_name)= '".strtolower($lookup_name)."'";
+                $res = db_query($sql);
+          
+                if($rs = db_fetch_object($res)){
+                        $message = getMessage('dsjelookup', 'code06', array("0"=>$lookupType_name));        
+                        form_set_error('lookup_name', $message);
+                }
+        }
+}
+
+
+
+function dsje_addlookupedit($id){
+ return drupal_get_form('lookup_form_edit',$id);
+}
+
+function lookup_form_edit($form_lookupType,$id) {
+                $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lookups', 'dsje/listlookup');
+  if($array[2] == 'edit'){
+     $breadcrumb[] = l('Edit Lookup', 'dsje/listlookup/edit/lookup/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+        $sqllookupType = "select * FROM {tbl_lookups} where lookup_id='$id' ";
+        $reslookupType = db_query($sqllookupType);
+        $rslookupType = db_fetch_object($reslookupType);
+        
+        $sqlcountry = "select * from {tbl_lookuptypes} WHERE status='1' ORDER BY
+lookupType_name ASC";
+        $rescountry =db_query($sqlcountry);
+        if($rescountry){
+          while($rscountry = db_fetch_object($rescountry)){
+            $countryarray[$rscountry->lookupType_id] = ucwords($rscountry->lookupType_name);
+          }
+        }
+        $form['lookupType_id'] = array(
+                '#type' => 'select',
+                '#title' => t('Lookup Type'),
+                '#required' => TRUE,
+                '#default_value' => $rslookupType->lookupType_id,
+                '#options' => $countryarray,
+                
+        );
+        
+        
+
+        
+        
+        /*$form['lookup_uid'] = array(
+                '#type' => 'textfield',
+                '#size' => '41',
+                '#title' => t('Unicode'),
+                '#required' => TRUE,
+                '#default_value' => $rslookupType->lookup_uid,
+                '#attributes' => array('onkeypress' => 'return fononlyn(event)',
+'readonly'=>'readonly'),
+                '#maxlength'=>2,
+        );
+        */
+        /*$form['prev_lookupType_uid'] = array(
+                '#type' => 'hidden',
+                '#default_value' => $rslookupType->lookup_uid,
+                
+        );*/
+        
+        $form['lookup_id'] = array(
+                '#type' => 'hidden',
+                '#default_value' => $id,
+                
+        );
+        
+        $form['prev_lookupType_name'] = array(
+                '#type' => 'hidden',
+                '#default_value' => $rslookupType->lookup_name,
+                
+        );
+    
+        $form['lookup_name'] = array(
+                '#type' => 'textfield',
+                '#size' => '20',
+                '#title' => t('Lookup'),
+                '#required' => TRUE,
+                '#default_value' =>$rslookupType->lookup_name,
+                '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+        );
+        
+
+        
+        /*$form['remarks'] = array(
+            '#type' =>'textarea',
+                '#title' => t('Remarks'),
+                '#required' => FALSE,
+                '#default_value' =>$rslookupType->remarks,
+                '#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return 
+textonlywithdotne(event)'),
+        ); */
+        /*$form['status'] = array(
+                '#type' => 'select',
+                '#title' => t('Status'),
+                '#required' => False,
+                '#default_value' => $rslookupType->status,
+                '#options' => array('0'=>'Disable','1'=>'Enable'),
+        ); */
+
+ $form['cancel'] = array(
+        '#type' => "markup",
+        '#value' => l(t('Back'), 'dsje/listlookup'),	
+	
+);
+
+        $form['submit'] = array(
+                '#type' => 'submit',
+                '#default_value' => t('Save')
+        );
+               
+        return $form;
+}
+function lookup_form_edit_validate($form, &$form_lookupType) { 
+   global $user;
+        $values = $form_lookupType['values'];
+    $lookup_id = $values['lookup_id'];
+        $lookupType_id =$values['lookupType_id'];
+    //$zone_id = $values['zone_id'];
+    $lookup_name = trim($values['lookup_name']);
+        $prev_lookupType_name = $values['prev_lookupType_name'];        
+    $remarks = parseData(trim($values['remarks']));
+    //$status = $values['status'];
+        $updatedby = $user->uid;
+        $updatedon = time();
+    $countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM
+{tbl_lookups} where LOWER(lookup_name)= '".strtolower($lookup_name)."' GROUP BY
+lookup_id"));
+                    $count = $countObj->count;
+                        
+                        if( strcmp(strtolower($prev_lookupType_name), strtolower($lookup_name))==0){
+                                                        
+                        }else{
+                                if($count==0){
+                                
+                                }else{
+                                
+  //db_query("UPDATE {tbl_lookuptypes} set `lookupType_name`='".$lookupType_name."',`country_id`= //'".$country_id."',`zone_id`='".$zone_id."',updatedby='".$updatedby."'  ,updatedon='".$updatedon."' where //lookupType_id='$lookupType_id'");
+                                        //$message = getMessage('recState', 'code06', array("0"=>$lookupType_name));
+                                        //form_set_error('lookupType_name', $message);
+                                        form_set_error('lookupType_name', 'The Lookup '.$lookupType_name.' alreday
+exist.');
+                                        //drupal_goto("rec/listlookupType");        
+                                }
+                        }
+         
+} 
+
+function lookup_form_edit_submit($form, &$form_lookupType) {
+        global $user;
+        $values = $form_lookupType['values'];
+    $lookup_id = $values['lookup_id'];
+        $lookupType_id =$values['lookupType_id'];
+    //$zone_id = $values['zone_id'];
+        //$lookup_uid = $values['lookup_uid'];
+        $prev_lookupType_uid = $values['prev_lookupType_uid'];
+    $lookup_name = trim($values['lookup_name']);
+        //$lookupType_union_territory =
+parseData(trim($values['lookupType_union_territory']));
+        $prev_lookupType_name = $values['prev_lookupType_name'];        
+    $remarks = parseData(trim($values['remarks']));
+        
+        $field = "";
+        /*if( strcmp(strtolower($prev_lookupType_uid), strtolower($lookup_uid))==0){
+        
+        }else{
+                $sqlU = "SELECT COUNT(*) AS countUnicode FROM {tbl_lookups} where lookup_uid=
+'".$lookup_uid."'";
+                $countUnicodeObj = db_fetch_object(db_query($sqlU));
+                $countUnicode = $countUnicodeObj->countUnicode;
+                $countUnicode = (int)$countUnicode;
+                if($countUnicode == 0){
+                        $field = "lookup_uid = '$lookup_uid', ";
+                }else{
+                        form_set_error('lookup_uid', 'Sorry! Unicode '.$lookup_uid.' alreday in use.');
+                }
+        }
+
+        */
+        $updatedby = $user->uid;
+        $updatedon = time();
+        
+        $s = textonlyn('lookup_name',$lookup_name,'Lookup Name');
+    $s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+    if($s == 0 && $s1 == 0){
+            
+                        $countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_lookups}
+where LOWER(lookup_name)= '".strtolower($lookup_name)."' GROUP BY lookup_id"));
+                    $count = $countObj->count;
+                        
+                        if( strcmp(strtolower($prev_lookupType_name), strtolower($lookup_name))==0){
+                                db_query("UPDATE `tbl_lookups` set $field `lookup_name`
+='".$lookup_name."',`lookupType_id`=
+'".$lookupType_id."',updatedby='".$updatedby."'  ,updatedon='".$updatedon."'
+where lookup_id='$lookup_id'");
+                                $message = getMessage('dsjelookup', 'code05', array("0"=>$lookup_name));
+                                drupal_set_message($message);
+                                drupal_goto("dsje/listlookup");                                
+                        }else{
+                                if($count==0){
+                                        db_query("UPDATE `tbl_lookups` set $field  `lookup_name`
+='".$lookup_name."',`lookupType_id`= '".$lookupType_id."'
+,updatedby='".$updatedby."'  ,updatedon='".$updatedon."' where
+lookup_id='$lookup_id'");
+                                        $message = getMessage('dsjelookup', 'code10', array("0"=>$lookup_name));
+                                        drupal_set_message($message);
+                                        drupal_goto("dsje/listlookup");                
+                                }else{
+                                        form_set_error('lookup_name', 'The Lookup Name '.$lookup_name.' alreday exist.');
+                                }
+                        }
+       
+        }
+}
+
+/**
+ *hook_theme
+ */
+function lookup_theme() {
+        
+        return array(
+                                 
+                'lookup_form' => array(
+                                                                'arguments' => array('form' => NULL),
+                                                                'template' => 'lookup_form',
+                                 ),
+        'lookup_form_edit' => array(
+                                                                'arguments' => array('form' => NULL),
+                                                                'template' => 'lookup_form_edit',
+                                 ),
+
+                                 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+ function lookup_form_alter(&$form, &$form_lookupType, $form_id){
+    //drupal_set_message($form_id);
+        if($form_id =='lookup_form_edit'){
+         // $form['zone_id']['#disabled'] = TRUE;
+        }
+ }
+
+
+ function lookup_delete($id){
+        $lookup_id =  $id;
+        $sql = "select lookup_id,status FROM {tbl_lookups} WHERE lookup_id='".$lookup_id."' and status=1";
+    $res = db_query($sql);
+    /*if($rs = db_fetch_object($res)){
+     form_set_error('form','The Lookup '' cannot be disabled as it has other entities mapped to it.');
+         $st=1;
+         //The Distict  cannot be disabled as it has other entities mapped to it.
+   }*/
+   //if($st !=1){
+                //db_query("UPDATE {tbl_lookuptypes} SET status=0 WHERE lookupType_id='".$lookupType_id."'");
+                db_query("UPDATE {tbl_lookups} SET status=0 WHERE lookup_id ='".$lookup_id."'");
+                
+                $message = getMessage('dsjelookup', 'code07', array("0"=>getLookupName($lookup_id)));
+                drupal_set_message($message);
+   //}
+        drupal_goto("dsje/listlookup");
+ }
+
+  function lookup_enable($id){
+        $lookup_id =  $id;
+        //db_query("UPDATE {tbl_lookuptypes} SET status=1 WHERE lookupType_id='".$lookupType_id."'");
+        db_query("UPDATE {tbl_lookups} SET status=1 WHERE lookup_id ='".$lookup_id."'");
+        
+        $message = getMessage('dsjelookup', 'code09', array("0"=>getLookupName($lookup_id)));
+		drupal_set_message($message);
+		
+		//$message = getMessage('dsjelookup', 'code09', array("0"=>$sno));
+       // drupal_set_message('Lookup has been enabled');
+        drupal_goto("dsje/listlookup");
+ }
+
+//api
+ 
+
+  
+
+
+function dsje_addlookupview($id){
+                $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Lookups', 'dsje/listlookup');
+  if($array[2] == 'view'){
+     $breadcrumb[] = l('View Lookup', 'dsje/listlookup/view/lookup/'.$array[4].'');
+  }
+    drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * FROM {tbl_lookups} where lookup_id = $id";
+        $res = db_query($sql);
+        $rs = db_fetch_object($res);
+        if($rs->status ==1){
+        $status ='Enabled';
+        }else{
+        $status ='Disabled';
+        }
+        
+        //$remarks = ucfirst($rs->remarks);
+        if($remarks==''){$remarks='N/A';}
+        
+//        $lookup_uid = ucfirst($rs->lookup_uid);
+//        if($lookup_uid==''){$lookup_uid='N/A';}
+        
+        $lookupTypename = getlookupType($rs->lookupType_id);
+        //$zonename = getZone($rs->zone_id);
+        $output .='<table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+        $output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Lookup Details</h2></td></tr>';
+        //$output .='<tr class="oddrow"><td>Unicode:</td><td>'.$lookup_uid.'</td></tr>';
+        $output .='<tr class="evenrow"><td width="50%">Lookup:</td><td class="normal">'.$rs->lookup_name.'</td></tr>';        
+        $output .='<tr class="oddrow"><td width="50%">Lookup Type:</td><td class="normal">'.ucwords($lookupTypename).'</td></tr>';
+        $output .='<tr class="evenrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+		$output .='<tr class="oddrow"><td class="back" align="center" colspan="2">'.l(t('Back'), 'dsje/listlookup').'</td></tr>';
+		
+        $output .='</table>';
+        return $output;
+}
+

@@ -1,0 +1,71 @@
+<?php
+function rec_department_schema() {
+
+  //department table
+   $schema['tbl_departments'] = array(
+							 'fields' => array(
+											   'department_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'department_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '900',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'department_id' => array('department_id'),
+												),
+							 'primary key' => array('department_id'),
+							 );
+	
+	return $schema;
+}
+
+function rec_department_install() {
+	drupal_install_schema('rec_department');
+}
+
+function rec_department_uninstall() {
+	drupal_uninstall_schema('rec_department');
+}

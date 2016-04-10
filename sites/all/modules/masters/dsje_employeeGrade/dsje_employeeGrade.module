@@ -1,0 +1,532 @@
+<?php
+function dsje_employeeGrade_init() {
+	//drupal_add_css(drupal_get_path('module', 'dsje_language') .'/dsje_language.css');
+	
+}
+
+
+function dsje_employeeGrade_perm() {
+	return array('edit dsje_employeeGrade','administer dsje_employeeGrade', 'create dsje_employeeGrade', 'view dsje_employeeGrade');
+}
+
+function dsje_employeeGrade_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_employeeGrade', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_employeeGrade', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_employeeGrade', $account);
+	}
+	
+}
+
+function dsje_employeeGrade_menu() {
+	
+	
+	$items['admin/dsje/listemployeeGrade'] = array(
+										'title' => t('List of Employee Grades'),
+										'description' => 'Allow user to View Employee Grades',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewemployeeGrade',
+										'access arguments' => array('administer dsje_employeeGrade'),
+													 
+									  );
+	
+	$items['admin/dsje/listemployeeGrade/addemployeeGrade'] = array(
+										'title' => t('Create Employee Grade'),
+										'description' => 'Allow user to add Employee Grade',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_employeeGrade',
+										'access arguments' => array('administer dsje_employeeGrade'),
+													 
+									  );
+   	$items['admin/dsje/listemployeeGrade/edit/employeeGrade/%'] = array(
+								
+										'title' => t('Edit Employee Grade'),
+										'description' => 'Allow user to add Employee Grade',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addemployeeGradeedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_employeeGrade'),
+													 
+									  );
+   $items['admin/dsje/listemployeeGrade/view/employeeGrade/%'] = array(
+								
+										'title' => t('View Employee Grade'),
+										'description' => 'Allow user to add Employee Grade',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addemployeeGradeview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_employeeGrade'),
+													 
+									  );
+     $items['admin/dsje/del/employeeGrade/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'employeeGrade_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_employeeGrade'),
+													 
+									  );
+    $items['admin/dsje/enable/employeeGrade/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'employeeGrade_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_employeeGrade'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing employeeGrade
+ */
+
+function viewemployeeGrade(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjeemployeeGrade', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Employee Grade'), 'field' => 'employeeGrade_name', 'sort' => 'asc'),
+		array('data' => t('Status')),
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Employee Grade', 'admin/dsje/listemployeeGrade/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+	
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+		$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	
+		
+		 $status = $_REQUEST['searchtextstatus'];	
+	
+	 if( $val && $status ==''){
+	 $searchquery = " employeeGrade_name LIKE '".$val."'";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "  status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(employeeGrade_name LIKE '".$val."' AND  status='".$status."')";
+	 }
+	 
+	 
+	 $query = "SELECT employeeGrade_id, employeeGrade_name, status FROM {tbl_employeegrades} where ".$searchquery."  ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM {tbl_employeegrades} where ".$searchquery."  ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	}else{
+    $query = "SELECT employeeGrade_id, employeeGrade_name, status FROM {tbl_employeegrades} ".tablesort_sql($header);
+ }
+   
+    /*if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%';	 
+	 $query = "SELECT employeeGrade_id, employeeGrade_name, status FROM {tbl_employeegrades} where UPPER(employeeGrade_name) LIKE '".$val."' ".tablesort_sql($header);
+	$sqlcount = "SELECT COUNT(*) AS count  FROM {tbl_employeegrades} where UPPER(employeeGrade_name) LIKE '".$val."' ".tablesort_sql($header);
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+ }else{
+    $query = "SELECT employeeGrade_id, employeeGrade_name, status FROM {tbl_employeegrades} ".tablesort_sql($header);
+ }
+ */
+ 
+ 
+ 
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+ 
+ $output = '<form method="post" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!='' || $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'dsjeemployeeGrade', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listemployeeGrade');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjeemployeeGrade', 'code01', NULL),"admin/dsje/listemployeeGrade/addemployeeGrade");
+   	$lising = getMessage( 'dsjeemployeeGrade', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">
+	Status:<select name="searchtextstatus" >
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;	
+	
+	
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, 10);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listemployeeGrade/edit/employeeGrade/".$row->employeeGrade_id);
+		$viewurl = l("View","admin/dsje/listemployeeGrade/view/employeeGrade/".$row->employeeGrade_id);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/employeeGrade/$row->employeeGrade_id/$row->employeeGrade_name");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/employeeGrade/$row->employeeGrade_id/$row->employeeGrade_name");
+		
+		}
+
+
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->employeeGrade_name)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+	}
+	
+	
+	if($rows== NULL)
+	$header=NULL;
+	
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+function dsje_employeeGrade(){
+ return drupal_get_form('dsje_employeeGrade_form');
+}
+
+function dsje_employeeGrade_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Employee Grade', 'admin/dsje/listemployeeGrade');
+  if($array[3] == 'addemployeeGrade'){
+     $breadcrumb[] = l('Add Employee Grade', 'admin/dsje/listemployeeGrade/addemployeeGrade');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['employeeGrade_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Employee Grade Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>'45',
+		'#maxlength' =>'45',
+	    '#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+
+	
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+   
+   $form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listemployeeGrade'),
+);
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dsje_employeeGrade_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $employeeGrade_name = trim($values['employeeGrade_name']);
+	$remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+   
+	
+	$s = textonlyn('employeeGrade_name',$employeeGrade_name,'employeeGrade');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+		db_query("INSERT INTO `tbl_employeegrades` (`employeeGrade_name`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`,`remarks`) VALUES('".$employeeGrade_name."','".$status."','".$createdby."','".$createdon."','".$createdby."','".$createdon."','".$remarks."') ");
+	   
+		$message = getMessage('dsjeemployeeGrade', 'code05', array("0"=>$employeeGrade_name));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listemployeeGrade');
+	}
+}
+
+function dsje_employeeGrade_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	$employeeGrade_name = trim($values['employeeGrade_name']);
+	$remarks = parseData(trim($values['remarks']));
+	
+	$s = textonlyn('employeeGrade_name',$employeeGrade_name,'employeeGrade');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$sql = "SELECT * FROM {tbl_employeegrades} where UCASE(employeeGrade_name)= '".strtoupper($employeeGrade_name)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjeemployeeGrade', 'code06', array("0"=>$employeeGrade_name));
+			form_set_error('employeeGrade_name', $message);
+		}
+	}	
+}
+
+function dsje_addemployeeGradeedit($employeeGrade_id){
+ return drupal_get_form('dsje_employeeGrade_form_edit',$employeeGrade_id);
+}
+
+function dsje_employeeGrade_form_edit(&$form_states,$employeeGrade_id) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Employee Grade', 'admin/dsje/listemployeeGrade');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit Employee Grade', 'admin/dsje/listemployeeGrade/edit/employeeGrade/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlemployeeGrade = "select * FROM {tbl_employeegrades} where employeeGrade_id=$employeeGrade_id";
+	$resemployeeGrade = db_query($sqlemployeeGrade);
+	$rsemployeeGrade = db_fetch_object($resemployeeGrade);
+	
+	$form['employeeGrade_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsemployeeGrade->employeeGrade_id,
+	);
+	
+	$form['employeeGrade_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('Employee Grade Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsemployeeGrade->employeeGrade_name,
+		'#size' =>'45',
+		'#maxtength' =>'45',
+		'#attributes' => array('onkeypress' => 'return textonlyn(event)'),
+	);
+	
+	$form['prev_employeeGrade_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsemployeeGrade->employeeGrade_name,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsemployeeGrade->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+    $form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l('Back', 'admin/dsje/listemployeeGrade'),
+);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+	
+	return $form;
+}
+
+function dsje_employeeGrade_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$employeeGrade_id = $values['employeeGrade_id'];
+	$employeeGrade_name = ParseData($values['employeeGrade_name']);
+	$prev_employeeGrade_name = ParseData($values['prev_employeeGrade_name']);
+	$remarks = parseData($values['remarks']);
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	$s = textonlyn('employeeGrade_name',$employeeGrade_name,'employeeGrade');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	
+	if($s == 0 && $s1 == 0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_employeegrades} where LOWER(employeeGrade_name)= '".strtolower($employeeGrade_name)."' GROUP BY employeeGrade_id"));
+		$count = $countObj->count;
+		
+		if( strcmp(strtolower($prev_employeeGrade_name), strtolower($employeeGrade_name))==0){
+			db_query("UPDATE `tbl_employeegrades` set `employeeGrade_name` = '".$employeeGrade_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where employeeGrade_id='".$employeeGrade_id."'");
+			
+			$message = getMessage('dsjeemployeeGrade', 'code11', array("0"=>$employeeGrade_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listemployeeGrade");	
+			
+		}else{
+			if($count==0){
+				db_query("UPDATE `tbl_employeegrades` set `employeeGrade_name` = '".$employeeGrade_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where employeeGrade_id='".$employeeGrade_id."'");
+				
+				$message = getMessage('dsjeemployeeGrade', 'code05', array("0"=>$employeeGrade_name));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listemployeeGrade");	
+			
+			}else{
+				db_query("UPDATE `tbl_employeegrades` set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where employeeGrade_id='".$employeeGrade_id."'");
+				
+				$message = getMessage('dsjeemployeeGrade', 'code06', array("0"=>$employeeGrade_name));
+				form_set_error('employeeGrade_name', $message);
+			}
+		}
+	}
+}
+
+function dsje_employeeGrade_theme() {
+	
+	return array(
+				 
+		'dsje_employeeGrade_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_employeeGrade_form',
+                                 ),
+        'dsje_employeeGrade_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_employeeGrade_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_employeeGrade_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_employeeGrade_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_employeeGrade_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function employeeGrade_delete($sid, $sno){
+  $employeeGrade_id =  $sid;
+  db_query("UPDATE {tbl_employeegrades} SET status=0 WHERE employeeGrade_id ='".$employeeGrade_id."'");
+  $message = getMessage('dsjeemployeeGrade', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listemployeeGrade");
+ }
+
+
+  function employeeGrade_enable($sid, $sno){
+    $employeeGrade_id =  $sid;
+    db_query("UPDATE {tbl_employeegrades} SET status=1 WHERE employeeGrade_id ='".$employeeGrade_id."'");
+  
+    $message = getMessage('dsjeemployeeGrade', 'code10', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listemployeeGrade");
+  }
+
+  function dsje_addemployeeGradeview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Employee Grade', 'admin/dsje/listemployeeGrade');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Employee Grade', 'admin/dsje/listemployeeGrade/view/employeeGrade/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * FROM {tbl_employeegrades} where employeeGrade_id=$id";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<table cellpadding="2" cellspacing="1" border="0" id="wrapper">';
+ $output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Employee Grade Details</h2></td></tr>';
+  $output .='<tr class="evenrow"><td width="50%">Employee Grade:</td><td class="normal">'.ucwords($rs->employeeGrade_name).'</td></tr>';
+ ////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+ $output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l('Back', 'admin/dsje/listemployeeGrade').'</td></tr>';
+ $output .='</table>';
+
+ return $output;
+  }
+	
+	

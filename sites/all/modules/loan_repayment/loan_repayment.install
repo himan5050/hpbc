@@ -1,0 +1,112 @@
+<?php
+function loan_repayment_install() {
+	drupal_install_schema('loan_repayment');
+}
+
+function loan_repayment_uninstall() {
+	drupal_uninstall_schema('loan_repayment');
+}
+
+function loan_repayment_schema() {
+	
+	$schema['tbl_loaneerepayment'] = array(
+							 'fields' => array(
+											   'loanrepayment_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+															  
+											 'loan_account' => array(
+																   'type' => 'varchar',
+																   'length' => '45',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),			  
+															  
+		                                       'loanee_name' => array(
+																   'type' => 'varchar',
+																   'length' => '45',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+                                               'loanee_address' => array(
+																   'type' => 'varchar',
+																   'length' => '45',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+																   
+												'mode_payment' => array(
+																   'type' => 'varchar',
+																   'length' => '25',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+																   				   
+                                               'cash_amount' => array(
+																   'type' => 'varchar',
+																   'length' => '25',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ), 
+																   
+											 'cheque_no' => array(
+																   'type' => 'varchar',
+																   'length' => '255',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ), 			   
+																   
+                                                 'cheque_date' => array(
+																   'type' => 'varchar',
+																   'length' => '255',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+												 'infavour' => array(
+																   'type' => 'varchar',
+																   'length' => '45',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),	
+											 'bank_name' => array(
+																   'type' => 'varchar',
+																   'length' => '25',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+																   
+										    'cheque_amount' => array(
+																   'type' => 'varchar',
+																   'length' => '50',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+										  	
+																   
+											'createdby' => array(
+																   'type' => 'varchar',
+																   'length' => '255',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),
+																   
+											'createdon' => array(
+																   'type' => 'varchar',
+																   'length' => '255',
+																   'not null' => TRUE,
+																   'default' => ''
+																   ),					   
+																   					   					   
+																   
+
+                                         ),      
+											 
+							 'indexes' => array(
+												'loanrepayment_id' => array('loanrepayment_id')
+												),
+							 'primary key' => array('loanrepayment_id'),
+							 );
+	return $schema;
+}

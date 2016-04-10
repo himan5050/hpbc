@@ -1,0 +1,1401 @@
+<?php
+//include(drupal_get_path('theme', 'garland') . '/includes/fdrCheque.inc');
+
+drupal_add_js(drupal_get_path('module','budgetDistribution').'/rec_program.js');
+
+
+
+function budgetDistribution_node_info() {
+	return array (
+					'budgetDistribution' => array (
+										'name' => t('List of Budget Distribution'),
+										'module' => 'budgetDistribution',
+										'description' => "Creates Budget Distribution",
+										'has_title' => TRUE,
+										'title_label' => t('Budget Distribution'),
+										'has_body' => FALSE,
+										),
+				);
+}
+/**
+ *hook_perm
+ */
+
+function budgetDistribution_perm() {
+	return array('edit budgetDistribution','administer budgetDistribution', 'create budgetDistribution', 'view budgetDistribution');
+}
+
+function budgetDistribution_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit budgetDistribution', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create budgetDistribution', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view budgetDistribution', $account);
+	}
+}
+ 
+ function budgetDistribution_menu(){
+	 $items['list/budgetDistributionList'] = array(
+		   'title' => 'List of Budget Distribution',
+		   'page callback' => 'budgetDistribution_list',
+		   'access arguments' => array('administer budgetDistribution'),
+		   'type' => MENU_NORMAL_ITEM,
+
+	   );
+$items['viewbudgetDistribution/%'] = array(
+								'title' => t('view Budget Distribution'),
+								'type' => MENU_CALLBACK,
+								'page callback' => 'view_budgetDistribution',
+								'page arguments' => array(1),
+								'access arguments' => array('administer budgetDistribution'),
+		                        
+						);
+  
+  $items['admin/dsje/del/budgetDistribution/%'] =  array(
+	               						 'title' => t('Delete Budget Distribution'),
+										 'type' => MENU_CALLBACK,
+										 'page callback' => 'budgetDistribution_delete',
+		           			             'page arguments' => array(4),
+		               			         'access arguments' => array('administer budgetDistribution'),
+													 
+	);
+ $items['admin/dsje/enable/budgetDistribution/%'] =  array(
+											'type' => MENU_CALLBACK,
+											'page callback' => 'budgetDistribution_enable',
+		            			            'page arguments' => array(4),
+		                  				    'access arguments' => array('administer budgetDistribution'),
+														 
+	);	
+	
+	
+	$items['dsje/headchange'] = array(
+										'page callback' => 'myheadchange',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+									
+	
+						
+   return $items;
+ }
+  
+  
+  
+
+
+
+function myheadchange() {
+  
+	$headtype_id = $_POST['headtype'];
+$branch=$_POST['branch'];
+$fin_year=$_POST['fin_year'];
+	//248-loan , 249- exp
+
+	$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('budgetDistribution_form', $form, $form_state);
+//$headtype_id=$form->headtype;
+
+//$branch=$form->branch;
+	//$fin_year=$form->fin_year;
+
+
+if($headtype_id==248){
+
+
+$no=db_query("select schemeName_name from tbl_schemeNames ");
+
+}else if($headtype_id==249) {
+//expenditure
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookupTypes WHERE lookupType_id=90";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$no= db_query($sqlsender);
+//$senderarray['']= '--Select--';
+
+
+}
+
+if(!empty($branch) && !empty($fin_year) && !empty($headtype_id)){
+
+
+	$findnid=db_query("select nid from tbl_budgetDistribution where (headtype='".$headtype_id."' and branch='".$branch."' and fin_year='".$fin_year."')");
+	$foundnid=db_fetch_object($findnid);
+
+$i=-1;
+
+$sum=db_query("select sum(amount) as amount from tbl_budgetReceived where fin_year='".$fin_year."' and headtype='".$headtype_id."'");
+	$total=db_fetch_object($sum);
+
+
+/*
+ $form['budget'] = array(
+	'#type' => 'markup',
+	'#value' => 'Total Budget: '.$total->amount,
+	
+	'#id' => 'edit-budget',
+	'#name' =>'budget',
+	);
+
+$output = '<tr id="headchange"><td id="headchange">'.drupal_render($form['budget']).'</td></tr>';*/
+$output .='<table> <tr class="oddrow">
+
+  <td class="form-text3" align="center">Schemes</td>
+  <td class="form-text3"  align="center">April</td>
+  <td class="form-text3" align="center">May</td>
+  <td class="form-text3" align="center">June</td>
+  <td class="form-text3" align="center">July</td>
+  <td class="form-text3" align="center">August</td>
+  <td class="form-text3" align="center">September</td>
+  <td class="form-text3" align="center">October</td>
+  <td class="form-text3" align="center">November</td>
+  <td class="form-text3" align="center">December</td>
+  <td class="form-text3" align="center">January</td>
+  <td class="form-text3" align="center">February</td>
+  <td class="form-text3" align="center">March</td>
+
+</tr>';
+
+
+
+while($noo=db_fetch_object($no)){
+
+
+$i++;
+
+	
+	
+	$findit="select * from tbl_budgetMonths where type_id='".$headtype_id."' and field_id='".$i."' and nid='".$foundnid->nid."'";
+	$finding=db_query($findit);
+	
+
+	$found=db_fetch_object($finding);
+
+
+//$output = drupal_render($form[$i.'getscheme']);
+	
+	if($headtype_id==248){
+	 $form[$i.'getscheme'] = array(
+	'#type' => 'markup',
+	'#value' => $noo->schemeName_name,
+	
+	'#id' => 'edit-'.$i.'getscheme',
+	'#name' => $i.'getscheme',
+	);
+} else if($headtype_id==249){
+
+
+
+	 $form[$i.'getscheme'] = array(
+	'#type' => 'markup',
+	'#value' => $noo->lookup_name,
+	
+	'#id' => 'edit-'.$i.'getscheme',
+	'#name' => $i.'getscheme',
+	);
+}
+
+$form[$i.'apr'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('April'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->apr,
+   '#id' => 'edit-'.$i.'apr',
+	'#name' => $i.'apr',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'may'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('May'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->may,
+		  '#id' => 'edit-'.$i.'may',
+	'#name' => $i.'may',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'jun'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('June'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' =>$found->jun,
+		  '#id' => 'edit-'.$i.'jun',
+	'#name' => $i.'jun',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'jul'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('July'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->jul,
+		  '#id' => 'edit-'.$i.'jul',
+	'#name' => $i.'jul',
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'aug'] = array(
+     '#type' =>'textfield',
+//	 '#title' => t('August'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->aug,
+		  '#id' => 'edit-'.$i.'aug',
+	'#name' => $i.'aug',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'sept'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('September'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' =>$found->sept,
+		  '#id' => 'edit-'.$i.'sept',
+	'#name' => $i.'sept',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'oct'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('October'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' =>$found->oct,
+		  '#id' => 'edit-'.$i.'oct',
+	'#name' => $i.'oct',
+	//'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'nov'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('November'),
+	 //'#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->nov,
+		  '#id' => 'edit-'.$i.'nov',
+	'#name' => $i.'nov',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'dec'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('December'),
+	 //'#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->dec,
+		  '#id' => 'edit-'.$i.'dec',
+	'#name' => $i.'dec',
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'jan'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('January'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->jan,
+		  '#id' => 'edit-'.$i.'jan',
+	'#name' => $i.'jan',
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'feb'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('February'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->feb,
+		  '#id' => 'edit-'.$i.'feb',
+	'#name' => $i.'feb',
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'mar'] = array(
+     '#type' =>'textfield',
+	 //'#title' => t('March'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->mar,
+		  '#id' => 'edit-'.$i.'mar',
+	'#name' => $i.'mar',
+	//'#attributes' => array('readonly' => 'readonly'),	
+  );
+
+   $output .='<tr class="evenrow" id="headchange">';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'getscheme']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'apr']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'may']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'jun']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'jul']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'aug']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'sept']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'oct']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'nov']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'dec']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'jan']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'feb']).'</td>';
+	$output .= '<td id="headchange">'.drupal_render($form[$i.'mar']).'</td>';
+
+   $output .='</tr>';
+
+}
+
+}else{
+
+
+
+$i=-1;
+while($noo=db_fetch_object($no)){
+
+
+$i++;
+
+
+
+
+
+
+	 $form[$i.'getscheme'] = array(
+	'#type' => 'markup',
+	'#value' => $noo->schemeName_name,
+	'#required' => FALSE,
+	'#id' => 'edit-'.$i.'getscheme',
+	'#name' => $i.'getscheme',
+	);
+
+
+$form[$i.'apr'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('April'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => '',
+	'#id' => 'edit-'.$i.'apr',
+	'#name' => $i.'apr',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'may'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('May'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' =>  '',
+		  '#id' => 'edit-'.$i.'may',
+	'#name' => $i.'may',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'jun'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('June'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => '',
+		  '#id' => 'edit-'.$i.'jun',
+	'#name' => $i.'jun',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'jul'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('July'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => '',
+		  '#id' => 'edit-'.$i.'jul',
+	'#name' => $i.'jul',
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'aug'] = array(
+     '#type' =>'textfield',
+//	 '#title' => t('August'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => '',
+		  '#id' => 'edit-'.$i.'aug',
+	'#name' => $i.'aug',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'sept'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('September'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => '',
+		  '#id' => 'edit-'.$i.'sept',
+	'#name' => $i.'sept',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'oct'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('October'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => '',
+		  '#id' => 'edit-'.$i.'oct',
+	'#name' => $i.'oct',
+	//'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'nov'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('November'),
+	 //'#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => '',
+		  '#id' => 'edit-'.$i.'nov',
+	'#name' => $i.'nov',
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'dec'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('December'),
+	 //'#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' =>  '',
+		  '#id' => 'edit-'.$i.'dec',
+	'#name' => $i.'dec',
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'jan'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('January'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => '',
+		  '#id' => 'edit-'.$i.'jan',
+	'#name' => $i.'jan',
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'feb'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('February'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' =>  '',
+		  '#id' => 'edit-'.$i.'feb',
+	'#name' => $i.'feb',
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'mar'] = array(
+     '#type' =>'textfield',
+	 //'#title' => t('March'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => '',
+		  '#id' => 'edit-'.$i.'mar',
+	'#name' => $i.'mar',
+	//'#attributes' => array('readonly' => 'readonly'),	
+  );
+
+
+
+
+
+
+
+
+	$output .= drupal_render($form[$i.'getscheme']);
+	$output .= drupal_render($form[$i.'apr']);
+	$output .= drupal_render($form[$i.'may']);
+	$output .= drupal_render($form[$i.'jun']);
+	$output .= drupal_render($form[$i.'jul']);
+	$output .= drupal_render($form[$i.'aug']);
+	$output .= drupal_render($form[$i.'sept']);
+	$output .= drupal_render($form[$i.'oct']);
+	$output .= drupal_render($form[$i.'nov']);
+	$output .= drupal_render($form[$i.'dec']);
+	$output .= drupal_render($form[$i.'jan']);
+	$output .= drupal_render($form[$i.'feb']);
+	$output .= drupal_render($form[$i.'mar']);
+	}}
+	$output .='</table>';
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+
+}
+
+
+
+
+
+
+  
+function budgetDistribution_list(){
+	global $user; //$base_url;
+	$limit =(int)getMessage('dsjebudgetDistribution', 'code04', NULL);
+	
+	$header = array(
+	array('data' => t('S. No.')),
+	//array('data' => t('Due Date'), 'field' => 'tbl_budgetDistribution.date_due', 'sort' => 'asc'),
+	array('data' => t('Head'), 'field' => 'head', 'sort' => 'asc'),
+	array('data' => t('Amount'), 'field' => 'amount', 'sort' => 'asc'),
+	
+	array('data' => t('Action'),'class'=>'addeditview'),
+	);
+
+
+$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Budget Distribution', 'list/budgetDistributionList'.$array[2].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 	
+	 $sql = "SELECT  node.nid,node.uid,  head,amount FROM node
+	 INNER JOIN tbl_budgetDistribution ON (node.nid=tbl_budgetDistribution.nid)
+	  WHERE node.uid='".$user->uid."' AND ( head LIKE '".$val."' OR amount LIKE '".$val."' ) ".tablesort_sql($header);
+   
+     $sqlcount = "SELECT COUNT(*) AS count FROM node
+	INNER JOIN tbl_budgetDistribution ON (node.nid=tbl_budgetDistribution.nid)
+	 WHERE node.uid='".$user->uid."' AND (  head LIKE '".$val."' OR amount LIKE '".$val."' ) ".tablesort_sql($header);
+	 
+	   $rscount = db_query($sqlcount);
+	   $rscounter = db_fetch_object($rscount);
+	    $_REQUEST['page']=0;
+	}else{
+	
+	  $sql = "SELECT  node.nid,node.uid, head,amount FROM node
+	 INNER JOIN tbl_budgetDistribution ON (node.nid=tbl_budgetDistribution.nid)
+	
+	 WHERE node.uid='".$user->uid."'".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/list/budgetDistributionList';
+	 $output = '<form method="POST" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+	$output .= t(getMessage('dsjebudgetDistribution', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','list/budgetDistributionList');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight"></td></tr>';
+	
+	$addurl = l(getMessage('dsjebudgetDistribution', 'code01', NULL),"node/add/budgetDistribution");
+   	$lising = getMessage('dsjebudgetDistribution', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight"><input type="text" name="searchtext" value="'.$_POST['searchtext'].'">
+	<input type="submit" name="search" value="Search"></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($sql,10);
+	
+	if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+	if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+		$editurl = l("Edit","node/$rs->nid/edit",array('attributes'=>array('id'=>'edit-state')));
+		$viewurl = l("View","viewbudgetDistribution/".$rs->nid,array('attributes'=>array('id'=>'edit-state')));
+		//$deleteurl = l("Delete","node/$rs->nid/delete",array('attributes'=>array('id'=>'edit-state')));
+		if($rs->statusnodal=='1'){
+		       $st='Enabled';
+		       $deleteurl = l("Delete","admin/dsje/del/budgetDistribution/".$rs->nid."/");
+		}else{
+			   $st ='Disabled';
+			   $deleteurl = l("Delete","admin/dsje/enable/budgetDistribution/".$rs->nid."/");
+		}
+
+      
+		  $cnode = node_load($rs->nid);
+  
+
+		$rows[] = array(
+			array('data' => $counter),
+			//array('data' => date('d-m-Y',strtotime($rs->date_due)),
+			array('data' => $rs->head),
+			array('data' => $rs->amount),
+           
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+		
+	  }
+	  
+	}
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .=theme_table($header,$rows);
+	return $output .=theme('pager', NULL, 20,0 );
+  }
+
+function budgetDistribution_delete($nid){
+   $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("Delete From tbl_budgetDistribution WHERE courtcase_id ='".$courtcase_id."'");
+  db_query("DELETE FROM tbl_budgetDistribution WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  $message=getMessage('dsjebudgetDistribution','code07',array("0"=>$node->head));
+  drupal_set_message($message);
+  
+  drupal_goto("list/budgetDistributionList");
+ }
+
+function budgetDistribution_enable($nid){
+  
+  $node = node_load($nid);
+  //db_query("UPDATE {users} SET status=0 WHERE uid ='".$node->uid."'");
+ // db_query("UPDATE {tbl_budgetDistribution} SET 	statusnodal =1 WHERE nid ='".$node->nid."'");
+  //drupal_set_message('Vehicle Insurance has been enabled successfully.');
+  //drupal_goto("list/budgetDistributionList");
+ 
+ db_query("DELETE FROM tbl_budgetDistribution WHERE nid ='".$node->nid."'");
+  //drupal_set_message(' Vehicle Insurance has been deleted successfully.');
+  
+  $message=getMessage('dsjebudgetDistribution','code07',array("0"=>$node->head));
+  drupal_set_message($message);
+  
+  drupal_goto("list/budgetDistributionList");
+ }
+
+
+function budgetDistribution_form(&$node){
+	global $user, $base_url;
+	$uid = $user->uid;
+	$rid = getRole($uid);	//$rid = getRole($user->uid);
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Budget Distribution', 'list/budgetDistributionList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	 $breadcrumb[] = l('Edit Budget Distribution ', 'node/'.$array[1].'/edit');
+	}
+  
+	//if($array[1] == 'add' && $array[2] == 'rec-program'){
+	 else{
+	 $breadcrumb[] = l('Add Budget Distribution ', 'node/add/budgetDistribution'.$array[3].'');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+   
+  
+	
+		
+	////////////////////////////////////
+	
+	
+	
+	
+
+	 
+	$form['headtype'] = array(
+		 '#id' => 'headtype_id',
+	'#type' => 'select',
+	'#title' => t('Head Type'),
+	'#required' => TRUE,
+	'#default_value' =>$node->headtype,
+	'#options' => HeadType(), 
+		 '#attributes' => array('onchange' => 'return selectedType("'.$base_url.'")'),
+		'#ahah' => array(
+				  'path' => 'dsje/headchange',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'headchange',
+				  ),
+	);
+
+		$form['branch'] = array(
+			'#id' => 'branch_id',
+	'#type' => 'select',
+	'#title' => t('Branch'),
+	'#required' => TRUE,
+	'#default_value' =>$node->branch,
+	'#options' => SelectOffices(), 
+ '#attributes' => array('onchange' => 'return selectedType("'.$base_url.'")'),
+				'#ahah' => array(
+				  'path' => 'dsje/headchange',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'headchange',
+				  ),
+	);
+	
+	
+	
+
+
+$form['fin_year'] = array(
+	'#id' => 'fin_year_id',
+	'#type' => 'select',
+	'#title' => t('Financial Year'),
+	'#required' => TRUE,
+	'#default_value' =>$node->fin_year,
+	'#options' => FinancialYear(), 
+	 '#attributes' => array('onchange' => 'return selectedType("'.$base_url.'")'),
+		'#ahah' => array(
+				  'path' => 'dsje/headchange',
+				  'method' => 'replace',
+				  'effect' => 'slide',
+				  'wrapper' =>'headchange',
+				  ),
+	);
+	
+	
+	//248=loan
+	
+$sum=db_query("select sum(amount) as amount from tbl_budgetReceived where fin_year='".$node->fin_year."' and headtype=248");
+	$total=db_fetch_object($sum);
+
+ $form['budget'] = array(
+     '#type' =>'textfield',
+	 '#title' => t('Total Budget'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $total->amount,
+	 '#attributes' => array('readonly' => 'readonly'),	
+  );
+
+
+///months
+if($node->headtype==248){
+$no=db_query("select schemeName_name from tbl_schemeNames ");
+}else {
+//expenditure
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookupTypes WHERE lookupType_id=90";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT * FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$no= db_query($sqlsender);
+//$senderarray['']= '--Select--';
+
+
+}
+$i=-1;
+$findnid=db_query("select nid from tbl_budgetDistribution where (headtype='".$node->headtype."' and branch='".$node->branch."' and fin_year='".$node->fin_year."')");
+	$foundnid=db_fetch_object($findnid);
+while($noo=db_fetch_object($no)){
+
+$i++;
+
+
+$findit="select * from tbl_budgetMonths where type_id='".$node->headtype."' and field_id='".$i."' and nid='".$node->nid."'";
+	$finding=db_query($findit);
+	
+
+	$found=db_fetch_object($finding);
+
+ $form[$i.'getscheme'] = array(
+	'#type' => 'markup',
+	'#value' => $noo->schemeName_name,
+	
+	
+	);
+
+$form[$i.'apr'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('April'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->apr,
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'may'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('May'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->may,
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'jun'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('June'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' =>$found->jun,
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'jul'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('July'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->jul,
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'aug'] = array(
+     '#type' =>'textfield',
+//	 '#title' => t('August'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->aug,
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'sept'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('September'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' =>$found->sept,
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'oct'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('October'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' =>$found->oct,
+	//'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'nov'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('November'),
+	 //'#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->nov,
+	// '#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'dec'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('December'),
+	 //'#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->dec,
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'jan'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('January'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->jan,
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'feb'] = array(
+     '#type' =>'textfield',
+	// '#title' => t('February'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->feb,
+	 //'#attributes' => array('readonly' => 'readonly'),	
+  );
+$form[$i.'mar'] = array(
+     '#type' =>'textfield',
+	 //'#title' => t('March'),
+	// '#required' =>TRUE,
+	 '#size' =>11,
+	 '#maxlength'=>11,
+	 '#default_value' => $found->mar,
+	//'#attributes' => array('readonly' => 'readonly'),	
+  );
+
+
+//print_r($node->apr);
+}
+
+///-----
+
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'list/budgetDistributionList'),	
+);
+
+
+return $form;
+} 
+
+
+
+
+
+
+function budgetDistribution_validate($form, &$form_state) {
+
+ 	$values = $form_state['values'];
+		
+	$array = explode('/',$_GET['q']);
+	$breadcrumb = array();
+	$breadcrumb[] = l('Home', '<front>');
+	$breadcrumb[] = l('List of Budget Distribution', 'list/budgetDistributionList');
+	if($array[0] == 'node' && $array[2] == 'edit'){
+	$breadcrumb[] = l('Edit Budget Distribution ', 'node/'.$array[1].'/edit');
+	}
+	if($array[1] == 'add' && $array[2] == 'rec-program'){
+	$breadcrumb[] = l('Add Budget Distribution ', 'node/add/budgetDistribution');
+	}
+	drupal_set_breadcrumb($breadcrumb);
+	
+//echo '<pre>';
+//print_r($form);
+	
+
+	//paypay('amount',$form->amount,'Amount');
+	
+	
+
+
+	
+	 
+}
+
+/**
+ *hook_form_alter
+ */
+function budgetDistribution_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	//echo '<pre>';
+	//print_r($form);exit;
+	 
+	
+	if($form_id =='budgetDistribution_node_form'){
+	 
+	 $form['author']['#type'] = 'value';
+    $form['author']['name'] = array('#type'=>'value', '#value'=>$form[
+'author']['name']['#default_value']);
+    $form['author']['date'] = array('#type'=>'value', '#value'=>$form[
+'author']['date']['#default_value']);
+	
+	
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	$form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['author_information']['#type'] = hidden;
+	$form['path']['#type'] = hidden;
+	 $form['attachments']['#type'] = hidden;
+	 
+	 
+	 $form['revision_information']['#type'] = hidden;
+	 $form['options']['#type'] = hidden;
+	 $form['buttons']['preview']['#type'] = hidden;
+	 $form['buttons']['delete']['#type'] = hidden;
+	 $form['menu']['#type'] = hidden;
+	 $form['comment_settings']['#type'] = hidden;
+	 $form['title']['#required'] = FALSE;
+	 $form['title']['#type'] = hidden;
+	 $form['field_password']['#size'] =30;
+     $form['field_password[0][][pass1]']['#size'] =30;
+	}
+	
+ }
+
+
+function budgetDistribution_insert($node){
+   global $user;
+   
+  
+  
+  
+  //all values
+  /////////
+
+  $headtype=$node->headtype;
+	  $branch=$node->branch;
+	  $fin_year=$node->fin_year;
+	  $budget=$node->budget;
+ 
+
+
+
+
+
+
+	$statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+
+
+$ko= "select * from tbl_budgetDistribution where nid='".$nid."'";
+
+/*if(db_query($ko)){
+
+db_query("update tbl_budgetDistribution set `headtype`='".$headtype."',`branch`='".$branch."',`fin_year`='".$fin_year."',`budget`='".$budget."' where nid='".$nid."'");
+
+
+if($node->headtype==248){
+$no=db_query("select count(schemeName_name) as count from tbl_schemeNames ");
+}else {
+//expenditure
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookupTypes WHERE lookupType_id=90";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT count(lookup_name) as count FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$no= db_query($sqlsender);
+
+//$senderarray['']= '--Select--';
+
+
+}
+//print_r($node);
+$noo=db_fetch_object($no);
+$count=$noo->count;
+$i=0;
+while($i<$count){
+
+$apr = $i.'apr';
+$may= $i.'may';
+	$jun= $i.'jun';
+	$jul= $i.'jul';
+	$aug= $i.'aug';
+	$sept= $i.'sept';
+	$oct= $i.'oct';
+	$nov= $i.'nov';
+	$dec= $i.'dec';
+	$jan= $i.'jan';
+	$feb= $i.'feb';
+	$mar= $i.'mar';
+
+
+//echo $apr=$node->$field;
+
+
+db_query("update tbl_budgetMonths set `apr`='".$apr."',`may`='".$may."',`jun`='".$jun."',`jul`='".$jul."',`aug`='".$aug."',`sept`='".$sept."',`oct`='".$oct."',`nov`='".$nov."',`dec`='".$dec."',`jan`='".$jan."',`feb`='".$feb."',`mar`='".$mar."' where field_id='".$i."' and type_id='".$headtype."' and nid='".$nid."'");
+
+
+
+
+$i++;
+
+}
+
+
+}else{*/
+
+   
+
+db_query ("INSERT INTO tbl_budgetDistribution (`vid`, `nid`,`headtype`, `branch`,`budget`,`fin_year`) VALUES ('".$vid."','".$nid."','".$headtype."','".$branch."','".$budget."','".$fin_year."')");
+
+
+///------months
+
+
+if($node->headtype==248){
+$no=db_query("select count(schemeName_name) as count from tbl_schemeNames ");
+}else {
+//expenditure
+$kk= "SELECT lookupType_id,lookupType_name  FROM tbl_lookupTypes WHERE lookupType_id=90";
+
+$tt= db_query($kk);
+$rst=db_fetch_object($tt);
+$sqlsender = "SELECT count(lookup_name) as count FROM tbl_lookups WHERE status=1 AND lookupType_id= '".$rst->lookupType_id."' ORDER BY lookup_name ASC";
+
+$no= db_query($sqlsender);
+
+//$senderarray['']= '--Select--';
+
+
+}
+//print_r($node);
+$noo=db_fetch_object($no);
+$count=$noo->count;
+$i=0;
+while($i<$count){
+
+$apr = $i.'apr';
+$may= $i.'may';
+	$jun= $i.'jun';
+	$jul= $i.'jul';
+	$aug= $i.'aug';
+	$sept= $i.'sept';
+	$oct= $i.'oct';
+	$nov= $i.'nov';
+	$dec= $i.'dec';
+	$jan= $i.'jan';
+	$feb= $i.'feb';
+	$mar= $i.'mar';
+
+
+//echo $apr=$node->$field;
+
+
+db_query("insert into tbl_budgetMonths (`vid`,`nid`,`type_id`,`field_id`,`apr`,`may`,`jun`,`jul`,`aug`,`sept`,`oct`,`nov`,`dec`,`jan`,`feb`,`mar`) values ('".$vid."','".$nid."','".$headtype."','".$i."','".$node->$apr."','".$node->$may."','".$node->$jun."','".$node->$jul."','".$node->$aug."','".$node->$sept."','".$node->$oct."','".$node->$nov."','".$node->$dec."','".$node->$jan."','".$node->$feb."','".$node->$mar."')");
+
+
+$i++;
+
+}
+//exit;
+
+
+
+///-----
+
+
+//}
+
+	
+  //  drupal_set_message('Vehicle Insurance Entry has been saved successfully.');
+	$message=getMessage('dsjebudgetDistribution','code05',array("0"=>$node->head));
+  drupal_set_message($message);
+	drupal_goto("list/budgetDistributionList");
+
+ 
+ 
+ }
+
+function budgetDistribution_update($node){
+	
+	 $amount=$node->amount;
+ $fin_year=$node->fin_year;
+	$head=$node->head;
+	$date=$node->date1;
+	
+ 
+    
+    $statusnodal =  1;   // $node->statusnodal;
+    
+	$nid = $node->nid;
+	$vid = $node->vid;
+	
+   
+	
+	
+	db_query("UPDATE tbl_budgetDistribution SET `head`='".$head."',`date1`='".$date."',`amount`='".$amount."',`fin_year`='".$fin_year."' WHERE nid='".$nid."'");
+	
+	
+	//drupal_set_message('Budget Distribution have been updated successfully.');
+	
+	$message=getMessage('dsjebudgetDistribution','code06',array("0"=>$node->head));
+  drupal_set_message($message);
+	drupal_goto("list/budgetDistributionList");
+	
+	
+}
+
+
+function budgetDistribution_theme() {
+	
+	return array(
+				 
+		'budgetDistribution_node_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'budgetDistribution_node_form',
+                                 ),
+       
+
+				 );
+}
+
+/**
+ *hook_validate
+ */
+
+
+
+
+/*function budgetDistribution_cron(){
+
+//$curr_date=date();
+$start=date('Y-m-d');
+
+$selDate=db_query("select * from tbl_budgetDistribution ");
+
+while($rs=db_fetch_object($selDate)){
+
+$date_diff=dateDiffByDays($start,$rs->date_to);
+
+if($date_diff==15 && $rs->remind_mail==0 && $rs->notification==84){
+
+
+$reg=db_query("select reg_no from tbl_vehicles where vehicle_id='".$rs->reg_no."'");
+//$to = $u->mail;
+	$finduid=db_query("select * from users_roles where rid=13");
+$reg_no=db_fetch_object($reg);
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from users where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+if(createMail('budgetDistribution', $ms->mail,'',$parameter,''))
+{
+$reminder= $rs->remind_mail + 1;
+db_query("update tbl_budgetDistribution set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+
+}
+}
+}
+
+else if($date_diff==3 && $rs->remind_mail==1 && $rs->notification==84){
+
+
+
+
+//$to = $u->mail;
+	
+	$reg=db_query("select reg_no from tbl_vehicles where vehicle_id='".$rs->reg_no."'");
+	$reg_no=db_fetch_object($reg);
+	$finduid=db_query("select * from users_roles where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from users where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('budgetDistribution', $ms->mail,'',$parameter,'')){
+
+$reminder= $rs->remind_mail + 1;
+db_query("update tbl_budgetDistribution set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+}}
+
+}
+
+
+else if($date_diff==0 && $rs->remind_mail <= 3 && $rs->notification==84){
+
+
+
+
+
+
+//$to = $u->mail;
+$reg=db_query("select reg_no from tbl_vehicles where vehicle_id='".$rs->reg_no."'");
+$reg_no=db_fetch_object($reg);
+$finduid=db_query("select * from users_roles where rid=13");
+while($ks=db_fetch_object($finduid)){
+
+
+$sendto=db_query("select name,mail from users where uid='".$ks->uid."' ");
+
+while($ms=db_fetch_object($sendto)){
+
+$parameter = '';
+$parameter = json_encode(array(0=>$ms->name,1=>$reg_no->reg_no,2=>$rs->date_to)); 
+
+	
+if(createMail('budgetDistribution_today', $ms->mail,'',$parameter,'')){
+$reminder= $rs->remind_mail + 1;
+db_query("update tbl_budgetDistribution set remind_mail='".$reminder."' where nid='".$rs->nid."'");
+}
+} 
+
+}
+}}
+
+
+}
+
+
+*/
+
+
+
+
+
+
+
+
+
+ 
+function budgetDistribution_load($node){
+$sql = "SELECT * FROM node INNER JOIN tbl_budgetDistribution ON (node.nid=tbl_budgetDistribution.nid) WHERE node.nid='".$node->nid."'";
+$res = db_query($sql);
+return $rs = db_fetch_object($res);
+}
+  
+function view_budgetDistribution($node){
+global $user;
+
+$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Budget Distribution', 'list/budgetDistributionList');
+   if($array[0] == 'viewbudgetDistribution'){
+     $breadcrumb[] = l('View Budget Distribution', 'viewbudgetDistribution/'.$array[1].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+
+ $sql = "select * from tbl_budgetDistribution where nid = $node";
+
+ $res = db_query($sql);
+ $rs = db_fetch_object($res);
+ //echo '<pre>';
+  //print_r($rs);
+ //echo '<pre>';exit;
+
+/*
+$nn=$rs->assigned_to;
+$nam= "select users.name from users where users.uid='".$nn."'";
+$assigned= db_query($nam);
+$assigned_t= $assigned->name;
+*/
+//$add_type=getLookupName($rs->add_type);
+//$regnowa=db_query("select * from tbl_vehicles where vehicle_id='".$rs->reg_no."'");
+//$regno= db_fetch_object($regnowa);
+//$notification=getLookupName($rs->notification);
+$ks=db_query("select name1 from tbl_headMaster where nid='".$rs->head."'");
+$head=db_fetch_object($ks);
+
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-conatiner">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Budget Distribution</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Head:</td><td class="normal"> '.ucwords($head->name1).'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Date:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date1)).'</td></tr>';
+$output .='<tr class="evenrow"><td width="50%">Amount:</td><td class="normal"> '.$rs->amount.'</td></tr>';
+//$output .='<tr class="oddrow" colspan="2"><td>PERIOD</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Financial Year:</td><td class="normal"> '.(getLookupName($rs->fin_year)).'</td></tr>';
+$output .='<tr class="evenrow"><td align="center" class="back" colspan="2">'.l(t('Back'), 'list/budgetDistributionList').'</td></tr>'; 
+ $output .='</table></td></tr>';
+return $output ;
+}

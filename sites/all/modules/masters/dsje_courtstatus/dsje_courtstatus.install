@@ -1,0 +1,71 @@
+<?php
+function dsje_courtstatus_schema() {
+
+  //language table
+   $schema['tbl_courtstatus'] = array(
+							 'fields' => array(
+											   'courtstatus_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'courtstatus_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                    	   	   'remarks' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+											   ),
+							 'indexes' => array(
+												'courtstatus_id' => array('courtstatus_id'),
+												),
+							 'primary key' => array('courtstatus_id'),
+							 );
+	
+	return $schema;
+}
+
+function dsje_courtstatus_install() {
+	drupal_install_schema('dsje_courtstatus');
+}
+
+function dsje_courtstatus_uninstall() {
+	drupal_uninstall_schema('dsje_courtstatus');
+}

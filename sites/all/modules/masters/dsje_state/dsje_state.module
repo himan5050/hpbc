@@ -1,0 +1,544 @@
+<?php
+function dsje_state_init() {
+}
+
+
+function dsje_state_perm() {
+	return array('edit dsje_state','administer dsje_state', 'create dsje_state', 'view dsje_state');
+}
+
+function dsje_state_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_state', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_state', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_state', $account);
+	}
+	
+}
+
+function dsje_state_menu() {
+	
+	
+	$items['admin/dsje/liststate'] = array(
+										'title' => t('List of State'),
+										'description' => 'Allow user to View State',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewdsjestate',
+										'access arguments' => array('administer dsje_state'),
+													 
+									  );
+	
+	$items['admin/dsje/liststate/addstate'] = array(
+										'title' => t('Add State'),
+										'description' => 'Allow user to add State',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addstate',
+										'access arguments' => array('administer dsje_state'),
+													 
+									  );
+									  
+   	$items['admin/dsje/liststate/edit/state/%'] = array(
+								
+										'title' => t('Edit State'),
+										'description' => 'Allow user to add State',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addstateedit',
+		                                'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_state'),
+													 
+									  );
+		 $items['admin/dsje/liststate/view/state/%'] = array(
+								
+										'title' => t('view State'),
+										'description' => 'Allow user to view State',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_viewstate',
+		                                'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_state'),
+													 
+									  );
+    $items['admin/dsje/del/state/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsjestate_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_state'),
+													 
+									  );
+  $items['admin/dsje/enable/state/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsjestate_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_state'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing designation
+ */
+ function viewdsjestate(){
+ global $user;
+	global $base_url;
+	global $xpathObj;
+	$limit = (int)getMessage('dsjestate', 'code04', NULL);
+
+   
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('State Name'), 'field' => 'state_name', 'sort' => 'asc'),
+		//array('data' => t('Remarks')),
+	    array('data' => t('Status'), 'field' => 'status', 'sort' => 'asc'),
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of States', 'admin/dsje/liststate/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+		$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);
+		
+		$status = $_REQUEST['searchtextstatus'];	
+	 
+	 if( $val && $status ==''){
+	 $searchquery = "UPPER(state_name) LIKE '".$val."'";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = "status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(UPPER(state_name) LIKE '".$val."' AND status='".$status."')";
+	 }
+		
+			 
+		$query = "SELECT state_id, state_name, remarks, status FROM {tbl_dsjestate} where  ".$searchquery."".tablesort_sql($header);
+        $sqlcount = "SELECT COUNT(*) AS count FROM {tbl_dsjestate} where  ".$searchquery."".tablesort_sql($header);
+		$rscount = db_query($sqlcount);
+		$rscounter = db_fetch_object($rscount);
+			//$_REQUEST['page']=0;
+	}else{
+	  	$query = "SELECT state_id, state_name, remarks, status FROM {tbl_dsjestate}".tablesort_sql($header);
+	}
+global $base_url;
+$action = $base_url.'/admin/dsje/liststate';
+
+$t1=$_POST['searchtextstatus'];
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+
+
+	$output = '<form method="post" action="'.$action.'"><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage('dsjestate', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/liststate');
+	}
+	
+	$output .='</td><td colspan="3"></td></tr>';
+	
+	$addurl = l(getMessage('dsjestate', 'code01', NULL),"admin/dsje/liststate/addstate");
+   	$lising = getMessage('dsjestate', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">Status:<select name="searchtextstatus">
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+	$result = pager_query($query,10);
+	
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/liststate/edit/state/".$row->state_id);
+		$viewurl = l("View","admin/dsje/liststate/view/state/".$row->state_id);
+     if($row->status=='1'){
+		$deleteurl = l("Disable","admin/dsje/del/state/".$row->state_id."/".$row->state_name);
+     }else{
+		$deleteurl = l("Enable","admin/dsje/enable/state/".$row->state_id."/".$row->state_name);
+     }
+		if($row->status=='1'){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->state_name)),
+			//array('data' => ucfirst($row->remarks)),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+	}
+	
+	if($rows== NULL)
+	$header=NULL;
+	
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	return $output;
+ }
+
+
+function dsje_addstateedit($state_id){
+ return drupal_get_form('dsje_state_form_edit',$state_id);
+}
+
+function dsje_state_form_edit(&$form_states,$state_id) {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of States', 'admin/dsje/liststate');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit State', 'admin/dsje/liststate/edit/state/'.$array[5].'');
+  }
+  drupal_set_breadcrumb($breadcrumb);
+	$sqldesignation = "select * FROM {tbl_dsjestate} where state_id='$state_id'";
+	$resdesignation = db_query($sqldesignation);
+	$rsdesignation = db_fetch_object($resdesignation);
+	
+	$form['state_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsdesignation->state_id,
+	);
+	
+	$form['state_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('State Name'),
+		'#required' => TRUE,
+		'#default_value' =>$rsdesignation->state_name,
+		'#size' =>45,
+		'#maxlength'=>45,
+		'#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+
+	$form['prev_state_name'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsdesignation->state_name,
+	);
+
+
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>$rsdesignation->remarks,
+		'#cols' =>30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+  
+  /*$form['status'] = array(
+		'#type' => 'hidden',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => $rsdesignation->status,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/liststate'),
+);
+
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dsje_state_form_edit_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $state_name = parseData(trim($values['state_name']));
+  $remarks = parseData(trim($values['remarks']));
+  $state_id = $values['state_id'];
+$s = textonlyn('state_name',$state_name,'State Name');
+$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+if($s == 0 && $s1 == 0){
+  $sql = "SELECT * FROM {tbl_dsjestate} where UCASE(state_name)= '".strtoupper($state_name)."'  and state_id !='".$state_id."'";
+   $res = db_query($sql);
+  
+  if($rs = db_fetch_object($res)){
+		$message = getMessage('dsjestate', 'code06', array("0"=>$state_name));
+		form_set_error('state_name', $message);
+   }
+}
+	
+}
+function dsje_state_form_edit_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+	
+    $remarks = trim($values['remarks']);
+    $status = $values['status'];
+	$createdby = $user->uid;
+	$state_id = $values['state_id'];
+	$state_name = parseData(trim($values['state_name']));
+	$prev_state_name = parseData($values['prev_state_name']);
+	$createdon = time();
+	$s = textonlyn('state_name',$state_name,'State Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_dsjestate} where LOWER(state_name)= '".strtolower($state_name)."' GROUP BY state_id"));
+$count = $countObj->count;
+
+if( strcmp(strtolower($prev_state_name), strtolower($state_name))==0){
+		db_query("UPDATE {tbl_dsjestate} set `state_name` = '".$state_name."'  ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."'  ,`remarks`='".$remarks."' where state_id='".$state_id."'");
+		$message = getMessage('dsjestate', 'code05', array("0"=>$state_name));
+		drupal_set_message($message);
+		drupal_goto("admin/dsje/liststate");	
+		}
+		else
+		{
+		if($count==0){
+			db_query("UPDATE {tbl_dsjestate} set `state_name` = '".$state_name."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' ,`remarks`='".$remarks."' where state_id='".$state_id."'");
+			$message = getMessage('dsjestate', 'code10', array('0'=>$state_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/liststate");	
+		
+			}else{
+			db_query("UPDATE {tbl_dsjestate} set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."'  ,`remarks`='".$remarks."' where state_id='".$state_id."'");
+			$message = getMessage('dsjestate', 'code06', array("0"=>$state_name));
+			form_set_error('state_name', $message);
+		 }	
+	}
+	}
+
+}
+function dsje_addstate(){
+ return drupal_get_form('dsje_state_form');
+}
+function dsje_state_form() {
+			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of States', 'admin/dsje/liststate');
+  if($array[3] == 'addstate'){
+     $breadcrumb[] = l('Add State', 'admin/dsje/liststate/addstate');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   $form['state_name'] = array(
+	    '#type' =>'textfield',
+		'#title' => t('State Name'),
+		'#required' => TRUE,
+		'#default_value' =>'',
+		'#size' =>41,
+		'#maxlength'=>45,
+        '#attributes' => array('onkeypress' => 'return alphanumeric(event)'), 
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' =>'textarea',
+		'#title' => t('Remarks'),
+		'#required' => FALSE,
+		'#default_value' =>'',
+		'#cols' => 30,
+        '#rows' => 5,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	/*$form['status'] = array(
+		'#type' => 'select',
+		'#title' => t('Status'),
+		'#required' => False,
+		'#default_value' => 1,
+		'#options' => array('0'=>'Disable','1'=>'Enable'),
+	); */
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/liststate'),
+);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dsje_state_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  $state_name = parseData(trim($values['state_name']));
+  $remarks = parseData(trim($values['remarks']));
+  
+	$s = textonlyn('state_name',$state_name,'State Name');
+	$s1 = textonlywithdotne('remarks',$remarks, 'Remarks');
+	if($s == 0 && $s1 == 0){
+	  $sql = "SELECT * FROM {tbl_dsjestate} where UCASE(state_name)= '".strtoupper($state_name)."' AND status =1";
+	   $res = db_query($sql);
+	  if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjestate', 'code06', array("0"=>$state_name));
+			form_set_error('state_name', $message);
+	   }
+ }	
+}
+
+
+function dsje_state_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $state_name = parseData(trim($values['state_name']));
+    $remarks = parseData(trim($values['remarks']));
+    $status = $values['status'];
+	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+    $sql = "SELECT * FROM {tbl_dsjestate} where UCASE(state_name)= '".strtoupper($state_name)."' AND status !=1";
+    $res = db_query($sql);
+  
+    if($rs = db_fetch_object($res)){
+      db_query("UPDATE {tbl_dsjestate} SET status=1 where state_id=$rs->state_id");
+    }else{
+	  db_query("INSERT INTO {tbl_dsjestate} (`state_name` ,`remarks`,`status` ,`createdby` ,`createdon`) VALUES('".$state_name."','".$remarks."','".$status."','".$createdby."','".$createdon."') ");
+     }
+	  $message = getMessage('dsjestate', 'code05', array('0'=>$state_name));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/liststate");	
+
+}
+
+
+function dsje_state_theme() {
+	
+	return array(
+				 
+		'dsje_state_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_state_form',
+                                 ),
+        'dsje_state_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_state_form_edit',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_state_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_state_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_state_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+  function dsjestate_delete($sid,$name){
+	  $state_id = $sid;
+   db_query("UPDATE {tbl_dsjestate} set `status`=0 where state_id='".$state_id."'");
+ $message = getMessage('dsjestate', 'code11', array("0"=>$name));
+ drupal_set_message($message);
+ drupal_goto('admin/dsje/liststate');
+ }
+
+   function dsjestate_enable($sid,$name){
+	  $state_id = $sid;
+   db_query("UPDATE {tbl_dsjestate} set `status`=1 where state_id='".$state_id."'");
+ $message = getMessage('dsjestate', 'code09', array("0"=>$name));
+ drupal_set_message($message);
+ drupal_goto('admin/dsje/liststate');
+ }
+
+function dsje_viewstate($state_id){
+	
+		$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of States', 'admin/dsje/liststate');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View State', 'admin/dsje/liststate/view/state/');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	
+	
+	
+	$sql = "select * FROM {tbl_dsjestate} where state_id = '$state_id' ORDER BY state_name ASC";
+$res = db_query($sql);
+ $rs = db_fetch_object($res);
+ if($rs->status =='0'){
+  $status ='Disabled';
+}else{
+  $status ='Enabled';
+}
+
+
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+
+
+
+$output .='<table cellpadding="2" cellspacing="1" border="0" id="form-container">';
+$output .='<tr class="oddrow"><td colspan="2" align="center"><h2>State Details</h2></td></tr>';
+$output .='<tr class="evenrow"><td width="50%">State Name:</td><td class="normal">'.ucwords($rs->state_name).'</td></tr>';
+////$output .='<tr class="oddrow"><td>Remarks:</td><td>'.$remarks.'</td></tr>';
+$output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+$output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'admin/dsje/liststate').'</td></tr>';
+$output .='</table>';
+return $output;
+  }
+
+
+
+  
+  
+	
+	

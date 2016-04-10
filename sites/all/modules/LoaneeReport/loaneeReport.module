@@ -1,0 +1,90 @@
+<?php
+
+/**
+ *hook_perm
+ */
+ 
+ function loaneeReport_init() {
+	drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+function loaneeReport_perm() {
+	return array('edit loaneeReport','administer loaneeReport', 'create loaneeReport', 'view loaneeReport');
+}
+
+function loaneeReport_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit loaneeReport', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create loaneeReport', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view loaneeReport', $account);
+	}
+	
+}
+
+
+function loaneeReport_menu(){
+
+  $items['loaneeReport_detail'] = array(
+										'title' => t('Loanee Report'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'loaneeReport_detail',
+										'access arguments' => array('administer loaneeReport_detail'),
+													 
+									  );
+   
+   return $items;
+}
+
+
+
+function loaneeReport_detail(){
+  return drupal_get_form('loaneeReport_detail_form');
+}
+
+function loaneeReport_detail_form(){
+   global $base_url;
+
+   $array = explode('/',$_GET['q']);
+    $breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = l('Loanee Report', 'loaneeReport_detail');
+    drupal_set_breadcrumb($breadcrumb);
+   
+    $form['acc_no'] = array(
+                                '#type' => 'textfield',
+							
+								'#size' => '30',
+								'#required' => TRUE,
+ );
+ 
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function loaneeReport_theme() {
+	
+	return array(
+		
+		'loaneeReport_detail_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'LoaneeReport_form',
+                                 ),							 
+ );
+        
+}

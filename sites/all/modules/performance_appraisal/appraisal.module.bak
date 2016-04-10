@@ -1,0 +1,305 @@
+<?php
+
+function appraisal_init() {
+	 drupal_add_js(drupal_get_path('module', 'performance_appraisal') .'/appraisal.js');
+
+}
+
+
+function appraisal_menu(){
+
+$items['appraisalentry'] = array(
+'title'=>t(''),
+'page callback'=>'appraisal_entry_page',
+'access arguments' => array('access content'),
+'type' => MENU_NORMAL_ITEM,
+);
+$items['appraisallist'] = array(
+'title'=>t(''),
+'page callback'=>'appraisal_list_page',
+'access arguments' => array('access content'),
+'type' => MENU_NORMAL_ITEM,
+);
+$items['appraisal-search-list/%'] = array(
+'title'=>t(''),
+'page callback'=>'appraisal_search_page',
+'page arguments' => array(1),
+'access arguments' => array('access content'),
+'type' => MENU_NORMAL_ITEM,
+);
+return $items;
+}
+
+
+function appraisal_entry_page(){
+
+$output = drupal_get_form('appraisal_form');
+
+return $output;
+
+}
+
+
+function appraisal_form(){
+
+$form['employee_id'] = array(
+	'#type' =>'select',
+	'#title' => t('Employee'),
+	'#required' =>TRUE,
+	'#default_value' =>'', 
+	'#options' => selectEmployee(),
+	'#attributes' => array('onchange'=> 'return showUser(this.value,"'.$base_url.'")'),
+		
+	);
+	
+	$form['employee_name'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Employee Name'),
+	'#required' => FALSE,
+	'#id' => 'employee_id',
+	'#default_value' =>'',
+	'#attributes' => array('readonly' => 'readonly'),
+	'#size' =>45,
+	);
+	
+	
+	$form['officeid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'office_id',
+	'#title' => t('Office'),
+	'#required' => FALSE,
+	'#default_value' =>'',
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+	$form['designationid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'designation_id',
+	'#title' => t('Designation'),
+	'#required' => FALSE,
+	'#default_value' =>'',
+	'#attributes' => array('readonly' => 'readonly'), 
+	); 
+	
+	$form['Departmentid'] = array(
+	'#type' => 'textfield',
+	'#id' => 'department_id',
+	'#title' => t('Department'),
+	'#required' => FALSE,
+	'#default_value' =>'',
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+
+	$form['prev_year_appraisal'] = array(
+	'#type' => 'textfield',
+	'#title' => t('Previous Year Appraisal'),
+	'#required' => FALSE,
+	'#size' => '10',
+	'#default_value' =>'',
+		'#id' => 'p_a_year_id',
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+	
+	$form['prev_year_acr'] = array(
+	'#type' => 'textfield',
+	'#id' => 'pyear_id',
+	'#title' => t('Previous Year ACR'),
+	'#required' => FALSE,
+	'#default_value' =>'',
+	'#attributes' => array('readonly' => 'readonly'), 
+	); 
+	
+	$form['prev_year_acr_status'] = array(
+	'#type' => 'textfield',
+	'#id' => 'acr_id',
+	'#title' => t('Previous Year ACR Status'),
+	'#required' => FALSE,
+	'#default_value' =>'',
+	'#attributes' => array('readonly' => 'readonly'),
+	);
+
+//
+
+$form['appraisal_year'] = array(
+	'#type' => 'select',
+	'#title' => t('Appraisal Year'),
+	'#required' => TRUE,
+	'#default_value' =>current(),
+	'#options' =>selectYear('111'),
+	);
+	
+	$form['appraisal_remark'] = array(
+'#type' =>'textarea',
+	'#title' => t('Appraisal Remark'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#maxlength' =>200,
+	'#attributes' => array('onkeypress' =>'return textonlywithdotnemax(event,"edit-appraisal_remark",200)'),
+	);
+	
+	
+	$form['acr_of_appriasal'] = array(
+	'#type' => 'radios',
+	'#title' => t('ACR Status'),
+	'#required' => TRUE,
+	'#default_value' =>'',
+	'#options' =>array('1'=>'Positive','2'=>'Negative'),
+	);
+$form['submit'] = array(
+	'#type' => 'submit',
+		'#value' =>t('Submit'),
+	);
+	return $form;
+
+	
+	}
+function appraisal_form_validate($form,&$form_status){
+	//$pre_year_appraisal = $form_state['values']['prev_year_appraisal'];
+    //$current_appraisal_year = $form_state['values']['appraisal_year'];
+
+//	if($pre_year_appraisal == $current_appraisal_year){
+//	form_set_error('appraisal_year','Please select');
+//	}
+}
+	
+function appraisal_form_submit($form,&$form_state){
+
+//echo '<pre>';
+//print_r($form_state);
+//exit;
+
+
+$emp_id = $form_state['values']['employee_id'];
+$pre_year_appraisal = $form_state['values']['prev_year_appraisal'];
+$pre_year_remark =$form_state['values']['prev_year_acr'];
+$pre_year_status = $form_state['values']['prev_year_acr_status'];
+$current_appraisal_year = $form_state['values']['appraisal_year'];
+$current_year_remark = $form_state['values']['appraisal_remark'];
+$current_year_status = $form_state['values']['acr_of_appriasal'];
+
+db_query("insert into tbl_apraisal (employee_id,prev_year_appraisal,prev_year_acr,prev_year_acr_status,appraisal_year,appraisal_remark,acr_of_appriasal,status) values ('".$emp_id."','".$pre_year_appraisal."','".$pre_year_remark."','".$pre_year_status."','".$current_appraisal_year."','".$current_year_remark."','".$current_year_status."',1)");
+
+drupal_goto('appraisallist');
+
+
+}
+
+function appraisalsearch_form(){
+
+$form['search_box']=array(
+'#type' => 'textfield',
+'#title' => '',
+'#required' => FALSE,
+'#size' => 60,
+);
+
+$form['search'] = array(
+'#type' => 'submit',
+	'#value' =>t('search'),
+);
+return $form;
+}
+
+function appraisalsearch_form_submit($form,&$form_state){
+	$keydata = $form_state['values']['search_box'];
+drupal_goto('appraisal-search-list/'.$keydata);
+
+}
+
+
+
+function appraisal_list_page(){
+
+$sql = "select tbl_apraisal.employee_id as employee_id,tbl_apraisal.prev_year_appraisal as prev_year_appraisal ,tbl_apraisal.appraisal_year as appraisal_year,tbl_apraisal.appraisal_remark as appraisal_remark,tbl_apraisal.acr_of_appriasal as acr_of_appriasal, tbl_joinings.employee_name as employee_name from tbl_apraisal INNER JOIN tbl_joinings ON(tbl_apraisal.employee_id = tbl_joinings.employee_id)";
+
+$output = listofappraisal($sql);
+return $output;
+
+}
+
+function appraisal_search_page($keydata){
+$val = '%'.strtoupper($keydata).'%'; $val=addslashes($val);
+$sql = "select tbl_apraisal.employee_id as employee_id,tbl_apraisal.prev_year_appraisal as prev_year_appraisal ,tbl_apraisal.appraisal_year as appraisal_year,tbl_apraisal.appraisal_remark as appraisal_remark,tbl_apraisal.acr_of_appriasal as acr_of_appriasal, tbl_joinings.employee_name as employee_name from tbl_apraisal INNER JOIN tbl_joinings ON(tbl_apraisal.employee_id = tbl_joinings.employee_id) where tbl_apraisal.prev_year_appraisal='".$keydata."' OR tbl_apraisal.appraisal_year='".$keydata."' OR tbl_apraisal.appraisal_remark='".$val."' OR tbl_apraisal.acr_of_appriasal='".$val."' OR tbl_joinings.employee_name ='".$val."'";
+
+$output = listofappraisal($sql);
+return $output;
+}
+
+function listofappraisal($sqlquery){
+
+global $user;
+//$limit =(int)getMessage('resignation', 'code04', NULL);
+$header = array(
+	array('data' => t('S. No.')),
+	array('data' => t('Employee Name'), 'field' => 'tbl_apraisal.employee_id', 'sort' => 'asc'),
+	array('data' => t('Previous Appraisal Date'), 'field' => 'tbl_apraisal.prev_year_appraisal', 'sort' => 'asc'),
+	array('data' => t('Current Appraisal Date'), 'field' => 'tbl_apraisal.appraisal_year', 'sort' => 'asc'),
+	array('data' => t('Remark'), 'field' => 'tbl_apraisal.appraisal_remark', 'sort' => 'asc'),
+	array('data' => t('Status'), 'field' => 'tbl_apraisal.acr_of_appriasal', 'sort' => 'asc'),
+	
+	);
+	
+	
+	$sql = $sqlquery.tablesort_sql($header);
+	$count_query = "SELECT COUNT(*) as mycount FROM (" . $sql . ") AS count_query";
+	$cres = db_query($count_query);
+	$crs = db_fetch_object($cres);
+	 $totalcount = $crs->mycount;
+	
+	$result = pager_query($sql,10,0,$count_query);
+if($result){
+        
+	  while($rs = db_fetch_object($result)){
+	    $counter++;
+$empsql = "select employee_name form tbl_joinings where employee_id='".$rs->employee_id."'"; 
+
+		$rows[] = array(
+			array('data' => $counter),
+			array('data' => ucwords($rs->employee_name).'('.$rs->employee_id.')'),
+		array('data' => $rs->prev_year_appraisal),
+		array('data' => $rs->appraisal_year),
+		array('data' => ucwords($rs->appraisal_remark)),
+		array('data' => $rs->acr_of_appriasal),
+            
+          
+		);
+	
+	  }
+}
+if($rows== NULL)
+	$header=NULL;
+$output .='<div class="uploadcss">';	
+    if(arg(0)=='appraisal-search-list'){
+	 $records = t(getMessage('resignation', 'code03', array("0"=>$totalcount)));
+	 $output .='<table  id="wrapper" class="searchrecord"><tr><td>'.$records.' | '.l('View All','appraisallist').'</td></tr></table>';
+	}
+	$title = t(getMessage('resignation', 'code02',NULL));
+	 $output .='<table id="wrapper"><tr><td class="tblHeaderLeft">'.$title.'<span class="addrecord">'.l('(Add Appraisal)','appraisalentry').'</span></td><td class="tblHeaderRight">'.drupal_get_form('appraisalsearch_form').'</td></tr></table>';
+	 
+	
+	$output .=theme_table($header,$rows);
+	 $output .=theme('pager', NULL, 20,0 );
+ $output .='<div>';
+  
+	return $output;
+  }
+  
+
+
+
+function selectYear($emp_id){
+	$sql ="select appraisal_year from tbl_apraisal where employee_id='".$emp_id."'";
+	$res= db_query($sql);
+	$rs=db_fetch_object($res);
+	$appraisalyear = $rs->appraisal_year;
+$year =$appraisalyear+1;
+	$cyear = Date("Y");
+	$selectyear[$year] ='--Select--';
+	while($year<=$cyear){
+	$selectyear[$year] = $year; 
+		$year = $year +1;
+	
+	}
+	
+	return $selectyear;
+	}

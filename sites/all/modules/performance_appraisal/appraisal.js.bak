@@ -1,0 +1,49 @@
+
+function showempdetail(str,url)
+{
+
+// var img = url+'/sites/all/modules/performance_appraisal/ajax.gif';
+//document.getElementById("rempdetail").innerHTML="<div style='text-align:center;'><img src="+img+" style='text-align: center;float: none;'/></div>";
+if (str=="")
+  {
+document.getElementById("employee_id").value = "";
+	document.getElementById("office_id").value = "";
+	document.getElementById("designation_id").value = "";
+	document.getElementById("department_id").value = "";
+	document.getElementById("p_a_year_id").value = "";
+	document.getElementById("pyear_id").value = "";
+	document.getElementById("acr_id").value = "";
+  return;
+  } 
+if (window.XMLHttpRequest)
+  {// code for IE7+, Firefox, Chrome, Opera, Safari
+  xmlhttp=new XMLHttpRequest();
+  }
+else
+  {// code for IE6, IE5
+  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+  }
+xmlhttp.onreadystatechange=function()
+  {
+  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+    {
+	 var val = xmlhttp.responseText.split('|');	
+	// alert(val[4]);
+    //document.getElementById("edit-employee-name").innerHTML=xmlhttp.responseText;
+	document.getElementById("employee_id").value = val[0];
+	document.getElementById("office_id").value = val[2];
+	document.getElementById("designation_id").value = val[1];
+	document.getElementById("department_id").value = val[3];
+	document.getElementById("p_a_year_id").value = val[4];
+	document.getElementById("pyear_id").value = val[5];
+	document.getElementById("acr_id").value = val[6];
+    }
+  }
+ 
+xmlhttp.open("GET",url+"/apraisalemployee.php?q="+str,true);
+xmlhttp.send();
+}
+
+
+
+

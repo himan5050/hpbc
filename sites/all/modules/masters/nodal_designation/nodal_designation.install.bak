@@ -1,0 +1,50 @@
+<?php
+function workingwith_schema() {
+
+   $schema['tbl_workingwith'] = array(
+							 'fields' => array(
+											   'workingwith_id' => array(
+															  'type' => 'serial',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE
+															  ),
+											   'workingwith_name' => array(
+															  'type' => 'varchar',
+															  'length' => '200',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                    	   	  									   	                                           
+		                                      'status' => array(
+															  'type' => 'varchar',
+															  'length' => '255',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 'utility_id' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											
+											   ),
+							 'indexes' => array(
+												'workingwith_id' => array('workingwith_id'),
+												),
+							 'primary key' => array('workingwith_id'),
+							 );
+//echo '<pre>';
+															  //print_r($schema);
+															  //echo '<pre>';exit;
+	
+	return $schema;
+}
+
+function workingwith_install() {
+	drupal_install_schema('workingwith');
+}
+
+function workingwith_uninstall() {
+	drupal_uninstall_schema('workingwith');
+}

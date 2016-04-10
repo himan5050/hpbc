@@ -1,0 +1,469 @@
+<?php
+global $base_url;
+
+/**
+ *hook_perm
+ */
+ 
+function LoaneeDetails_perm() {
+	return array('edit LoaneeDetails','administer LoaneeDetails', 'create LoaneeDetails', 'view LoaneeDetails');
+}
+
+function LoaneeDetails_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit LoaneeDetails', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create LoaneeDetails', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view LoaneeDetails', $account);
+	}
+	
+}
+
+
+function LoaneeDetails_menu(){
+
+  $items['LoaneeDetailsReport_loanee'] = array(
+										'title' => t('Loane Details'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'LoaneeDetailsReport_loanee',
+										'access arguments' => array('administer LoaneeDetailsReport_loanee'),
+													 
+									  );
+									
+   $items['dsje/sector1'] = array(
+										'page callback' => 'mysector11',
+										'type' => MENU_CALLBACK,
+										'access arguments' => array('access content'),
+										);
+										
+   $items['LoaneeTehsilDetailsReport_loanee'] = array(
+										'title' => t('Loane Details'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'LoaneeTehsilDetailsReport_loanee',
+										'access arguments' => array('administer LoaneeTehsilDetailsReport_loanee'),
+													 
+									  );
+									  
+   $items['EducationLoanDetailsReport_loanee'] = array(
+										'title' => t('Education Loan Details'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'EducationLoanDetailsReport_loanee',
+										'access arguments' => array('administer EducationLoanDetailsReport_loanee'),
+													 
+									  );									
+										
+										
+   return $items;
+}
+////////////////////
+
+
+function SelectSector()
+  {
+  
+  $query2 = "SELECT * FROM tbl_sectors order by sector_name";
+   $result2 = db_query($query2);
+    $sectorarray = array(''=>'--Select--');
+    while($row2=db_fetch_object($result2))
+          {
+		  
+		  
+             $sectorarray[$row2->sector_id]=ucwords ($row2->sector_name);
+          }
+  return $sectorarray;
+ }
+ 
+
+ 
+
+///////////////////////
+
+
+function LoaneeDetailsReport_loanee(){
+	 $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Loanee Details Report', 'LoaneeDetailsReport_loanee');
+  drupal_set_breadcrumb($breadcrumb);
+  return drupal_get_form('LoaneeDetailsReport_loanee_form');
+}
+
+function LoaneeDetailsReport_loanee_form(){
+ 
+  global $base_url;
+//breadcrumb
+
+ 
+ /*$form['district'] = array(
+                                '#type' => 'textfield',
+						
+								
+ );
+ */
+ $sqlcountry = "select * from tbl_district WHERE status='1' ORDER BY district_name";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--select---'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->district_id] = ucfirst($rscountry->district_name);
+	  }
+	}
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => false,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		
+	);							 
+
+	$form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('From'),
+						   '#required' => true,
+						   '#size' => '30',
+ );
+ 
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('To'),
+						   '#required' => true,
+						   '#size' => '30',			   
+		);							   
+						   
+	/* $form['sector'] = array(
+                                '#type' => 'textfield',
+								'#title' => t('Sector'),
+								'#size' => '30',
+ );
+ 					   
+	$form['scheme'] = array(
+                                '#type' => 'textfield',
+								'#title' => t('Scheme'),
+								'#size' => '30',
+ );					   
+	*/	
+				   
+   $form['sector1'] = array(
+	            '#type' => 'select',
+	  
+	            '#required'=>FALSE,
+	            '#default_value' =>$node->religion,
+	            '#options' => SelectSector(), 
+				'#ahah' => array(
+				                       'path' => 'dsje/sector1',
+				                      'method' => 'replace',
+				                      'effect' => 'slide',
+				                      'wrapper' =>'sector2',
+				                       ),
+						   
+ );
+ $sector_id=$node->sector1;
+    $query = "SELECT scheme_name,loan_scheme_id FROM tbl_scheme_master  WHERE sector = '".$sector_id."' order by scheme_name";
+	$result = db_query($query);
+	//$schemearray = array();
+	$schemearray3 = array(''=>"--Select--");
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$schemearray3[$row->loan_scheme_id] =ucwords($row->scheme_name);
+		$counter++;
+	}
+	if($counter==0) {
+		$schemearray[''] = "--Select--";
+	}
+ 
+$nitquery ="select lookup_id, lookup_name from tbl_lookups where lookup_id in (1,226)";
+$nitinres=db_query($nitquery);
+
+$genderarray =array(''=>"--Select--"); 
+while($nitinreso=db_fetch_object($nitinres)) {
+		$genderarray[$nitinreso->lookup_id] =$nitinreso->lookup_name;
+		$counter++;
+	}
+	if($counter==0) {
+		$genderarray[''] = "--Select--";
+	}
+
+
+$form['gender'] = array(
+	'#type' => 'select',
+
+	'#default_value' =>$_REQUEST['gender'] ,
+	'#options' =>$genderarray, 
+	'#name' => 'gender',
+	);
+ 
+ $form['scheme2'] = array(
+	'#type' => 'select',
+
+	'#default_value' =>$_REQUEST['scheme2'] ,
+	'#options' =>$schemearray3, 
+	//'#id' => 'edit-scheme2',
+	'#name' => 'scheme2',
+	);
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+
+function mysector11() {
+    $sector_id = $_POST['sector1'];
+	
+	$query = "SELECT scheme_name,loan_scheme_id FROM tbl_scheme_master  WHERE sector = '".$sector_id."' order by scheme_name";
+	$result = db_query($query);
+	//$schemearray = array();
+	$schemearray3 = array(''=>"--Select--");
+	$counter = 0;
+	while($row=db_fetch_object($result)) {
+		$schemearray3[$row->loan_scheme_id] =ucwords($row->scheme_name);
+		$counter++;
+	}
+	if($counter==0) {
+		$schemearray3[''] = "--Select--";
+	}
+	$form_state = array('submitted' => FALSE);
+	$form_build_id = $_POST['form_build_id'];
+	$form = form_builder('dsje_joinings_form', $form, $form_state);
+
+
+	
+	 $form['scheme2'] = array(
+	'#type' => 'select',
+
+	'#required'=>FALSE,
+	'#default_value' =>$_REQUEST['scheme2'] ,
+	'#id' => 'edit-scheme3',
+	'#name' => 'scheme2',
+	'#options' => $schemearray3, 
+	);
+
+	$output = drupal_render($form['scheme2']);
+	return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+
+ function LoaneeDetails_theme() {
+	
+	return array(
+		
+		'LoaneeDetailsReport_loanee_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'LoaneeDetails_form',
+                                 ),
+								 
+		'LoaneeTehsilDetailsReport_loanee_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'LoaneeTehsilDetails_form',
+                                 ),
+	
+	    'EducationLoanDetailsReport_loanee_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'EducationLoanDetails_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}
+//Nishant//////////////////////////////////////////////////////////////////////////////////////////////
+
+function LoaneeTehsilDetailsReport_loanee(){
+	 $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Loanee Tehsilwise Details Report', 'LoaneeTehsilDetailsReport_loanee');
+  drupal_set_breadcrumb($breadcrumb);
+  return drupal_get_form('LoaneeTehsilDetailsReport_loanee_form');
+}
+
+function LoaneeTehsilDetailsReport_loanee_form(){
+ 
+  global $base_url;
+//breadcrumb
+
+ $sqlcountry = "select * from tbl_tehsil WHERE status='1'";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--select---'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->tehsil_id] = ucfirst($rscountry->tehsil_name);
+	  }
+	}
+	$form['tehsil_id'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => true,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		
+	);			
+	$form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('From'),
+						   '#required' => true,
+						   '#size' => '30',
+ );
+ 
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('To'),
+						   '#required' => true,
+						   '#size' => '30',			   
+		);							   
+						   
+	/* $form['sector'] = array(
+                                '#type' => 'textfield',
+								'#title' => t('Sector'),
+								'#size' => '30',
+ );
+ 					   
+	$form['scheme'] = array(
+                                '#type' => 'textfield',
+								'#title' => t('Scheme'),
+								'#size' => '30',
+ );					   
+	*/	
+				   
+  
+
+ 
+  
+  
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}
+
+//Nishant//
+
+
+
+
+//// Himanshu////
+function EducationLoanDetailsReport_loanee(){
+	 $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Education Loan Details Report', 'EducationLoanDetailsReport_loanee');
+  drupal_set_breadcrumb($breadcrumb);
+  return drupal_get_form('EducationLoanDetailsReport_loanee_form');
+}
+
+function EducationLoanDetailsReport_loanee_form(){
+ 
+  global $base_url;
+//breadcrumb
+
+ $sqlcountry = "select * from tbl_district WHERE status='1' ORDER BY district_name";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--select---'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->district_id] = ucfirst($rscountry->district_name);
+	  }
+	}
+	$form['district_id'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => false,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		
+	);	
+	
+	
+	$sqlcountry = "select * from tbl_tehsil WHERE status='1' ORDER BY tehsil_name";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--select---'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->tehsil_id] = ucfirst($rscountry->tehsil_name);
+	  }
+	}
+	$form['tehsil_id'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => false,
+		'#default_value' => '',
+		'#options' => $countryarray,
+		
+	);
+	
+	
+	$sqlcountry = "select * from tbl_panchayt WHERE status='1' ORDER BY panchayt_name";
+	$rescountry =db_query($sqlcountry);
+	if($rescountry){
+      $countryarray[''] = '--select---'; 
+	  while($rscountry = db_fetch_object($rescountry)){
+	    $countryarray[$rscountry->panchayt_id] = ucfirst($rscountry->panchayt_name);
+	  }
+	}
+	
+	$form['panchayt_id'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => false,
+		'#default_value' => '',
+		'#options' => $countryarray,
+	);								 
+								 
+
+	$form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('From'),
+						   '#required' => false,
+						   '#size' => '30',
+   );
+ 
+   $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('To'),
+						   '#required' => false,
+						   '#size' => '30',			   
+		);
+		
+		
+    $sqlcourse = "select * from tbl_courses WHERE course_status='1' ORDER BY course_name";
+	$rescourse =db_query($sqlcourse);
+	if($rescourse){
+      $coursearray[''] = '--select---'; 
+	  while($rscourse = db_fetch_object($rescourse)){
+	    $coursearray[$rscourse->course_id] = ucfirst($rscourse->course_name);
+	  }
+	}
+	
+	$form['course_id'] = array(
+		'#type' => 'select',
+		'#title' => t(''),
+		'#required' => false,
+		'#default_value' => '',
+		'#options' => $coursearray,
+	);								 
+								 
+							   
+						    
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate Report',
+  ); 
+  return $form;
+}

@@ -1,0 +1,6 @@
+;$id 16/11/2011 Rahman
+name = "In-coming Mails Report"
+description ="Inbound Mails Register"
+core = 6.x
+version =6.x-1
+package="SC and St Reports"

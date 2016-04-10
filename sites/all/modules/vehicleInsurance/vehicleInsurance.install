@@ -1,0 +1,203 @@
+<?php
+function vehicleInsurance_schema() {
+
+  //nodal table
+   $schema['tbl_vehicleInsurance'] = array(
+							 'fields' => array(
+											   
+                                               'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                         
+										   'notification' => array(
+															  'type' => 'varchar',
+															  'length' => '20',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										 
+										  'reg_no' => array(
+															  'type' => 'varchar',
+															  'length' => '40',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										   'date_insurance' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'date_from' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ), 
+										 'date_to' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											'date_due' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												 'policy_no' => array(
+															  'type' => 'varchar',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'sum_insured' => array(
+															  'type' => 'varchar',
+															  'length' => '11',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															    
+															  
+										
+											 'person_name' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											 
+													'add_type' => array(
+															  'type' => 'varchar',
+															  'length' => '20',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												  'add_line1' => array(
+															  'type' => 'varchar',
+															  'length' => '100',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'add_line2' => array(
+															  'type' => 'varchar',
+															  'length' => '100',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                            
+
+                                          'state_id' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										 'district_id' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 'tehsil_id' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											 'block' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											  'panchayat' => array(
+															  'type' => 'varchar',
+															  'length' => '45',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                            
+                                            'pincode' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											
+												'status1' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											
+												'statusnodal' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+															  
+															  'remind_mail' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+                                             
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('vid'),
+							 );
+	return $schema;
+}
+function vehicleInsurance_install() {
+	drupal_install_schema('vehicleInsurance');
+}
+
+function vehicleInsurance_uninstall() {
+	drupal_uninstall_schema('vehicleInsurance');
+}

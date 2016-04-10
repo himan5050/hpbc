@@ -1,0 +1,178 @@
+<?php
+function interestsubsidy1_schema() {
+
+  //nodal table
+   $schema['tbl_interestsubsidy1'] = array(
+							 'fields' => array(
+											   
+                                               'vid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'nid' => array(
+															  'type' => 'int',
+															  'unsigned' => TRUE,
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+                                         
+										 'interestsubsidy1_uid' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' =>0,
+															  ),
+										 
+									
+											  'interestsubsidy1_no' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											 'Loanee_details' => array(
+															  'type' => 'varchar',
+															  'length' => '100',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+										 'corp_reg_no' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'bank_acc_no' => array(
+															  'type' => 'varchar',
+															  'length' => '15',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'tot_adv_loan' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'dis_date' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  				  
+											'd_interest' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											'd_principle' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+											'd_total' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											'p_principle' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+															  
+											'p_interest' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+											'p_total' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),					  					  			  				  				  
+											'interest_sub_due' => array(
+															  'type' => 'int',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),				  
+											'status' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	
+											'bank_name' => array(
+															  'type' => 'varchar',
+															  'length' => '20',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),				  			  
+											'cheque_no' => array(
+															  'type' => 'varchar',
+															  'length' => '20',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),	  			    			  
+											    			  
+											'date1' => array(
+															  'type' => 'varchar',
+															  'length' => '10',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),		
+															  
+											
+												
+												'createdon' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'createdby' => array(
+															  'type' => 'int',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+											   'updatedby' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => 0
+															  ),
+												'updatedon' => array(
+															  'type' => 'varchar',
+															  'length' => '50',
+															  'not null' => TRUE,
+															  'default' => ''
+															  ),
+                                             
+											   ),
+									 'indexes' => array(
+												'nid' => array('nid')
+												),
+							 'primary key' => array('vid'),
+							 );
+	return $schema;
+}
+function interestsubsidy1_install() {
+	drupal_install_schema('interestsubsidy1');
+}
+
+function interestsubsidy1_uninstall() {
+	drupal_uninstall_schema('interestsubsidy1');
+}

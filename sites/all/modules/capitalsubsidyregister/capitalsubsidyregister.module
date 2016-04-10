@@ -1,0 +1,149 @@
+<?php
+//global $base_url;
+
+/**
+ *hook_perm
+ 
+ 
+ */
+ 
+ function capitalsubsidyregister_init() {
+	//drupal_add_css(drupal_get_path('module', 'scstReports') .'/report_style.css');
+	
+}
+ 
+function capitalsubsidyregister_perm() {
+	return array('edit capitalsubsidyregister','administer capitalsubsidyregister', 'create capitalsubsidyregister', 'view capitalsubsidyregister');
+}
+
+function capitalsubsidyregister_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit capitalsubsidyregister', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create capitalsubsidyregister', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view capitalsubsidyregister', $account);
+	}
+	
+}
+
+
+function capitalsubsidyregister_menu(){
+
+  $items['capitalsubsidyregister'] = array(
+										'title' => t('Capital Subsidy Register'),
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'capitalsubsidyregister',
+										'access arguments' => array('administer capitalsubsidyregister'),
+													 
+									  );
+   
+   return $items;
+}
+
+function SelectDistrictdis()
+  {
+  
+  $query22 = "SELECT * FROM tbl_district order by  district_name ASC";
+   $result22 = db_query($query22);
+    $districtarray2 = array(''=>'--Select--');
+    while($row22=db_fetch_object($result22))
+          {
+		  
+		  
+             $districtarray2[$row22->district_id]=ucwords($row22->district_name);
+          }
+  return $districtarray2;
+ }
+
+function capitalsubsidyregister(){
+  return drupal_get_form('capitalsubsidy_form');
+}
+
+function capitalsubsidy_form(){
+	
+global $base_url;
+if($_REQUEST['from_date']['date'] && $_REQUEST['to_date']['date'])
+{
+	$fdate = explode('-',$_REQUEST['from_date']['date']);
+	$tdate = explode('-',$_REQUEST['to_date']['date']);
+	$frdate = $fdate['2'].'-'.$fdate['1'].'-'.$fdate['0'];
+	$todate = $tdate['2'].'-'.$tdate['1'].'-'.$tdate['0'];
+	if($frdate > $todate)
+		form_set_error('from_date','From date should be less than To date.');
+}
+//breadcrumb
+ $array = explode('/',$_GET['q']);
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Capital Subsidy Register', 'capitalsubsidyregister');
+  drupal_set_breadcrumb($breadcrumb);
+
+
+
+
+$form['district'] = array(
+	            '#type' => 'select',
+	            '#title' => t('District'), 
+	            //'#default_value' =>$districtarray2,
+	            '#options' =>SelectDistrictdis(),
+								
+ );
+
+
+$form['from_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('From Date'),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+ );
+ $form['to_date'] = array(
+ 	                       '#type' => 'date_popup',
+						   '#date_format' =>'d-m-Y',
+						   '#title' => t('To Date'),
+						   '#required' => FALSE,
+						   '#size' => '30',
+						   
+						   
+		);				   
+ 	
+
+ 
+
+ 
+ 
+						   
+ 
+  $form['submit'] = array(
+      '#type' =>'button',
+	  '#default_value' =>'Generate',
+  ); 
+  return $form;
+}
+
+
+/**
+ *@ hook_theme 
+*/
+
+ function capitalsubsidyregister_theme() {
+	
+	return array(
+		
+		'capitalsubsidy_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'capitalsubsidyregister_form',
+                                 ),
+			
+			
+								 
+ );
+        
+}

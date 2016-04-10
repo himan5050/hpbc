@@ -1,0 +1,6 @@
+; $Id$
+name = OfficesMaster
+description = "REC Offices Master"
+core = 6.x
+version =6.x-1
+package = "REC Masters"

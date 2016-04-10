@@ -1,0 +1,728 @@
+<?php error_reporting(0);
+function dsje_vehicle_init() {
+	drupal_add_css(drupal_get_path('module', 'dsje_language') .'/dsje_language.css');	
+}
+
+function dsje_vehicle_perm() {
+	return array('edit dsje_vehicle','administer dsje_vehicle', 'create dsje_vehicle', 'view dsje_vehicle');
+}
+
+function dsje_vehicle_access($op, $node, $account) {
+	if($op == 'update' || $op == 'delete') {
+		//&& ($account->uid == $node->uid)
+		if (user_access('edit dsje_vehicle', $account) ) {
+			return TRUE;
+		}
+	}
+	if (($op=='create') && ($op='list')) {
+		return user_access('create dsje_vehicle', $account);
+	}
+	if (($op=='view') or ($op=='list')) {
+		return user_access('view dsje_vehicle', $account);
+	}
+	
+}
+
+function dsje_vehicle_menu() {
+	
+	
+	$items['admin/dsje/listvehicle'] = array(
+										'title' => t('List of Vehicles'),
+										'description' => 'Allow user to View vehicle',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'viewvehicle',
+										'access arguments' => array('administer dsje_vehicle'),
+													 
+									  );
+	
+	$items['admin/dsje/listvehicle/addvehicle'] = array(
+										'title' => t('Create vehicle'),
+										'description' => 'Allow user to add vehicle',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_vehicle',
+										'access arguments' => array('administer dsje_vehicle'),
+													 
+									  );
+   	$items['admin/dsje/listvehicle/edit/vehicle/%'] = array(
+								
+										'title' => t('Edit vehicle'),
+										'description' => 'Allow user to add vehicle',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addvehicleedit',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_vehicle'),
+													 
+									  );
+   $items['admin/dsje/listvehicle/view/vehicle/%'] = array(
+								
+										'title' => t('View Vehicle'),
+										'description' => 'Allow user to add vehicle',
+										'type' => MENU_CALLBACK,
+										'page callback' => 'dsje_addvehicleview',
+                                        'page arguments' => array(5),
+		                                'access arguments' => array('administer dsje_vehicle'),
+													 
+									  );
+     $items['admin/dsje/del/vehicle/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'vehicle_delete',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_vehicle'),
+													 
+									  );
+    $items['admin/dsje/enable/vehicle/%/%'] =  array(
+										'type' => MENU_CALLBACK,
+										'page callback' => 'vehicle_enable',
+		                                'page arguments' => array(4,5),
+		                                'access arguments' => array('administer dsje_vehicle'),
+													 
+									  );
+	return $items;
+}
+
+
+/**
+ listing vehicle
+ */
+
+function viewvehicle(){
+global $user;
+global $base_url;
+$limit = (int)getMessage( 'dsjevehicle', 'code04', NULL);
+  
+  $header = array(
+		array('data' => t('S. No.')),
+        array('data' => t('Reg No.'), 'field' => 'reg_no', 'sort' => 'asc'),
+		array('data' => t('Vehicle Type'), 'field' => 'tbl_lookups.lookup_name', 'sort' => 'asc'),
+		array('data' => t('Model'), 'field' => 'model', 'sort' => 'asc'),
+		array('data' => t('Status'),'field' => 'status', 'sort' => 'asc'),
+		array('data' => t('Action'),'class' => 'addeditview',),
+	);
+	
+	$breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+   
+    if($array[0] == '' ) {
+     $breadcrumb[] = l('List of Vehicles', 'admin/dsje/listvehicle/'.$array[3].'');
+	 }  
+	 drupal_set_breadcrumb($breadcrumb);
+	 
+	 ///////////////////
+	 
+	 if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']|| $_REQUEST['searchtextstatus']!=''){
+		$val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	
+		
+		 $status = $_REQUEST['searchtextstatus'];	
+	
+	 if( $val && $status ==''){
+	 $searchquery = " tbl_lookups.lookup_name LIKE '".$val."' OR reg_no LIKE '".$val."' OR model LIKE '".$val."'";
+	 }
+	 
+	else if( $val=='' && $status){
+	 $searchquery = " tbl_vehicles.status='".$status."'";
+	 }
+	 
+	 else if($val && ($status =='0' ||$status =='1') ){
+	 $searchquery = "(tbl_lookups.lookup_name LIKE '".$val."' OR reg_no LIKE '".$val."' OR model LIKE '".$val."') AND tbl_vehicles.status='".$status."'";
+	 }
+	 
+	 
+	 $query = "SELECT  reg_no,model, tbl_lookups.lookup_name,tbl_vehicles.status FROM {tbl_vehicles} 
+	  INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_vehicles.vehicle_type)
+	  where ".$searchquery." ".tablesort_sql($header);
+	 
+	//$sqlcount = "SELECT COUNT(*) AS count  FROM {tbl_vehicles} INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_vehicles.vehicle_type)
+	  //where UPPER(tbl_lookups.lookup_name) LIKE '".$val."' OR UPPER(reg_no) LIKE '".$val."' OR UPPER(model) LIKE '".$val."'"  .tablesort_sql($header);
+	
+	 $sqlcount = "SELECT COUNT(*) AS count  FROM {tbl_vehicles} INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_vehicles.vehicle_type)
+	  where ".$searchquery." ";
+	
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	//echo $rscounter->count;exit;
+	//echo $_REQUEST['page'];exit;
+	 $_REQUEST['page']=0;
+	 
+	 }
+	 else{
+    $query = "SELECT tbl_lookups.lookup_name,reg_no,model,tbl_vehicles.status  FROM {tbl_vehicles} 
+	 INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_vehicles.vehicle_type)".tablesort_sql($header);
+ }
+	 ////////////////////
+	 
+   
+  /*  if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!=''){
+    $val = '%'.strtoupper($_REQUEST['searchtext']).'%'; $val=addslashes($val);	 
+	 $query = "SELECT  reg_no,model, tbl_lookups.lookup_name,tbl_vehicles.status FROM {tbl_vehicles} 
+	  INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_vehicles.vehicle_type)
+	  where UPPER(tbl_lookups.lookup_name) LIKE '".$val."' OR reg_no LIKE '".$val."' OR model LIKE '".$val."'"  .tablesort_sql($header);
+	 
+	$sqlcount = "SELECT COUNT(*) AS count  FROM {tbl_vehicles} INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_vehicles.vehicle_type)
+	  where UPPER(tbl_lookups.lookup_name) LIKE '".$val."' OR UPPER(reg_no) LIKE '".$val."' OR UPPER(model) LIKE '".$val."'"  .tablesort_sql($header);
+	
+	$rscount = db_query($sqlcount);
+	$rscounter = db_fetch_object($rscount);
+	 $_REQUEST['page']=0;
+ }else{
+    $query = "SELECT tbl_lookups.lookup_name,reg_no,model,tbl_vehicles.status  FROM {tbl_vehicles} 
+	 INNER JOIN tbl_lookups ON (tbl_lookups.lookup_id=tbl_vehicles.vehicle_type)".tablesort_sql($header);
+ }
+ 
+
+*/
+
+
+
+
+	 
+
+ global $base_url;
+$action = $base_url.'/admin/dsje/listvehicle';
+
+
+
+$selected0 ="";
+$selected1 ="";
+
+if($_REQUEST['searchtextstatus'] !=''){
+	
+	if($_REQUEST['searchtextstatus'] == 0){
+	  $selected0 ="selected = selected"; 
+	}
+	
+	if($_REQUEST['searchtextstatus'] == 1){
+	  $selected1  ="selected =  selected"; 
+	}
+}else{
+$selected0 ="";
+$selected1 ="";
+}
+ $output = '<form method="post" action=""><table width="100%" border="0" cellspacing="1" cellpadding="1" id="wrapper">
+	<tr><td colspan="3" class="searchrecord">';
+	if(isset($_REQUEST['searchtext']) && $_REQUEST['searchtext']!='' || $_REQUEST['searchtextstatus']!=''){
+	$output .= t(getMessage( 'dsjevehicle', 'code03', array("0"=>$rscounter->count)))." | ".l('View All','admin/dsje/listvehicle');
+	}
+	
+	$output .='</td><td colspan="3" class="tblHeaderRight" align="center"></td></tr>';
+	
+	$addurl = l(getMessage( 'dsjevehicle', 'code01', NULL),"admin/dsje/listvehicle/addvehicle");
+   	$lising = getMessage( 'dsjevehicle', 'code02', NULL);
+		
+	$output .='<tr>
+	<td colspan="3" class="tblHeaderLeft">'.$lising.'<span class="addrecord">'.$addurl.'</span></td>
+	<td colspan="3" class="tblHeaderRight">
+	Status:<select name="searchtextstatus" >
+	<option value="" selected = "selected">--Select--</option>
+	<option value="0" '.$selected0.'>Disabled</option>
+	<option value="1" '.$selected1.'>Enabled</option>
+	
+	</select>&nbsp;&nbsp;	
+	<input type="text" name="searchtext" value="'.$_POST['searchtext'].'" />
+	<input type="submit" name="search" value="Search" /></td>
+	</tr>
+	</table></form>';
+
+	$result = pager_query($query, 10);
+
+	if($_REQUEST['page']){
+     $counter = $_REQUEST['page']*$limit;
+	}else{
+	 $counter = 0;
+    }
+	while($row=db_fetch_object($result)) {
+		$counter++;
+		$editurl = l("Edit","admin/dsje/listvehicle/edit/vehicle/".$row->reg_no);
+		$viewurl = l("View","admin/dsje/listvehicle/view/vehicle/".$row->reg_no);
+		
+		if($row->status=='1'){
+		  $deleteurl = l("Disable","admin/dsje/del/vehicle/$row->reg_no/$row->reg_no");
+        }else{
+		  $deleteurl = l("Enable","admin/dsje/enable/vehicle/$row->reg_no/$row->reg_no");
+		
+		}
+  
+		if($row->status==1){
+		       $st='Enabled';
+		    }else{
+			   $st ='Disabled';
+			}
+			
+		$rows[] = array(
+			
+			array('data' => $counter),
+			array('data' => ucwords($row->reg_no)),
+			array('data' => ucwords($row->lookup_name)),
+			array('data' => $row->model),
+			array('data' => $st),
+			array('data' => $viewurl." | ".$editurl." | ".$deleteurl),
+		);
+	}
+	
+if($rows== NULL)
+	$header=NULL;
+	
+	$output .= theme_table($header,$rows, $attributes = array(), $caption = NULL);
+	$output .= theme('pager', NULL, $limit,0 );
+	
+	return $output;
+ }
+
+function dsje_vehicle(){
+ return drupal_get_form('dsje_vehicle_form');
+}
+
+function dsje_vehicle_form() {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Vehicles', 'admin/dsje/listvehicle');
+  if($array[3] == 'addvehicle'){
+     $breadcrumb[] = l('Add Vehicle', 'admin/dsje/listvehicle/addvehicle');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+   
+	
+		$form['vehicle_type'] = array(
+ 		'#type' => 'select',
+		'#title' => t('Vehicle Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $form->vehicle_type,
+		 '#options' => VehicleType(),
+
+);
+
+
+	
+	$form['date_purchase'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Purchase',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $form->date_purchase,
+	);
+	$form['mfd'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Manufacturing',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $form->mfd,
+	);
+	
+
+	$form['reg_no'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Reg No.'),
+	'#required' => TRUE,
+	'#default_value' =>$form->reg_no,
+	 '#maxlength'=>15,
+	'#size' =>25,
+    '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+	);
+	
+  $form['model'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Model'),
+	'#required' => TRUE,
+	'#default_value' =>$form->model,
+	 '#maxlength'=>45,
+	'#size' =>45,
+	      '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+
+	);
+	
+
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listvehicle'),
+	
+);	
+  
+    
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dsje_vehicle_form_submit($form, &$form_state) {
+	global $user;
+	$values = $form_state['values'];
+    $reg_no = trim($values['reg_no']);
+	 $vehicle_type = trim($values['vehicle_type']);
+	
+	 $model = trim($values['model']);
+	
+  
+    $date_purchase = $values['date_purchase'];
+    $mfd = $values['mfd'];
+   	$status = 1;
+	$createdby = $user->uid;
+	$createdon = time();
+    $s4=0;
+	if($date_purchase < $mfd)
+   {
+      form_set_error(mfd, t('Manufacturing Date should be less than the date of purchase'));
+	  $s4=1;
+   }
+  $s2=alphanumeric('reg_no',$reg_no,'Reg No.');
+  $s=alphanumeric('model',$model,'Model');
+	$s1=alphanumeric ('vehicle_type',$vehicle_type,'Vehicle Type');
+	
+	if($s == 0 && $s1 == 0 && $s2==0 && s4==0){
+		db_query("INSERT INTO {tbl_vehicles} (`reg_no`,`vehicle_type`,`model`,`date_purchase`,`mfd`,`status` ,`createdby` ,`createdon`,`updatedby` ,`updatedon`) VALUES('".$reg_no."','".$vehicle_type."','".$model."','".$date_purchase."','".$mfd."','1','".$createdby."','".$createdon."','".$createdby."','".$createdon."') ");
+	   
+		$message = getMessage('dsjevehicle', 'code05', array("0"=>$reg_no));
+		drupal_set_message($message);
+	   drupal_goto('admin/dsje/listvehicle');
+	}
+}
+
+function dsje_vehicle_form_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	 $reg_no = trim($values['reg_no']);
+	 $vehicle_type = trim($values['vehicle_type']);
+	
+		//if($reg_no==0){form_set_error(reg_no,t('Registration No. should not be 0'));}
+
+  
+    $date_purchase = $values['date_purchase'];
+    $mfd = $values['mfd'];
+	
+	 $model = trim($values['model']);
+	 $s=0;
+	if($date_purchase < $mfd)
+   {
+      form_set_error(mfd, t('Manufacturing Date should be less than the date of purchase'));
+	  $s=1;
+   }
+	$s6=alphanumeric('reg_no',$reg_no,'Reg No.');
+ $s4= alphanumeric('model',$model,'Model');
+$s5= alphanumeric ('vehicle_type',$vehicle_type,'Vehicle Type');
+	
+
+	//if($s == 0 && $s1 == 0 && $s4==0 && $s5==0 && $s6==0){
+	
+		$sql = "SELECT * FROM {tbl_vehicles} where UCASE(reg_no)= '".strtoupper($reg_no)."' ";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjevehicle', 'code06', array("0"=>$reg_no));
+			form_set_error('reg_no', $message);
+	//	}
+	}	
+}
+
+function dsje_vehicle_form_edit_validate($form, &$form_state) {
+	$values = $form_state['values'];
+	 $reg_no = trim($values['reg_no']);
+	 $vehicle_type = trim($values['vehicle_type']);
+	
+	$reg_no_edit = $values['reg_no_edit']; 
+    $date_purchase = $values['date_purchase'];
+    $mfd = $values['mfd'];
+	
+	 $model = trim($values['model']);
+	 $s=0;
+	if($date_purchase < $mfd)
+   {
+      form_set_error(mfd, t('Manufacturing Date should be less than the date of purchase'));
+	  $s=1;
+   }
+	$s6=alphanumeric('reg_no',$reg_no,'Reg No.');
+   $s4= alphanumeric('model',$model,'Model');
+    $s5= alphanumeric ('vehicle_type',$vehicle_type,'Vehicle Type');
+	//if($reg_no==0){form_set_error(reg_no,t('Registration No. should not be 0'));}
+
+	//if($s == 0 && $s1 == 0 && $s4==0 && $s5==0 && $s6==0){
+	  
+	  if($reg_no_edit == $reg_no){}else{
+	
+		$sql = "SELECT * FROM {tbl_vehicles} where UCASE(reg_no) = '".strtoupper($reg_no)."'";
+		$res = db_query($sql);
+		
+		if($rs = db_fetch_object($res)){
+			$message = getMessage('dsjevehicle', 'code06', array("0"=>$reg_no));
+			form_set_error('reg_no', $message);
+	  }
+	}	
+}
+
+function dsje_addvehicleedit($reg_no){
+ return drupal_get_form('dsje_vehicle_form_edit',$reg_no);
+}
+
+function dsje_vehicle_form_edit(&$form_states,$reg_no) {
+				$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Vehicle', 'admin/dsje/listvehicle');
+  if($array[3] == 'edit'){
+     $breadcrumb[] = l('Edit vehicle', 'admin/dsje/listvehicle/edit/vehicle/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+	$sqlvehicle = "select * FROM {tbl_vehicles} where reg_no='".$reg_no."'";
+	$resvehicle = db_query($sqlvehicle);
+	$rsvehicle = db_fetch_object($resvehicle);
+	
+	$form['vehicle_id'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsvehicle->vehicle_id,
+	);
+	
+
+		$form['vehicle_type'] = array(
+ 		'#type' => 'select',
+		'#title' => t('Vehicle Type'),
+		 '#required' =>TRUE,
+		  '#default_value' => $rsvehicle->vehicle_type,
+		 '#options' => VehicleType(),
+
+);
+
+
+	
+	$form['date_purchase'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Purchase',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' => $rsvehicle->date_purchase,
+	);
+	$form['mfd'] = array(
+	'#type' => 'date_popup',
+	'#date_format' => 'd-m-Y',
+	'#title' => 'Date of Manufacturing',
+	'#required' => TRUE,
+	'#size' => '10',
+	'#default_value' =>$rsvehicle->mfd,
+	);
+	
+
+	$form['reg_no'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Reg No.'),
+	'#required' => TRUE,
+	'#default_value' =>$rsvehicle->reg_no,
+	 '#maxlength'=>15,
+	'#size' =>25,
+		    '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+
+	);
+	
+	$form['reg_no_edit'] = array(
+	'#type' =>'hidden',
+	'#default_value' =>$rsvehicle->reg_no,
+
+	);
+	
+	
+  $form['model'] = array(
+	'#type' =>'textfield',
+	'#title' => t('Model'),
+	'#required' => TRUE,
+	'#default_value' =>$rsvehicle->model,
+	 '#maxlength'=>45,
+	'#size' =>40,
+	      '#attributes' => array('onkeypress' => 'return alphanumeric(event)'),
+
+	);
+	
+
+	
+		
+	$form['prev_vehicle_type'] = array(
+	    '#type' =>'hidden',
+		'#default_value' =>$rsvehicle->vehicle_type,
+	);
+
+	/*$form['remarks'] = array(
+	    '#type' => 'textarea',
+		'#title' => t('Remarks'),
+		'#default_value' => $rsvehicle->remarks,
+		'#rows' =>5,
+		'#cols' =>30,    '#attributes' => array('onkeypress' =>'return  textonlywithdotne(event)'),
+	); */
+	
+	$form['cancel'] = array(
+	'#type' => "markup",
+	'#value' => l(t('Back'), 'admin/dsje/listvehicle'),
+	
+);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#default_value' => t('Save')
+	);
+		
+	return $form;
+}
+
+function dsje_vehicle_form_edit_submit($form, &$form_state) {
+	global $user;
+	
+	$values = $form_state['values'];
+    $status = $values['status'];
+	$reg_no = $values['reg_no'];
+	
+	$prev_vehicle_type = ParseData($values['prev_vehicle_type']);
+	$reg_no = ParseData($values['reg_no']);
+	 $vehicle_type = ParseData($values['vehicle_type']);
+	$vehicle_id = trim($values['vehicle_id']);
+	 $model = ParseData($values['model']);
+	
+  
+    $date_purchase = $values['date_purchase'];
+    $mfd = $values['mfd'];
+	$updatedby = $user->uid;
+	$updatedon = time();
+	
+	////////////////
+	
+	$s2=alphanumeric('reg_no',$reg_no,'Reg No.');
+ $s= alphanumeric('model',$model,'Model');
+$s1= alphanumeric ('vehicle_type',$vehicle_type,'Vehicle Type');
+	
+
+	if($s == 0 && $s1 == 0 && $s2==0){
+	
+		$countObj = db_fetch_object(db_query("SELECT COUNT(*) AS count FROM {tbl_vehicles} where LOWER(vehicle_type)= '".strtolower($vehicle_type)."' GROUP BY reg_no"));
+		$count = $countObj->count;
+	/*drupal_set_message("UPDATE {tbl_vehicles} SET `reg_no`='".$reg_no."',`vehicle_type`='".$vehicle_type."',model='".$model."',date_purchase='".$date_purchase."',mfd='".$mfd."',`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' where vehicle_id='".$vehicle_id."'")	;*/
+		//if( strcmp(strtolower($prev_vehicle_id), strtolower($vehicle_id))==0){
+db_query("UPDATE {tbl_vehicles} SET `reg_no`='".$reg_no."',`vehicle_type`='".$vehicle_type."',model='".$model."',date_purchase='".$date_purchase."',mfd='".$mfd."',`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."' where vehicle_id='".$vehicle_id."'");
+			
+			$message = getMessage('dsjevehicle', 'code11', array("0"=>$reg_no));
+			drupal_set_message($message);
+			drupal_goto("admin/dsje/listvehicle");	
+			
+			
+		//}else{
+			/*if($count==0){
+				db_query("UPDATE {tbl_vehicles} set `vehicle_id` = '".$vehicle_id."', `vehicle_type`='".$vehicle_type."',add_type='".$add_type."',add_line1='".$add_line1."',add_line2='".$add_line2."',district_id='".$district_id."',tehsil_id='".$tehsil_id."',state_id='".$state_id."',block='".$block."',panchayat='".$panchayat."',pincode='".$pincode."' ,`updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where reg_no='".$reg_no."'");
+				
+				$message = getMessage('dsjevehicle', 'code11', array("0"=>$vehicle_id));
+				drupal_set_message($message);
+				drupal_goto("admin/dsje/listvehicle");	
+			
+			}else{
+				db_query("UPDATE {tbl_vehicles} set `updatedby`='".$updatedby."' ,`updatedon`='".$updatedon."',remarks='".$remarks."' where reg_no='".$reg_no."'");
+				
+				$message = getMessage('dsjevehicle', 'code06', array("0"=>$vehicle_id));
+				form_set_error('vehicle_id', $message);
+			}*/
+		//}
+	}
+}
+
+function dsje_vehicle_theme() {
+	
+	return array(
+				 'dsje_vehicle_form_edit' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_vehicle_form_edit',
+                                 ),
+		
+        'dsje_vehicle_form' => array(
+								'arguments' => array('form' => NULL),
+								'template' => 'dsje_vehicle_form_add',
+                                 ),
+
+				 );
+}
+
+
+/**
+ *hook_form_alter
+ */
+  function dsje_vehicle_form_alter(&$form, &$form_state, $form_id){
+    //drupal_set_message($form_id);
+	if($form_id =='dsje_vehicle_form'){
+	 // $form['zone_id']['#disabled'] = TRUE;
+	 // $form['state_id']['#disabled'] = TRUE;
+	}
+	if($form_id =='dsje_vehicle_form_edit'){
+	  //$form['zone_id']['#disabled'] = TRUE;
+	  //$form['state_id']['#disabled'] = TRUE;
+	}
+ }
+
+function vehicle_delete($sid, $sno){
+  $reg_no =  $sid;
+  //echo $reg_no; exit;
+  db_query("UPDATE {tbl_vehicles} SET status=0 WHERE reg_no ='".$reg_no."'");
+  $message = getMessage('dsjevehicle', 'code07', array("0"=>$sno));
+  drupal_set_message($message);
+  drupal_goto("admin/dsje/listvehicle");
+ }
+
+
+  function vehicle_enable($sid, $sno){
+    $reg_no =  $sid;
+	// echo $reg_no; exit;
+    db_query("UPDATE {tbl_vehicles} SET status=1 WHERE reg_no ='".$reg_no."'");
+  
+    $message = getMessage('dsjevehicle', 'code10', array("0"=>$sno));
+	drupal_set_message($message);
+    drupal_goto("admin/dsje/listvehicle");
+  }
+
+  function dsje_addvehicleview($id){
+	  			$array = explode('/',$_GET['q']);
+//echo '<pre>';
+//print_r($array);
+//echo '<pre>';
+
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('List of Vehicle', 'admin/dsje/listvehicle');
+  if($array[3] == 'view'){
+     $breadcrumb[] = l('View Vehicle', 'admin/dsje/listvehicle/view/vehicle/'.$array[5].'');
+  }
+
+  drupal_set_breadcrumb($breadcrumb);
+    $sql = "select * FROM {tbl_vehicles} where reg_no='".$id."'";
+	$res = db_query($sql);
+	$rs = db_fetch_object($res);
+	if($rs->status ==1){
+   $status ='Enable';
+ }else{
+   $status ='Disable';
+ }
+ 
+ $vehType=getLookupName($rs->vehicle_type);
+ 
+$remarks = ucfirst($rs->remarks);
+ if($remarks==''){$remarks='N/A';}
+ 
+ $output .='<table cellpadding="2" cellspacing="1" border="0" id="form-conatiner">';
+ $output .='<tr class="oddrow"><td colspan="2" align="center"><h2>Vehicle Details</h2></td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Vehicle Type:</td><td class="normal">'.ucwords($vehType).'</td></tr>';  
+ $output .='<tr class="oddrow"><td width="50%">Model:</td><td class="normal">'.ucwords($rs->model).'</td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Reg No.:</td><td class="normal">'.ucwords($rs->reg_no).'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Date of Purchase:</td><td class="normal">'.date('d-m-Y',strtotime($rs->date_purchase)).'</td></tr>';
+ $output .='<tr class="evenrow"><td width="50%">Date of Manufacturing:</td><td class="normal">'.date('d-m-Y',strtotime($rs->mfd)).'</td></tr>';
+ $output .='<tr class="oddrow"><td width="50%">Status:</td><td class="normal">'.$status.'</td></tr>';
+ $output .='<tr class="evenrow"><td colspan="2" align="center" class="back">'.l(t('Back'), 'admin/dsje/listvehicle').'</td></tr>';
+ $output .='</table>';
+ return $output;
+  }
+	
+	
+	
+
