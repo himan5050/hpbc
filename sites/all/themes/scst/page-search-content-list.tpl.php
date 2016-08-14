@@ -19,7 +19,7 @@ global $user, $base_url,$language;
 <?php print $header; ?>
 <div id="header">
 <div class="hindi"><?php print $lbox; ?> </div>
-<img src="<?php print $base_path . $directory; ?>/images/hpscst.png" width="564" height="51" hspace="0" vspace="0" alt="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation" title="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation"/>
+<img src="<?php print $base_path . $directory; ?>/images/hpscst.png" width="564" height="51" hspace="0" vspace="0" alt="Himachal Backward Classes Finance And Development Corporation" title="Himachal Backward Classes Finance And Development Corporation"/>
 <div class="menu-block">
 <div class="top-search middle">
          <?php print $searchblock; ?>
@@ -35,7 +35,7 @@ global $user, $base_url,$language;
 
 <!-- top header -->
 
-<div id="headerslider"><img src="<?php print $base_path . $directory; ?>/images/slide1.jpg" width="934" height="194" hspace="0" vspace="0" alt="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation" title="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation"/>
+<div id="headerslider"><img src="<?php print $base_path . $directory; ?>/images/slide1.jpg" width="934" height="194" hspace="0" vspace="0" alt="Himachal Backward Classes Finance And Development Corporation" title="Himachal Backward Classes Finance And Development Corporation"/>
 </div>
 
 <!-- services block -->
@@ -109,7 +109,6 @@ else {
 <div class="clr"></div>
 </div>
 <div id="latestnews">
-<h1>Latest News</h1>
 <?php print $latestnews; ?>
 </div>
 </div>

@@ -30,7 +30,7 @@ global $user, $base_url,$language;
 <div id="top-left">
 <div id="top-right">
 <div class="hindi"><?php print $lbox; ?> </div>
-<img src="<?php print $base_path . $directory; ?>/images/logo.png" width="364" height="38" alt="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation" title="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation"/>
+<img src="<?php print $base_path . $directory; ?>/images/logo.png" width="364" height="38" alt="Himachal Backward Classes Finance And Development Corporation" title="Himachal Backward Classes Finance And Development Corporation"/>
 </div>
 </div>
 </div>
@@ -49,7 +49,7 @@ global $user, $base_url,$language;
 
 <!-- top header -->
 
-<div id="headerslider"><img src="<?php print $base_path . $directory; ?>/images/header.png" alt="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation" title="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation"/>
+<div id="headerslider"><img src="<?php print $base_path . $directory; ?>/images/header.png" alt="Himachal Backward Classes Finance & Development Corporation" title="Himachal Backward Classes Finance & Development Corporation"/>
 </div>
 
 <!-- top header end here-->
@@ -76,7 +76,8 @@ if ($user->uid != 0) {
  echo "<a href=' $change_password'>Change Password</a>";
 }
 else {
- //cho "<a href=\"?q=user\">Login</a>";
+ // code for the logout button
+  echo ''.'Hi&nbsp; Guest !&nbsp; Do You Want Loan? &nbsp;'."<a href='$node211'><b>Apply Here</b></a>&nbsp; &nbsp;";
 }
 ?>
 </div>
@@ -91,10 +92,6 @@ else {
 </div>
 <?php } ?>
 <div id="latestnews">
-    <?php if($user->uid == 0){ ?>
-    <li><a href ="loan/applyloan">Apply For Loan</a></li>
-    <li><a href ="sites/default/files/loan/Form01.docx" target ="_blank">Download Application Form</a></li>
-        <?php } ?>
 <?php print $latestnews; ?>
 </div>
 </div>

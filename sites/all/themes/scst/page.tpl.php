@@ -83,7 +83,7 @@ echo '<style type="text/css">.tabs{display:none;}</style>';
 <div id="top-left">
 <div id="top-right">
 <div class="hindi"><?php print $lbox; ?> </div>
-<img src="<?php print $base_path . $directory; ?>/images/logo.png" width="364" height="38" hspace="0" vspace="0" alt="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation" title="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation"/>
+<img src="<?php print $base_path . $directory; ?>/images/logo.png" width="364" height="38" hspace="0" vspace="0" alt="Himachal Backward Classes Finance And Development Corporation" title="Himachal Backward Classes Finance And Development Corporation"/>
 </div>
 </div>
 </div>
@@ -102,7 +102,7 @@ echo '<style type="text/css">.tabs{display:none;}</style>';
 		   $nodec = node_load(arg(1));
 		  	if($nodec->type == 'page' || $nodec->type == 'scheme_name' || $nodec->type == 'application_forms' || $nodec->type == 'list_scst' || $nodec->type == 'story' || $nodec->type == 'latestnews' || $nodec->type == 'welcome' || $nodec->type == 'scheduled'|| $nodec->type == 'cast'){
 				?>
-<div id="headerslider"><img src="<?php print $base_path . $directory; ?>/images/header.png" hspace="0" vspace="0" alt="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation" title="Himachal Pradesh Scheduled Castes and Scheduled Tribe Development Corporation"/>
+<div id="headerslider"><img src="<?php print $base_path . $directory; ?>/images/header.png" hspace="0" vspace="0" alt="Himachal Backward Classes Finance And Development Corporation" title="Himachal Backward Classes Finance And Development Corporation"/>
 </div>
 <?php } ?>
    <?php 
