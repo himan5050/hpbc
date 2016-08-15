@@ -96,7 +96,7 @@ $cond = '';
 		$cond .= " AND tbl_loanee_detail.account_id='".$accountno."'";
 	}
 		
-	echo 'Account no is = '.$accountno;
+	//echo 'Account no is = '.$accountno;
 	
 	
 //$cond .= ' group by tbl_loan_detail.scheme_name';		
@@ -111,7 +111,7 @@ $cond = '';
   $row=db_fetch_object($res1);
   $oprincipal=$row->o_principal;
   $projectcost=$row->project_cost;
-  echo 'Project Cost = '.$projectcost;
+  //echo 'Project Cost = '.$projectcost;
   $pro=$row->promoter_share;
   $apexshare=$row->apex_share;
   $corpshare=$row->corp_share;
