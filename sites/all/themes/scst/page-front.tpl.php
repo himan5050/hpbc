@@ -61,10 +61,12 @@ global $user, $base_url,$language;
   $username = $user->name;
 if($language->language == 'hi'){
 $node211 = $base_url.'/hi/welcome-deshboard';
+$node111 = $base_url.'/hi/loan/applyloan';
 $logout=$base_url.'/hi/logout';
 $change_password = $base_url.'/hi/scst/resetpassword';
 }else{
 $node211 = $base_url.'/welcome-deshboard';
+$node111 = $base_url.'/loan/applyloan';
 $logout=$base_url.'/logout';
 $change_password = $base_url.'/scst/resetpassword';
 }
@@ -77,7 +79,7 @@ if ($user->uid != 0) {
 }
 else {
  // code for the logout button
-  echo ''.'Hi&nbsp; Guest !&nbsp; Do You Want Loan? &nbsp;'."<a href='$node211'><b>Apply Here</b></a>&nbsp; &nbsp;";
+  echo ''.'Hi&nbsp; Guest !&nbsp; Do You Want Loan? &nbsp;'."<a href='$node111'><b>Apply Here</b></a>&nbsp; &nbsp;";
 }
 ?>
 </div>
