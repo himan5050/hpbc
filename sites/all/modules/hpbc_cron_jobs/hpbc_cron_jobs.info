@@ -1,0 +1,6 @@
+;$id 28/8/2016 Himanshu Sharma
+name = "HPBC Cron Jobs"
+description ="Custom module to create and execute cron jobs in HPBC Application"
+core = 6.x
+version =6.x-1
+package="HPBC Cron Jobs"
