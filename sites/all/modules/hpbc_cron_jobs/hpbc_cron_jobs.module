@@ -59,12 +59,13 @@ function hpbc_cron_jobs_theme() {
 function hpbc_cron_jobs_cron() {
 	$live_loan_accounts = filter_live_loan_accounts();
 	
-	$file = drupal_get_path('module','hpbc_cron_jobs').'/tmp/int-'.date('Y-m').'.txt';
+	$file = drupal_get_path('module','hpbc_cron_jobs').'/tmp/interest_tmp.txt';
 	if(file_exists($file)){
-		file_put_contents($file, "");
+		return;
 	}
 	
 	foreach($live_loan_accounts as $loan){
+		global $base_url;
 		$loan_id = $loan['loan_id'];
 		$account_id = $loan['account_id'];
 		$o_principal = $loan['o_principal'];
@@ -91,7 +92,14 @@ function hpbc_cron_jobs_cron() {
 		
 		$final_principal = $o_principal + $interest_value;
 		$result_text = $loan_id."|".$account_id."|".$interest_value."|".$last_interest_calculated."|".$quarter_end_date."|".$o_principal."\n";
-		file_put_contents($file, $result_text, FILE_APPEND | LOCK_EX);
+		
+		if(file_put_contents($file, $result_text, FILE_APPEND | LOCK_EX)){
+			$backfile = drupal_get_path('module','hpbc_cron_jobs').'/int_records/int-'.date('Y-m-d').'.txt.bak';
+			if (!copy($file, $backfile)) {
+				echo "failed to copy $file...\n";
+			}
+		}
+		
 	}
 }
 

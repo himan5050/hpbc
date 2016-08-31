@@ -38,7 +38,7 @@
 <?php
 $op = $_REQUEST['op'];
 if ($op == 'Apply Qaurter Interest on Live Loan Accounts') {
-	$file = drupal_get_path('module','hpbc_cron_jobs').'/tmp/int-'.date('Y-m').'.txt';
+	$file = drupal_get_path('module','hpbc_cron_jobs').'/tmp/interest_tmp.txt';
 	if(!file_exists($file)){
 		echo '<font color="red"><b>You have already applied interest on all Live Loan accounts.</b></font>';
 	}else{
