@@ -5,7 +5,7 @@
  */
 
 function hpbc_cron_jobs_menu(){
-	$items['int-db-write'] = array(
+	$items['apply_quarter_interest'] = array(
 			'title' => 'Apply Quarter Interest',
 			'page callback' => 'int_loan_db_write',
 			'type' => MENU_NORMAL_ITEM,
