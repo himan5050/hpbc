@@ -40,7 +40,7 @@ $op = $_REQUEST['op'];
 if ($op == 'Apply Qaurter Interest on Live Loan Accounts') {
 	$file = drupal_get_path('module','hpbc_cron_jobs').'/tmp/int-'.date('Y-m').'.txt';
 	if(!file_exists($file)){
-		echo '<font color="red"><b>System is in process to calculate interest of all Live Loan Accounts, Please apply interest after some time.</b></font>';
+		echo '<font color="red"><b>You have already applied interest on all Live Loan accounts.</b></font>';
 	}else{
 		$handle = @fopen($file, "r"); //read line one by one
 		$values='';
@@ -61,6 +61,8 @@ if ($op == 'Apply Qaurter Interest on Live Loan Accounts') {
 		 	}
 		}
 		if(!$error){
+			fclose($handle);
+			unlink($file);
 			echo '<font color="green"><b>Interest Applied Successfully.</b></font>';
 		}
 		
