@@ -1255,10 +1255,10 @@ function approve_reject_application($status=1,$docket='',$taskid='',$level='')
 	}
 	if($status == 14 || $status == 16)
 	{
-		$sql = "SELECT loan_requirement FROM tbl_loan_detail WHERE loan_docket = $docket LIMIT 1";
+		$sql = "SELECT loan_requirement,project_cost FROM tbl_loan_detail WHERE loan_docket = $docket LIMIT 1";
 		$res = db_query($sql);
 		$loanamount = db_fetch_object($res);
-		$append .= " ,payment_order_released_date = CURDATE(),o_disburse_amount = '".$loanamount->loan_requirement."' ";
+		$append .= " ,payment_order_released_date = CURDATE(),o_disburse_amount = '".$loanamount->project_cost."' ";
 	}
 	$loanupdatesql = "UPDATE tbl_loan_detail SET loan_status = $status,remark = '".$_POST['remark']."' $append WHERE loan_docket = $docket";
 	if(!db_query($loanupdatesql))
