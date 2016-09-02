@@ -143,8 +143,6 @@ function disbursmentform($loanid = '', $did = '') {
     global $base_path;
     global $base_url;
     
-    
-    
     $array = explode('/', $_GET['q']);
     $cheque_number = isset($_POST['cheque_number']) ? $_POST['cheque_number'] : '';
     $amount = isset($_POST['amount']) ? $_POST['amount'] : '';
@@ -178,8 +176,9 @@ function disbursmentform($loanid = '', $did = '') {
         $cheque_date = $r->cheque_date;
         $bank = $r->bank;
     }
-
+    
     if (isset($_POST['cheque_number'])) {
+        //print_r('values submitted'); exit;
         $fieldstr = '';
         $valuestr = '';
         $updatestr = '';
@@ -229,6 +228,10 @@ function disbursmentform($loanid = '', $did = '') {
                     $valuestr .= "'" . db_escape_string($b->bank_name) . "',";
                 }
             }
+            
+            /*=========================================
+             * Database transaction started.
+             */
             db_query('START TRANSACTION');
             db_query('BEGIN');
             if (isset($_POST['did'])) {
@@ -238,7 +241,7 @@ function disbursmentform($loanid = '', $did = '') {
                     $inserterror = 1;
             }else {
                 $fieldstr .= "createdby,createdon";
-                $valuestr .= "'" . $user->uid . "','" . time() . "'";
+                $valuestr .= "'" . $user->uid . "','" . strtotime($_POST['cheque_date']) . "'";
                 //$fields = trim($fields,',');
                 //$valuestr = trim($valuestr,',');
                 $lastiid = '';
@@ -287,6 +290,7 @@ function disbursmentform($loanid = '', $did = '') {
                     //echo $short_code;
                     $accountno = generate_accountno($short_code,$dist_uid);
                     //echo 'First Call = '.$accountno.'<br>';
+                    //print_r($dist_uid); exit;
                    
                     //Emi Calculation on total term loan for perticular loan_id.
                     $sql = "SELECT tbl_loan_detail.project_cost,tbl_loan_detail.ROI FROM tbl_loan_detail WHERE loan_id = " . $_POST['loan_id'];
@@ -318,13 +322,10 @@ function disbursmentform($loanid = '', $did = '') {
                     //$sql = "UPDATE tbl_loan_detail SET last_interest_calculated = '".$_POST['cheque_date']."',o_disburse_amount = loan_requirement - ".$_POST['amount'].",o_principal =  WHERE loan_id = ".$_POST['loan_id'];
                     //if(!db_query($sql))
                     //$inserterror = 1;
-                    $sql = "UPDATE tbl_loan_detail SET last_interest_calculated = '" . date("Y-m-d") . "',loan_disburse_date = '" . date("Y-m-d") . "' WHERE loan_id = " . $_POST['loan_id'];
+                    $sql = "UPDATE tbl_loan_detail SET last_interest_calculated = '" . $_POST['cheque_date']. "',loan_disburse_date = '" . $_POST['cheque_date'] . "',loan_id = '" . $dist_uid . "' WHERE loan_id = " . $_POST['loan_id'];                    
+                    $_POST['loan_id'] = $dist_uid;
                     if (!db_query($sql))
-                        $inserterror = 1;
-                    
-                    
-                    
-                    
+                        $inserterror = 1;       
                 }
                 
                 
@@ -530,20 +531,26 @@ function validateDisbursementForm() {
         $scriptcss .= '$("select[name=bank]").addClass("error");';
     }
 
-    $sql = "SELECT o_disburse_amount,payment_order_released_date FROM tbl_loan_detail WHERE loan_id = " . $_POST['loan_id'] . " LIMIT 1";
+    $sql = "SELECT o_disburse_amount,roi,project_cost,payment_order_released_date FROM tbl_loan_detail WHERE loan_id = " . $_POST['loan_id'] . " LIMIT 1";
     $res = db_query($sql);
     $d = db_fetch_object($res);
 
-    if ($d->o_disburse_amount < $_POST['amount']) {
+    /*if ($d->o_disburse_amount <= $_POST['amount']) {
         form_set_error('amount', 'Amount you provided is more than pending amount to be disbursed ie . Rs. ' . $d->o_disburse_amount);
         $errorstr = 1;
         $scriptcss .= '$("input[name=amount]").addClass("error");';
     }
+     * 
+     */
+    
+    /*
     if ($d->payment_order_released_date > databaseDateFormat($_POST['cheque_date'], 'indian', '-')) {
         form_set_error('cheque_date', 'Cheque date should be higher than or same as Payment order released date.');
         $errorstr = 1;
         $scriptcss .= '$("input[name=cheque_date]").addClass("error");';
     }
+     * 
+     */
     return $scriptcss;
 }
 
