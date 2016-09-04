@@ -5169,7 +5169,7 @@ GROUP BY tbl_loan_repayment.payment_date");
 	}
    }
      
-     return (int) $magic_ball;
+     return $magic_ball;
   
 		
 }

@@ -1,7 +1,7 @@
-<!--?php	
+<?php	
 		function post_to_url($url, $data) {
         $fields = '';
-        foreach($data as $key =--> $value) {
+        foreach($data as $key => $value) {
            $fields .= $key . '=' . $value . '&';
         }
         rtrim($fields, '&');
