@@ -1,152 +1,158 @@
 <?php
 
 /**
- *@hook_menu
+ * @hook_menu
  */
-
-function hpbc_cron_jobs_menu(){
-	$items['apply_quarter_interest'] = array(
-			'title' => 'Apply Quarter Interest',
-			'page callback' => 'int_loan_db_write',
-			'type' => MENU_NORMAL_ITEM,
-			'access arguments' => array('access content'),
-	);
-	return $items;
+function hpbc_cron_jobs_menu() {
+    $items['apply_quarter_interest'] = array(
+      'title' => 'Apply Quarter Interest',
+      'page callback' => 'int_loan_db_write',
+      'type' => MENU_NORMAL_ITEM,
+      'access arguments' => array('access content'),
+    );
+    return $items;
 }
 
-function int_loan_db_write(){
-	return drupal_get_form('int_loan_db_write_form');
+function int_loan_db_write() {
+    return drupal_get_form('int_loan_db_write_form');
 }
 
+function int_loan_db_write_form() {
+    $breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = l('Control Panel', 'node/211');
+    $breadcrumb[] = l('Apply Quarter Interest', 'int-db-write');
+    drupal_set_breadcrumb($breadcrumb);
 
-function int_loan_db_write_form(){
-	$breadcrumb[] = l('Home', '<front>');
-	$breadcrumb[] = l('Control Panel', 'node/211');
-	$breadcrumb[] = l('Apply Quarter Interest', 'int-db-write');
-	drupal_set_breadcrumb($breadcrumb);
-	
-	$form['submit'] = array(
-			'#type' =>'button',
-			'#default_value' =>'Apply Qaurter Interest on Live Loan Accounts',);
-	return $form;
+    $form['submit'] = array(
+      '#type' => 'button',
+      '#default_value' => 'Apply Qaurter Interest on Live Loan Accounts',);
+    return $form;
 }
 
-function int_loan_db_write_form_validate($form,&$form_state){
-	// Write validation here.
+function int_loan_db_write_form_validate($form, &$form_state) {
+    // Write validation here.
 }
 
 /**
- *@ hook_theme
+ * @ hook_theme
  */
 function hpbc_cron_jobs_theme() {
-	return array(
-			'int_loan_db_write_form' => array(
-					'arguments' => array('form' => NULL),
-					'template' => 'int_loan_db_write_form',),);
-
+    return array(
+      'int_loan_db_write_form' => array(
+        'arguments' => array('form' => NULL),
+        'template' => 'int_loan_db_write_form',),);
 }
-
-
-
-
-
-
 
 /**
  * @File
  * Create custom cron jobs and check there execution
  */
 function hpbc_cron_jobs_cron() {
-	$live_loan_accounts = filter_live_loan_accounts();
-	
-	$file = drupal_get_path('module','hpbc_cron_jobs').'/tmp/interest_tmp.txt';
-	if(file_exists($file)){
-		return;
-	}
-	
-	foreach($live_loan_accounts as $loan){
-		global $base_url;
-		$loan_id = $loan['loan_id'];
-		$account_id = $loan['account_id'];
-		$o_principal = $loan['o_principal'];
-		$last_interest_calculated = $loan['last_interest_calculated'];
-		$quarter_end_date = $loan['quarter_end_date'];
-		$ROI = $loan['ROI'];
-		$loanee_id = $loan['loanee_id']; 
-		$project_cost = $loan['project_cost'];
-		//$o_principle = $loan['o_principle'];
-		$o_principle = coreloanledger($account_id,$last_interest_calculated); 
-		
-		if (isset($o_principle)) {
-			$interest = interest_calculation_regular($account_id, $o_principle, $last_interest_calculated, $quarter_end_date, $ROI);
-		}else {
-			// Interest must be calculated on total term loan value.
-			$sqlp = "select amount
+    $live_loan_accounts = filter_live_loan_accounts();
+
+    $file = drupal_get_path('module', 'hpbc_cron_jobs') . '/tmp/interest_tmp.txt';
+    if (file_exists($file)) {
+        drupal_goto('apply_quarter_interest');
+    }
+
+    foreach ($live_loan_accounts as $loan) {
+        global $base_url;
+        $loan_id = $loan['loan_id'];
+        $account_id = $loan['account_id'];
+        $o_principal = $loan['o_principal'];
+        $last_interest_calculated = $loan['last_interest_calculated'];
+        $quarter_end_date = $loan['quarter_end_date'];
+        $ROI = $loan['ROI'];
+        $loanee_id = $loan['loanee_id'];
+        $project_cost = $loan['project_cost'];
+        //$o_principle = $loan['o_principle'];
+        if (isset($loan['o_principle'])) {
+            $o_principle = coreloanledger($account_id, $last_interest_calculated);
+            $interest = interest_calculation_regular($account_id, $o_principle, $last_interest_calculated, $quarter_end_date, $ROI);
+        }
+        else {
+            // Interest must be calculated on total term loan value.
+            $sqlp = "select amount
 			            from tbl_loan_repayment
 					    where loanee_id = '" . $loanee_id . "' AND paytype = 'Promoter Share'";
-			$resp = db_query($sqlp);
-			$rsp = db_fetch_object($resp);
-		
-			$o_principal = abs($project_cost - $rsp->amount);
-			$interest = interest_calculation_first($account_id, $o_principal, $last_interest_calculated, $quarter_end_date, $ROI);
-		}
-		
-		$final_principal = abs($o_principal + $interest['interest_value']);
-		$final_principle = abs($o_principle + $interest['interest_value'] - $interest['repaid_amount']);
-		
-		if($interest['interest_value'] > 0){
-			$result_text = $loan_id."|".$account_id."|".abs($interest['interest_value'])."|".$last_interest_calculated."|".$quarter_end_date."|".$final_principal."|".$final_principle."|".$o_principle."\n";
-			if(file_put_contents($file, $result_text, FILE_APPEND | LOCK_EX)){
-				$backfile = drupal_get_path('module','hpbc_cron_jobs').'/int_records/int-'.$quarter_end_date.'.txt.bak';
-				if (!copy($file, $backfile)) {
-					echo "failed to copy $file...\n";
-				}
-			}		
-		}
-	}
-}
+            $resp = db_query($sqlp);
+            $rsp = db_fetch_object($resp);
 
+            $o_principal = abs($project_cost - $rsp->amount);
+            $interest = interest_calculation_first($account_id, $o_principal, $last_interest_calculated, $quarter_end_date, $ROI);
+        }
+
+        if (isset($loan['o_principle'])) {
+            $final_principal = abs($o_principal + $interest['interest_value']);
+            $final_principle = abs($o_principle + $interest['interest_value'] - $interest['repaid_amount']);
+        }
+        else {
+            $final_principal = abs($o_principal + $interest['interest_value']);
+            $final_principle = abs($o_principal + $interest['interest_value'] - $interest['repaid_amount']);
+        }
+
+        if ($interest['interest_value'] > 0) {
+            $result_text = $loan_id . "|" . $account_id . "|" . abs($interest['interest_value']) . "|" . $last_interest_calculated . "|" . $quarter_end_date . "|" . $final_principal . "|" . $final_principle . "|" . $o_principle . "\n";
+            if (file_put_contents($file, $result_text, FILE_APPEND | LOCK_EX)) {
+                $backfile = drupal_get_path('module', 'hpbc_cron_jobs') . '/int_records/int-' . $quarter_end_date . '.txt.bak';
+                if (!copy($file, $backfile)) {
+                    echo "failed to copy $file...\n";
+                }
+            }
+        }
+    }
+}
 
 /**
  * Interact with database and create business logic to filter live loan accounts in an array.
  */
-
-function filter_live_loan_accounts(){
-	$current_date = '2016-03-31';
-	//$current_date = date('Y-m-d');
-	$sqlg = "SELECT `account_id`,`loan_id`,`o_principal`,`last_interest_calculated`,`ROI`,`project_cost`,`loanee_id`
+function filter_live_loan_accounts() {
+    $current_date = '2014-06-30';
+    //$current_date = date('Y-m-d');
+    $sqlg = "SELECT `account_id`,`loan_id`,`o_principal`,`last_interest_calculated`,`ROI`,`project_cost`,`loanee_id`
 			 FROM `tbl_loan_detail` AS `tl`
 			 LEFT JOIN `tbl_loanee_detail` AS `tle`
-			 ON `tl`.reg_number=`tle`.reg_number WHERE `tl`.`o_principal` != 0.0 AND `tl`.`last_interest_calculated` < '".$current_date."'";
-	
-	$resg = db_query($sqlg);
-	while ($rsg = db_fetch_object($resg)) {
-		db_query('START TRANSACTION');
-		db_query('BEGIN');
-		
-		if($rsg->loan_id && $rsg->account_id){
-			$sqlint = db_query("SELECT `o_principle`,`calculation_date` FROM `tbl_loan_interestld` WHERE account_id = '".$rsg->account_id."' AND type = 'interest' ORDER BY id DESC LIMIT 1");
-			$sqlin = db_fetch_object($sqlint);
-			//print_r($rsg->account_id.' and '.$sqlin->o_principle.' and '.$sqlin->calculation_date); echo '<BR>';
-			if(isset($sqlin->o_principle) && isset($sqlin->calculation_date)){
-				if($sqlin->o_principle != 0 && ($sqlin->calculation_date < $current_date)){
-					$loan['loan_id'] = $rsg->loan_id;
-					$loan['loanee_id'] = $rsg->loanee_id;
-					$loan['account_id'] = $rsg->account_id;
-					$loan['project_cost'] = $rsg->project_cost;
-					$loan['o_principal'] = $rsg->o_principal;
-					//$loan['last_interest_calculated'] = $rsg->last_interest_calculated;
-					$loan['quarter_end_date'] = $current_date;
-					$loan['ROI'] = $rsg->ROI;
-					
-					$loan['o_principle'] = $sqlin->o_principle;
-					$loan['last_interest_calculated'] = $sqlin->calculation_date;
-					$live_loan_accounts[] = $loan;
-				}
-			}
-		}
-	}
-	
-	return $live_loan_accounts;
-}
+			 ON `tl`.reg_number=`tle`.reg_number WHERE `tl`.`o_principal` != 0.0 AND `tl`.`last_interest_calculated` < '" . $current_date . "'";
 
+    $resg = db_query($sqlg);
+    while ($rsg = db_fetch_object($resg)) {
+        db_query('START TRANSACTION');
+        db_query('BEGIN');
+
+        if ($rsg->loan_id && $rsg->account_id) {
+            $sqlint = db_query("SELECT `o_principle`,`calculation_date` FROM `tbl_loan_interestld` WHERE account_id = '" . $rsg->account_id . "' AND type = 'interest' ORDER BY id DESC LIMIT 1");
+            $sqlin = db_fetch_object($sqlint);
+            //print_r($rsg->account_id.' and '.$sqlin->o_principle.' and '.$sqlin->calculation_date); echo '<BR>';
+            if (isset($sqlin->o_principle) && isset($sqlin->calculation_date)) {
+                if ($sqlin->o_principle != 0 && ($sqlin->calculation_date < $current_date)) {
+                    $loan['loan_id'] = $rsg->loan_id;
+                    $loan['loanee_id'] = $rsg->loanee_id;
+                    $loan['account_id'] = $rsg->account_id;
+                    $loan['project_cost'] = $rsg->project_cost;
+                    $loan['o_principal'] = $rsg->o_principal;
+                    //$loan['last_interest_calculated'] = $rsg->last_interest_calculated;
+                    $loan['quarter_end_date'] = $current_date;
+                    $loan['ROI'] = $rsg->ROI;
+
+                    $loan['o_principle'] = $sqlin->o_principle;
+                    $loan['last_interest_calculated'] = $sqlin->calculation_date;
+                    $live_loan_accounts[] = $loan;
+                }
+            } // Calculating interest first time.
+            else if (!isset($sqlin->o_principle)) {
+                $loan['loan_id'] = $rsg->loan_id;
+                $loan['loanee_id'] = $rsg->loanee_id;
+                $loan['account_id'] = $rsg->account_id;
+                $loan['project_cost'] = $rsg->project_cost;
+                $loan['o_principal'] = $rsg->o_principal;
+                $loan['last_interest_calculated'] = $rsg->last_interest_calculated;
+                $loan['quarter_end_date'] = $current_date;
+                $loan['ROI'] = $rsg->ROI;
+                $loan['o_principle'] = NULL;
+                $live_loan_accounts[] = $loan;
+            }
+        }
+    }
+
+    return $live_loan_accounts;
+}
