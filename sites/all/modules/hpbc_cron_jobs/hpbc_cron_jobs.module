@@ -61,6 +61,7 @@ function hpbc_cron_jobs_cron() {
         $file = drupal_get_path('module', 'hpbc_cron_jobs') . '/tmp/interest_tmp.txt';
         if (file_exists($file)) {
           //  drupal_goto('apply_quarter_interest');
+            return;
         }
 
         foreach ($live_loan_accounts as $loan) {
