@@ -91,7 +91,7 @@
 //$db_url = 'mysqli://dsjescst:dsje@321@10.10.10.28/dsje';
 //$db_url = 'mysqli://dsjescst:dsje@321@10.10.1.60/dsje';
 //$db_url = 'mysqli://dsjescst:dsje@321@10.10.1.19/dsje';
-$db_url = 'mysqli://root:@localhost/hpbc';
+$db_url = 'mysqli://root:Virtualife@5050@localhost/hpbc';
 //$db_url = 'mysqli://root:@localhost/hpbcnew';
 $db_prefix = '';
 
