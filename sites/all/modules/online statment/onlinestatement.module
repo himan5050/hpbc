@@ -1,4 +1,5 @@
 <?php
+
 global $base_url;
 
 /**
@@ -46,45 +47,9 @@ function onlinestatement_menu(){
 										
    return $items;
 }
-//////////////////// 
-
-/*function SelectSector2()
-  {
-  
-  $query2 = "SELECT * FROM tbl_sectors ";
-   $result2 = db_query($query2);
-    $sectorarray = array(''=>'--Select--');
-    while($row2=db_fetch_object($result2))
-          {
-		  
-		  
-             $sectorarray[$row2->sector_id]=$row2->sector_name;
-          }
-  return $sectorarray;
- }
- 
-
-function SelectDistrict2()
-  {
-  
-  $query22 = "SELECT * FROM tbl_district ";
-   $result22 = db_query($query22);
-    $districtarray2 = array(''=>'--Select--');
-    while($row22=db_fetch_object($result22))
-          {
-		  
-		  
-             $districtarray2[$row22->district_name]=$row22->district_name;
-          }
-  return $districtarray2;
- }*/
- 
-
-///////////////////////
-
 
 function onlinestatementreport(){
-	 $array = explode('/',$_GET['q']);
+  $array = explode('/',$_GET['q']);
   $breadcrumb = array();
   $breadcrumb[] = l('Home', '<front>');
   $breadcrumb[] = l('Online Statement', 'onlinestatementreport');
@@ -92,129 +57,39 @@ function onlinestatementreport(){
   return drupal_get_form('onlinestatementreport_form');
 }
 
-function onlinestatementreport_form()
-{
- 
+function onlinestatementreport_form(){
   global $base_url;
-//breadcrumb
-
- /*
- $form['district'] = array(
-	            '#type' => 'select',
-	            '#title' => t('District'), 
-	            '#default_value' =>$districtarray2,
-	            '#options' =>SelectDistrict2(),
-								
- );
- 
- 
-						   
-						   
-	/* $form['sector'] = array(
-                                '#type' => 'textfield',
-								'#title' => t('Sector'),
-								'#size' => '30',
- );
- 					   
-	$form['scheme'] = array(
-                                '#type' => 'textfield',
-								'#title' => t('Scheme'),
-								'#size' => '30',
- );					   
-		
-				   
-   $form['sector'] = array(
-	            '#type' => 'select',
-	            '#title' => t('Sector'), 
-	            '#default_value' =>$node->religion,
-	            '#options' => SelectSector2(), 
-				'#ahah' => array(
-				                       'path' => 'dsje/sector',
-				                      'method' => 'replace',
-				                      'effect' => 'slide',
-				                      'wrapper' =>'sector',
-				                       ),
-						   
- );
- 
- 
- $form['scheme'] = array(
-	'#type' => 'select',
-	'#title' => t('scheme'),
-	'#default_value' =>'--Select--',
-	'#options' => $schemearray, 
-	'#id' => 'edit-scheme',
-	'#name' => 'scheme',
-	);
- 
- 
- */
- 
+  global $user;
+  //print_r($user->roles); exit;
+  foreach($user->roles as $value){
+      if($value == 'Loanee'){
+          $account_id = isset($user->name)?$user->name:'';
+      }else{
+          $account_id = NULL;
+      }
+  }
+  
   $form['account'] = array(
-                                '#type' => 'textfield',
-								 '#required' => TRUE,
-						
-								
- );
- 
- 
- 
- 
+                    '#type' => 'textfield',
+                    '#default_value' => $account_id,
+                    '#required' => TRUE,
+                   // '#attributes' => array('class' => 'disable-text'),
+                );
+  
   $form['submit'] = array(
       '#type' =>'button',
-	  '#value' =>'Generate Report',
+      '#value' =>'Generate Report',
+     // '#attributes' => array('class' => 'disable-text'),
+      
   ); 
   return $form;
 }
-/*
-function mysector2() {
-    $sector_id = $_POST['sector'];
-	
-	$query = "SELECT scheme_name,loan_scheme_id FROM tbl_scheme_master  WHERE sector = '".$sector_id."'";
-	$result = db_query($query);
-	//$schemearray = array();
-	$schemearray1 = array(''=>"--Select--");
-	$counter = 0;
-	while($row=db_fetch_object($result)) {
-		$schemearray1[$row->loan_scheme_id] = $row->scheme_name;
-		$counter++;
-	}
-	if($counter==0) {
-		$schemearray[''] = "--Select--";
-	}
-	$form_state = array('submitted' => FALSE);
-	$form_build_id = $_POST['form_build_id'];
-	$form = form_builder('dsje_joinings_form', $form, $form_state);
 
-
-	
-	 $form['scheme'] = array(
-	'#type' => 'select',
-	'#title' => t('scheme'),
-	'#required' => TRUE,
-	//'#default_value' =>'--Select--',
-	
-	'#id' => 'edit-scheme',
-	'#name' => 'scheme',
-	'#options' => $schemearray1, 
-	);
-
-	$output = drupal_render($form['scheme']);
-	return drupal_json(array('status' => TRUE, 'data' => $output));
-}
-*/
-
- function onlinestatement_theme() {
-	
+ function onlinestatement_theme() {	
 	return array(
-		
 		'onlinestatementreport_form' => array(
-								'arguments' => array('form' => NULL),
-								'template' => 'onlinestatement_form',
-                                 ),
-			
-			
-								 
+				'arguments' => array('form' => NULL),
+				'template' => 'onlinestatement_form',
+                ),							 
  );
-        
 }

@@ -80,21 +80,21 @@ else {
 		 
 		 if(arg(1) == 18){
 			  if($language->language == 'hi'){
-			  if ($title): print '<h2'. ($tabs ? ' class="with-tabs"' : '') .'>'. $title .'<span id="listsc">'.l(t('List of Scheduled Tribes'),$base_url.'/hi/list-of-scheduled-tribes').'</h2>'; endif;
+			  if ($title): print '<h2'. ($tabs ? ' class="with-tabs"' : '') .'>'. $title .'<span id="listsc"></h2>'; endif;
 			  }
 			  else{
-			  if ($title): print '<h2'. ($tabs ? ' class="with-tabs"' : '') .'>'. $title .'<span id="listsc">'.l(t('List of Scheduled Tribes'),$base_url.'/list-of-scheduled-tribes').'</h2>'; endif;
+			  if ($title): print '<h2'. ($tabs ? ' class="with-tabs"' : '') .'>'. $title .'<span id="listsc"></h2>'; endif;
 			  }
 		  }
 		  else if(arg(1) == 31){
 			 if($language->language == 'hi'){
-		     if ($title): print '<h2'. ($tabs ? ' class="with-tabs"' : '') .'>'. $title .'<span id="listsc">'.l(t('List of Scheduled Caste'),$base_url.'/hi/list-of-scheduled-castes').'</span></h2>'; endif;
+		     if ($title): print '<h2'. ($tabs ? ' class="with-tabs"' : '') .'>'. $title .'<span id="listsc"></span></h2>'; endif;
 			 }else{
-			 if ($title): print '<h2'. ($tabs ? ' class="with-tabs"' : '') .'>'. $title .'<span id="listsc">'.l(t('List of Scheduled Caste'),$base_url.'/list-of-scheduled-castes').'</span></h2>'; endif;
+			 if ($title): print '<h2'. ($tabs ? ' class="with-tabs"' : '') .'>'. $title .'<span id="listsc"></span></h2>'; endif;
 			 }
 		  }else{
 		     if ($title): print '<h2'. ($tabs ? ' class="with-tabs"' : '') .'>'. $title .'</h2>'; endif;
-		  }
+		  } 
 		  ?>
           <?php if ($tabs): print '<ul class="tabs primary">'. $tabs .'</ul></div>'; endif; ?>
           <?php if ($tabs2): print '<ul class="tabs secondary">'. $tabs2 .'</ul>'; endif; ?>
