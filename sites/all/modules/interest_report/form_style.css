@@ -1,0 +1,20 @@
+@charset "utf-8";
+/* CSS Document */
+    .container-inline-date .form-item, .container-inline-date .form-item input {
+        width: 100px;
+        display: inline;
+    }
+
+    input[type="text"] {
+        width: 100px;
+        height: 18px;
+        margin: 0;
+        padding: 2px;
+        vertical-align: middle;
+        font-family: sans-serif;
+        font-size: 14px;
+        border: #BCBCBC 1px solid;
+    }
+    .maincol select{
+        width: 100px;
+    }

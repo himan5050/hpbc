@@ -1,4 +1,5 @@
 <?php
+
 function loan_init() {
 	//drupal_add_css(drupal_get_path('module', 'loan') .'/loan.css');
       drupal_add_js(drupal_get_path('module','loan').'/loan.js');
@@ -38,6 +39,16 @@ function loan_menu() {
 										'description' => 'schemewise recovery report',
 										'type' => MENU_NORMAL_ITEM,
 										'page callback' => 'schemewise_recovery',
+										'access arguments' => array('view loan'),
+										'file' =>'schemewise_recovery.php',			 
+													 
+									  );
+        
+        $items['loan/interest_recovery'] = array(
+										'title' => t('District-wise Interest Recovery Report'),
+										'description' => 'Disctrict wise interest recovery report',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'interestwise_recovery',
 										'access arguments' => array('view loan'),
 										'file' =>'schemewise_recovery.php',			 
 													 

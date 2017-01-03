@@ -11,6 +11,15 @@ function hpbc_cron_jobs_menu() {
       'type' => MENU_NORMAL_ITEM,
       'access arguments' => array('access content'),
     );
+    
+    $items['pre_migration'] = array(
+      'title' => 'Pre Migration Steps',
+      'page callback' => 'pre_migration_steps',
+      'type' => MENU_NORMAL_ITEM,
+      'file' => 'pre_migration.inc',
+      'access arguments' => array('access content'),
+    );
+    
     return $items;
 }
 
@@ -49,11 +58,16 @@ function hpbc_cron_jobs_theme() {
  * Create custom cron jobs and check there execution
  */
 function hpbc_cron_jobs_cron() {
-    $quater_end_dates = array('31-03','30-06','09-09','31-12');
+    $quater_end_dates = array('31-03','30-06','05-12','01-01');
     $current_date = date('d-m');
     
     if (in_array($current_date, $quater_end_dates)) {
         $live_loan_accounts = filter_live_loan_accounts();
+        //$live_loan_accounts = filter_with_csv();
+        
+       // echo '<PRE>';
+      //  print_r($live_loan_accounts); exit;
+        
         if(empty($live_loan_accounts)){
             echo 'Sorry, No loan account is available for interest application';
             return;
@@ -69,12 +83,20 @@ function hpbc_cron_jobs_cron() {
             global $base_url;
             $loan_id = $loan['loan_id'];
             $account_id = $loan['account_id'];
+            
+            $disb_query = db_query("SELECT SUM(amount) as amount FROM `tbl_loan_disbursement` WHERE loanee_id = '".$loan['loanee_id']."'");
+            while($rdisb = db_fetch_object($disb_query)){
+                $project_cost = $rdisb->amount;
+            }
+            
+            
+            //print_r($project_cost); exit;
             $o_principal = $loan['o_principal'];
             $last_interest_calculated = $loan['last_interest_calculated'];
             $quarter_end_date = $loan['quarter_end_date'];
             $ROI = $loan['ROI'];
             $loanee_id = $loan['loanee_id'];
-            $project_cost = $loan['project_cost'];
+           // $project_cost = $loan['project_cost'];
             //$o_principle = $loan['o_principle'];
             if (isset($loan['o_principle'])) {
                 $o_principle = coreloanledger($account_id, $last_interest_calculated);
@@ -104,7 +126,7 @@ function hpbc_cron_jobs_cron() {
             if ($interest['interest_value'] > 0) {
                 $result_text = $loan_id . "|" . $account_id . "|" . abs($interest['interest_value']) . "|" . $last_interest_calculated . "|" . $quarter_end_date . "|" . $final_principal . "|" . $final_principle . "|" . $o_principle . "\n";
                 if (file_put_contents($file, $result_text, FILE_APPEND | LOCK_EX)) {
-                    $backfile = drupal_get_path('module', 'hpbc_cron_jobs') . '/int_records/int1-' . $quarter_end_date . '.txt.bak';
+                    $backfile = drupal_get_path('module', 'hpbc_cron_jobs') . '/int_records/intHPBC_01-' . $quarter_end_date . '.txt.bak';
                     if (!copy($file, $backfile)) {
                         echo "failed to copy $file...\n";
                     }
@@ -118,7 +140,7 @@ function hpbc_cron_jobs_cron() {
  * Interact with database and create business logic to filter live loan accounts in an array.
  */
 function filter_live_loan_accounts() {
-    $current_date = '2014-06-30';
+    $current_date = '2016-12-31';
     //$current_date = date('Y-m-d');
     $sqlg = "SELECT `account_id`,`loan_id`,`o_principal`,`last_interest_calculated`,`ROI`,`project_cost`,`loanee_id`
 			 FROM `tbl_loan_detail` AS `tl`
@@ -165,5 +187,73 @@ function filter_live_loan_accounts() {
         }
     }
 
+    return $live_loan_accounts;
+}
+
+
+
+
+/**
+ * Interact with database and create business logic to filter live loan accounts in an array.
+ */
+function filter_with_csv() {
+    $counter = 1;
+    $current_date = '2016-09-30';
+    $file = fopen("csv/notok.csv","r");
+    while(! feof($file)){
+        $row = fgetcsv($file);
+        if(isset($row[0])){
+            $not_ok_loan_ids[$counter] = $row[0];
+            $counter++;
+        }
+    }
+    
+    foreach ($not_ok_loan_ids as $loan_id){
+    $sqlg = "SELECT `account_id`,`loan_id`,`o_principal`,`last_interest_calculated`,`ROI`,`project_cost`,`loanee_id`
+              FROM `tbl_loan_detail` AS `tl`
+              LEFT JOIN `tbl_loanee_detail` AS `tle`
+              ON `tl`.reg_number=`tle`.reg_number WHERE `tl`.`loan_id` = '".$loan_id."' AND `tl`.`last_interest_calculated` <= '" . $current_date . "'";
+
+    $resg = db_query($sqlg);
+    while ($rsg = db_fetch_object($resg)) {
+        db_query('START TRANSACTION');
+        db_query('BEGIN');
+
+        if ($rsg->loan_id && $rsg->account_id) {
+            $sqlint = db_query("SELECT `o_principle`,`calculation_date` FROM `tbl_loan_interestld` WHERE account_id = '" . $rsg->account_id . "' AND type = 'interest' ORDER BY id DESC LIMIT 1");
+            $sqlin = db_fetch_object($sqlint);
+            //print_r($rsg->account_id.' and '.$sqlin->o_principle.' and '.$sqlin->calculation_date); echo '<BR>';
+            if (isset($sqlin->o_principle) && isset($sqlin->calculation_date)) {
+                //if ($sqlin->o_principle != 0) {
+                    $loan['loan_id'] = $rsg->loan_id;
+                    $loan['loanee_id'] = $rsg->loanee_id;
+                    $loan['account_id'] = $rsg->account_id;
+                    $loan['project_cost'] = $rsg->project_cost;
+                    $loan['o_principal'] = $rsg->o_principal;
+                    //$loan['last_interest_calculated'] = $rsg->last_interest_calculated;
+                    $loan['quarter_end_date'] = $current_date;
+                    $loan['ROI'] = $rsg->ROI;
+
+                    $loan['o_principle'] = $sqlin->o_principle;
+                    $loan['last_interest_calculated'] = $sqlin->calculation_date;
+                    $live_loan_accounts[] = $loan;
+                //}
+            } // Calculating interest first time.
+            else if (!isset($sqlin->o_principle)) {
+                $loan['loan_id'] = $rsg->loan_id;
+                $loan['loanee_id'] = $rsg->loanee_id;
+                $loan['account_id'] = $rsg->account_id;
+                $loan['project_cost'] = $rsg->project_cost;
+                $loan['o_principal'] = $rsg->o_principal;
+                $loan['last_interest_calculated'] = $rsg->last_interest_calculated;
+                $loan['quarter_end_date'] = $current_date;
+                $loan['ROI'] = $rsg->ROI;
+                $loan['o_principle'] = NULL;
+                $live_loan_accounts[] = $loan;
+            }
+        }
+    }
+    }
+    
     return $live_loan_accounts;
 }

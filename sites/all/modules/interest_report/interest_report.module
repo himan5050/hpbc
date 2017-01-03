@@ -1,0 +1,96 @@
+<?php
+
+global $base_url;
+
+/**
+* Implementing hook_perm()
+*/
+
+function interest_report_perm(){
+   return array(
+          'administer interest_report', 'view interest_report'
+		  );
+}
+
+/**
+* Implementing hook_access()
+*/
+
+function interest_report_access($op, $node, $account){
+    if(($op == 'view') || ($op == 'list')){
+	      return user_access('view interest_report', $account);
+	 }
+}
+
+
+/**
+* Implementing hook_menu()
+*/
+
+function interest_report_menu(){									  
+        $items['interest_recovery_report'] = array(
+               'title' => t('District wise Interest and Recovery Report'),
+               'type' => MENU_NORMAL_ITEM,
+               'page callback' => 'interest_recovery_report',							        'access arguments' => array('administer educationloans_SchemeReport'),
+       );
+       return $items;
+}
+
+/**
+* Implementing Page Callback Function for 
+* Interest and Recovery Report
+*/
+
+function interest_recovery_report(){
+   $array = explode('/', $_GET['q']);
+   $breadcrumb = array();
+   $breadcrumb[] = l('Home','<front>');
+   $breadcrumb[] = l('District-wise Interest Recovery Report','interest_recovery_report');
+   drupal_set_breadcrumb($breadcrumb);
+   return drupal_get_form(districtwise_interest_recovery_form);
+}
+
+
+/**
+* Implementing Drupal Form API
+* for Education Loan Scheme report.
+*/
+
+function districtwise_interest_recovery_form(){
+  global $base_url;
+  
+  $form['from_date'] = array(
+        '#type' => 'date_popup',
+        '#date_format' =>'d-m-Y',
+        '#title' => t(''),
+        '#required' => false,
+        '#size' => '30',
+  );
+ 
+  $form['to_date'] = array(
+          '#type' => 'date_popup',
+          '#date_format' =>'d-m-Y',
+          '#title' => t(''),
+          '#required' => false,
+          '#size' => '30',			   
+ );
+		
+ $form['submit'] = array('#type' => 'submit', '#default_value' => 'Generate Report');
+ 
+  return $form;
+}
+
+
+/**
+* Implementation of hook_theme()
+*/
+
+function interest_report_theme(){
+     $themable_items = array(
+	'districtwise_interest_recovery_form' => array(
+                        'arguments' => array('form' => NULL),
+                        'template' => 'districtwise_interest_recovery_form'												),
+     );
+	
+     return $themable_items;
+}

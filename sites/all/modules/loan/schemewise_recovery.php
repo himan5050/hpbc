@@ -1053,4 +1053,191 @@ EOD;
     }
     return $output;
 }
+
+
+
+//Interest Recovery Schedule Report Source Code.
+function interestwise_recovery() {
+    global $user;
+    global $base_root;
+    global $base_url;
+    $array = explode('/', $_GET['q']);
+    $breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = 'Daily-wise Interest Recovery Report';
+    drupal_set_breadcrumb($breadcrumb);
+    $scriptcss = '';
+
+    if (isset($_POST['datefrom'])) {
+        if (isEmpty('datefrom', $_POST['datefrom'], 'From Date'))
+            $scriptcss .= '$("#datefromid").addClass("error");';
+    }
+    if (isset($_POST['dateto'])) {
+        if (isEmpty('dateto', $_POST['dateto'], 'To Date'))
+            $scriptcss .= '$("#datetoid").addClass("error");';
+    }
+    if (isset($_POST['datefrom']) && $_POST['datefrom']) {
+        $datefrom = $_POST['datefrom'];
+        $dateto = $_POST['dateto'];
+    }
+    $output = <<<EOD
+	<script type="text/javascript" src="$base_url/sites/all/libraries/jquery.ui/ui/minified/ui.core.min.js?K"></script>
+    <script type="text/javascript" src="$base_url/sites/all/libraries/jquery.ui/ui/minified/ui.datepicker.min.js?K"></script>
+    <script type="text/javascript" src="$base_url/sites/all/modules/date/date_popup/lib/jquery.timeentry.pack.js?K"></script>
+    <script type="text/javascript" src="$base_url/sites/all/modules/date/date_popup/date_popup.js?K"></script>
+	<script>
+		$(function() {
+			$( "#dateto" ).datepicker();
+			$( "#dateto" ).datepicker( "option", "dateFormat", "dd-mm-yy" );
+			$( "#datefrom" ).datepicker();
+			$( "#datefrom" ).datepicker( "option", "dateFormat", "dd-mm-yy" );
+			$( "#submit" ).focus();
+		});
+	</script>
+	<div id="errorid" class="messages error" style="display:none;"></div>
+	
+	<div id="form-container">
+		<form action="" name="onetimesettlementform" method="post" enctype="multipart/form-data">
+		  <table width="100%" style="border:none;" border="0" id="onetimesettlement_container">
+  <tr>	<td align="left" class="tdform-width"><fieldset><legend>District-wise Interest Recovery Schedule Report</legend>
+		 <table align="left" class="frmtbl">
+  <tr>
+	  <td align="left"><strong>From Date: <span title="This field is required." class="form-required">*</span></strong></td>
+  	  <td>			<input type="text" name="datefrom" value="$datefrom" id="datefrom" readonly="readonly" style="width:100px;"/>
+			</td>
+			 <td align="left"><strong>To Date: <span title="This field is required." class="form-required">*</span></strong>
+			</td><td>
+					<input type="text" name="dateto" value="$dateto" id="dateto" readonly="readonly" style="width:100px;"/>
+			</td>
+		<td colspan="4" align="right"><input type="submit" class="form-submit" value="Generate" id="submit" name="ls"/></td></tr>
+		</table></fieldset></td></tr></table>
+        <br />
+       
+</form>
+</div>
+EOD;
+
+
+    if (isset($_POST['datefrom']) && $_POST['datefrom'] && !$scriptcss) {
+        $datefrom = databaseDateFormat($_POST['datefrom'], 'indian', '-');
+        $datefromstr = strtotime(databaseDateFormat($_POST['datefrom'], 'indian', '-'));
+        if ($_POST['dateto']) {
+            $dateto = databaseDateFormat($_POST['dateto'], 'indian', '-');
+            $datetostr = strtotime($dateto);
+        } else {
+            $dateto = date("Y-m-d");
+            $datetostr = time();
+        }
+
+        
+        
+        
+        
+        
+        $pdfimage = $base_url . '/' . drupal_get_path('theme', 'scst') . "/images/pdf_icon.gif";
+        $pdfurl = $base_url . "/districtwise_interest_recoverypdf.php?datefrom=$datefromstr&dateto=$datetostr";
+
+        $sql = "SELECT district_id, district_name FROM `tbl_district` WHERE district_id <= 11 ORDER BY district_name";
+        
+        $output .= '<div class="listingpage_scrolltable">
+                  <table cellpadding="0" cellspacing="2" border="0" width="100%">
+	              <tr class="oddrow">
+                  <td colspan="6"><h2 style="text-align:left;">District-wise Interest Recovery Schedule Report</h2></td></tr><tr>
+	              <td colspan="11" style="text-align:right;">
+                  <a target="_blank" href="' . $pdfurl . '">
+                  <img style="float:right;" src="' . $pdfimage . '" alt="Export to PDF" title="Export to PDF" /></a>
+                  </td></tr></table>
+                  </div>
+                  <div class="listingpage_scrolltable"><table><tr>';
+
+        $output .= "<th>S.No.</th>
+                    <th>District</th>
+                    <th>Opening Balance</th>
+                    <th>Disbursement During the period</th>
+                    <th>Total Interest</th>
+                    <th>Recovery</th>
+                    <th>LD Charges.</th>
+                    <th>Closing Balance.</th>";
+
+        $counter = 0;
+        $alltotal = 0;
+        $res = db_query($sql);
+        while ($rs = db_fetch_object($res)) {
+            $counter++;
+            $district_name = $rs->district_name;
+            $district_id  = isset($rs->district_id)?$rs->district_id:0;
+            
+            $dis_query = db_query("SELECT SUM(amount) as dis_amount FROM `tbl_loan_disbursement` where loanee_id IN (SELECT loanee_id FROM `tbl_loanee_detail` WHERE district = '".$district_id."') AND cheque_date BETWEEN '".$datefrom."' AND '".$dateto."'");
+            $dis_obj = db_fetch_object($dis_query);
+            $dis_amount = isset($dis_obj->dis_amount)?$dis_obj->dis_amount:0;
+            
+            $int_query = db_query("SELECT SUM(amount) as int_amount FROM `tbl_loan_interestld` WHERE account_id IN (SELECT account_id FROM `tbl_loanee_detail` WHERE district = '".$district_id."') AND calculation_date BETWEEN '".$datefrom."' AND '".$dateto."' AND type = 'interest'");
+            $int_obj = db_fetch_object($int_query);
+            $int_amount = isset($int_obj->int_amount)?$int_obj->int_amount:0;
+            
+            $ld_query = db_query("SELECT SUM(amount) as ld_amount FROM `tbl_loan_interestld` WHERE account_id IN (SELECT account_id FROM `tbl_loanee_detail` WHERE district = '".$district_id."') AND calculation_date BETWEEN '".$datefrom."' AND '".$dateto."' AND type = 'LD'");
+            $ld_obj = db_fetch_object($ld_query);
+            $ld_amount = isset($ld_obj->ld_amount)?$ld_obj->ld_amount:0;
+            
+            $rec_query = db_query("SELECT SUM(amount) as rec_amount FROM `tbl_loan_repayment` WHERE loanee_id IN (SELECT loanee_id FROM `tbl_loanee_detail` WHERE district = '".$district_id."') AND payment_date BETWEEN '".$datefrom."' AND '".$dateto."' AND paytype = 'EMI'");
+            $rec_obj = db_fetch_object($rec_query);
+            $rec_amount = isset($rec_obj->rec_amount)?$rec_obj->rec_amount:0;
+            
+           /* $loanee_query = db_query("SELECT account_id FROM `tbl_loanee_detail` WHERE district = '".$district_id."'");
+            $open_principal = 0;
+            $closing_principal = 0;
+            while($loanee_obj = db_fetch_object($loanee_query)){
+                $open_principal += coreloanledger($loanee_obj->account_id, $datefrom);
+                $closing_principal = coreloanledger($account_id, $dateto);
+            }
+            * 
+            */
+            
+            
+            
+            
+            $res1 = db_query("SELECT `reg_number` FROM `tbl_loanee_detail` WHERE `account_id` = '" . $rs->account_id . "'");
+            $regno = db_fetch_object($res1);
+            $reg_number = $regno->reg_number;
+
+            $res2 = db_query("SELECT `scheme_name`,`o_principal` FROM `tbl_loan_detail` WHERE `reg_number` = '" . $reg_number . "'");
+            $ress2 = db_fetch_object($res2);
+            $scheme_name = $ress2->scheme_name;
+            $o_principal = $ress2->o_principal;
+
+            echo $res3 = db_query("SELECT `scheme_name` FROM `tbl_scheme_master` WHERE `loan_scheme_id` = '" . $scheme_name . "'");
+            $ress3 = db_fetch_object($res3);
+            $schemename = $ress3->scheme_name;
+
+            $res4 = db_query("SELECT `district_name` FROM `tbl_district` WHERE `district_id` = '$rs->district'");
+            $ress4 = db_fetch_object($res4);
+           // $district_name = $ress4->district_name;
+            // echo 'fetched values = '.$district_name.' | '.$schemename.' | '.$o_principal.' <br />';
+
+            if ($counter % 2) {
+                $cl = 'odd';
+            } else {
+                $cl = 'even';
+            }
+
+            $output .= "<tr class=$cl>
+                        <td align='center'>$counter</td>
+                        <td align='left'>$district_name</td>
+                        <td align='center'>$dis_amount</td>
+                        <td align='center'>$dis_amount</td>
+                        <td align='center'>$int_amount</td>
+                        <td align='center'>$rec_amount</td>
+                        <td align='center'>$ld_amount</td>
+                        <td align='center'>$dis_amount</td>";
+        }
+
+
+        $output .= "<tr><td colspan='2'>";
+
+        $output .= "<tr><td colspan='2'>";
+        $output .= "<td align='right'>Total Recovery:</td><td align='right'>" . round($alltotal) . "</td></tr></table></div>";
+        //return $output;
+    }
+    return $output;
+}
 ?>

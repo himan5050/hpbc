@@ -28,11 +28,11 @@ $data = array(
 
    "smsservicetype" =>"singlemsg",     //*Note*  for single sms enter  îsinglemsgî , for bulk enter ìbulkmsgî
 
-   "mobileno" =>"mobileno",	       //enter the mobile number 
+   "mobileno" =>"9805646181",	       //enter the mobile number
 
    "bulkmobno" => "bulkmobno",	//enter mobile numbers separated by commas for bulk sms otherwise leave it blank                                        
 
-   "content"  => "message" 	      //type the message.
+   "content"  => "Attention HBCFDC Kangra Loan A/c no. K-20320. Your EMI for the month of Jan-2017 is due from 1st of this month onwards.Your payable outstanding amount is 475332.Please ignore this message if EMI already paid.For help, contact on 01892-264334,262282" 	      //type the message.
 
  );
 

@@ -129,28 +129,11 @@ if ($gender == 1){
 // Header Title
 $output .='<table cellpadding="0" cellspacing="0" border="0">';
 
-$output .='<tr><td colspan="0" align="center" class="header_report">HIMACHAL BACKWARD CLASSES FINANCE AND DEVELOPMENT CORPORATION KANGRA (H.P.) </td></tr><tr><td  class="header_report">Loanee Details (From '.$fromfdrdate.' To '.$tofdrdate.')</td></tr><tr ><td align="left"><strong>Date : '.date("d/m/Y").'</strong></td></tr><tr ><td align="center"><strong>'.$gender1.'</strong></td></tr>
+$output .='<tr><td colspan="0" align="center" class="header_report">HIMACHAL BACKWARD CLASSES FINANCE AND DEVELOPMENT CORPORATION KANGRA (H.P.) </td></tr><tr><td  class="header_report"></td></tr><tr ><td align="left"><strong>Date : '.date("d/m/Y").'</strong></td></tr><tr ><td align="center"><strong>'.$gender1.'</strong></td></tr>
 
 </table>';
 	
 
-/*if($district == '' and $sector == '' )
-{
-  form_set_error('form','Please enter the district or sector .');
-     
-}else{
-if($district && $sector == ''){
-   $cond = 'and tbl_district.district_name Like "'.'%'.$district.'%'.'"';
-}else if($district == '' && $sector ){
-
-  $cond = 'and tbl_sectors.sector_name Like  "'.'%'.$sector.'%'.'"';
-//  $cond = 'and tbl_sectors.sector_name Like  "'.'%'.$sector.'%'.'" AND tbl_scheme_master.schemename Like "'.'%'.$scheme.'%'.'"';
-}else if($district  && $sector ){
-  //$cond = 'and tbl_sectors.sector_name Like  "'.'%'.$sector.'%'.'" AND tbl_district.district_name Like "'.'%'.$district.'%'.'" AND tbl_scheme_master.schemename Like "'.'%'.$scheme.'%'.'"';
-
-$cond = 'and tbl_sectors.sector_name Like  "'.'%'.$sector.'%'.'" AND tbl_district.district_name Like "'.'%'.$district.'%'.'"';
-}
-*/
 
 
 $val = '%'.strtoupper($district).'%'; $key=addslashes($val);
@@ -181,9 +164,11 @@ else if($district==''  && $sector && $scheme ){
 }
 
 
-  if ($gender!== '') {
 
-$sql = "SELECT tbl_loan_detail.project_cost,tbl_loan_detail.scheme_name, sum(tbl_loan_disbursement.amount) as loantotal, tbl_loan_detail.reg_number, tbl_loanee_detail.account_id, tbl_loanee_detail.loanee_id, tbl_loanee_detail.fname, tbl_loanee_detail.lname, tbl_loanee_detail.district, tbl_loanee_detail.tehsil, tbl_district.district_name, tbl_tehsil.tehsil_name, tbl_scheme_master.scheme_name as schemename, tbl_sectors.sector_name, tbl_scheme_master.loan_scheme_id,
+
+  if ($gender != '') {
+
+/* $sql = "SELECT tbl_loan_detail.project_cost,tbl_loan_detail.scheme_name, sum(tbl_loan_disbursement.amount) as loantotal, tbl_loan_detail.reg_number, tbl_loanee_detail.account_id, tbl_loanee_detail.loanee_id, tbl_loanee_detail.fname, tbl_loanee_detail.lname, tbl_loanee_detail.district, tbl_loanee_detail.tehsil, tbl_district.district_name, tbl_tehsil.tehsil_name, tbl_scheme_master.scheme_name as schemename, tbl_sectors.sector_name, tbl_scheme_master.loan_scheme_id,
 round((tbl_scheme_master.apex_share*tbl_loan_detail.project_cost)/100,2) as apextotal, 
 round((tbl_scheme_master.corp_share*tbl_loan_detail.project_cost)/100,2) as corptotal,
 round((tbl_scheme_master.promoter_share*tbl_loan_detail.project_cost)/100,2) as promototal 
@@ -210,26 +195,9 @@ round((tbl_scheme_master.promoter_share*tbl_loan_detail.project_cost)/100,2) as 
  		INNER JOIN tbl_tehsil ON (tbl_loanee_detail.tehsil=tbl_tehsil.tehsil_id) 
 		INNER JOIN tbl_loan_disbursement ON (tbl_loanee_detail.loanee_id=tbl_loan_disbursement.loanee_id)	
 		where 1=1 AND tbl_loan_detail.loan_disburse_date between '$fromfdrdate' and '$tofdrdate' and tbl_loanee_detail.gender=$gender $cond group by 					
-		tbl_scheme_master.scheme_name";
-		
-		
-		
-	$grandsql = "SELECT tbl_loan_detail.project_cost,tbl_loan_detail.scheme_name, tbl_loan_detail.loan_amount as loantotal, tbl_loan_detail.reg_number, tbl_loanee_detail.account_id, 	tbl_loanee_detail.loanee_id, tbl_loanee_detail.fname, tbl_loanee_detail.lname, tbl_loanee_detail.district, tbl_loanee_detail.tehsil, tbl_district.district_name, tbl_tehsil.tehsil_name, tbl_scheme_master.scheme_name as schemename, tbl_sectors.sector_name, tbl_scheme_master.loan_scheme_id,
-round((tbl_scheme_master.apex_share*tbl_loan_detail.project_cost)/100,2) as apexgtotal, 
-round((tbl_scheme_master.corp_share*tbl_loan_detail.project_cost)/100,2) as corpgtotal,
-round((tbl_scheme_master.promoter_share*tbl_loan_detail.project_cost)/100,2) as promogtotal 
-	    FROM tbl_loanee_detail 
-	    INNER JOIN tbl_loan_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
-        INNER JOIN tbl_scheme_master ON  (tbl_loan_detail.scheme_name=tbl_scheme_master.loan_scheme_id) 
-	    INNER JOIN tbl_sectors ON  (tbl_scheme_master.sector=tbl_sectors.sector_id) 
-	    INNER JOIN tbl_district ON  (tbl_loanee_detail.district=tbl_district.district_id)
-        INNER JOIN tbl_tehsil ON  (tbl_loanee_detail.tehsil=tbl_tehsil.tehsil_id)
-	   	where 1=1 AND tbl_loan_detail.loan_disburse_date between '$fromfdrdate' and '$tofdrdate' and tbl_loanee_detail.gender=$gender $cond";
-		
-		
-	
-}else{
-	 /*$sql = "SELECT tbl_loan_detail.scheme_name,
+		tbl_scheme_master.scheme_name"; */
+
+      $sql = "SELECT tbl_loan_detail.scheme_name,
                 tbl_loan_detail.loan_amount,
 				tbl_loan_detail.reg_number,
 				tbl_loanee_detail.account_id,
@@ -251,7 +219,55 @@ round((tbl_scheme_master.promoter_share*tbl_loan_detail.project_cost)/100,2) as 
 	    INNER JOIN tbl_sectors ON  (tbl_scheme_master.sector=tbl_sectors.sector_id) 
 	    INNER JOIN tbl_district ON  (tbl_loanee_detail.district=tbl_district.district_id)
         INNER JOIN tbl_tehsil ON  (tbl_loanee_detail.tehsil=tbl_tehsil.tehsil_id)
-	    where 1=1 AND tbl_loan_detail.loan_disburse_date between '$fromfdrdate' and '$tofdrdate' $cond";*/
+        INNER JOIN tbl_loan_disbursement ON (tbl_loanee_detail.loanee_id = tbl_loan_disbursement.loanee_id)
+	    where 1=1  $cond";
+		
+		
+		
+	$grandsql = "SELECT tbl_loan_detail.project_cost,tbl_loan_detail.scheme_name, tbl_loan_detail.loan_amount as loantotal, tbl_loan_detail.reg_number, tbl_loanee_detail.account_id, 	tbl_loanee_detail.loanee_id, tbl_loanee_detail.fname, tbl_loanee_detail.lname, tbl_loanee_detail.district, tbl_loanee_detail.tehsil, tbl_district.district_name, tbl_tehsil.tehsil_name, tbl_scheme_master.scheme_name as schemename, tbl_sectors.sector_name, tbl_scheme_master.loan_scheme_id,
+round((tbl_scheme_master.apex_share*tbl_loan_detail.project_cost)/100,2) as apexgtotal, 
+round((tbl_scheme_master.corp_share*tbl_loan_detail.project_cost)/100,2) as corpgtotal,
+round((tbl_scheme_master.promoter_share*tbl_loan_detail.project_cost)/100,2) as promogtotal 
+	    FROM tbl_loanee_detail 
+	    INNER JOIN tbl_loan_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+        INNER JOIN tbl_scheme_master ON  (tbl_loan_detail.scheme_name=tbl_scheme_master.loan_scheme_id) 
+	    INNER JOIN tbl_sectors ON  (tbl_scheme_master.sector=tbl_sectors.sector_id) 
+	    INNER JOIN tbl_district ON  (tbl_loanee_detail.district=tbl_district.district_id)
+        INNER JOIN tbl_tehsil ON  (tbl_loanee_detail.tehsil=tbl_tehsil.tehsil_id)
+	   	where 1=1 AND tbl_loan_detail.loan_disburse_date between '$fromfdrdate' and '$tofdrdate' and tbl_loanee_detail.gender=$gender $cond";
+		
+		
+	
+}else{
+      $sql = "SELECT tbl_loan_detail.scheme_name,
+                tbl_loan_detail.loan_amount,
+				tbl_loan_detail.reg_number,
+				tbl_loan_detail.o_principal,
+				tbl_loanee_detail.account_id,
+				tbl_loanee_detail.loanee_id,	  
+				tbl_loanee_detail.fname,tbl_loanee_detail.lname,
+				tbl_loanee_detail.district,
+   				tbl_loanee_detail.tehsil,
+   				tbl_loanee_detail.address1,
+				tbl_district.district_name,
+                tbl_tehsil.tehsil_name,
+                tbl_scheme_master.scheme_name as schemename,
+				tbl_sectors.sector_name,
+				tbl_scheme_master.loan_scheme_id,
+				tbl_scheme_master.apex_share,
+				tbl_scheme_master.corp_share,
+				tbl_scheme_master.promoter_share,
+				tbl_loan_disbursement.createdon
+	    FROM tbl_loanee_detail 
+	    INNER JOIN tbl_loan_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+        INNER JOIN tbl_scheme_master ON  (tbl_loan_detail.scheme_name=tbl_scheme_master.loan_scheme_id) 
+	    INNER JOIN tbl_sectors ON  (tbl_scheme_master.sector=tbl_sectors.sector_id) 
+	    INNER JOIN tbl_district ON  (tbl_loanee_detail.district=tbl_district.district_id)
+        INNER JOIN tbl_tehsil ON  (tbl_loanee_detail.tehsil=tbl_tehsil.tehsil_id)
+        INNER JOIN tbl_loan_disbursement ON (tbl_loanee_detail.loanee_id = tbl_loan_disbursement.loanee_id)
+	    where 1=1  $cond";
+
+	 /*
 		$sql = "SELECT tbl_loan_detail.project_cost,tbl_loan_detail.scheme_name, sum(tbl_loan_disbursement.amount) as loantotal, tbl_loan_detail.reg_number, tbl_loanee_detail.account_id, tbl_loanee_detail.loanee_id, tbl_loanee_detail.fname, tbl_loanee_detail.lname, tbl_loanee_detail.district, tbl_loanee_detail.tehsil, tbl_district.district_name, tbl_tehsil.tehsil_name, tbl_scheme_master.scheme_name as schemename, tbl_sectors.sector_name, tbl_scheme_master.loan_scheme_id,
 round((tbl_scheme_master.apex_share*tbl_loan_detail.project_cost)/100,2) as apextotal, 
 round((tbl_scheme_master.corp_share*tbl_loan_detail.project_cost)/100,2) as corptotal,
@@ -278,7 +294,7 @@ round((tbl_scheme_master.promoter_share*tbl_loan_detail.project_cost)/100,2) as 
 		INNER JOIN tbl_district ON (tbl_loanee_detail.district=tbl_district.district_id)
  		INNER JOIN tbl_tehsil ON (tbl_loanee_detail.tehsil=tbl_tehsil.tehsil_id) 
 		INNER JOIN tbl_loan_disbursement ON (tbl_loanee_detail.loanee_id=tbl_loan_disbursement.loanee_id)	
-		where 1=1 AND tbl_loan_detail.loan_disburse_date between '$fromfdrdate' and '$tofdrdate' $cond group by  tbl_scheme_master.scheme_name";
+		where 1=1 AND tbl_loan_detail.loan_disburse_date between '$fromfdrdate' and '$tofdrdate' $cond group by  tbl_scheme_master.scheme_name"; */
 		
 		$grandsql = "SELECT tbl_loan_detail.scheme_name, tbl_loan_detail.loan_amount as loantotal, tbl_loan_detail.reg_number, tbl_loanee_detail.account_id, 	tbl_loanee_detail.loanee_id, tbl_loanee_detail.fname, tbl_loanee_detail.lname, tbl_loanee_detail.district, tbl_loanee_detail.tehsil, tbl_district.district_name, tbl_tehsil.tehsil_name, tbl_scheme_master.scheme_name as schemename, tbl_sectors.sector_name, tbl_scheme_master.loan_scheme_id,
 round((tbl_scheme_master.apex_share*tbl_loan_detail.project_cost)/100,2) as apexgtotal, 
@@ -298,6 +314,9 @@ round((tbl_scheme_master.promoter_share*tbl_loan_detail.project_cost)/100,2) as 
 		
 	$result = db_query($sql);
 	$rs2 = db_fetch_object($result);
+
+	echo '<PRE>';
+	print_r($rs2);
 
 if ($district && $sector == '' && $scheme=='')
 {
@@ -321,22 +340,20 @@ else if($district==''  && $sector && $scheme )
 }
 
    $output .='<table cellpadding="3" cellspacing="2" id="wrapper" class="tbl_border">';
-   $output .='<tr>
+
+$output .='<tr>
    				<td class="header2" width="40">S.No.</td>
 				<td class="header2">District Name</td>
+                <td class="header2">Tehsil Name</td>
 				<td class="header2">Sector Name</td>
 				<td class="header2">Name of Scheme</td>
 				<td class="header2">Account No.</td>
 				<td class="header2">Name of Loanee</td>
+				<td class="header2">Address of Loanee</td>
 				<td class="header2">Loan Amount Disbursed</td>
-				<td class="header2">NBCFDC Share</td>
-				<td class="header2">HBCFDC Share</td>
-				<td class="header2">Promoter Share</td>
+				<td class="header2">Date of Disbursement</td>
+				<td class="header2">Outstanding Principal</td>
 				</tr>';
-				
-
-
-
 
 
  $res = db_query($sql);
@@ -355,18 +372,22 @@ else if($district==''  && $sector && $scheme )
 		    $resql = db_fetch_object($loanesql);
 			$nsumdis = $nsumdis + round($resql->disamount);	
 			$nsumsh = $nsumsh + round($resql->disamount/100 * $rs->apex_share);
-				 $output .='<tr>
+			if($rs->o_principal != 0){
+                $output .='<tr>
 					  <td class="'.$class.'">'.$counter.'</td>
 					  <td class="'.$class.'">'.ucwords($rs->district_name).'</td>
+					  <td class="'.$class.'">'.ucwords($rs->tehsil_name).'</td>
 					  <td class="'.$class.'" style="height:65px;">'.ucwords($rs->sector_name).'</td>
 					   <td class="'.$class.'">'.ucwords($rs->schemename).'</td>
 					    <td class="'.$class.'">'.$rs->account_id.'</td>
 						 <td class="'.$class.'">'.ucwords($rs->fname).' '.ucwords($rs->lname).'</td>
-						  <td class="'.$class.'" align="right">'.round($rs->loantotal).'</td>
-						  <td class="'.$class.'" align="right">'.round($rs->apextotal).'</td>
-						  <td class="'.$class.'" align="right">'.round($rs->corptotal).'</td>
-						    <td class="'.$class.'" align="right">'.round($rs->promototal).'</td>
+						 <td class="'.$class.'" align="right">'.$rs->address1.'</td>
+						  <td class="'.$class.'" align="right">'.round($resql->disamount).'</td>
+						  <td class="'.$class.'" align="right">'.date('d/m/Y', $rs->createdon).'</td>
+						    <td class="'.$class.'" align="right">'.round($rs->o_principal).'</td>
 						</tr>';
+            }
+
 				$counter++;
  }
 if($cl == 'header4_1')

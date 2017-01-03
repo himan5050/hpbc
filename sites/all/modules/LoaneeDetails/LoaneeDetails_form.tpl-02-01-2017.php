@@ -91,22 +91,19 @@ if ($op == 'Generate Report') {
         $sql = "SELECT tbl_loan_detail.scheme_name,
                 tbl_loan_detail.loan_amount,
 				tbl_loan_detail.reg_number,
-				tbl_loan_detail.o_principal,
 				tbl_loanee_detail.account_id,
 				tbl_loanee_detail.loanee_id,	  
 				tbl_loanee_detail.fname,tbl_loanee_detail.lname,
 				tbl_loanee_detail.district,
    				tbl_loanee_detail.tehsil,
-   				tbl_loanee_detail.address1,
 				tbl_district.district_name,
-                tbl_tehsil.tehsil_name,
+                                tbl_tehsil.tehsil_name,
                 tbl_scheme_master.scheme_name as schemename,
 				tbl_sectors.sector_name,
 				tbl_scheme_master.loan_scheme_id,
 				tbl_scheme_master.apex_share,
 				tbl_scheme_master.corp_share,
-				tbl_scheme_master.promoter_share,
-				tbl_loan_disbursement.createdon
+				tbl_scheme_master.promoter_share
 	    FROM tbl_loanee_detail 
 	    INNER JOIN tbl_loan_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
         INNER JOIN tbl_scheme_master ON  (tbl_loan_detail.scheme_name=tbl_scheme_master.loan_scheme_id) 
@@ -149,10 +146,10 @@ if ($op == 'Generate Report') {
 				<th>Name of Scheme</th>
 				<th>Account No.</th>
 				<th>Name of Loanee</th>
-                <th>Address of Loanee</th>
 				<th>Loan Amount Disbursed</th>
-				<th>Date of Disbursement</th>
-				<th>Outstanding Principal</th>
+				<th>Corporation Share</th>
+				<th>Govt. Share</th>
+				<th>Promoter Share</th>
 				</tr>';
 
 
@@ -173,22 +170,19 @@ if ($op == 'Generate Report') {
         } else {
             $cla = "odd";
         }
-        if($rs->o_principal != 0){
-            $output .='<tr class="' . $cla . '">
+        $output .='<tr class="' . $cla . '">
 				   <td class="center" width="5%">' . $counter . '</td>
 				   <td >' . ucwords($rs->district_name) . '</td>
-                   <td >' . ucwords($rs->tehsil_name) . '</td>
+                                   <td >' . ucwords($rs->tehsil_name) . '</td>
 				   <td >' . ucwords($rs->sector_name) . '</td>
 				   <td >' . ucwords($rs->schemename) . '</td>
 				   <td >' . $rs->account_id . '</td>
 				   <td >' . ucwords($rs->fname) . ' ' . ucwords($rs->lname) . '</td>
-				   <td >' . ucwords($rs->address1) . '</td>
 				   <td >' . round($resql->disamount) . '</td>
-				   <td align="right">' . date('d/m/Y', $rs->createdon) . '</td>
-				   <td align="right">' . round($rs->o_principal) . '</td>
+				   <td align="right">' . round($rs->corp_share) . '</td>
+				   <td align="right">' . round($rs->apex_share) . '</td>
+				   <td align="right">' . round($rs->promoter_share) . '</td>
 	               </tr>';
-        }
-
     }
 
     if ($counter > 0) {

@@ -150,7 +150,9 @@ if ($op == 'Calculate Interest') {
                 $resp = db_query($sqlp);
                 $rsp = db_fetch_object($resp);
 
-                $o_principal = $rs->project_cost - $rsp->amount;
+                //$o_principal = $rs->project_cost - $rsp->amount;
+                $o_principal  = isset($rs->o_principal)?$rs->o_principal:0;
+                //print_r($o_principal); exit;
                 $interest_value = interest_calculation_first($rs->account_id, $o_principal, $rs->last_interest_calculated, date('Y-m-d', strtotime($_REQUEST['date_to']['date'])), $rs->ROI);
             }
             if ($counter % 2 == 0) {
@@ -170,7 +172,7 @@ if ($op == 'Calculate Interest') {
 					      <td>' . $valint[1] . '</td>
 					      <td>' . date('d-m-Y', strtotime($rs->last_interest_calculated)) . '</td>
 					      <td>' . $_REQUEST['date_to']['date'] . '</td>
-					      <td>' . $interest_value . ' </td>
+					      <td>' . $interest_value['interest_value'] . ' </td>
 	                      </tr>';
         }
 

@@ -56,7 +56,7 @@ $to = date("Y-m-d",strtotime($totime));
 */
 $output='';
 // define some HTML content with style
-$output .= <<<EOF
+    $output .= <<<EOF
 <style>
 td.header_first{
 color:111111;
@@ -67,17 +67,17 @@ background-color:#ffffff;
 }
 td.header_report{
 color:111111;
-font-family:Verdana;
-font-size: 16pt;
+font-family:Times New Roman;
+font-size: 10pt;
 
 font-weight:bold;
 background-color:#ffffff;
 }
 table{
-width:1555px;
+width:1000px;
 }
-table.tbl_border{border:1px solid #a7c942;
-background-color:#a7c942;
+table.tbl_border{border:1px solid #1D374C;
+background-color:#1D374C;
 }
 td.header1 {
         color:#3b3c3c;
@@ -90,7 +90,7 @@ td.header1 {
 td.header2 {
 border-bottom-color:#FFFFFF;
 color: #ffffff;
-background-color:#a7c942;
+background-color:#1D374C;
 font-family:Verdana;
 font-size: 10pt;
 font-weight: bold;
@@ -113,14 +113,14 @@ td.header4_1 {
 color:#222222;
 background-color:#ffffff;
 font-family:Verdana;
-font-size: 11pt;
+font-size: 10pt;
 font-weight: normal;
 }
 td.header4_2  {
 color:#222222;
 background-color:#eaf2d3;
 font-family:Verdana;
-font-size: 11pt;
+font-size: 10pt;
 font-weight: normal;		
 }
 td.msg{
@@ -147,8 +147,8 @@ $header1 .='<table cellpadding="0" cellspacing="0" border="0" style="width:1420p
 
 	
 
-  $sql = "SELECT tbl_scheme_master.scheme_name,tbl_loan_detail.reg_number,tbl_loanee_detail.account_id,tbl_loanee_detail.fname,tbl_loanee_detail.lname,tbl_loanee_detail.loanee_id,tbl_loanee_detail.district,
-	tbl_loanee_detail.tehsil,tbl_loanee_detail.address1,tbl_loanee_detail.address2,tbl_loan_detail.loan_requirement,tbl_loan_disbursement.createdon,tbl_loan_disbursement.cheque_number,tbl_loan_disbursement.amount,tbl_loanee_detail.fh_name
+  $sql = "SELECT tbl_scheme_master.scheme_name,tbl_scheme_master.apex_share,tbl_scheme_master.corp_share,tbl_scheme_master.promoter_share,tbl_loan_detail.reg_number,tbl_loanee_detail.account_id,tbl_loanee_detail.fname,tbl_loanee_detail.lname,tbl_loanee_detail.loanee_id,tbl_loanee_detail.district,
+	tbl_loanee_detail.tehsil,tbl_loanee_detail.address1,tbl_loanee_detail.address2,tbl_loanee_detail.panchayat,tbl_loanee_detail.gender,tbl_loanee_detail.dob,tbl_loan_detail.loan_requirement,tbl_loan_detail.project_cost,tbl_loan_disbursement.createdon,tbl_loan_disbursement.cheque_number,tbl_loan_disbursement.amount,tbl_loanee_detail.fh_name
 	
 	 FROM tbl_loanee_detail inner join tbl_loan_detail on (tbl_loan_detail.reg_number=tbl_loanee_detail.reg_number)     
 
@@ -190,7 +190,7 @@ $cond = '';
 
 
  
-
+/*
 $header3 .='<table cellpadding="3" cellspacing="2" border="0" class="tbl_border" align="center" width="1400px;"><tr>
 <td width="3%" colspan="1" align="left" class="header2">S. No.</td>
 <td width="8%" colspan="1" align="left" class="header2">District Name</td>
@@ -206,11 +206,29 @@ $header3 .='<table cellpadding="3" cellspacing="2" border="0" class="tbl_border"
 <td width="8%" colspan="1" align="left" class="header2">Balance Amount</td>
 <td width="8%" colspan="1" align="left" class="header2">Father Name/Husband Name </td>
 </tr>';
+  */
+
+$header3 .='<table cellpadding="3" cellspacing="2" border="0" class="tbl_border" align="center" width="1400px;"><tr>
+<td width="3%" colspan="1" align="left" class="header2">S. No.</td>
+<td width="8%" colspan="1" align="left" class="header2">Code No.</td>
+<td width="8%" colspan="1" align="left" class="header2">Name & Address</td>
+<td width="8%" colspan="1" align="left" class="header2">Scheme</td>
+<td width="8%" colspan="1" align="left" class="header2">Male/Female</td>
+<td width="8%" colspan="1" align="left" class="header2">DOB</td>
+<td width="8%" colspan="1" align="left" class="header2">Rural/Urban</td>
+<td width="8%" colspan="1" align="left" class="header2">Date of Disbursement.</td>
+<td width="8%" colspan="1" align="left" class="header2">Disbursed Amount.</td>
+<td width="8%" colspan="1" align="left" class="header2">Project Cost</td>
+<td width="8%" colspan="1" align="left" class="header2">NBCFDC Share</td>
+<td width="8%" colspan="1" align="left" class="header2">HBCFDC Share</td>
+<td width="8%" colspan="1" align="left" class="header2">Promoter Share</td>
+
+</tr>';
 
 
-  
+
   $outputh .= $header1.$header2.$header3;
-  
+
   $query = $sql . $cond;
   $sql_count = "SELECT count(*) as count_neshat FROM tbl_loanee_detail inner join tbl_loan_detail on (tbl_loan_detail.reg_number=tbl_loanee_detail.reg_number)     
 
@@ -230,9 +248,50 @@ where 1=1";
  
  while($rs = db_fetch_object($res)){
 
-	 
-	  $wer=$rs->loan_requirement;
-	 $dis_amount=$rs->amount;
+     /**
+      * Share calculation
+      */
+     $project_cost = $rs->project_cost;
+     $promoter_share_rate = $rs->promoter_share;
+     $apex_share_rate = $rs->apex_share;
+     $corp_share_rate = $rs->corp_share;
+     $promoter_share = round($project_cost*$promoter_share_rate/100);
+     $nbcfdc_share =  round($project_cost*$apex_share_rate/100);
+     $hbcfdc_share = round($project_cost*$corp_share_rate/100);
+
+     /**
+      * Gender Identification.
+      */
+     $gender = $rs->gender;
+     if($gender == '1'){
+         $gender_name = 'Male';
+     }else{
+         $gender_name = 'Female';
+     }
+
+     /**
+      * DOB Calculation
+      */
+     $dob = $rs->dob;
+     if($dob === '0000-00-00' || $dob === '1970-01-01'){
+            $dob = '';
+     }
+     /**
+      * Rural/Urban Identification.
+      */
+     $area = $rs->panchayat;
+     if(isset($area) && $area != 0){
+         $location = 'Rural';
+     }else{
+         $location = 'Urban';
+
+     }
+
+
+
+     $wer=$rs->loan_requirement;
+
+      $dis_amount=$rs->amount;
 	 
 	 //$accountid=$rs->account_id;
 	 if(!$accountid)
@@ -266,7 +325,7 @@ where 1=1";
 	 }
 	 
 	 
-				if($counter%2==0){ $class='header4_2';}else{$class='header4_1';}
+				/*if($counter%2==0){ $class='header4_2';}else{$class='header4_1';}
 				$output .='<tr>
 				<td width="3%" class="'.$class.'" align="center">'.$counter.'</td>
 				<td width="8%" class="'.$class.'" align="left">'.ucwords(getdistrict($rs->district)).'</td>
@@ -284,18 +343,39 @@ where 1=1";
 				
 				';
 				$output .='</tr>';
-				$counter++; 
+				$counter++; */
+
+
+     if($counter%2==0){ $class='header4_2';}else{$class='header4_1';}
+     $output .='<tr>
+				<td width="3%" class="'.$class.'" align="center">'.$counter.'</td>
+				<td width="8%" class="'.$class.'" align="left">'.$rs->account_id.'</td>
+				<td width="8%" class="'.$class.'" align="center">'.ucwords($rs->fname).' '.ucwords($rs->lname).', S/O '.$rs->fh_name.','.ucwords($rs->address1).' '.ucwords($rs->address2).'</td>
+				<td width="8%" class="'.$class.'" align="left">'.ucwords($rs->scheme_name).'</td>
+				<td width="8%" class="'.$class.'" align="left">'.ucwords($gender_name).'</td>
+				<td width="8%" class="'.$class.'" align="right">'.date("d-m-Y",strtotime($dob)).'</td> 
+				<td width="8%" class="'.$class.'" align="left">'.ucwords($location).'</td>
+				<td width="8%" class="'.$class.'" align="left">'.date("d-m-Y",$rs->createdon).'</td>
+				<td width="8%" class="'.$class.'" align="right">'.round($dis_amount).'</td>
+				<td width="8%" class="'.$class.'" align="right">'.round($project_cost).'</td>
+				<td width="8%" class="'.$class.'" align="right">'.round($nbcfdc_share).'</td>
+				<td width="8%" class="'.$class.'" align="right">'.round($hbcfdc_share).'</td>
+				<td width="8%" class="'.$class.'" align="right">'.round($promoter_share).'</td>
 				
-				
-				
-			  /*  if($neshatcount+1 != $pdf->pagenumber1()){
-				
-				}else{
-				   $neshat .='neshat';
-				   $neshatcount =1;
-				
-				}
-				$neshatcount++;	*/
+				';
+     $output .='</tr>';
+     $counter++;
+
+
+
+     /*  if($neshatcount+1 != $pdf->pagenumber1()){
+
+       }else{
+          $neshat .='neshat';
+          $neshatcount =1;
+
+       }
+       $neshatcount++;	*/
 		
  }
 

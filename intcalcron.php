@@ -62,7 +62,7 @@ while ($rsg = db_fetch_object($resg)) {
         if (isset($rsi->o_principle)) {
                // echo 'Regular Time = '.$rs->account_id.' / '.$rsi->o_principle.' / '.$rs->last_interest_calculated.' / '.$rs->ROI; 
                 $interest_value = interest_calculation_regular($rs->account_id, $rsi->o_principle, $rs->last_interest_calculated, date('Y-m-d',$to_date), $rs->ROI);
-
+                $final_principle = abs($rsi->o_principle + $interest_value['interest_value'] - $interest_value['repaid_amount']);
                 //  echo $interest_value; exit;
             } else {
                 // Interest must be calculated on total term loan value.
@@ -72,34 +72,38 @@ while ($rsg = db_fetch_object($resg)) {
                 $resp = db_query($sqlp);
                 $rsp = db_fetch_object($resp);
 
-                $o_principal = $rs->project_cost - $rsp->amount;
+                //$o_principal = $rs->project_cost - $rsp->amount;
+                $o_principal  = isset($rs->o_principal)?$rs->o_principal:0;
                // echo $rs->account_id.' / '.$o_principal.' / '.$rs->last_interest_calculated.' / '.$rs->ROI.' / '.date('Y-m-d',$to_date);
                 $interest_value = interest_calculation_first($rs->account_id, $o_principal, $rs->last_interest_calculated, date('Y-m-d',$to_date), $rs->ROI);
+                $final_principle = abs($o_principal + $interest_value['interest_value'] - $interest_value['repaid_amount']);
             }
 
 
-        echo 'Interest Value = ' . $interest_value . '<br>';
-        $last_interest_calculated = $rsg->up_to_date;
+        echo 'Interest Value = ' . $interest_value['interest_value'] . '<br> and recoevery in quarter = '.$interest_value['repaid_amount'];
+       // $last_interest_calculated = $rsg->up_to_date;
         $batch_id = $rsg->intbatch_id;
         //echo $reg_number = $rs->reg_number;
 
         $from_date = $rs->last_interest_calculated;
         $to_date = date("Y-m-d", $rsg->up_to_date);
         $calculation_date = $to_date;
-        $amount = $interest_value;
+        $amount = $interest_value['interest_value'];
+        $amount_repaid = isset($interest_value['repaid_amount'])?$interest_value['repaid_amount']:0;
         $type = 'interest';
         $account_id = $rs->account_id;
         $reg_number = $rs->reg_number;
         $last_interest_calculated = date('Y-m-d', $rsg->up_to_date);
-        $final_principal = $rs->o_principal + $interest_value;
+        $final_principal = abs($rs->o_principal + $amount);
+        
 
-        if (!db_query("UPDATE {tbl_loan_detail} SET  o_principal='" . $final_principal . "',last_interest_calculated='" . $last_interest_calculated . "'  WHERE reg_number='" . $reg_number . "'")) {
+        if (!db_query("UPDATE {tbl_loan_detail} SET  o_principal='" . $final_principle . "',last_interest_calculated='" . $last_interest_calculated . "'  WHERE reg_number='" . $reg_number . "'")) {
             $error = 1;
         }
         if (!db_query("INSERT INTO {tbl_loan_interestld}
 		                          (account_id,type,amount,from_date,to_date,calculation_date,o_principle,reason,intbatch_id) 
 		                  VALUES ('" . $account_id . "','" . $type . "','" . $amount . "','" . $from_date . "','" . $to_date . "','" . $calculation_date . "',
-						          '" . $final_principal . "','212','" . $batch_id . "') ")) {
+						          '" . $final_principle . "','212','" . $batch_id . "') ")) {
             $error = 1;
         }
     }
