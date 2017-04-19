@@ -51,7 +51,7 @@ function sendSMS($loanee_id){
             "smsservicetype" =>"singlemsg",     //*Note*  for single sms enter  îsinglemsgî , for bulk enter ìbulkmsgî
             "mobileno" =>$mobile_no,
             "bulkmobno" => "bulkmobno",	//enter mobile numbers separated by commas for bulk sms otherwise leave it blank                                        
-            "content"  => "Attention HBCFDC Kangra Loan A/c No. $loanee_id . Your EMI for the month of JANUARY-2017 is due from 1st of this month onwards.  As interest is calculated on daily basis, pay early to avoid paying more interest. Please ignore this message if EMI already paid. For help, contact on 01892-264334, 262282." 	      //type the message.
+            "content"  => "Attention HBCFDC Kangra Loan A/c No. $loanee_id . Your EMI for the month of APRIL-2017 is due from 1st of this month onwards.  As interest is calculated on daily basis, pay early to avoid paying more interest. Please ignore this message if EMI already paid. For help, contact on 01892-264334, 262282." 	      //type the message.
         );
        
        post_to_url("http://msdgweb.mgov.gov.in/esms/sendsmsrequest", $data);

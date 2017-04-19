@@ -21,10 +21,10 @@
 <div id="rec_participant">
     <table width="100%" cellpadding="2" cellspacing="1" border="0" id="wrapper">
         <tr>
-            <td align="left" class="tdform-width"><fieldset><legend>Defaulters List</legend>
+            <td align="left" class="tdform-width"><fieldset><legend>Defaulters List Within Loan Period:</legend>
                     <table align="left" class="frmtbl" >
-                        <tr><td width="5%">&nbsp;</td><td><div class="maincol maincoldate"><?php print drupal_render($form['startdate']); ?></div></td><td><div class="maincol maincoldate"><?php print drupal_render($form['enddate']); ?></div></td><td><div class="maincol"><?php print drupal_render($form['type']); ?></div></td><td width="5%">&nbsp;</td></tr><tr><td colspan="7" align="right"><div  style="margin-right:70px;"><?php print drupal_render($form); ?></div></td></tr>    
-
+                        <tr><td width="5%">&nbsp;</td><td><div class="maincol maincoldate"><?php print drupal_render($form['district_id']); ?></div></td><td><div class="maincol maincoldate"><?php print drupal_render($form['tehsil_id']); ?></div></td><td><div class="maincol maincoldate"><?php print drupal_render($form['panchayat_id']); ?></div></td></tr>
+                        <tr><td width="5%">&nbsp;</td><td><div class="maincol maincoldate"><?php print drupal_render($form['startdate']); ?></div></td><td><div class="maincol maincoldate"><?php print drupal_render($form['enddate']); ?></div></td><td><div class="maincol maincoldate"><?php print drupal_render($form['type']); ?></div></td><td width="5%">&nbsp;</td></tr><tr><td colspan="7" align="right"><div  style="margin-right:70px;"><?php print drupal_render($form); ?></div></td></tr>
                     </table>
                 </fieldset></td></tr>
     </table>
@@ -36,6 +36,7 @@ $op = $_REQUEST['op'];
 if ($op == 'Generate') {
     $type = $_REQUEST['type'];
     if ($type != '') {
+        $cond = '';
         $stdate = strtotime($_REQUEST['startdate']['date']);
         $endate = strtotime($_REQUEST['enddate']['date']);
         $std = explode('-', $_REQUEST['startdate']['date']);
@@ -48,6 +49,17 @@ if ($op == 'Generate') {
         $usr = db_fetch_array($usq);
         $usid = $usr['current_officeid'];
        // echo 'Current User Official Id = '.$usid; exit;
+        if(isset($_REQUEST['district_id']) && ($_REQUEST['district_id'] != '')){
+            $cond .= "and tbl_loanee_detail.district = '".$_REQUEST['district_id']."'";
+        }
+
+        if(isset($_REQUEST['tehsil_id']) && ($_REQUEST['tehsil_id'] != '')){
+            $cond .= "and tbl_loanee_detail.tehsil = '".$_REQUEST['tehsil_id']."'";
+        }
+
+        if(isset($_REQUEST['panchayat_id']) && ($_REQUEST['panchayat_id'] != '')){
+            $cond .= "and tbl_loanee_detail.panchayat = '".$_REQUEST['panchayat_id']."'";
+        }
 
         if ($type == 'alr') {
             $sql = "select tbl_loanee_detail.alr_status, 
@@ -211,7 +223,7 @@ if ($op == 'Generate') {
              INNER JOIN tbl_scheme_master ON (tbl_scheme_master.loan_scheme_id=tbl_loan_detail.scheme_name)
              WHERE UNIX_TIMESTAMP(tbl_loan_detail.sanction_date) >= '" . $startdate . "' and 
 			       UNIX_TIMESTAMP(tbl_loan_detail.sanction_date)<= '" . $enddate . "' 
-				   and tbl_loanee_detail.account_id !=''";
+				   and tbl_loanee_detail.account_id !='' $cond ";
 // where alr_status=1";
             // where UNIX_TIMESTAMP(tbl_loan_detail.sanction_date) >= '".$startdate."' and UNIX_TIMESTAMP(tbl_loan_detail.sanction_date)<= '".$enddate."'
             $query = db_query($sql);
@@ -243,7 +255,7 @@ if ($op == 'Generate') {
                       INNER JOIN tbl_scheme_master ON (tbl_scheme_master.loan_scheme_id=tbl_loan_detail.scheme_name)
                       where UNIX_TIMESTAMP(tbl_loan_detail.sanction_date) >= '" . $startdate . "' and 
 					  UNIX_TIMESTAMP(tbl_loan_detail.sanction_date)<= '" . $enddate . "'  
-					  and tbl_loanee_detail.account_id !='' group by tbl_loanee_detail.corp_branch";
+					  and tbl_loanee_detail.account_id !='' $cond group by tbl_loanee_detail.corp_branch";
 // where alr_status=1";
             $rscount = db_query($sqlcount);
             $rscounter = db_fetch_object($rscount);
@@ -263,14 +275,6 @@ if ($op == 'Generate') {
                     $opbq = db_query($opb);
                     $opbr = db_fetch_array($opbq);
 
-                    /* $opi="select sum(interest_paid) as intpaid, 
-                      sum(principal_paid) as recovery
-                      from tbl_loan_amortisaton
-                      where loanacc_id='".$res['account_id']."' group by loanacc_id";
-                      $opiq=db_query($opi);
-                      $opir=db_fetch_array($opiq); */
-
-
                     $opi = "select sum(amount) as intpaid 
 							   from tbl_loan_interestld 
 							   where account_id='" . $res['account_id'] . "'";
@@ -282,6 +286,11 @@ if ($op == 'Generate') {
 							   where loanee_id='" . $res['loanee_id'] . "'";
                     $oprq = db_query($opr);
                     $oprr = db_fetch_array($oprq);
+
+
+                    // Return Outstanding Principal.
+                    $o_principle = coreloanledger($res['account_id'],'2016-12-31');
+
 
 
                     $ss = "select max(payment_date) as last_date 
@@ -314,7 +323,7 @@ if ($op == 'Generate') {
 												<td colspan="13" align="right">
 												<h2 style="text-align:left;">Defaulters List</h2></td></tr>
 		                                        <tr><td colspan="13" align="right">
-												<a href="' . $base_url . '/generatedefaulterpdf.php?op=defaulter&startdate=' . $startdate . '&enddate=' . $enddate . '&type=' . $type . '" target="_blank">
+												<a href="' . $base_url . '/generatedefaulterpdf.php?op=defaulter&startdate=' . $startdate . '&enddate=' . $enddate . '&type=' . $type . '&district=' . $_REQUEST['district_id'] . '&tehsil=' . $_REQUEST['tehsil_id'] . '&panchayat=' . $_REQUEST['panchayat_id'] . '" target="_blank">
 												<img src="account/images/pdf_icon.gif" style="float:right;" alt="pdf"/></a></td></tr>
 		                                        <tr><td colspan="13" align="right"></td></tr>
                                                 <tr><th><b>Account No.</b></th>
@@ -328,12 +337,14 @@ if ($op == 'Generate') {
                                                 <th><b>Interest</b></th>
                                                 <th><b>Recover amount</b></th>
                                                 <th><b>Expected Amount</b></th>
+                                                <th><b>Default Amount</b></th>
                                                 <th><b>Outstanding Balance</b></th></tr>';
                                 $val = 1;
                             }
                             $sk++;
 
-                            $output .='<tr class="' . $cla . '">
+                            if($o_principle != 0){
+                                $output .='<tr class="' . $cla . '">
 									            <td>' . $res['account_id'] . '</td>
 												<td>' . $res['scheme_name'] . '</td>
 												<td>' . $res['fname'] . '</td>
@@ -345,7 +356,11 @@ if ($op == 'Generate') {
 												<td>' . round($opir['intpaid']) . '</td>
 												<td>' . round($oprr['recovery']) . '</td>
 												<td>' . round($expted) . '</td>
-												<td>' . $res['o_principal'] . '</td></tr>';
+												<td>' . round($expted) . '</td>
+												<td>' . $o_principle . '</td></tr>';
+                            }
+
+
                         }
                     } // if condition ends...
                     $l++;
