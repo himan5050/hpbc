@@ -1,7 +1,7 @@
 <?php
- if ($_FILES['file']['tmp_name']){ 
+ if ($_FILES['file']['tmp_name']){
    $dom = DOMDocument::load( $_FILES['file']['tmp_name'] );
-   $rows = $dom->getElementsByTagName('Row');  
+   $rows = $dom->getElementsByTagName('Row');
    $first_row = true;
    foreach ($rows as $row ){  //$tenure,$amount,$interest,$subsidy = 0,$loan_id = ''
         if (!$first_row ){          
@@ -16,7 +16,7 @@
                 $index += 1;
             }
   
-            //echo "</br>".$loanee_id;
+            //echo "</br>".$loanee_id; exit;
             sendSMS($loanee_id);
         }
         $first_row = false;
@@ -31,7 +31,7 @@
 function sendSMS($loanee_id){
    $Link = mysql_connect('localhost','root','');
    if ($Link) {
-    mysql_select_db('hpbctest', $Link);
+    mysql_select_db('hpbc', $Link);
    }
    
    if($loanee_id){
@@ -40,6 +40,8 @@ function sendSMS($loanee_id){
        $lres = mysql_query($ldetail);
        $ld = mysql_fetch_object($lres);
        $mobile_no = isset($ld->mobile)?$ld->mobile:'';
+
+       print_r($mobile_no);
        
        if(isset($mobile_no)){
        $data = array(
@@ -49,7 +51,7 @@ function sendSMS($loanee_id){
             "smsservicetype" =>"singlemsg",     //*Note*  for single sms enter  îsinglemsgî , for bulk enter ìbulkmsgî
             "mobileno" =>$mobile_no,
             "bulkmobno" => "bulkmobno",	//enter mobile numbers separated by commas for bulk sms otherwise leave it blank                                        
-            "content"  => "Attention HBCFDC Kangra Loan A/c No. $loanee_id . Your EMI for the month of NOVEMBER-2015 is due from 1st of this month onwards.  As interest is calculated on daily basis, pay early to avoid paying more interest. Please ignore this message if EMI already paid. For help, contact on 01892-264334, 262282." 	      //type the message.
+            "content"  => "Attention HBCFDC Kangra Loan A/c No. $loanee_id . Your EMI for the month of APRIL-2017 is due from 1st of this month onwards.  As interest is calculated on daily basis, pay early to avoid paying more interest. Please ignore this message if EMI already paid. For help, contact on 01892-264334, 262282." 	      //type the message.
         );
        
        post_to_url("http://msdgweb.mgov.gov.in/esms/sendsmsrequest", $data);

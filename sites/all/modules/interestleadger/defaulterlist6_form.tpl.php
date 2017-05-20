@@ -21,11 +21,10 @@
 <div id="rec_participant">
     <table width="100%" cellpadding="2" cellspacing="1" border="0" id="wrapper">
         <tr>
-            <td align="left" class="tdform-width"><fieldset><legend>Defaulters List Beyond Loan Period</legend>
+            <td align="left" class="tdform-width"><fieldset><legend>Defaulters List Beyond Loan Period:</legend>
                     <table align="left" class="frmtbl" >
-                        <tr><td></td>
-                            <td><?php print drupal_render($form['tehsil_id']); ?></td><td><div class="maincol"><?php print drupal_render($form['type']); ?></div></td><td width="5%">&nbsp;</td></tr><tr><td colspan="7" align="right"><div  style="margin-right:70px;"><?php print drupal_render($form); ?></div></td></tr>    
-
+                        <tr><td width="5%">&nbsp;</td><td><div class="maincol maincoldate"><?php print drupal_render($form['district_id']); ?></div></td><td><div class="maincol maincoldate"><?php print drupal_render($form['tehsil_id']); ?></div></td><td><div class="maincol maincoldate"><?php print drupal_render($form['panchayat_id']); ?></div></td></tr>
+                        <tr><td width="5%">&nbsp;</td><td><div class="maincol maincoldate"><?php print drupal_render($form['type']); ?></div></td><td width="5%">&nbsp;</td></tr><tr><td colspan="7" align="right"><div  style="margin-right:70px;"><?php print drupal_render($form); ?></div></td></tr>
                     </table>
                 </fieldset></td></tr>
     </table>
@@ -40,6 +39,7 @@ if ($op == 'Generate') {
 	$tehsil = $_REQUEST['tehsil_id'];
 	   
     if ($type != '') {
+        $cond = '';
        // $stdate = strtotime($_REQUEST['startdate']['date']);
       //  $endate = strtotime($_REQUEST['enddate']['date']);
       //  $std = explode('-', $_REQUEST['startdate']['date']);
@@ -52,6 +52,18 @@ if ($op == 'Generate') {
         $usr = db_fetch_array($usq);
         $usid = $usr['current_officeid'];
        // echo 'Current User Official Id = '.$usid; exit;
+        if(isset($_REQUEST['district_id']) && ($_REQUEST['district_id'] != '')){
+            $cond .= " and tbl_loanee_detail.district = '".$_REQUEST['district_id']."'";
+        }
+
+        if(isset($_REQUEST['tehsil_id']) && ($_REQUEST['tehsil_id'] != '')){
+            $cond .= " and tbl_loanee_detail.tehsil = '".$_REQUEST['tehsil_id']."'";
+        }
+
+        if(isset($_REQUEST['panchayat_id']) && ($_REQUEST['panchayat_id'] != '')){
+            $cond .= " and tbl_loanee_detail.panchayat = '".$_REQUEST['panchayat_id']."'";
+        }
+
        
 	   /*
         if ($type == 'alr') {
@@ -218,8 +230,8 @@ if ($op == 'Generate') {
 				 INNER JOIN tbl_loan_detail ON (tbl_loan_detail.reg_number=tbl_loanee_detail.reg_number) 
 				 INNER JOIN tbl_scheme_master ON (tbl_scheme_master.loan_scheme_id=tbl_loan_detail.scheme_name) 
                  
-				 WHERE tbl_loanee_detail.tehsil = '".$tehsil."' AND
-				       DATE_ADD(tbl_loan_detail.sanction_date, INTERVAL 6 YEAR) < '".date('y-m-d')."'"; 
+				 WHERE DATE_ADD(tbl_loan_detail.sanction_date, INTERVAL 6 YEAR) < '".date('y-m-d')."' $cond";
+
 // where alr_status=1";
             // where UNIX_TIMESTAMP(tbl_loan_detail.sanction_date) >= '".$startdate."' and UNIX_TIMESTAMP(tbl_loan_detail.sanction_date)<= '".$enddate."'
             $query = db_query($sql);
@@ -250,11 +262,11 @@ if ($op == 'Generate') {
                       INNER JOIN tbl_block ON (tbl_block.block_id=tbl_loanee_detail.block)
                       INNER JOIN tbl_loan_detail ON (tbl_loan_detail.reg_number=tbl_loanee_detail.reg_number)
                       INNER JOIN tbl_scheme_master ON (tbl_scheme_master.loan_scheme_id=tbl_loan_detail.scheme_name)
-                      WHERE tbl_loanee_detail.tehsil = '".$tehsil."' 
-					  AND DATE_ADD(tbl_loan_detail.sanction_date, INTERVAL 6 YEAR) < '".date('y-m-d')."'"; 
+                      WHERE DATE_ADD(tbl_loan_detail.sanction_date, INTERVAL 6 YEAR) < '".date('y-m-d')."' $cond";
 // where alr_status=1";
             $rscount = db_query($sqlcount);
             $rscounter = db_fetch_object($rscount);
+
             if ($rscounter->count == 0 || $rscounter->count == '') {
                 //echo '<font color="red"><b>No Record found...</b></font>';
             } else {
@@ -266,11 +278,10 @@ if ($op == 'Generate') {
 												<h2 style="text-align:left;">Defaulters List</h2></td></tr>
 		                                        <tr><td colspan="13" align="right">
 												<a href="' . $base_url . '/generatedefaulter6pdf.php?op=defaulter&tehsil='
-												 . $tehsil. '&type=' . $type . '" target="_blank">
+												 . $tehsil. '&type=' . $type . '&district=' . $_REQUEST['district_id'] . '&panchayat=' . $_REQUEST['panchayat_id'] . '" target="_blank">
 												<img src="account/images/pdf_icon.gif" style="float:right;" alt="pdf"/></a></td></tr>
 		                                        <tr><td colspan="13" align="right"></td></tr>
                                                 <tr>
-												<th><b>Sr. No.</b></th>
 												<th><b>Account No.</b></th>
                                                 <th width="10%"><b>Loanee & Guardian Name</b></th>
 												<th><b>Scheme Name</b></th>
@@ -324,6 +335,9 @@ if ($op == 'Generate') {
                     $q = db_query($ss);
                     $r = db_fetch_array($q);
 
+                    // Return Outstanding Principal.
+                    $o_principle = coreloanledger($res['account_id'],'2016-12-31');
+
                     //if ($r['last_date'] != '') {
                         $ld = explode('-', $r['last_date']);
                         $mkt = mktime(0, 0, 0, ($ld[1] + 3), ($ld[2]), ($ld[0]));
@@ -349,10 +363,10 @@ if ($op == 'Generate') {
                                 
                             } */
                             $sk++;
-							
+							$o_principal = $res['o_principal'];
 
-                           $output .='<tr class="' . $cla . '">
-									            <td>' . $sk . '</td>
+                            if($o_principle != 0 && $o_principal != 0){
+                                $output .='<tr class="' . $cla . '">
 											    <td>' . $res['account_id'] . '</td>
 												<td width="10%">'.ucwords($res['fname']).' '.ucwords($res['lname']).'<br/><br/> '.ucwords($res['fh_name']).'</td>
 												<td>' . $res['scheme_name'] . '</td>
@@ -362,11 +376,15 @@ if ($op == 'Generate') {
 												<td>' . round($opir['intpaid']) . '</td>
 												<td>' . round($oprr['recovery']) . '</td>
 												<td>' . round($expted) . '</td>
-												<td>' . $res['o_principal'] . '</td></tr>';
+												<td>' . $o_principle . '</td></tr>';
+                                $l++;
+
+                            }
+
 						//}
                         
                    // } // if condition ends...
-                    $l++;
+
                 } // while loop ends///
             }// else loop ends..
             if ($val == 1) {

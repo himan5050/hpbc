@@ -4581,3 +4581,595 @@ function generate_accountno($short_code,$dist_uid){
         }
     
 }
+
+
+//Business Logic for interest calculation..
+
+function interest_calculation_regular($loanid, $odbalance, $last_int_cal, $new_int_cal, $roi) {
+	$quarter_start_date = $last_int_cal;
+	$quarter_end_date = $new_int_cal;
+	$quarter_time = abs(strtotime($quarter_end_date) - strtotime($quarter_start_date));
+	$quarter_days = round(($quarter_time / (60 * 60 * 24)));
+	//echo $quarter_days; exit;
+	$flag = db_query("SELECT * FROM tbl_loan_interestld
+	                    WHERE account_id =  '" . $loanid . "'
+						AND calculation_date = '" . $quarter_end_date . "'");
+	$counter = 0;
+	while ($res = db_fetch_object($flag)) {
+		$counter++;
+	}
+	if ($counter == 0) {
+		$loanee = db_query("SELECT * FROM tbl_loanee_detail
+		                       WHERE account_id =  '" . $loanid . "'");
+		$res = db_fetch_object($loanee);
+		$loaneeid = $res->loanee_id;
+		//echo $loaneeid; exit;
+		$interest_value = 0;
+
+		$repayments = db_query("SELECT payment_date,amount FROM tbl_loan_repayment
+		                           WHERE loanee_id =  '" . $loaneeid . "' AND paytype = 'EMI'
+								   AND (payment_date BETWEEN '" . $quarter_start_date . "' AND '" . $quarter_end_date . "')");
+		$repay_count = 0;
+		while ($res1 = db_fetch_object($repayments)) {
+			$repay_count++;
+		}
+		//-------------------------------In Case of Loanee did not pay installment in selected quarter--------------------------
+		if ($repay_count == 0) {
+			$interest_value = round(($odbalance * $quarter_days * $roi) / 36500);
+		}
+		//-------------------------------In Case when Loanee paid installment in selected quarter--------------------------
+		else {
+			$tdays = 0;
+			$start_date = $quarter_start_date;
+			$first_repayment = true;
+			$total_repayment_amount = 0;
+			$total_repayments = db_query("SELECT payment_date,amount FROM tbl_loan_repayment
+		                                    WHERE loanee_id =  '" . $loaneeid . "' AND paytype = 'EMI'
+								            AND (payment_date BETWEEN '" . $quarter_start_date . "' AND '" . $quarter_end_date . "')");
+
+			while ($row = db_fetch_object($total_repayments)) {
+				if ($first_repayment && ($row->payment_date != $quarter_start_date)) {
+					$time = abs(strtotime($row->payment_date) - strtotime($start_date));
+					$days = round(($time / (60 * 60 * 24))) - 1;
+					//echo 'No of days = '.$days; exit;
+					$interest_value += round(($odbalance * $days * $roi) / 36500);
+					$odbalance = $odbalance - $row->amount;
+					$tdays += $days;
+					$total_repayment_amount += $row->amount;
+					$start_date = $row->payment_date;
+					$first_repayment = false;
+				} else if ($row->payment_date != $quarter_start_date) {
+					$time = abs(strtotime($row->payment_date) - strtotime($start_date));
+					$days = round(($time / (60 * 60 * 24)));
+					$interest_value += round(($odbalance * $days * $roi) / 36500);
+					$odbalance = $odbalance - $row->amount;
+					$tdays += $days;
+					$total_repayment_amount += $row->amount;
+					$start_date = $row->payment_date;
+				}
+			}
+
+			$rdays = $quarter_days - $tdays;
+			$interest_value += round(($odbalance * $rdays * $roi) / 36500);
+	
+		}
+	} else {
+		echo 'INTEREST ON ACCOUNT ID. = ' . $loanid . ' HAS ALREADY BEEN CALCULATED FOR QUARTER  = ' . $quarter_end_date . '<br>';
+	}
+	
+	$interest['interest_value'] = isset($interest_value)?$interest_value:0;
+	$interest['repaid_amount'] = isset($total_repayment_amount)?$total_repayment_amount:0;
+	
+	return $interest;
+}
+
+
+//Business Logic for interest calculation first..
+function interest_calculation_first($loanid, $odbalance, $last_int_cal, $new_int_cal, $roi) {
+	$quarter_start_date = $last_int_cal;
+	$quarter_end_date = $new_int_cal;
+	$quarter_time = abs(strtotime($quarter_end_date) - strtotime($quarter_start_date));
+	$quarter_days = round(($quarter_time / (60 * 60 * 24))) + 1;
+	//echo $quarter_days; exit;
+	$flag = db_query("SELECT * FROM tbl_loan_interestld
+	                    WHERE account_id =  '" . $loanid . "'
+						AND calculation_date = '" . $quarter_end_date . "'");
+	$counter = 0;
+	while ($res = db_fetch_object($flag)) {
+		$counter++;
+	}
+	if ($counter == 0) {
+		$loanee = db_query("SELECT * FROM tbl_loanee_detail
+		                       WHERE account_id =  '" . $loanid . "'");
+		$res = db_fetch_object($loanee);
+		$loaneeid = $res->loanee_id;
+		//echo $loaneeid; exit;
+		$interest_value = 0;
+
+		$repayments = db_query("SELECT payment_date,amount FROM tbl_loan_repayment
+		                           WHERE loanee_id =  '" . $loaneeid . "' AND paytype = 'EMI'
+								   AND (payment_date BETWEEN '" . $quarter_start_date . "' AND '" . $quarter_end_date . "')");
+		$repay_count = 0;
+		while ($res1 = db_fetch_object($repayments)) {
+			$repay_count++;
+		}
+		//-------------------------------In Case of Loanee did not pay installment in selected quarter--------------------------
+		if ($repay_count == 0) {
+			$interest_value = round(($odbalance * $quarter_days * $roi) / 36500);
+		}
+		//-------------------------------In Case when Loanee paid installment in selected quarter--------------------------
+		else {
+			$tdays = 0;
+			$start_date = $quarter_start_date;
+			$first_repayment = true;
+			$total_repayment_amount = 0;
+			$total_repayments = db_query("SELECT payment_date,amount FROM tbl_loan_repayment
+		                                    WHERE loanee_id =  '" . $loaneeid . "' AND paytype = 'EMI'
+								            AND (payment_date BETWEEN '" . $quarter_start_date . "' AND '" . $quarter_end_date . "')");
+
+			while ($row = db_fetch_object($total_repayments)) {
+				if ($first_repayment && ($row->payment_date != $quarter_start_date)) {
+					$time = abs(strtotime($row->payment_date) - strtotime($start_date));
+					$days = round(($time / (60 * 60 * 24)));
+					//echo 'No of days = '.$days; exit;
+					$interest_value += round(($odbalance * $days * $roi) / 36500);
+					$odbalance = $odbalance - $row->amount;
+					$tdays += $days;
+					$total_repayment_amount += $row->amount;
+					$start_date = $row->payment_date;
+					$first_repayment = false;
+				} else if ($row->payment_date != $quarter_start_date) {
+					$time = abs(strtotime($row->payment_date) - strtotime($start_date));
+					$days = round(($time / (60 * 60 * 24)));
+					$interest_value += round(($odbalance * $days * $roi) / 36500);
+					$odbalance = $odbalance - $row->amount;
+					$tdays += $days;
+					$total_repayment_amount += $row->amount;
+					$start_date = $row->payment_date;
+				}
+			}
+
+			$rdays = $quarter_days - $tdays;
+			$interest_value += round(($odbalance * $rdays * $roi) / 36500);
+		}
+	} else {
+		echo 'INTEREST ON ACCOUNT ID. = ' . $loanid . ' HAS ALREADY BEEN CALCULATED FOR QUARTER  = ' . $quarter_end_date . '<br>';
+	}
+	
+	$interest['interest_value'] = isset($interest_value)?$interest_value:0;
+	$interest['repaid_amount'] = isset($total_repayment_amount)?$total_repayment_amount:0;
+	
+	return $interest;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * This need to be delete in future
+ */
+function coreloanledger($accountno,$last_int_calculated){
+	 $rfirst = true;
+	
+     $sql = "SELECT   tbl_loanee_detail.loanee_id,
+	 tbl_loanee_detail.refno,
+	 tbl_loanee_detail.account_id,
+	 tbl_loanee_detail.fname,
+	 tbl_loanee_detail.lname,
+	 tbl_loanee_detail.fh_name,
+	 tbl_loanee_detail.address1,
+	 tbl_loanee_detail.address2,
+	 tbl_loanee_detail.dob,
+	 tbl_loanee_detail.caste,
+	 tbl_loanee_detail.reg_number,
+	 tbl_loan_detail.scheme_name,
+	 tbl_loan_detail.project_cost,
+	 tbl_scheme_master.loan_scheme_id,
+	 tbl_scheme_master.scheme_name as schemename,
+	 tbl_loan_detail.loan_requirement,
+	 tbl_scheme_master.promoter_share,
+	 tbl_scheme_master.apex_share,
+	 tbl_scheme_master.corp_share,
+	 tbl_loan_detail.work_place,
+	 tbl_scheme_master.tenure,
+	 tbl_loan_detail.emi_amount,
+	 tbl_loan_detail.ROI,
+	 tbl_loan_detail.o_principal
+     
+	 FROM tbl_loanee_detail
+     INNER JOIN tbl_loan_detail ON (tbl_loan_detail.reg_number = tbl_loanee_detail.reg_number)
+     INNER JOIN tbl_scheme_master ON (tbl_loan_detail.scheme_name = tbl_scheme_master.loan_scheme_id)
+     WHERE 1=1";
+
+     $cond = '';	
+	
+	 if($accountno){
+		$cond .= " AND tbl_loanee_detail.account_id='".$accountno."'";
+	 }
+	
+     $query = $sql . $cond; 
+     $res1=db_query($query);
+  
+     $row=db_fetch_object($res1);
+  	 $oprincipal=$row->o_principal;
+  	 $projectcost=$row->project_cost;
+  	 $pro=$row->promoter_share;
+  	 $apexshare=$row->apex_share;
+   	 $corpshare=$row->corp_share;
+  
+  	 $loanesql=db_query("select sum(amount) as disamountid from tbl_loan_disbursement where loanee_id = '".$row->loanee_id."'");
+  	 $rowloane=db_fetch_object($loanesql);
+  	 $sisamount= $rowloane->disamountid;
+  
+  
+  	 $share=($projectcost * $pro) / 100;
+  	 $apexsharenb=($projectcost * $apexshare) / 100;
+  	 $corpsharehb=($projectcost * $corpshare) / 100;
+  
+  	 $loan_term=$sisamount - $share;
+     $emiamount = $row->emi_amount;
+ 
+     $pdfurl = $base_url."/coloanledger.php?op=loanledgerreport";
+   	 if($accountno){
+		 $pdfurl.= "&accountno=$accountno";
+	 }
+	 $pdfurl1=$pdfurl;
+     $pdfimage = $base_url.'/'.drupal_get_path('theme','scst')."/images/pdf_icon.gif";
+	
+     if($row->account_id){ 
+	  	if($row->refno)		
+				$dissql=db_query("select * from tbl_loan_disbursement where loanee_id = '".$row->loanee_id."'");
+				$counter = 0;
+				while($rowdis=db_fetch_object($dissql)){		
+				$counter++;
+					if($counter%2==0){$cl="even";}else{$cl="odd";}			
+				}
+
+				$sqlgran=db_query("select * from tbl_guarantor_detail where loanee_id = '".$row->loanee_id."'");
+				while($asdgran=db_fetch_object($sqlgran)){
+				$counter++;
+					if($counter%2==0){$cl="even";}else{$cl="odd";}
+				}
+				
+				$count_query = "SELECT COUNT(*) FROM (" .$query. ") AS count_query";
+
+  				$res = db_query($query);
+			if ($counter%2==0){$cl="even";}else{$cl="odd";} 
+			
+			//echo "select * from tbl_loan_disbursement where loanee_id = '".$row->loanee_id."' order by createdon desc";exit;
+			 $dissql=db_query("select * from tbl_loan_disbursement where loanee_id = '".$row->loanee_id."' order by createdon ");
+			 $rowdis=db_fetch_object($dissql);
+			 
+			$disdate = date("Y-m-d", $rowdis->createdon);
+			$psharesql = "SELECT SUM(amount) as pshare FROM tbl_loan_repayment WHERE loanee_id = '".$row->loanee_id."' AND payment_date = '".$disdate."' AND paytype = 'Promoter Share' GROUP BY loanee_id";
+			//echo $psharesql;
+			$pres = db_query($psharesql);
+			$ps = db_fetch_object($pres);
+			$pshare = ($ps->pshare)?round($ps->pshare):0;
+			 
+			 
+			$sqlin=db_query("select tbl_loan_interestld.calculation_date,tbl_loan_interestld.type, tbl_loan_interestld.amount as intamount from tbl_loanee_detail inner join tbl_loan_interestld on (tbl_loan_interestld.account_id=tbl_loanee_detail.account_id)
+	 where tbl_loanee_detail.loanee_id='".$row->loanee_id."' and tbl_loan_interestld.type='interest' order by tbl_loan_interestld.calculation_date asc limit 0,1");
+	  
+	$wsd=db_fetch_object($sqlin);
+	  
+	$wsdd=$wsd->calculation_date;
+	
+
+
+if(!$wsdd){
+
+
+}
+else{
+$numberDays = dateDiffByDays($disdate,$wsdd);  // 86400 seconds in one day
+
+// and you might want to convert to integer
+
+
+$numberDays = intval($numberDays);
+	
+	
+}
+
+
+
+        
+	
+		
+		$dateg=dateDiffByDays($disdate,$wsdd);
+		
+		$bal = $sisamount;
+		
+if($bal < 0){
+$ball=0;	
+	
+}
+else{
+	
+$ball=round($bal);	
+	
+	
+}
+				
+	}
+
+else{
+	
+echo '<font color="red"><b>No Record found...</b></font>';	
+}	
+	
+	$limit=10;		
+   if($_REQUEST['page']){
+	$counter = $_REQUEST['page']*$limit;
+	}else{
+	$counter = 0;
+	}
+	
+   $intbal=0;
+   while($rs = db_fetch_object($res)){
+     $counter++;
+	
+	$retdate=$rowdis->createdon;
+	
+
+	
+	
+	
+	$sqlll=db_query("select tbl_loan_interestld.calculation_date, tbl_loan_interestld.reason,sum(tbl_loan_interestld.amount) as intamount,tbl_loan_interestld.type from tbl_loanee_detail inner join tbl_loan_interestld on (tbl_loan_interestld.account_id=tbl_loanee_detail.account_id)
+	where tbl_loanee_detail.account_id='$accountno' group by tbl_loan_interestld.type,tbl_loan_interestld.calculation_date");
+	
+	while($resins=db_fetch_object($sqlll))
+	{
+		
+	
+		if($resins->type == 'interest')
+		{
+			$intldarr[$resins->calculation_date] = $resins->intamount;
+		}elseif(!array_key_exists($resins->calculation_date,$intldarr)){
+			$intldarr[$resins->calculation_date] = '-';
+		}
+		if($resins->type == 'LD'){
+			$ldarr[$resins->calculation_date]['amount'] = $resins->intamount;
+			$ldarr[$resins->calculation_date]['reason'] = ucwords(getLookupName($resins->reason));
+		}
+		if($resins->type == 'other')
+		{
+			$otherarr[$resins->calculation_date]['amount'] = $resins->intamount;
+			$otherarr[$resins->calculation_date]['reason'] = ucwords(getLookupName($resins->reason));
+		}
+	
+		
+		
+	}
+	
+	
+	
+	$sqllre=db_query("SELECT DISTINCT (
+tbl_loan_repayment.id
+), tbl_loan_repayment.payment_date, SUM(tbl_loan_repayment.amount) AS repamount
+FROM tbl_loan_repayment
+INNER JOIN tbl_loanee_detail ON ( tbl_loan_repayment.loanee_id = tbl_loanee_detail.loanee_id )
+WHERE tbl_loanee_detail.account_id = '$accountno'
+GROUP BY tbl_loan_repayment.payment_date");	
+	
+	while($resre=db_fetch_object($sqllre))
+	{
+		
+		$repldarr[$resre->payment_date] = $resre->repamount;
+	}
+	
+	if($intldarr)
+		$farr=array_merge($intldarr,$repldarr);
+	else
+		$farr=$repldarr;
+	
+
+	ksort($farr);
+	
+	$sqlrep=db_query("SELECT tbl_loan_repayment.cheque_number AS recno, tbl_loan_repayment.payment_date, SUM(tbl_loan_repayment.amount) AS repamount
+FROM tbl_loan_repayment
+INNER JOIN tbl_loanee_detail ON ( tbl_loan_repayment.loanee_id = tbl_loanee_detail.loanee_id )
+WHERE tbl_loanee_detail.account_id = '$accountno'
+GROUP BY tbl_loan_repayment.payment_date");	
+	while($r=db_fetch_object($sqlrep))
+	{
+		
+		foreach($farr as $k => $vall)
+		{
+			
+			if(!$intldarr[$k])
+			{
+				$fdarr[$r->payment_date]['cr']= $r->repamount;
+				$fdarr[$r->payment_date]['id']= $r->recno;	
+				$fdarr[$r->payment_date]['dr']=0;	
+				
+			}
+			else{
+				$fdarr[$k]['dr']=$intldarr[$k];	
+				//echo $k." == ".$r->payment_date;exit;
+				if($k == $r->payment_date){
+					
+					$fdarr[$r->payment_date]['cr']= $r->repamount;
+					$fdarr[$r->payment_date]['id']= $r->recno;		
+					
+				}
+				else{
+					if(!$fdarr[$k]['cr'])
+						$fdarr[$k]['cr']=0;		
+				}
+			
+		}
+		}
+			
+	}
+	
+	
+	ksort($fdarr);
+	$keyarr=array_keys($fdarr);
+	$counter = 0;
+	$totalrepay = 0;
+	
+	$current_date = '';
+	$previous_date = date("Y-m-d",$rowdis->createdon);
+	foreach($fdarr as $key => $v)
+	{
+		$counter++;
+		if ($counter%2==0){$cl="even";}else{$cl="odd";} 
+		$diffwith_disdate = strtotime($key) - strtotime(date("Y-m-d",$rowdis->createdon));
+		if(($diffwith_disdate >= 0)){$current_date = $key;}
+		else{$current_date = date("Y-m-d",$rowdis->createdon);}
+		$nextk = '';
+		$ordinal = array_search($key,$keyarr) + 1;
+		if(isset($keyarr[$ordinal])){$nextk = $keyarr[$ordinal];}
+		else{$nextk = $key;}
+		if(strtotime($current_date) == strtotime(date("Y-m-d",$rowdis->createdon))){
+		    // $output .= 'Condition Satisfied';
+		     $retention_time = abs(strtotime($nextk) - strtotime($current_date));
+		     $retention_period = round(($retention_time / (60 * 60 * 24))) ;
+			 //$retention_period++;
+	    }else{
+		     //$next_date = $fdarr[$nextk];
+			 //$output .= 'Condition Not Satisfied';
+		     $retention_time = abs(strtotime($nextk) - strtotime($current_date));
+		     $retention_period = round(($retention_time / (60 * 60 * 24)));
+		}
+	
+		
+		
+		if($v['cr'])
+		
+		{
+			$part='To Loan A/c and Reciept No.'.$v['id'];	
+			
+		}
+		
+		
+		
+		else if($v['dr'] && $v['dr'] != '-'){
+			
+			$part='To interest';		
+		}else{
+			$part='To LD and Other charges';	
+		}
+		
+		if($v['dr'] && $v['dr'] != '-')
+		{
+			if($fdarr[$nextk]['cr'] && ($current_date != date("Y-m-d",$rowdis->createdon))){
+			   $retention_period--;
+			}
+		}
+		else{
+		}
+		if($v['cr'])
+		{
+			
+			if($fdarr[$nextk]['dr'] && ($current_date != date("Y-m-d",$rowdis->createdon))){
+			   $retention_period = $retention_period + 1;
+			}
+			
+		}
+		else{
+		}
+		$dramt = ($v['dr'] != '-')?$v['dr']:0;
+		$bal =($bal + $dramt) - $v['cr'];
+		
+		if($bal < 0){
+			
+		$ball =0;	
+		}else{
+			
+		//$ball =round(($bal + $dramt) - $v['cr'],2);
+		$ball = $bal;
+		}
+		
+		/**
+		 * Finding magic ball here.
+		 */
+		$quarter_date = date("d-m-Y",strtotime($current_date));
+		$input_date = date("d-m-Y",strtotime($last_int_calculated));
+		if($quarter_date == $input_date){
+			$magic_ball = $ball;
+		}
+		
+		
+		if($v['dr'] && $v['dr'] != '-')
+		{
+			$current = $key;
+			
+			$ordinal = array_search($current,$keyarr) + 1;
+			$nextk = $keyarr[$ordinal];
+			if($fdarr[$nextk]['dr'])
+			{
+				$perret = dateDiffByDays($key,$nextk);
+				
+			}
+			else if($fdarr[$nextk]['cr'])
+			{
+				$interest_paid = round((round($ball)*$retention_period*$row->ROI) / 36500);
+				
+			}
+		}else{
+			$interest_paid = round((round($ball)*$retention_period*$row->ROI) / 36500);
+			
+		}
+		$nil= '';
+		$totalrepay+=$fdarr[$nextk]['dr'];
+		
+		if($counter%4 == 0)
+		{
+						
+						
+			$retdate = $calculationdate1;
+			
+			$timeDiff = abs($calculationdate1-$retdate);
+			
+			$years = floor($timeDiff / (365*60*60*24));
+	
+			
+			$months = dateDiffByDays($disdate,$key) / 30;
+	
+			$defualt= abs(($months * $emiamount)-$totalrepay);
+			$nil= 'nil';
+			
+			$totalrepay=0;
+			
+			
+		}else{
+		}
+		if($ldarr[$key]){
+			
+		}
+		else{
+			
+		}
+		if($otherarr[$key]){
+		}
+		else{
+			
+		}
+		
+		
+		$previous_date = $current_date;
+	}
+   }
+     
+     return (int) $magic_ball;
+  
+		
+}

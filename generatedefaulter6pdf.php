@@ -138,7 +138,21 @@ $tehsil_name = $res->tehsil_name;
 $dissql = "select tbl_district.district_name from tbl_district where district_id = '".$district."'";
 $dissqlr = db_query($dissql);
 $disres = db_fetch_object($dissqlr);
-$district_name = $disres->district_name;		    
+$district_name = $disres->district_name;
+
+
+    if(isset($_REQUEST['district']) && ($_REQUEST['district'] != '')){
+        $cond .= "and tbl_loanee_detail.district = '".$_REQUEST['district']."'";
+    }
+
+    if(isset($_REQUEST['tehsil']) && ($_REQUEST['tehsil'] != '')){
+        $cond .= "and tbl_loanee_detail.tehsil = '".$_REQUEST['tehsil']."'";
+    }
+
+    if(isset($_REQUEST['panchayat']) && ($_REQUEST['panchayat'] != '')){
+        $cond .= "and tbl_loanee_detail.panchayat = '".$_REQUEST['panchayat']."'";
+    }
+
 // Header Title
 $output .='<table cellpadding="0" cellspacing="0" border="0" width="950px">
 <tr><td class="header_report" colspan="5" align="center">
@@ -261,8 +275,7 @@ if($type=='defaulter')
 				 INNER JOIN tbl_loan_detail ON (tbl_loan_detail.reg_number=tbl_loanee_detail.reg_number) 
 				 INNER JOIN tbl_scheme_master ON (tbl_scheme_master.loan_scheme_id=tbl_loan_detail.scheme_name) 
                  
-				 WHERE tbl_loanee_detail.tehsil = '".$tehsil."' AND
-				       DATE_ADD(tbl_loan_detail.sanction_date, INTERVAL 6 YEAR) < '".date('y-m-d')."'"; 
+				 WHERE DATE_ADD(tbl_loan_detail.sanction_date, INTERVAL 6 YEAR) < '".date('y-m-d')."' $cond";
 // where alr_status=1";
  // where UNIX_TIMESTAMP(tbl_loan_detail.sanction_date) >= '".$startdate."' and UNIX_TIMESTAMP(tbl_loan_detail.sanction_date)<= '".$enddate."'
  $query=db_query($sql);
@@ -293,6 +306,9 @@ if($type=='defaulter')
          $opr = "select sum(amount) as recovery from tbl_loan_repayment where loanee_id='" . $res['loanee_id'] . "'";
          $oprq = db_query($opr);
          $oprr = db_fetch_array($oprq);
+
+       // Return Outstanding Principal.
+       $o_principle = coreloanledger($res['account_id'],'2016-12-31');
 
 
 	 
@@ -335,10 +351,14 @@ if($type=='defaulter')
 	
 	//$expted=$months*($res['emi_amount']*(($res['ROI'])/100));
    
-	
-    $output .='<tr><td class="'.$cla.'" width="3%" align="center">'.$l.'</td><td class="'.$cla.'" width="6%">'.$res['account_id'].'</td><td class="'.$cla.'"  width="10%">'.ucwords($res['fname']).' '.ucwords($res['lname']).' <br/><br/> '.ucwords($res['fh_name']).'</td><td class="'.$cla.'">'.ucwords($res['scheme_name']).'</td><td class="'.$cla.'" width="12%" style="height:65px;">'.ucwords($res['address1']).'</td><td class="'.$cla.'">'.ucwords($res['tehsil_name']).'</td><td class="'.$cla.'" align="right">'.round($opbr['opbal']).'</td><td class="'.$cla.'" align="right">'.round($opir['intpaid']).'</td><td class="'.$cla.'" align="right">'.round($oprr['recovery']).'</td><td class="'.$cla.'" align="right">'.round($expted).'</td><td class="'.$cla.'" align="right">'.abs(round($defaultamount)).'</td><td class="'.$cla.'" align="right">'.$res['o_principal'].'</td></tr>';
+
+        if($o_principle != 0){
+            $output .='<tr><td class="'.$cla.'" width="3%" align="center">'.$l.'</td><td class="'.$cla.'" width="6%">'.$res['account_id'].'</td><td class="'.$cla.'"  width="10%">'.ucwords($res['fname']).' '.ucwords($res['lname']).' <br/><br/> '.ucwords($res['fh_name']).'</td><td class="'.$cla.'">'.ucwords($res['scheme_name']).'</td><td class="'.$cla.'" width="12%" style="height:65px;">'.ucwords($res['address1']).'</td><td class="'.$cla.'">'.ucwords($res['tehsil_name']).'</td><td class="'.$cla.'" align="right">'.round($opbr['opbal']).'</td><td class="'.$cla.'" align="right">'.round($opir['intpaid']).'</td><td class="'.$cla.'" align="right">'.round($oprr['recovery']).'</td><td class="'.$cla.'" align="right">'.round($expted).'</td><td class="'.$cla.'" align="right">'.abs(round($defaultamount)).'</td><td class="'.$cla.'" align="right">'.$o_principle.'</td></tr>';
+            $l++;
+        }
+
 	   }
-	   $l++;
+
    } if($open_bal  !=0 ){
                          $output .= '</table><table border="0" style="width:960px;"><tr >
 						<td colspan="11">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</td></tr ><tr >
@@ -350,7 +370,7 @@ if($type=='defaulter')
                          <td  width="9%"><strong>'.$recover_total.'</strong></td>
                          <td  width="8%"><strong>'.$expectedamount.'</strong></td>
 						 <td  width="8%"><strong>'.$defaultamount.'</strong></td>
-                         <td  width="8%"><strong>'.$outstand_bal.'</strong></td>
+                         <td  width="8%"><strong>'.$o_principle.'</strong></td>
                          </tr><tr >
 						<td colspan="11">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</td></tr >';
                         }

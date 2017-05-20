@@ -32,7 +32,7 @@ function interestleadger_menu(){
 		  );
 		  
 		  $items['defaulter'] = array(
-			'title' => t('Defaulter'),
+			'title' => t('Defaulter List Within Loan Period'),
 			'type' => MENU_CALLBACK,
 			'page callback' => 'defaulterlist',
 			'access arguments' => array('administer interestleadger'),
@@ -131,31 +131,88 @@ function defaulterlist_form(){
 	$breadcrumb[] = l('Defaulter List', 'defaulter');
 	
 	drupal_set_breadcrumb($breadcrumb);
+
+    // District Array
+	$sqldistrict = "select * from tbl_district WHERE status='1'";
+    $resdistrict =db_query($sqldistrict);
+    if($resdistrict){
+        $districtarray[''] = '-SELECT DISTRICT-';
+        while($rsdistrict = db_fetch_object($resdistrict)){
+            $districtarray[$rsdistrict->district_id] = ucfirst($rsdistrict->district_name);
+        }
+    }
+
+    // Tehsil Array
+    $sqltehsil = "select * from tbl_tehsil WHERE status='1'";
+    $restehsil =db_query($sqltehsil);
+    if($restehsil){
+        $tehsilarray[''] = '-SELECT TEHSIL-';
+        while($rstehsil = db_fetch_object($restehsil)){
+            $tehsilarray[$rstehsil->tehsil_id] = ucfirst($rstehsil->tehsil_name);
+        }
+    }
+
+    // Panchayat Array
+    $sqlpanchayat = "select * from tbl_panchayt WHERE status='1'";
+    $respanchayat =db_query($sqlpanchayat);
+    if($respanchayat){
+        $panchayatarray[''] = '-SELECT PANCHAYAT-';
+        while($rspanchayat = db_fetch_object($respanchayat)){
+            $panchayatarray[$rspanchayat->panchayt_id] = ucfirst($rspanchayat->panchayt_name);
+        }
+    }
 	
 	$form['type'] = array(
 	'#type' =>'select',
-	'#title' => 'Type',
+	'#title' => '',
 	'#required' =>TRUE,
 	'#default_value' =>'', 
-	'#options' => array('' => '--Select--','alr' => 'ALR', 'defaulter' => 'Defaulter'),
+	'#options' => array('' => '-SELECT TYPE-','alr' => 'ALR', 'defaulter' => 'Defaulter'),
 	
 		
 	);
+
+    $form['district_id'] = array(
+        '#type' => 'select',
+        '#title' => t(''),
+        '#required' => false,
+        '#default_value' => '',
+        '#options' => $districtarray,
+
+    );
+
+    $form['tehsil_id'] = array(
+        '#type' => 'select',
+        '#title' => t(''),
+        '#required' => false,
+        '#default_value' => '',
+        '#options' => $tehsilarray,
+
+    );
+
+    $form['panchayat_id'] = array(
+        '#type' => 'select',
+        '#title' => t(''),
+        '#required' => false,
+        '#default_value' => '',
+        '#options' => $panchayatarray,
+
+    );
 	
 	$form['startdate'] = array(
 	'#type' =>'date_popup',
-	'#title' => 'Start Date',
+	'#title' => '',
 	'#required' =>TRUE,
-	'#default_value' =>'', 
+	'#default_value' =>'-START DATE-',
 	'#size' => 10,
 	'#date_format' => 'd-m-Y',
 		
 	);
 	$form['enddate'] = array(
 	'#type' =>'date_popup',
-    '#title' => 'End Date',
+    '#title' => '',
 	'#required' =>TRUE,
-	'#default_value' =>'', 
+	'#default_value' =>'-END DATE-',
 	'#size' =>10,
 	'#date_format' => 'd-m-Y',
 		
@@ -168,18 +225,15 @@ function defaulterlist_form(){
 	return $form;
 	}
 	
-	
-	function defaulterlist_form_validate($form,&$form_state){
-	
 
- $startdate= $form_state['values']['startdate'];
- $enddate= $form_state['values']['enddate'];
-$type =$form_state['values']['type'];
+function defaulterlist_form_validate($form,&$form_state){
+    $startdate= $form_state['values']['startdate'];
+    $enddate= $form_state['values']['enddate'];
+    $type =$form_state['values']['type'];
 
- if((strtotime($startdate)) > (strtotime($enddate)))
- { 
-	 form_set_error('form','Start Date Can Not Be Greater Than To Date'); 
- }
+    if((strtotime($startdate)) > (strtotime($enddate))) {
+	    form_set_error('form','Start Date Can Not Be Greater Than To Date');
+    }
 
 	}
 	
@@ -198,32 +252,72 @@ function defaulterlist6_form(){
 	$breadcrumb[] = l('Defaulter List Beyond Loan Period', 'defaulter6');
 	
 	drupal_set_breadcrumb($breadcrumb);
-	$sqlcountry = "select * from tbl_tehsil WHERE status='1'";
-	$rescountry =db_query($sqlcountry);
-	if($rescountry){
-      $countryarray[''] = '--select---'; 
-	  while($rscountry = db_fetch_object($rescountry)){
-	    $countryarray[$rscountry->tehsil_id] = ucfirst($rscountry->tehsil_name);
-	  }
-	}
-	$form['tehsil_id'] = array(
-		'#type' => 'select',
-		'#title' => t('Tehsil'),
-		'#required' => true,
-		'#default_value' => '',
-		'#options' => $countryarray,
-		
-	);			
-	
-	$form['type'] = array(
-	'#type' =>'select',
-	'#title' => 'Type',
-	'#required' =>TRUE,
-	'#default_value' =>'', 
-	'#options' => array('' => '--Select--','alr' => 'ALR', 'defaulter' => 'Defaulter'),
-	
-		
-	);
+    // District Array
+    $sqldistrict = "select * from tbl_district WHERE status='1'";
+    $resdistrict =db_query($sqldistrict);
+    if($resdistrict){
+        $districtarray[''] = '-SELECT DISTRICT-';
+        while($rsdistrict = db_fetch_object($resdistrict)){
+            $districtarray[$rsdistrict->district_id] = ucfirst($rsdistrict->district_name);
+        }
+    }
+
+    // Tehsil Array
+    $sqltehsil = "select * from tbl_tehsil WHERE status='1'";
+    $restehsil =db_query($sqltehsil);
+    if($restehsil){
+        $tehsilarray[''] = '-SELECT TEHSIL-';
+        while($rstehsil = db_fetch_object($restehsil)){
+            $tehsilarray[$rstehsil->tehsil_id] = ucfirst($rstehsil->tehsil_name);
+        }
+    }
+
+    // Panchayat Array
+    $sqlpanchayat = "select * from tbl_panchayt WHERE status='1'";
+    $respanchayat =db_query($sqlpanchayat);
+    if($respanchayat){
+        $panchayatarray[''] = '-SELECT PANCHAYAT-';
+        while($rspanchayat = db_fetch_object($respanchayat)){
+            $panchayatarray[$rspanchayat->panchayt_id] = ucfirst($rspanchayat->panchayt_name);
+        }
+    }
+
+    $form['type'] = array(
+        '#type' =>'select',
+        '#title' => '',
+        '#required' =>TRUE,
+        '#default_value' =>'',
+        '#options' => array('' => '-SELECT TYPE-','alr' => 'ALR', 'defaulter' => 'Defaulter'),
+
+
+    );
+
+    $form['district_id'] = array(
+        '#type' => 'select',
+        '#title' => t(''),
+        '#required' => false,
+        '#default_value' => '',
+        '#options' => $districtarray,
+
+    );
+
+    $form['tehsil_id'] = array(
+        '#type' => 'select',
+        '#title' => t(''),
+        '#required' => false,
+        '#default_value' => '',
+        '#options' => $tehsilarray,
+
+    );
+
+    $form['panchayat_id'] = array(
+        '#type' => 'select',
+        '#title' => t(''),
+        '#required' => false,
+        '#default_value' => '',
+        '#options' => $panchayatarray,
+
+    );
 	
 	$form['submit'] = array(
 	'#type' => 'button',

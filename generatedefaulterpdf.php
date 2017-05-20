@@ -2,29 +2,31 @@
 require_once './includes/bootstrap.inc';
 drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
 
+
 require_once('tcpdf/config/lang/eng.php');
 require_once('tcpdf/tcpdf.php');
 require_once('tcpdf/pdfcss.php');
 
 // create new PDF document
-$pdf = new TCPDF(L, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+$pdf = new TCPDF(L, PDF_UNIT, A4, true, 'UTF-8', false);
 // set document information
 $pdf->SetCreator(PDF_CREATOR);
 $pdf->SetAuthor('HBCFDC');
 $pdf->SetTitle('HBCFDC');
 $pdf->SetSubject('HBCFDC');
 $pdf->SetKeywords('HBCFDC');
-$pdf->SetPrintHeader(false);
+$pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
+
 //$pdf->SetHeaderData('tcpdf/images/hpsc.png', PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
+$pdf->SetHeaderData('', PDF_HEADER_LOGO_WIDTH);
 // set default header data
 //$pdf->SetHeaderData(PDF_HEADER_LOGO, PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
 // set header and footer fonts
-$pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
 // set default monospaced font
 $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+$pdf->SetPrintHeader(false);
 //set margins
 $pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_RIGHT);
-$pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
 //set auto page breaks
 $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
 //set image scale factor
@@ -32,10 +34,9 @@ $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
 //set some language-dependent strings
 $pdf->setLanguageArray($l);
 // set font
-$pdf->SetFont('times', '', 8);
+$pdf->SetFont('times', '', 10);
 // add a page
 $pdf->AddPage();
-
 
 
 
@@ -64,13 +65,13 @@ background-color:#ffffff;
 td.header_report{
 color:111111;
 font-family:Times New Roman;
-font-size: 13pt;
+font-size: 10pt;
 text-align:center;
 font-weight:bold;
 background-color:#ffffff;
 }
 table{
-width:1065px;
+width:1000px;
 }
 table.tbl_border{border:1px solid #ffffff;
 background-color: #ffffff;
@@ -108,14 +109,14 @@ background-color:#eeeeee;
 }
 td.header4_1 {
 color:#222222;
-background-color:#ffffff;
+background-color:#9dcae7;
 font-family:Verdana;
 font-size: 11pt;
 font-weight: normal;
 }
 td.header4_2  {
 color:#222222;
-background-color:#eaf2d3;
+background-color:#ffffff;
 font-family:Verdana;
 font-size: 11pt;
 font-weight: normal;		
@@ -134,7 +135,7 @@ $cre=0;
 $output .='<table cellpadding="0" cellspacing="0" border="0">
 <tr><td class="header_report" colspan="5" align="center">
 HBCFDC KANGRA (H.P.) Defaulters List Within Loan Period From '. date('d-m-Y',$startdate).' To '.date('d-m-Y',$enddate).'</td></tr>
-<tr ><td align="left"><strong>'.date("d/m/Y").'</strong></td></tr><tr><td colspan="5">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</td></tr>
+<tr ><td align="left"><strong>'.date("d/m/Y").'</strong></td></tr><tr><td colspan="5"></td></tr>
 </table>';
 
 $output .='<table cellpadding="3" cellspacing="2" >
@@ -159,6 +160,21 @@ $usq=db_query($us);
 $usr=db_fetch_array($usq);
 $usid=$usr['current_officeid'];
 $type=$_REQUEST['type'];
+
+
+    if(isset($_REQUEST['district']) && ($_REQUEST['district'] != '')){
+        $cond .= "and tbl_loanee_detail.district = '".$_REQUEST['district']."'";
+    }
+
+    if(isset($_REQUEST['tehsil']) && ($_REQUEST['tehsil'] != '')){
+        $cond .= "and tbl_loanee_detail.tehsil = '".$_REQUEST['tehsil']."'";
+    }
+
+    if(isset($_REQUEST['panchayat']) && ($_REQUEST['panchayat'] != '')){
+        $cond .= "and tbl_loanee_detail.panchayat = '".$_REQUEST['panchayat']."'";
+    }
+
+
 if($type=='alr')
 {
  $sql="select tbl_loanee_detail.alr_status, tbl_loan_detail.emi_amount,tbl_loan_detail.ROI,tbl_loanee_detail.loanee_id,tbl_loanee_detail.corp_branch,tbl_scheme_master.scheme_name,tbl_loanee_detail.account_id,tbl_loanee_detail.fname,tbl_loanee_detail.address1,tbl_loanee_detail.address2,tbl_loanee_detail.district,tbl_loanee_detail.tehsil,tbl_loanee_detail.block,tbl_loanee_detail.reg_number,alr.case_no,alr.date from tbl_loanee_detail
@@ -220,15 +236,17 @@ if($type=='alr')
 	 $l++;
    }
 }
+
+
 if($type=='defaulter')
 {
- $sql="select tbl_loanee_detail.lname, tbl_loanee_detail.fh_name, tbl_loan_detail.emi_amount,tbl_loan_detail.ROI,tbl_loan_detail.o_principal,tbl_loanee_detail.loanee_id,tbl_loanee_detail.corp_branch,tbl_scheme_master.scheme_name,tbl_panchayt.panchayt_name,tbl_tehsil.tehsil_name,tbl_block.block_name,tbl_loanee_detail.account_id,tbl_loanee_detail.fname,tbl_loanee_detail.address1,tbl_loanee_detail.address2,tbl_loanee_detail.district,tbl_loanee_detail.tehsil,tbl_loanee_detail.block,tbl_loanee_detail.reg_number from tbl_loanee_detail
+ $sql="select tbl_loanee_detail.lname, tbl_loanee_detail.fh_name, tbl_loan_detail.emi_amount,tbl_loan_detail.ROI,tbl_loan_detail.o_principal,tbl_loan_detail.last_interest_calculated, tbl_loanee_detail.loanee_id,tbl_loanee_detail.corp_branch,tbl_scheme_master.scheme_name,tbl_panchayt.panchayt_name,tbl_tehsil.tehsil_name,tbl_block.block_name,tbl_loanee_detail.account_id,tbl_loanee_detail.fname,tbl_loanee_detail.address1,tbl_loanee_detail.address2,tbl_loanee_detail.district,tbl_loanee_detail.tehsil,tbl_loanee_detail.block,tbl_loanee_detail.reg_number from tbl_loanee_detail
  INNER JOIN tbl_panchayt ON (tbl_panchayt.panchayt_id=tbl_loanee_detail.panchayat)
  INNER JOIN tbl_tehsil ON (tbl_tehsil.tehsil_id=tbl_loanee_detail.tehsil)
  INNER JOIN tbl_block ON (tbl_block.block_id=tbl_loanee_detail.block)
  INNER JOIN tbl_loan_detail ON (tbl_loan_detail.reg_number=tbl_loanee_detail.reg_number)
  INNER JOIN tbl_scheme_master ON (tbl_scheme_master.loan_scheme_id=tbl_loan_detail.scheme_name)
- where UNIX_TIMESTAMP(tbl_loan_detail.sanction_date) >= '".$startdate."' and UNIX_TIMESTAMP(tbl_loan_detail.sanction_date)<= '".$enddate."' ";
+ where UNIX_TIMESTAMP(tbl_loan_detail.sanction_date) >= '".$startdate."' and UNIX_TIMESTAMP(tbl_loan_detail.sanction_date)<= '".$enddate."' $cond";
 // where alr_status=1";
  // where UNIX_TIMESTAMP(tbl_loan_detail.sanction_date) >= '".$startdate."' and UNIX_TIMESTAMP(tbl_loan_detail.sanction_date)<= '".$enddate."'
  $query=db_query($sql);
@@ -261,6 +279,9 @@ if($type=='defaulter')
          $oprq = db_query($opr);
          $oprr = db_fetch_array($oprq);
 
+       // Return Outstanding Principal.
+       $o_principle = coreloanledger($res['account_id'],'2016-12-31');
+
 
 	 
 	 $ss="select max(payment_date) as last_date from tbl_loan_amortisaton where loanacc_id='".$res['account_id']."' group by loanacc_id";
@@ -272,8 +293,8 @@ if($type=='defaulter')
 	 $ld=explode('-',$r['last_date']);
 	 $mkt= mktime(0,0,0,($ld[1]+3),($ld[2]),($ld[0]));
 	 $newdate=date('Y-m-d',$mkt);
-	$checkdate= strtotime($newdate);
-	$currdate=$enddate;
+	 $checkdate= strtotime($newdate);
+	 $currdate=$enddate;
 	
 	 $ss1="select min(createdon) as start_date from tbl_loan_disbursement where loanee_id='".$res['loanee_id']."' group by loanee_id";
     $q1=db_query($ss1);
@@ -291,9 +312,9 @@ if($type=='defaulter')
     $diffmonthss = (($year2 - $year1) * 12) + ($month2 - $month1);
 	//$expted=$months*($res['emi_amount']*(($res['ROI'])/100));
     $expted=$diffmonthss*($res['emi_amount']);
-	$defaultamountt =  $expted - $oprr['recovery'] ;
+	$defaultamount =  $expted - $oprr['recovery'] ;
 	$outstanding=$expted-$opir['recovery'];
-	if($currdate>=$checkdate)
+	if($currdate>=$checkdate && ($res['last_interest_calculated'] === '2016-12-31') && ($o_principle != 0))
 	  {
     $output .='<tr ><td class="'.$cla.'" width="3%" align="center">'.$l.'</td>
 	<td class="'.$cla.'" width="6%">'.$res['account_id'].'</td>
@@ -306,28 +327,14 @@ if($type=='defaulter')
 	<td class="'.$cla.'" width="5%">'.round($oprr['recovery']).'</td>
 	<td class="'.$cla.'" width="6%">'.round($expted).'</td>
 	<td class="'.$cla.'" width="6%">'.abs(round($defaultamount)).'</td>
-	<td class="'.$cla.'">'.$res['o_principal'].'</td>
+	<td class="'.$cla.'">'.round($o_principle).'</td>
 	</tr>';
+          $l++;
 	   }
 	   }
-	   $l++;
 
-   }        if($open_bal  !=0 ){
-                         $output .= '</table><table border="0" width="980px"><tr >
-						<td colspan="11">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</td></tr ><tr>
-						 <td colspan="1" width="4%"></td>
-                         <td style="font-size:11pt;"><strong>Grand Total</strong></td> 
-						 <td colspan="4"></td> 
-						<td width="11.5%"></td>
-                         <td  width="6.5%" style="font-size:10pt;"><strong>'.$open_bal.'</strong></td> 
-                         <td  width="6%" style="font-size:10pt;"><strong>'.$int_paid.'</strong></td>
-                         <td  width="6%" style="font-size:10pt;"><strong>'.$recover_total.'</strong></td>
-                         <td  width="6.5%" style="font-size:10pt;"><strong>'.$expectedamount.'</strong></td>
-						 <td  width="6.5%" style="font-size:10pt;"><strong>'.$defaultamount.'</strong></td>
-                         <td  width="7.5%" style="font-size:10pt;"><strong>'.$outstand_bal.'</strong></td>
-                         </tr><tr >
-						<td colspan="13">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</td></tr >';
-                        }
+
+   }
 
 }
 

@@ -32,6 +32,14 @@
                             <td><div id="sector2"><?php print drupal_render($form['scheme2']); ?></div></td>
                         </tr>
                         <tr>
+                            <td><b>From:</b></td>
+                            <td><div id="sector2"><?php print drupal_render($form['from_date']); ?></div></td>
+                            <td><b>To:</b></td>
+                            <td><div id="sector2"><?php print drupal_render($form['to_date']); ?></div></td>
+                            <td><b>Gender:</b></td>
+                            <td><div id="sector2"><?php print drupal_render($form['gender']); ?></div></td>
+                        </tr>
+                        <tr>
                             <td colspan="6" align="right"><div style="margin-right:93px;"><?php print drupal_render($form); ?></div></td>
                         </tr>
                     </table></fieldset>
@@ -48,6 +56,10 @@ if ($op == 'Generate Report') {
     $district = $_REQUEST['district_id'];
     $sector = $_REQUEST['sector1'];
     $scheme = $_REQUEST['scheme2'];
+    $gender = $_REQUEST['gender'];
+    $from_date = date('Y-m-d', strtotime($_REQUEST['from_date']['date']));
+    $to_date = date('Y-m-d', strtotime($_REQUEST['to_date']['date']));
+
 
 //print_r($_REQUEST);exit;
 //drupal_set_message($sector.$scheme);
@@ -61,7 +73,7 @@ if ($op == 'Generate Report') {
         } else if ($district == '' && $sector && $scheme == '') {
             $_REQUEST['page'] = 0;
             //$cond = 'and tbl_sectors.sector_name Like  "'.'%'.$sector.'%'.'"';
-            $cond = "and tbl_sectors.sector_id='" . $sector . "' OR tbl_scheme_master.loan_scheme_id='" . $scheme . "' ";
+            $cond = "and tbl_sectors.sector_id='" . $sector . "' OR tbl_scheme_master.loan_scheme_id='" . $scheme . "' and tbl_loan_disbursement.cheque_date BETWEEN '" . $from_date. "' AND '". $to_date ."' ";
         } else if ($district && $sector && $scheme == '') {
             $cond = "and tbl_sectors.sector_id='" . $sector . "' and tbl_district.district_id = '" . $district . "' OR tbl_scheme_master.loan_scheme_id='" . $scheme . "' ";
             $_REQUEST['page'] = 0;
@@ -76,47 +88,37 @@ if ($op == 'Generate Report') {
 
 
 
-
         $sql = "SELECT tbl_loan_detail.scheme_name,
                 tbl_loan_detail.loan_amount,
 				tbl_loan_detail.reg_number,
+				tbl_loan_detail.o_principal,
 				tbl_loanee_detail.account_id,
 				tbl_loanee_detail.loanee_id,	  
 				tbl_loanee_detail.fname,tbl_loanee_detail.lname,
 				tbl_loanee_detail.district,
    				tbl_loanee_detail.tehsil,
+   				tbl_loanee_detail.address1,
 				tbl_district.district_name,
-                                tbl_tehsil.tehsil_name,
+                tbl_tehsil.tehsil_name,
                 tbl_scheme_master.scheme_name as schemename,
 				tbl_sectors.sector_name,
 				tbl_scheme_master.loan_scheme_id,
 				tbl_scheme_master.apex_share,
 				tbl_scheme_master.corp_share,
-				tbl_scheme_master.promoter_share
+				tbl_scheme_master.promoter_share,
+				tbl_loan_disbursement.createdon
 	    FROM tbl_loanee_detail 
 	    INNER JOIN tbl_loan_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
         INNER JOIN tbl_scheme_master ON  (tbl_loan_detail.scheme_name=tbl_scheme_master.loan_scheme_id) 
 	    INNER JOIN tbl_sectors ON  (tbl_scheme_master.sector=tbl_sectors.sector_id) 
 	    INNER JOIN tbl_district ON  (tbl_loanee_detail.district=tbl_district.district_id)
         INNER JOIN tbl_tehsil ON  (tbl_loanee_detail.tehsil=tbl_tehsil.tehsil_id)
+        INNER JOIN tbl_loan_disbursement ON (tbl_loanee_detail.loanee_id = tbl_loan_disbursement.loanee_id)
 	    where 1=1  $cond";
 
 
-        // echo $sql;
-        /* echo  $sql = "SELECT *
-          FROM tbl_loanee_detail
-          INNER JOIN tbl_loan_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
-          INNER JOIN tbl_scheme_master ON  (tbl_loan_detail.scheme_name=tbl_scheme_master.loan_scheme_id)
-          INNER JOIN tbl_sectors ON  (tbl_scheme_master.sector=tbl_sectors.sector_id)
-          INNER JOIN tbl_district ON  (tbl_loanee_detail.district=tbl_district.district_id)
 
 
-
-          where tbl_district.district_name Like '%".$district."%'  ";
-         */
-
-
-//$sql = "SELECT * FROM tbl_district  where district_name Like '%".$district."%'";
         $pdfurl = $base_url . "/LoaneeDetailReportpdf.php?op=loaneedetail_report&district=$district&sector=$sector&scheme=$scheme";
 
 
@@ -142,15 +144,15 @@ if ($op == 'Generate Report') {
     $output .='<tr>
    				<th>S. No.</th>
 				<th>District Name</th>
-                                <th>Tehsil Name</th>
+                <th>Tehsil Name</th>
 				<th>Sector Name</th>
 				<th>Name of Scheme</th>
 				<th>Account No.</th>
 				<th>Name of Loanee</th>
+                <th>Address of Loanee</th>
 				<th>Loan Amount Disbursed</th>
-				<th>Corporation Share</th>
-				<th>Govt. Share</th>
-				<th>Promoter Share</th>
+				<th>Date of Disbursement</th>
+				<th>Outstanding Principal</th>
 				</tr>';
 
 
@@ -171,19 +173,22 @@ if ($op == 'Generate Report') {
         } else {
             $cla = "odd";
         }
-        $output .='<tr class="' . $cla . '">
+        if($rs->o_principal != 0){
+            $output .='<tr class="' . $cla . '">
 				   <td class="center" width="5%">' . $counter . '</td>
 				   <td >' . ucwords($rs->district_name) . '</td>
-                                   <td >' . ucwords($rs->tehsil_name) . '</td>
+                   <td >' . ucwords($rs->tehsil_name) . '</td>
 				   <td >' . ucwords($rs->sector_name) . '</td>
 				   <td >' . ucwords($rs->schemename) . '</td>
 				   <td >' . $rs->account_id . '</td>
 				   <td >' . ucwords($rs->fname) . ' ' . ucwords($rs->lname) . '</td>
+				   <td >' . ucwords($rs->address1) . '</td>
 				   <td >' . round($resql->disamount) . '</td>
-				   <td align="right">' . round($rs->corp_share) . '</td>
-				   <td align="right">' . round($rs->apex_share) . '</td>
-				   <td align="right">' . round($rs->promoter_share) . '</td>
+				   <td align="right">' . date('d/m/Y', $rs->createdon) . '</td>
+				   <td align="right">' . round($rs->o_principal) . '</td>
 	               </tr>';
+        }
+
     }
 
     if ($counter > 0) {

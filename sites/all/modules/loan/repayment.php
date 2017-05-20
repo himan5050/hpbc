@@ -1,10 +1,9 @@
 <?php
 
 function getReceipt($loan_id,$amount,$amid = '')
-{
+{   
 	global $user;
 	global $base_url;
-	
 	$breadcrumb = array();
 	$breadcrumb[] = l('Home', '<front>');
 	$breadcrumb[] = l('List of Loans', 'loan/listloans');
@@ -50,11 +49,15 @@ function getReceipt($loan_id,$amount,$amid = '')
 	$lin=$base_url."/nodues/".$loan->account_id;
 	$rsword = convert_number(round($amount));
 	$name = ucwords($loan->fname.' '.$loan->lname);
+        $mobile_no = $loan->mobile;
 	$gamount = 'N/A';
 	$famount = round($amount);
 	$recno = $reciept_no->id;
+        $paymentdate = $reciept_no->payment_date;
 	$recnumber = $amid;
 	$accnumber = $loan->loanacc_id;
+        $o_principal = $loan->o_principal;
+        
 	$ben = 'N/A';
 	}
 	//$phone = getMessage('corporation', 'phone', '');
@@ -132,6 +135,28 @@ function getReceipt($loan_id,$amount,$amid = '')
 		</table>
 	</div>
 EOD;
+        
+        /*------------------------------------------------------------------------
+         * SMS Integration Code for each repayment.
+         */
+         //Sending SMS
+         /*
+        $data = array("username" => "hpgovt",
+                      "password" => "hpdit@1234",
+                      "senderid" =>"hpgovt",
+                      "smsservicetype" =>"singlemsg",
+                      "mobileno" =>$mobile_no,
+                      "bulkmobno" => "bulkmobno",
+                     // "content"  => "Namaskar ! HBCFDC Kangra thankfully acknowledges receipt of Rs. $tot against A/c no. $accnumber on vide receipt no. $recnumber . $currentdate.Repayment as per schedule is in your interest.For Help, contact landline no. 01892-264326."
+                    //  "content"  => "Payment of Rs. $tot received vide RT No. $recnumber  has been credited into your HBCFDC Kangra Loan A/c No. $accnumber on $currentdate.Your payable outstanding amount now is $o_principal.For help,contact on 01892-264334,262282."
+                       "content"  => "Payment of Rs. $tot received vide RT No. $recnumber  has been credited into your HBCFDC Kangra Loan A/c No. $accnumber on $currentdate.For help,contact on 01892-264334,262282."
+                );
+        $url = "http://msdgweb.mgov.gov.in/esms/sendsmsrequest";
+        post_to_url($url, $data);
+        /*------------------------------------------------------------------------
+         * End of SMS Integration.
+         */
+        
 return $output;
 }
 
@@ -179,6 +204,7 @@ function repayment_form($type = '',$loan_id = 0)
 		$res = db_query($query);
 		$l = db_fetch_object($res);
 		$account_id = $l->account_id;
+                $mobile_no = $l->mobile;
 		$readonly = 'readonly';
 	}
 	if(isset($_POST['account_id']) && $_POST['account_id'])
@@ -385,7 +411,25 @@ function repayment_form($type = '',$loan_id = 0)
 				         }else{
 				               $o_LD = abs($ra1);
 				               $o_LDpaid = $ra;
-						}
+                                        }
+                                        /*------------------------------------------------------------------------
+                                        * SMS Integration Code for closing of account.
+                                        */
+                                        //Sending SMS
+                                        /*
+                                        $data = array("username" => "hpgovt",
+                                                      "password" => "hpdit@1234",
+                                                      "senderid" =>"hpgovt",
+                                                      "smsservicetype" =>"singlemsg",
+                                                      "mobileno" =>$mobile_no,
+                                                      "bulkmobno" => "bulkmobno",
+                                                      "content"  => "Attention HBCFDC Kangra Loan A/c No.$accountid. Thanks ! You have cleared the entire loan amount alongwith interest.  You are advised to apply for No Dues Certificate.  For any help, contact on 01892-264334, 262282."
+                                                );
+                                        $url = "http://msdgweb.mgov.gov.in/esms/sendsmsrequest";
+                                        post_to_url($url, $data);
+                                        /*------------------------------------------------------------------------
+                                        * End of SMS Integration.
+                                        */                
 			        }else{
 			              $o_principal = abs($ra);
 			              $o_principalpaid = $_POST['amount'];
@@ -1059,4 +1103,5 @@ function validateRepaymentForm($loaneeid)
     
 	return $scriptcss;
 }
+
 ?>

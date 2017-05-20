@@ -1,4 +1,5 @@
 <?php
+
 function loan_init() {
 	//drupal_add_css(drupal_get_path('module', 'loan') .'/loan.css');
       drupal_add_js(drupal_get_path('module','loan').'/loan.js');
@@ -38,6 +39,16 @@ function loan_menu() {
 										'description' => 'schemewise recovery report',
 										'type' => MENU_NORMAL_ITEM,
 										'page callback' => 'schemewise_recovery',
+										'access arguments' => array('view loan'),
+										'file' =>'schemewise_recovery.php',			 
+													 
+									  );
+        
+        $items['loan/interest_recovery'] = array(
+										'title' => t('District-wise Interest Recovery Report'),
+										'description' => 'Disctrict wise interest recovery report',
+										'type' => MENU_NORMAL_ITEM,
+										'page callback' => 'interestwise_recovery',
 										'access arguments' => array('view loan'),
 										'file' =>'schemewise_recovery.php',			 
 													 
@@ -1255,10 +1266,10 @@ function approve_reject_application($status=1,$docket='',$taskid='',$level='')
 	}
 	if($status == 14 || $status == 16)
 	{
-		$sql = "SELECT loan_requirement FROM tbl_loan_detail WHERE loan_docket = $docket LIMIT 1";
+		$sql = "SELECT loan_requirement,project_cost FROM tbl_loan_detail WHERE loan_docket = $docket LIMIT 1";
 		$res = db_query($sql);
 		$loanamount = db_fetch_object($res);
-		$append .= " ,payment_order_released_date = CURDATE(),o_disburse_amount = '".$loanamount->loan_requirement."' ";
+		$append .= " ,payment_order_released_date = CURDATE(),o_disburse_amount = '".$loanamount->project_cost."' ";
 	}
 	$loanupdatesql = "UPDATE tbl_loan_detail SET loan_status = $status,remark = '".$_POST['remark']."' $append WHERE loan_docket = $docket";
 	if(!db_query($loanupdatesql))

@@ -1286,7 +1286,6 @@ function updateLoanAccount($rid = '',$mg = '')
 	$valuestr = '';
 	$updatestr = '';
 	$loanupdatestr = '';
-	//print_r($_POST);
 	//$len = sizeof($_POST['g']['gname']);
 	$len = $_POST['gnumname'];
 	$error = validateLoanForm($len,$mg);
@@ -1392,7 +1391,7 @@ function updateLoanAccount($rid = '',$mg = '')
 				$loaneeid = db_last_insert_id('tbl_loanee_detail','loanee_id');
 				
 				$loanfields .= "application_date,createdby,createdon,loan_status,corp_branch,loan_requirement,o_disburse_amount";
-				$loanvaluestr .= "'".date("Y-m-d")."','".$user->uid."','".time()."',1,'".$_POST['p']['corp_branch']."','".$_POST['l']['loan_amount']."','".$_POST['l']['loan_amount']."'";
+				$loanvaluestr .= "'".date("Y-m-d")."','".$user->uid."','".time()."',1,'".$_POST['p']['corp_branch']."','".$_POST['l']['loan_amount']."','".$_POST['l']['project_cost']."'";
 				$insert_statement = "INSERT INTO tbl_loan_detail ($loanfields) VALUES ($loanvaluestr)";
 				if(!db_query($insert_statement))
 					$inserterror = 1;
