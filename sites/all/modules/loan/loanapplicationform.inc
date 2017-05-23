@@ -280,7 +280,7 @@ $output .= <<<EOD
 <div id="errorid" class="messages error" style="display:none;"></div>
 
 <div id="form-container">
-<form action="#" name="loanapplicationform" method="post" enctype="multipart/form-data">
+<form action="#" name="loanapplicationform" method="post" enctype="multipart/form-data" autocomplete = "off">
 <table width="100%" cellspacing="2" cellpadding="1" border="0">
 <tr class="oddrow">
 

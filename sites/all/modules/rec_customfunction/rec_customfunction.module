@@ -5173,3 +5173,11 @@ GROUP BY tbl_loan_repayment.payment_date");
   
 		
 }
+
+
+/**
+ * Autocomplete OFF on all Drupal forms.
+ */
+function rec_customfunction_form_alter(&$form) {
+   $form['#attributes']['autocomplete'] = 'off';
+}
