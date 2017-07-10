@@ -49,7 +49,7 @@ function hpbc_cron_jobs_theme() {
  * Create custom cron jobs and check there execution
  */
 function hpbc_cron_jobs_cron() {
-    $quater_end_dates = array('31-03','30-06','01-04','31-12');
+    $quater_end_dates = array('31-03','30-06','01-07','31-12');
     $current_date = date('d-m');
     
     if (in_array($current_date, $quater_end_dates)) {
