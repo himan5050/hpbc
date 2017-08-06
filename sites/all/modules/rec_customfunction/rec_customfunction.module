@@ -5181,3 +5181,30 @@ GROUP BY tbl_loan_repayment.payment_date");
 function rec_customfunction_form_alter(&$form) {
    $form['#attributes']['autocomplete'] = 'off';
 }
+
+
+/**
+ * Get Last quarter date
+ */
+function getLastQuaterEndDate() {
+	$curMonth = date("m", time());
+	$curYear = date("Y", time());
+	$prevYear = $curYear - 1;
+	$curQuarter = ceil($curMonth/3);
+	switch ($curQuarter) {
+		case 1 :
+			return $prevYear.'-12-31';
+			break;
+		case 2 :
+			return $curYear.'-03-31';
+			break;
+		case 3 :
+			return $curYear.'-06-30';
+			break;
+		case 4 :
+			return $curYear.'-09-30';
+			break;
+		default:
+			return false;
+	}
+}
