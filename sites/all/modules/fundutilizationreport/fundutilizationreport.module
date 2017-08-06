@@ -42,9 +42,71 @@ function fundutilizationreport_menu(){
 										'access arguments' => array('administer fundutilizationreport'),
 													 
 									  );
+  
+  $items ['dsje/sector23'] = array (
+  		'page callback' => 'mysector23',
+  		'type' => MENU_CALLBACK,
+  		'access arguments' => array (
+  				'access content'
+  		)
+  );
    
    return $items;
 }
+
+// //////////////////
+function SelectSector3() {
+	$query2 = "SELECT * FROM tbl_sectors order by sector_name ASC";
+	$result2 = db_query ( $query2 );
+	$sectorarray = array (
+			'' => '--Select--'
+	);
+	while ( $row2 = db_fetch_object ( $result2 ) ) {
+		
+		$sectorarray [$row2->sector_id] = ucwords ( $row2->sector_name );
+	}
+	return $sectorarray;
+}
+function SelectDistrict3() {
+	$query22 = "SELECT * FROM tbl_district  order by  district_name ASC ";
+	$result22 = db_query ( $query22 );
+	$districtarray2 = array (
+			'' => '--Select--'
+	);
+	while ( $row22 = db_fetch_object ( $result22 ) ) {
+		
+		$districtarray2 [$row22->district_id] = ucwords ( $row22->district_name );
+	}
+	return $districtarray2;
+}
+
+function SelectTehsil3() {
+	$query22 = "SELECT * FROM tbl_tehsil  order by  tehsil_name ASC ";
+	$result22 = db_query ( $query22 );
+	$tehsilarray2 = array (
+			'' => '--Select--'
+	);
+	while ( $row22 = db_fetch_object ( $result22 ) ) {
+		
+		$tehsilarray2 [$row22->tehsil_id] = ucwords ( $row22->tehsil_name );
+	}
+	return $tehsilarray2;
+}
+
+function SelectPanchayat3() {
+	$query22 = "SELECT * FROM tbl_panchayt  order by  panchayt_name ASC ";
+	$result22 = db_query ( $query22 );
+	$panchayatarray2 = array (
+			'' => '--Select--'
+	);
+	while ( $row22 = db_fetch_object ( $result22 ) ) {
+		
+		$panchayatarray2 [$row22->panchayt_id] = ucwords ( $row22->panchayt_name );
+	}
+	return $panchayatarray2;
+}
+
+// /////////////////////
 
 
 
@@ -53,67 +115,127 @@ function fundutilizationreport(){
 }
 
 function fundutilizationreport_form(){
+	global $base_url;
+	// breadcrumb
 	
-global $base_url;
-
-//breadcrumb
- $array = explode('/',$_GET['q']);
-  $breadcrumb = array();
-  $breadcrumb[] = l('Home', '<front>');
-  $breadcrumb[] = l('Fund Utilization Report', 'fundutilizationreport');
-  drupal_set_breadcrumb($breadcrumb);
-
-
- 	
-$sqlcountry = "select * from tbl_headmaster ORDER BY name1";
-	$rescountry =db_query($sqlcountry);
-	$countryarray[''] = array();
-	$countryarray[''] = '--Select--'; 
-	if($rescountry){
-	  while($rscountry = db_fetch_object($rescountry)){
-	    $countryarray[$rscountry->name1] = ucwords($rscountry->name1);
-	  }
-	}
-	
-
-	$form['head_name'] = array(
-		'#type' => 'select',
-		'#title' => t(''),
-		'#required' => false,
-		'#default_value' => '',
-		'#options' => $countryarray,
+	$form ['district'] = array (
+			'#type' => 'select',
+			
+			'#default_value' => $districtarray2,
+			'#options' => SelectDistrict2 ()
+			
 	);
-    
- 
- $sqlscheme = "select * from tbl_scheme_master ORDER BY scheme_name";
-	$resscheme =db_query($sqlscheme);
-	$schemearray[''] = array();
-	$schemearray[''] = '--Select--'; 
-	if($rescountry){
-	  while($rsscheme = db_fetch_object($resscheme)){
-	    $schemearray[$rsscheme->scheme_name] = ucwords($rsscheme->scheme_name);
-	  }
-	}
 	
-
-	$form['scheme_name'] = array(
-		'#type' => 'select',
-		'#title' => t(''),
-		'#required' => false,
-		'#default_value' => '',
-		'#options' => $schemearray,
+	$form ['tehsil'] = array (
+			'#type' => 'select',
+			
+			'#default_value' => $tehsilarray2,
+			'#options' => SelectTehsil2 ()
+			
 	);
-    
+	
+	$form ['panchayat'] = array (
+			'#type' => 'select',
+			
+			'#default_value' => $panchayatarray2,
+			'#options' => SelectPanchayat2 ()
+	);
+	/*
+	
+	$form ['sector9'] = array (
+			'#type' => 'select',
+			
+			'#default_value' => $node->religion,
+			'#options' => SelectSector2 (),
+			'#ahah' => array (
+					'path' => 'dsje/sector23',
+					'method' => 'replace',
+					'effect' => 'slide',
+					'wrapper' => 'sector'
+			)
+			
+	);
+	$schemearray7 = array (
+			'' => '--Select--'
+	); */
+	
+	/*
+	$form ['scheme4'] = array (
+			'#type' => 'select',
+			'#options' => $schemearray7,
+			'#id' => 'edit-scheme',
+			'#name' => 'scheme4'
+	); */
+	
+	$form['from_date'] = array(
+			'#type' => 'date_popup',
+			'#date_format' =>'d-m-Y',
+			'#title' => t(''),
+			//'#required' => true,
+			'#size' => '30',
+	);
+	
+	$form['to_date'] = array(
+			'#type' => 'date_popup',
+			'#date_format' =>'d-m-Y',
+			'#title' => t(''),
+			//'#required' => true,
+			'#size' => '30',
+	);
+	
+	/*
+	$form ['account'] = array (
+			'#type' => 'textfield'
+			
+	);
+	*/
+	
+	$form ['submit'] = array (
+			'#type' => 'button',
+			'#value' => 'Generate Report'
+	);
+	return $form;
+}
 
- 
- 
-						   
- 
-  $form['submit'] = array(
-      '#type' =>'button',
-	  '#default_value' =>'Generate',
-  ); 
-  return $form;
+
+function mysector23() {
+	$sector_id = $_POST ['sector9'];
+	
+	$query = "SELECT scheme_name,loan_scheme_id FROM tbl_scheme_master WHERE sector = '" . $sector_id . "' order by  scheme_name ASC";
+	$result = db_query ( $query );
+	// $schemearray = array();
+	$schemearray7 = array (
+			'' => "--Select--"
+	);
+	$counter = 0;
+	while ( $row = db_fetch_object ( $result ) ) {
+		$schemearray7 [$row->loan_scheme_id] = ucwords ( $row->scheme_name );
+		$counter ++;
+	}
+	if ($counter == 0) {
+		$schemearray7 [''] = "--Select--";
+	}
+	$form_state = array (
+			'submitted' => FALSE
+	);
+	$form_build_id = $_POST ['form_build_id'];
+	$form = form_builder ( 'dsje_joinings_form', $form, $form_state );
+	
+	$form ['scheme4'] = array (
+			'#type' => 'select',
+			
+			'#required' => FALSE,
+			// '#default_value' =>'--Select--',
+			'#id' => 'edit-scheme',
+			'#name' => 'scheme4',
+			'#options' => $schemearray7
+	);
+	
+	$output = drupal_render ( $form ['scheme4'] );
+	return drupal_json ( array (
+			'status' => TRUE,
+			'data' => $output
+	) );
 }
 
 
