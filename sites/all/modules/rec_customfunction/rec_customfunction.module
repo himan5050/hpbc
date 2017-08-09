@@ -5208,3 +5208,217 @@ function getLastQuaterEndDate() {
 			return false;
 	}
 }
+
+
+/**
+ * Get List of schemes by sector.
+ */
+function getSchemeBySector ($sector_id) {
+	$sql = "SELECT loan_scheme_id, scheme_name, apex_share, corp_share, promoter_share FROM `tbl_scheme_master` where sector = '". $sector_id. "'";
+    $sql1 = db_query($sql);
+    $result = [];
+    while($s = db_fetch_object($sql1)) {
+    	$r[$s->loan_scheme_id] = array(
+    			'scheme_name' => $s->scheme_name,
+    			'apex_share' => $s->apex_share,
+    			'corp_share' => $s->corp_share,
+    			'promoter_share' => $s->promoter_share
+    	);
+    	$result = $r;
+    }
+    return $result;
+}
+
+
+/**
+ * Loan Under with dates.
+ */
+function loanUnderSchemeWithDates($scheme_id, $from_date, $to_date) {
+	$response = [];
+	$sql = "SELECT loan_id, 
+		   `tbl_loan_disbursement`.`cheque_date`, 
+            SUM(`tbl_loan_disbursement`.amount) AS disamount,
+		   `tbl_loanee_detail`.gender 
+            FROM `tbl_loan_detail`
+		    INNER JOIN tbl_loanee_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+		    INNER JOIN tbl_loan_disbursement ON  (tbl_loanee_detail.loanee_id=tbl_loan_disbursement.loanee_id)
+            where scheme_name = '".$scheme_id."' and `tbl_loan_disbursement`.cheque_date BETWEEN '".$from_date."' and '".$to_date."' 
+            GROUP by `tbl_loan_disbursement`.loanee_id";
+	
+	$sql1 = db_query($sql);
+	$counter = 0;
+	$result_upto_2lac = 0;
+	$result_above_2lac = 0;
+	$benef_upto2Lac = 0;
+	$benef_above2Lac = 0;
+	$result_male_count = 0;
+	$result_female_count = 0;
+	
+	while($s = db_fetch_object($sql1)) {
+		$gender = getlookupName ( $s->gender );
+		if($gender == 'Male') {
+			$result_male_count++;
+		}
+		if($gender == 'Female') {
+			$result_female_count++;
+		}
+		$disamount = $s->disamount;
+		if ($disamount <= 200000) {
+			$result_upto_2lac = $disamount + $result_upto_2lac;
+			$benef_upto2Lac++;
+		} else {
+			$result_above_2lac = $disamount + $result_above_2lac;
+			$benef_above2Lac++;
+		}
+	}
+	
+	$response['upto_2lac']['amount'] = $result_upto_2lac;
+	$response['upto_2lac']['benef'] = $benef_upto2Lac;
+	$response['above_2lac']['amount'] = $result_above_2lac;
+	$response['above_2lac']['benef'] = $benef_above2Lac;
+	$response['gender']['male'] = $result_male_count;
+	$response['gender']['female'] = $result_female_count;
+	
+	return $response;
+}
+
+
+/**
+ * Loan Under Scheme As on Date.
+ */
+function loanUnderSchemeAsOnDate($scheme_id, $year, $to_date) {
+	$from_date = $year.'-04-01';
+	$response = [];
+	$sql = "SELECT loan_id,
+		   `tbl_loan_disbursement`.`cheque_date`,
+            SUM(`tbl_loan_disbursement`.amount) AS disamount,
+		   `tbl_loanee_detail`.gender
+            FROM `tbl_loan_detail`
+		    INNER JOIN tbl_loanee_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+		    INNER JOIN tbl_loan_disbursement ON  (tbl_loanee_detail.loanee_id=tbl_loan_disbursement.loanee_id)
+            where scheme_name = '".$scheme_id."' and `tbl_loan_disbursement`.cheque_date BETWEEN '".$from_date."' and '".$to_date."'
+            GROUP by `tbl_loan_disbursement`.loanee_id";
+	$sql1 = db_query($sql);
+	$counter = 0;
+	$result_upto_2lac = 0;
+	$result_above_2lac = 0;
+	$benef_upto2Lac = 0;
+	$benef_above2Lac = 0;
+	$result_male_count = 0;
+	$result_female_count = 0;
+	
+	while($s = db_fetch_object($sql1)) {
+		$gender = getlookupName ( $s->gender );
+		if($gender == 'Male') {
+			$result_male_count++;
+		}
+		if($gender == 'Female') {
+			$result_female_count++;
+		}
+		$disamount = $s->disamount;
+		if ($disamount <= 200000) {
+			$result_upto_2lac = $disamount + $result_upto_2lac;
+			$benef_upto2Lac++;
+		} else {
+			$result_above_2lac = $disamount + $result_above_2lac;
+			$benef_above2Lac++;
+		}
+	}
+	
+	$response['upto_2lac']['amount'] = $result_upto_2lac;
+	$response['upto_2lac']['benef'] = $benef_upto2Lac;
+	$response['above_2lac']['amount'] = $result_above_2lac;
+	$response['above_2lac']['benef'] = $benef_above2Lac;
+	$response['gender']['male'] = $result_male_count;
+	$response['gender']['female'] = $result_female_count;
+	
+	return $response;
+}
+
+
+/**
+ *
+ */
+function getDemand ($scheme_id, $from_date, $to_date) {
+	// Ommiting closed accounts
+	$last_quarter_end_date = getLastQuaterEndDate ();
+	$cond .= ' and tbl_loan_detail.o_principal != 0 and tbl_loan_detail.last_interest_calculated >= "' . $last_quarter_end_date . '"';
+	$response = [];
+	$sql = "SELECT loan_id, emi_amount,
+		   `tbl_scheme_master`.apex_share,
+ 		   `tbl_scheme_master`.corp_share
+            FROM `tbl_loan_detail`
+			INNER JOIN tbl_scheme_master ON (tbl_loan_detail.scheme_name = tbl_scheme_master.loan_scheme_id)
+		    INNER JOIN tbl_loanee_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+		    INNER JOIN tbl_loan_disbursement ON  (tbl_loanee_detail.loanee_id=tbl_loan_disbursement.loanee_id)
+            where `tbl_loan_detail`.scheme_name = '".$scheme_id."' $cond and `tbl_loan_disbursement`.cheque_date BETWEEN '".$from_date."' and '".$to_date."'
+            GROUP by `tbl_loan_disbursement`.loanee_id";
+	$sql1 = db_query($sql);
+	$counter = 0;
+	// Get months
+	$y1 = date('Y', strtotime($from_date));
+	$y2 = date('Y', strtotime($to_date));
+	$m1 = date('m', strtotime($from_date));
+	$m2 = date('m', strtotime($to_date));
+	$diff = (($y2 - $y1) * 12) + ($m2 - $m1) - 1; //upto previous month
+	$allDemandNBCFDC = 0;
+	$allDemandHBCFDC = 0;
+	$allCurrentMonthDemandNBCFDC = 0;
+	$allCurrentMonthDemandHBCFDC = 0;
+	while($s = db_fetch_object($sql1)) {
+		$allDemandNBCFDC = ((($s->emi_amount * $diff) * $s->apex_share)/100) + $allDemandNBCFDC;
+		$allDemandHBCFDC = ((($s->emi_amount * $diff) * $s->corp_share)/100) + $allDemandHBCFDC;
+		$allCurrentMonthDemandNBCFDC = (($s->emi_amount * $s->apex_share)/100) + $allCurrentMonthDemandNBCFDC;
+		$allCurrentMonthDemandHBCFDC = (($s->emi_amount * $s->corp_share)/100) + $allCurrentMonthDemandHBCFDC;
+	}
+	//echo $allDemand;
+	$response['previousMonthDemand']['NBCFDC'] = $allDemandNBCFDC;
+	$response['previousMonthDemand']['HBCFDC'] = $allDemandHBCFDC;
+	$response['currentMonthDemand']['NBCFDC'] = $allCurrentMonthDemandNBCFDC;
+	$response['currentMonthDemand']['HBCFDC'] = $allCurrentMonthDemandHBCFDC;
+	
+	return $response;
+}
+
+
+/**
+ *
+ */
+function getRecovery ($scheme_id, $from_date, $to_date) {
+	// Ommiting closed accounts
+	$last_quarter_end_date = getLastQuaterEndDate ();
+	$cond .= ' and tbl_loan_detail.o_principal != 0 and tbl_loan_detail.last_interest_calculated >= "' . $last_quarter_end_date . '"';
+	$response = [];
+	$sql = "SELECT `tbl_loan_disbursement`.loanee_id
+		    FROM `tbl_loan_detail`
+			INNER JOIN tbl_scheme_master ON (tbl_loan_detail.scheme_name = tbl_scheme_master.loan_scheme_id)
+		    INNER JOIN tbl_loanee_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+			INNER JOIN tbl_loan_repayment ON  (tbl_loanee_detail.loanee_id=tbl_loan_repayment.loanee_id)
+		    INNER JOIN tbl_loan_disbursement ON  (tbl_loanee_detail.loanee_id=tbl_loan_disbursement.loanee_id)
+            where `tbl_loan_detail`.scheme_name = '".$scheme_id."' $cond and `tbl_loan_disbursement`.cheque_date BETWEEN '".$from_date."' and '".$to_date."'
+            GROUP by `tbl_loan_disbursement`.loanee_id";
+	$sql1 = db_query($sql);
+	$counter = 0;
+	// Get months
+	$Ym = date('Y-m', strtotime($to_date));
+	$current_month_date = $Ym.'-01';
+	$allRecovery = 0;
+	$allCurrentMonthRecovery = 0;
+	while($s = db_fetch_object($sql1)) {
+		$sql2 = "SELECT SUM(amount) AS rec_amount FROM `tbl_loan_repayment` where loanee_id = '".$s->loanee_id."' and paytype = 'EMI' and payment_date BETWEEN '".$from_date."' and '".$to_date."'";
+		$sql21 = db_query($sql2);
+		$s21 = db_fetch_object($sql21);
+		$allRecovery = $allRecovery + $s21->rec_amount;
+		
+		$sql3 = "SELECT SUM(amount) AS rec_amount FROM `tbl_loan_repayment` where loanee_id = '".$s->loanee_id."' and paytype = 'EMI' and payment_date BETWEEN '".$current_month_date."' and '".$to_date."'";
+		$sql31 = db_query($sql3);
+		$s31 = db_fetch_object($sql31);
+		$allCurrentMonthRecovery = $allCurrentMonthRecovery + $s31->rec_amount;
+	}
+	
+	//echo $allRecovery
+	$response['previousMonthRecovery'] = $allRecovery;
+	$response['currentMonthRecovery'] = $allCurrentMonthRecovery;
+	
+	return $response;
+}

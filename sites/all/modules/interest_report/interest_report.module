@@ -29,9 +29,10 @@ function interest_report_access($op, $node, $account){
 
 function interest_report_menu(){									  
         $items['interest_recovery_report'] = array(
-               'title' => t('District wise Interest and Recovery Report'),
+               'title' => t('Scheme-wise Utilization Certificate'),
                'type' => MENU_NORMAL_ITEM,
-               'page callback' => 'interest_recovery_report',							        'access arguments' => array('administer educationloans_SchemeReport'),
+               'page callback' => 'interest_recovery_report',							        
+        	   'access arguments' => array('administer educationloans_SchemeReport'),
        );
        return $items;
 }
@@ -45,7 +46,7 @@ function interest_recovery_report(){
    $array = explode('/', $_GET['q']);
    $breadcrumb = array();
    $breadcrumb[] = l('Home','<front>');
-   $breadcrumb[] = l('District-wise Interest Recovery Report','interest_recovery_report');
+   $breadcrumb[] = l('Sector-wise Utilization Certificate','interest_recovery_report');
    drupal_set_breadcrumb($breadcrumb);
    return drupal_get_form(districtwise_interest_recovery_form);
 }
@@ -74,8 +75,11 @@ function districtwise_interest_recovery_form(){
           '#required' => false,
           '#size' => '30',			   
  );
-		
- $form['submit'] = array('#type' => 'submit', '#default_value' => 'Generate Report');
+  
+ $form ['submit'] = array (
+  		'#type' => 'button',
+  		'#value' => 'Generate Report'
+  );
  
   return $form;
 }
@@ -85,7 +89,7 @@ function districtwise_interest_recovery_form(){
 * Implementation of hook_theme()
 */
 
-function interest_report_theme(){
+function interest_report_theme() {
      $themable_items = array(
 	'districtwise_interest_recovery_form' => array(
                         'arguments' => array('form' => NULL),

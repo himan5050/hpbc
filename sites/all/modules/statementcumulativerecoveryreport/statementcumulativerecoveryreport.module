@@ -60,7 +60,7 @@ global $base_url;
  $array = explode('/',$_GET['q']);
   $breadcrumb = array();
   $breadcrumb[] = l('Home', '<front>');
-  $breadcrumb[] = l('District-Wise Scheme-Wise Cumulative Recovery Statement', 'statementcumulativerecoveryreport');
+  $breadcrumb[] = l('Sector-wise Cumulative Recovery Statement', 'statementcumulativerecoveryreport');
   drupal_set_breadcrumb($breadcrumb);
 
 

@@ -1,4 +1,3 @@
-;$id 03/12/2016 Himanshu Sharma
 name = "Interest and Recovery Report"
 description ="Balance report to calculate district wise interest and recovery value"
 core = 6.x
