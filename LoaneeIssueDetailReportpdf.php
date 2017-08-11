@@ -38,6 +38,8 @@ $pdf->SetFont ( 'times', '', 10 );
 $pdf->AddPage ();
 if ($_REQUEST ['op'] == 'loanissuedetail_report') {
 	$cond = '';
+	$panchayat_table = '';
+	$panchayat_join = '';
 	$district = isset ( $_REQUEST ['district'] ) ? $_REQUEST ['district'] : '';
 	$tehsil = isset ( $_REQUEST ['tehsil'] ) ? $_REQUEST ['tehsil'] : '';
 	$panchayat = isset ( $_REQUEST ['panchayat'] ) ? $_REQUEST ['panchayat'] : '';
@@ -145,6 +147,8 @@ EOF;
 		}
 		if ($panchayat) {
 			$cond .= ' and tbl_loanee_detail.panchayat LIKE "' . $panchayat . '"';
+			$panchayat_table = 'tbl_panchayt.panchayt_name,';
+			$panchayat_join = 'INNER JOIN tbl_panchayt ON  (tbl_loanee_detail.panchayat=tbl_panchayt.panchayt_id)';
 			$_REQUEST ['page'] = 0;
 		}
 		if ($sector) {
@@ -187,7 +191,7 @@ EOF;
 	tbl_loanee_detail.address2,
 	tbl_district.district_name,
 	tbl_tehsil.tehsil_name,
-	tbl_panchayt.panchayt_name,
+	$panchayat_table
 	tbl_block.block_name,
 	tbl_scheme_master.scheme_name as schemename ,
 	tbl_scheme_master.tenure ,
@@ -203,7 +207,7 @@ EOF;
 	INNER JOIN tbl_sectors ON  (tbl_scheme_master.sector=tbl_sectors.sector_id)
 	INNER JOIN tbl_district ON  (tbl_loanee_detail.district=tbl_district.district_id)
 	INNER JOIN tbl_tehsil ON  (tbl_loanee_detail.tehsil=tbl_tehsil.tehsil_id)
-	INNER JOIN tbl_panchayt ON  (tbl_loanee_detail.panchayat=tbl_panchayt.panchayt_id)
+	$panchayat_join
 	INNER JOIN tbl_block ON  (tbl_loanee_detail.block=tbl_block.block_id)
 	LEFT OUTER JOIN tbl_loan_repayment   ON (tbl_loanee_detail.loanee_id=tbl_loan_repayment.loanee_id)
 	where 1=1  $cond GROUP BY tbl_loan_repayment.loanee_id";
@@ -353,13 +357,14 @@ EOF;
 			$gname = ($g->gname) ? $g->gname : 'N/A';
 			$gaddress = ($g->address) ? $g->address : 'N/A';
 			$disbamount = ($d->disamount) ? $d->disamount : 'N/A';
+			$panchayat_name = isset($rs->panchayt_name) ? $rs->panchayt_name : 'URBAN';
 			
 			$output .= '<tr>
 					  <td class="' . $class . '">' . $counter . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->district_name ) . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->tehsil_name ) . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->block_name ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->panchayt_name ) . '</td>
+					  <td class="' . $class . '">' . ucwords ( $panchayat_name ) . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->sector_name ) . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->schemename ) . '</td>
 					  <td class="' . $class . '">' . $accno . '</td>
