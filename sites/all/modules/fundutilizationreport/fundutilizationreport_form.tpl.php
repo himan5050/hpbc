@@ -59,6 +59,7 @@ global $base_url;
 $op = $_REQUEST['op'];
 if ($op == 'Generate Report') {
 	$cond = '';
+	$panchayat_join = '';
 	$district = isset ( $_REQUEST ['district'] ) ? $_REQUEST ['district'] : '';
 	$tehsil = isset ( $_REQUEST ['tehsil'] ) ? $_REQUEST ['tehsil'] : '';
 	$panchayat = isset ( $_REQUEST ['panchayat'] ) ? $_REQUEST ['panchayat'] : '';
@@ -80,6 +81,7 @@ if ($op == 'Generate Report') {
 		}
 		if ($panchayat) {
 			$cond .= ' and tbl_loanee_detail.panchayat LIKE "' . $panchayat . '"';
+			$panchayat_join = 'INNER JOIN tbl_panchayt ON  (tbl_panchayt.panchayt_id=tbl_loanee_detail.panchayat)';
 			$_REQUEST ['page'] = 0;
 		}
 		if ($from_date && $to_date) {
@@ -96,7 +98,7 @@ if ($op == 'Generate Report') {
 				INNER JOIN tbl_loanee_detail ON  (tbl_loan_detail.reg_number=tbl_loanee_detail.reg_number)
 				INNER JOIN tbl_district ON  (tbl_district.district_id=tbl_loanee_detail.district)
 				INNER JOIN tbl_tehsil ON  (tbl_tehsil.tehsil_id=tbl_loanee_detail.tehsil)
-				INNER JOIN tbl_panchayt ON  (tbl_panchayt.panchayt_id=tbl_loanee_detail.panchayat)
+				$panchayat_join
 				INNER JOIN tbl_sectors ON  (tbl_sectors.sector_id=tbl_scheme_master.sector)
 				INNER JOIN tbl_loan_disbursement ON  (tbl_loan_disbursement.loanee_id=tbl_loanee_detail.loanee_id)
 				WHERE 1=1 $cond GROUP BY `tbl_loan_detail`.scheme_name ORDER by `tbl_loan_disbursement`.cheque_date DESC";
