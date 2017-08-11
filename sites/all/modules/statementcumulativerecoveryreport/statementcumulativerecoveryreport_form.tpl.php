@@ -151,7 +151,7 @@ else {
 						<td align ="right">' . round ( $totalDemandNBCFDC/100000, '2' ) . '</td>
 						<td align ="right">' . round ( $totalDemandHBCFDC/100000, '2' ) . '</td>
 						<td align ="right">' . round ( $totalDemand/100000, '2' ) . '</td>
-  						<td align ="right">' . round ( $currentMonthRecovery/100000, '4' ) . '</td>
+  						<td align ="right">' . round ( $currentMonthRecovery/100000, '2' ) . '</td>
 						<td align ="right">' . round ( $recovery/100000, '2' ) . '</td>
 						<td align ="right">' . round ( ($recovery/$totalDemand) * 100, '2' ) . '%</td>
 						<td align ="right">' . round ( ($totalDemand - $recovery)/100000, '2' ) . '</td>
