@@ -250,18 +250,18 @@ EOF;
 		WHERE 1=1 $cond and scheme_name = '" . $rs->loan_scheme_id . "'";
 			$sql_sanc_amt1 = db_query ( $sql_sanc_amt );
 			$ssa = db_fetch_object ( $sql_sanc_amt1 );
-			$sanctioned_amount = $ssa->sanctioned_amount / 100000;
+			$sanctioned_amount = $ssa->sanctioned_amount ;
 			
 			// GET NBCFDC, HBCFDC and Promoter Share.
 			$sql_share = "SELECT apex_share,corp_share,promoter_share FROM `tbl_scheme_master` where loan_scheme_id = '" . $rs->loan_scheme_id . "'";
 			$sql_share1 = db_query ( $sql_share );
 			$ss = db_fetch_object ( $sql_share1 );
 			$NBCFDC_amount = $ssa->sanctioned_amount * $ss->apex_share / 100;
-			$nbcfdc_amount = $NBCFDC_amount / 100000;
+			$nbcfdc_amount = $NBCFDC_amount;
 			$HBCFDC_amount = $ssa->sanctioned_amount * $ss->corp_share / 100;
-			$hbcfdc_amount = $HBCFDC_amount / 100000;
+			$hbcfdc_amount = $HBCFDC_amount;
 			$PROMOTER_amount = $ssa->sanctioned_amount * $ss->promoter_share / 100;
-			$promoter_amount = $PROMOTER_amount / 100000;
+			$promoter_amount = $PROMOTER_amount;
 			
 			if ($counter % 2 == 0) {
 				$class = 'header4_1';

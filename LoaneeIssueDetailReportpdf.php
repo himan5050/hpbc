@@ -40,6 +40,9 @@ if ($_REQUEST ['op'] == 'loanissuedetail_report') {
 	$cond = '';
 	$panchayat_table = '';
 	$panchayat_join = '';
+	$panchayat_header = '';
+	$panchayat_row = '';
+	$width = '27.5%';
 	$district = isset ( $_REQUEST ['district'] ) ? $_REQUEST ['district'] : '';
 	$tehsil = isset ( $_REQUEST ['tehsil'] ) ? $_REQUEST ['tehsil'] : '';
 	$panchayat = isset ( $_REQUEST ['panchayat'] ) ? $_REQUEST ['panchayat'] : '';
@@ -149,6 +152,8 @@ EOF;
 			$cond .= ' and tbl_loanee_detail.panchayat LIKE "' . $panchayat . '"';
 			$panchayat_table = 'tbl_panchayt.panchayt_name,';
 			$panchayat_join = 'INNER JOIN tbl_panchayt ON  (tbl_loanee_detail.panchayat=tbl_panchayt.panchayt_id)';
+			$panchayat_header = '<td width="6.5%" class="header2">Panchayat</td>';
+			$width = '34%';
 			$_REQUEST ['page'] = 0;
 		}
 		if ($sector) {
@@ -268,13 +273,13 @@ EOF;
 	
 	
 		$output .= '<table cellpadding="2" cellspacing="2" id="wrapper" class="tbl_border">';
-		$output .= '<tr><td align="center" style="border:1px solid #fff;" width="34.0%" colspan="7" class="header2">Project Detail</td><td colspan="6" align="center" class="header2" width="33.0%" style="border:1px solid #fff;">Loanee Detail</td><td colspan="2" align="center" class="header2" width="12.5%" style="border:1px solid #fff;">Gaurantor Detail</td><td style="border:1px solid #fff;" colspan="6" class="header2" width="21.5%">Loan Account Detail</td></tr>';
+		$output .= '<tr><td align="center" style="border:1px solid #fff;" width="'.$width.'" colspan="7" class="header2">Project Detail</td><td colspan="6" align="center" class="header2" width="33.0%" style="border:1px solid #fff;">Loanee Detail</td><td colspan="2" align="center" class="header2" width="12.5%" style="border:1px solid #fff;">Gaurantor Detail</td><td style="border:1px solid #fff;" colspan="6" class="header2" width="21.5%">Loan Account Detail</td></tr>';
 		
 		$output .= '<tr><td width="3%" class="header2">S.No.</td>
 				<td width="5.0%" class="header2">District</td>
 				<td width="5.0%" class="header2">Tehsil</td>
 				<td width="5.0%" class="header2">Block</td>
-				<td width="6.5%" class="header2">Panchayat</td>
+				' .$panchayat_header. '
 				<td width="4.5%" class="header2">Sector</td>
 				<td width="5.0%" class="header2">Scheme</td>
 				<td width="5.0%" class="header2">A/c No.</td>
@@ -358,13 +363,18 @@ EOF;
 			$gaddress = ($g->address) ? $g->address : 'N/A';
 			$disbamount = ($d->disamount) ? $d->disamount : 'N/A';
 			$panchayat_name = isset($rs->panchayt_name) ? $rs->panchayt_name : 'URBAN';
+			if($panchayat) {
+				$panchayat_row = '<td class="' . $class . '">' . ucwords ( $panchayat_name ) . '</td>';
+			}else {
+				$panchayat_row = '';
+			}
 			
 			$output .= '<tr>
 					  <td class="' . $class . '">' . $counter . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->district_name ) . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->tehsil_name ) . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->block_name ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $panchayat_name ) . '</td>
+					  '.$panchayat_row.'
 					  <td class="' . $class . '">' . ucwords ( $rs->sector_name ) . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->schemename ) . '</td>
 					  <td class="' . $class . '">' . $accno . '</td>
@@ -394,7 +404,12 @@ EOF;
 			$cl = 'header4_2';
 		else
 			$cl = 'header4_1';
-		$output .= '<tr style="background-color:white;"><td colspan="14"></td>
+		if($panchayat) {
+			$colspan = '14';
+		} else {
+			$colspan = '13';
+		}
+		$output .= '<tr style="background-color:white;"><td colspan="'.$colspan.'"></td>
                     <td align="left" class="'.$cl.'"><strong>Grand Total</strong></td>';
 		$output .= '<td align="right" class="'.$cl.'"><strong>'.round($alldisbamount).'</strong></td><td colspan="1" align = "right" class="'.$cl.'"></td>
 					<td colspan="1" align = "right" class="'.$cl.'"><strong>'.round($allrecovered_amount).'</strong></td><td colspan="1" align = "right" class="'.$cl.'"><strong>'.round($allinterest_amount).'</strong></td>

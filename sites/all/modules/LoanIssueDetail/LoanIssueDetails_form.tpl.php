@@ -66,6 +66,9 @@ if ($op == 'Generate Report') {
 	$cond = '';
 	$panchayat_join = '';
 	$panchayat_table = '';
+	$panchayat_header = '';
+	$panchayat_row = '';
+	$width = '27.5%';
 	$district = isset ( $_REQUEST ['district'] ) ? $_REQUEST ['district'] : '';
 	$tehsil = isset ( $_REQUEST ['tehsil'] ) ? $_REQUEST ['tehsil'] : '';
 	$panchayat = isset ( $_REQUEST ['panchayat'] ) ? $_REQUEST ['panchayat'] : '';
@@ -94,6 +97,8 @@ if ($op == 'Generate Report') {
 			$cond .= ' and tbl_loanee_detail.panchayat LIKE "' . $panchayat . '"';
 			$panchayat_join = 'INNER JOIN tbl_panchayt ON  (tbl_loanee_detail.panchayat=tbl_panchayt.panchayt_id)';
 			$panchayat_table = 'tbl_panchayt.panchayt_name,';
+			$panchayat_header = '<th >Panchayat</th>';
+			$width = '34%';
 			$_REQUEST ['page'] = 0;
 		}
 		if ($sector) {
@@ -177,7 +182,7 @@ if ($op == 'Generate Report') {
 				<th >District</th>
 				<th >Tehsil</th>
 				<th >Block</th>
-				<th >Panchayat</th>
+				' .$panchayat_header. '
 				<th>Sector</th>
 				<th>Scheme</th>
 				<th>Account No.</th>
@@ -261,12 +266,17 @@ if ($op == 'Generate Report') {
 			$gaddress = ($g->address) ? $g->address : 'N/A';
 			$disbamount = ($d->disamount) ? $d->disamount : 'N/A';
 			$panchayat_name = isset($rs->panchayt_name) ? $rs->panchayt_name : 'URBAN';
+			if($panchayat) {
+				$panchayat_row = '<td >' . ucwords ( $panchayat_name ) . '</td>';
+			}else {
+				$panchayat_row = '';
+			}
 			$output .= '<tr class="' . $cla . '">
 					 <td class="center" width="10%">' . $counter . '</td> 
 					 <td >' . ucwords ( $rs->district_name ) . '</td>
 					 <td >' . ucwords ( $rs->tehsil_name ) . '</td>
 					 <td >' . ucwords ( $rs->block_name ) . '</td>
-					 <td >' . ucwords ( $panchayat_name ) . '</td>
+					 '.$panchayat_row.'
 					 <td >' . ucwords ( $rs->sector_name ) . '</td>
 					 <td >' . ucwords ( $rs->schemename ) . '</td>
 					 <td >' . $accno . '</td>
