@@ -5237,12 +5237,14 @@ function loanUnderSchemeWithDates($scheme_id, $from_date, $to_date) {
 	$response = [];
 	$sql = "SELECT loan_id, 
 		   `tbl_loan_disbursement`.`cheque_date`, 
+		   `tbl_scheme_master`.`apex_share`,
             SUM(`tbl_loan_disbursement`.amount) AS disamount,
 		   `tbl_loanee_detail`.gender 
             FROM `tbl_loan_detail`
 		    INNER JOIN tbl_loanee_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+			INNER JOIN tbl_scheme_master ON  (tbl_scheme_master.loan_scheme_id=tbl_loan_detail.scheme_name)
 		    INNER JOIN tbl_loan_disbursement ON  (tbl_loanee_detail.loanee_id=tbl_loan_disbursement.loanee_id)
-            where scheme_name = '".$scheme_id."' and `tbl_loan_disbursement`.cheque_date BETWEEN '".$from_date."' and '".$to_date."' 
+            where `tbl_loan_detail`.scheme_name = '".$scheme_id."' and `tbl_loan_disbursement`.cheque_date BETWEEN '".$from_date."' and '".$to_date."' 
             GROUP by `tbl_loan_disbursement`.loanee_id";
 	
 	$sql1 = db_query($sql);
@@ -5262,7 +5264,8 @@ function loanUnderSchemeWithDates($scheme_id, $from_date, $to_date) {
 		if($gender == 'Female') {
 			$result_female_count++;
 		}
-		$disamount = $s->disamount;
+		$disamount = ($s->disamount * $s->apex_share)/100;
+		//$disamount = $s->disamount;
 		if ($disamount <= 200000) {
 			$result_upto_2lac = $disamount + $result_upto_2lac;
 			$benef_upto2Lac++;
@@ -5291,12 +5294,14 @@ function loanUnderSchemeAsOnDate($scheme_id, $year, $to_date) {
 	$response = [];
 	$sql = "SELECT loan_id,
 		   `tbl_loan_disbursement`.`cheque_date`,
+		   `tbl_scheme_master`.`apex_share`,
             SUM(`tbl_loan_disbursement`.amount) AS disamount,
 		   `tbl_loanee_detail`.gender
             FROM `tbl_loan_detail`
 		    INNER JOIN tbl_loanee_detail ON  (tbl_loanee_detail.reg_number=tbl_loan_detail.reg_number)
+			INNER JOIN tbl_scheme_master ON  (tbl_scheme_master.loan_scheme_id=tbl_loan_detail.scheme_name)
 		    INNER JOIN tbl_loan_disbursement ON  (tbl_loanee_detail.loanee_id=tbl_loan_disbursement.loanee_id)
-            where scheme_name = '".$scheme_id."' and `tbl_loan_disbursement`.cheque_date BETWEEN '".$from_date."' and '".$to_date."'
+            where `tbl_loan_detail`.scheme_name = '".$scheme_id."' and `tbl_loan_disbursement`.cheque_date BETWEEN '".$from_date."' and '".$to_date."'
             GROUP by `tbl_loan_disbursement`.loanee_id";
 	$sql1 = db_query($sql);
 	$counter = 0;
@@ -5315,7 +5320,8 @@ function loanUnderSchemeAsOnDate($scheme_id, $year, $to_date) {
 		if($gender == 'Female') {
 			$result_female_count++;
 		}
-		$disamount = $s->disamount;
+		//$disamount = $s->disamount;
+		$disamount = ($s->disamount * $s->apex_share)/100;
 		if ($disamount <= 200000) {
 			$result_upto_2lac = $disamount + $result_upto_2lac;
 			$benef_upto2Lac++;
