@@ -42,7 +42,7 @@ if ($_REQUEST ['op'] == 'loanissuedetail_report') {
 	$panchayat_join = '';
 	$panchayat_header = '';
 	$panchayat_row = '';
-	$width = '27.5%';
+	$width = '35.0%';
 	$district = isset ( $_REQUEST ['district'] ) ? $_REQUEST ['district'] : '';
 	$tehsil = isset ( $_REQUEST ['tehsil'] ) ? $_REQUEST ['tehsil'] : '';
 	$panchayat = isset ( $_REQUEST ['panchayat'] ) ? $_REQUEST ['panchayat'] : '';
@@ -86,10 +86,8 @@ td.header1 {
 }
 
 td.header2 {
-border-bottom-color:#FFFFFF;
+border-bottom-color:#3b3c3c;
 border-left-color:#ffffff;
-color: #ffffff;
-background-color:#1D374C;
 font-family:Verdana;
 font-size: 8pt;
 font-weight: bold;
@@ -110,7 +108,7 @@ background-color:#eeeeee;
 }
 td.header4_1 {
 color:#222222;
-background-color:#9dcae7;
+background-color:#ffffff;
 font-family:Verdana;
 font-size: 8pt;
 font-weight: normal;
@@ -152,8 +150,6 @@ EOF;
 			$cond .= ' and tbl_loanee_detail.panchayat LIKE "' . $panchayat . '"';
 			$panchayat_table = 'tbl_panchayt.panchayt_name,';
 			$panchayat_join = 'INNER JOIN tbl_panchayt ON  (tbl_loanee_detail.panchayat=tbl_panchayt.panchayt_id)';
-			$panchayat_header = '<td width="6.5%" class="header2">Panchayat</td>';
-			$width = '34%';
 			$_REQUEST ['page'] = 0;
 		}
 		if ($sector) {
@@ -273,29 +269,27 @@ EOF;
 	
 	
 		$output .= '<table cellpadding="2" cellspacing="2" id="wrapper" class="tbl_border">';
-		$output .= '<tr><td align="center" style="border:1px solid #fff;" width="'.$width.'" colspan="7" class="header2">Project Detail</td><td colspan="6" align="center" class="header2" width="33.0%" style="border:1px solid #fff;">Loanee Detail</td><td colspan="2" align="center" class="header2" width="12.5%" style="border:1px solid #fff;">Gaurantor Detail</td><td style="border:1px solid #fff;" colspan="6" class="header2" width="21.5%">Loan Account Detail</td></tr>';
+		$output .= '<tr><td align="center" style="border:1px solid #fff;" width="'.$width.'" colspan="6" class="header2">Loanee Detail</td><td colspan="6" align="center" class="header2" width="14.5%" style="border:1px solid #fff;">Gaurantor Detail</td><td colspan="2" align="center" class="header2" width="15.7%" style="border:1px solid #fff;">Address Detail</td><td align="center" style="border:1px solid #fff;" colspan="6" class="header2" width="35.5%">Project Detail</td></tr>';
 		
-		$output .= '<tr><td width="3%" class="header2">S.No.</td>
-				<td width="5.0%" class="header2">District</td>
-				<td width="5.0%" class="header2">Tehsil</td>
-				<td width="5.0%" class="header2">Block</td>
-				' .$panchayat_header. '
-				<td width="4.5%" class="header2">Sector</td>
-				<td width="5.0%" class="header2">Scheme</td>
+		$output .= '<tr><td width="2%" class="header2">S.No.</td>
 				<td width="5.0%" class="header2">A/c No.</td>
-				<td width="4.5%" class="header2">Name</td>
-				<td width="3.0%" class="header2">Sex</td>
-				<td width="5.0%" class="header2">Father</td>
+				<td width="6.0%" class="header2">Name</td>
+				<td width="6.0%" class="header2">Father</td>
+				<td width="10.5%" class="header2">Address</td>
+				<td width="2.0%" class="header2">Sex</td>
 				<td width="3.5%" class="header2">Mobile</td>
-				<td width="12.0%" class="header2">Address</td>
 				<td width="4.5%" class="header2">Name</td>
-				<td width="8.0%" class="header2">Address</td>
-				<td width="3.5%" class="header2">Loan Sanctioned Amount</td>
-				<td width="4.0%" class="header2">Loan Sanctioned Date</td>
-				<td width="4.0%" class="header2">Recovered Amount</td>
-				<td width="4.0%" class="header2">Interest Amount</td>
-				<td width="2.0%" class="header2">Overdue Charges</td>
-				<td width="4.0%" class="header2">Outstanding Balance</td>
+				<td width="10.5%" class="header2">Address</td>
+				<td width="5.5%" class="header2">District</td>
+				<td width="5.5%" class="header2">Tehsil</td>
+				<td width="4.7%" class="header2">Block</td>
+				<td width="5.0%" class="header2">Scheme</td>
+				<td width="4.8%" class="header2">Loan Sanctioned Amount</td>
+				<td width="5.4%" class="header2">Loan Sanctioned Date</td>
+				<td width="5.0%" class="header2">Recovered Amount</td>
+				<td width="5.0%" class="header2">Interest Amount</td>
+				<td width="5.0%" class="header2">Overdue Charges</td>
+				<td width="5.0%" class="header2">Outstanding Balance</td>
 				</tr>';
 		
 		$res = db_query ( $sql );
@@ -307,6 +301,11 @@ EOF;
 		$allbalance_amount = 0;
 		while ( $rs = db_fetch_object ( $res ) ) {
 			$gender = getlookupName ( $rs->gender );
+			if($gender == 'Male') {
+				$gender = 'M';
+			} else {
+				$gender = 'F';
+			}
 			$intcal = "SELECT calculation_date FROM `tbl_loan_interestld` WHERE `account_id` = '" . $rs->account_id . "' ORDER BY calculation_date DESC LIMIT 1";
 			$intcal1 = db_query ( $intcal );
 			$ic = db_fetch_object ( $intcal1 );
@@ -371,20 +370,18 @@ EOF;
 			
 			$output .= '<tr>
 					  <td class="' . $class . '">' . $counter . '</td>
+					  <td class="' . $class . '">' . $accno . '</td>
+					  <td class="' . $class . '">' . ucwords ( $rs->fname ) . '&nbsp;<br>' . ucwords ( $rs->lname ) . '</td>
+					  <td class="' . $class . '">' . ucwords ( $rs->fh_name ) . '</td>
+					  <td class="' . $class . '">' . ucwords ( $rs->address1 . " " . $rs->address2 ) . '</td>
+					  <td class="' . $class . '">' . ucwords ( $gender ) . '</td>
+					  <td class="' . $class . '">' . ucwords ( $rs->mobile ) . '</td>
+					  <td class="' . $class . '" >' . ucwords ( $gname ) . '</td>
+					  <td class="' . $class . '" >' . ucwords ( $gaddress ) . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->district_name ) . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->tehsil_name ) . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->block_name ) . '</td>
-					  '.$panchayat_row.'
-					  <td class="' . $class . '">' . ucwords ( $rs->sector_name ) . '</td>
 					  <td class="' . $class . '">' . ucwords ( $rs->schemename ) . '</td>
-					  <td class="' . $class . '">' . $accno . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->fname ) . '&nbsp;' . ucwords ( $rs->lname ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $gender ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->fh_name ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->mobile ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->address1 . " " . $rs->address2 ) . '</td>
-					  <td class="' . $class . '" >' . ucwords ( $gname ) . '</td>
-					  <td class="' . $class . '" >' . ucwords ( $gaddress ) . '</td>
 					  <td class="' . $class . '" align="right">' . round ( $disbamount ) . '</td>
 				      <td class="' . $class . '" align="right">' . date ( 'd/m/Y', strtotime ( $rs->cheque_date ) ). '</td>
 					  <td class="' . $class . '" align="right">' . round ( abs ( $recovered_amount ) ). '</td>
@@ -404,12 +401,8 @@ EOF;
 			$cl = 'header4_2';
 		else
 			$cl = 'header4_1';
-		if($panchayat) {
-			$colspan = '14';
-		} else {
-			$colspan = '13';
-		}
-		$output .= '<tr style="background-color:white;"><td colspan="'.$colspan.'"></td>
+		
+		$output .= '<tr style="background-color:white;"><td colspan="12"></td>
                     <td align="left" class="'.$cl.'"><strong>Grand Total</strong></td>';
 		$output .= '<td align="right" class="'.$cl.'"><strong>'.round($alldisbamount).'</strong></td><td colspan="1" align = "right" class="'.$cl.'"></td>
 					<td colspan="1" align = "right" class="'.$cl.'"><strong>'.round($allrecovered_amount).'</strong></td><td colspan="1" align = "right" class="'.$cl.'"><strong>'.round($allinterest_amount).'</strong></td>

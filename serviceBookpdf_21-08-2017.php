@@ -8,10 +8,10 @@ require_once('tcpdf/pdfcss.php');
 $pdf = new TCPDF(L, PDF_UNIT, A3, true, 'UTF-8', false);
 // set document information
 $pdf->SetCreator(PDF_CREATOR);
-$pdf->SetAuthor('SC and ST');
-$pdf->SetTitle('SC and ST');
-$pdf->SetSubject('SC and ST');
-$pdf->SetKeywords('SC and ST');
+$pdf->SetAuthor('HIMACHAL BACKWARD CLASSES FINANCE & DEVELOPMENT CORPORATION');
+$pdf->SetTitle('HIMACHAL BACKWARD CLASSES FINANCE & DEVELOPMENT CORPORATION');
+$pdf->SetSubject('HIMACHAL BACKWARD CLASSES FINANCE & DEVELOPMENT CORPORATION');
+$pdf->SetKeywords('HIMACHAL BACKWARD CLASSES FINANCE & DEVELOPMENT CORPORATION');
 
 //$pdf->SetHeaderData('tcpdf/images/hpsc.png', PDF_HEADER_LOGO_WIDTH, PDF_HEADER_TITLE, PDF_HEADER_STRING);
 $pdf->SetHeaderData('tcpdf/images/hpsc.png', PDF_HEADER_LOGO_WIDTH, '','');
