@@ -25,7 +25,7 @@ $pdf->SetHeaderData ( '', PDF_HEADER_LOGO_WIDTH );
 $pdf->SetDefaultMonospacedFont ( PDF_FONT_MONOSPACED );
 $pdf->SetPrintHeader ( false );
 // set margins
-$pdf->SetMargins ( PDF_MARGIN_LEFT, PDF_MARGIN_RIGHT );
+$pdf->SetMargins ( 5, PDF_MARGIN_RIGHT );
 // set auto page breaks
 $pdf->SetAutoPageBreak ( TRUE, 10 );
 // set image scale factor
@@ -35,14 +35,14 @@ $pdf->setLanguageArray ( $l );
 // set font
 $pdf->SetFont ( 'times', '', 10 );
 // add a page
-$pdf->AddPage ();
+// $pdf->AddPage ();
 if ($_REQUEST ['op'] == 'loanissuedetail_report') {
 	$cond = '';
 	$panchayat_table = '';
 	$panchayat_join = '';
 	$panchayat_header = '';
 	$panchayat_row = '';
-	$width = '35.0%';
+	$width = '36.0%';
 	$district = isset ( $_REQUEST ['district'] ) ? $_REQUEST ['district'] : '';
 	$tehsil = isset ( $_REQUEST ['tehsil'] ) ? $_REQUEST ['tehsil'] : '';
 	$panchayat = isset ( $_REQUEST ['panchayat'] ) ? $_REQUEST ['panchayat'] : '';
@@ -53,8 +53,9 @@ if ($_REQUEST ['op'] == 'loanissuedetail_report') {
 	$to_date = isset($_REQUEST ['to_date']) ? $_REQUEST ['to_date'] : '';
 	
 	$output = '';
+	$header = '';
 	// define some HTML content with style
-	$output .= <<<EOF
+	$header_css .= <<<EOF
 <style>
 td.header_first{
 color:111111;
@@ -128,7 +129,7 @@ text-align:left;
 EOF;
 	
 	// Header Title
-	$output .='<table cellpadding="0" cellspacing="0" border="0">
+	$header .='<table cellpadding="0" cellspacing="0" border="0">
 			   <tr><td class="header_report" width="68%">HIMACHAL BACKWARD CLASSES FINANCE AND DEVELOPMENT CORPORATION KANGRA (H.P.)</td><td class="header_report" width="30%" align="right">General Loanee Details Report ( ' .date('d/m/Y', strtotime($from_date)). ' To '.date('d/m/Y', strtotime($to_date)).' ) </td></tr><tr><td><strong>Date  : '.date('d/m/y').'</strong></td></tr><tr><td colspan="2">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</td></tr></table><br/>';
 	
 	if ($district == '' && $tehsil == '' && $panchayat == '' && $sector == '' && $account == '') {
@@ -225,7 +226,7 @@ EOF;
 			$intcal1 = db_query ( $intcal );
 			$ic = db_fetch_object ( $intcal1 );
 			$district_name = isset ( $ic->district_name) ? $ic->district_name: '';
-			$output .= '<tr><td><b>District Name :</b> ' . ucwords ( $district_name ) . '<br></td></tr>';
+			$header1 .= '<tr><td><b>District Name :</b> ' . ucwords ( $district_name ) . '<br></td></tr>';
 			$_REQUEST ['page'] = 0;
 		}
 		if ($tehsil) {
@@ -233,7 +234,7 @@ EOF;
 			$intcal1 = db_query ( $intcal );
 			$ic = db_fetch_object ( $intcal1 );
 			$tehsil_name = isset ( $ic->tehsil_name) ? $ic->tehsil_name: '';
-			$output .= '<tr><td><b>Tehsil Name :</b> ' . ucwords ( $tehsil_name ) . '<br></td></tr>';
+			$header1 .= '<tr><td><b>Tehsil Name :</b> ' . ucwords ( $tehsil_name ) . '<br></td></tr>';
 			$_REQUEST ['page'] = 0;
 		}
 		if ($panchayat) {
@@ -241,7 +242,7 @@ EOF;
 			$intcal1 = db_query ( $intcal );
 			$ic = db_fetch_object ( $intcal1 );
 			$panchayt_name = isset ( $ic->panchayt_name) ? $ic->panchayt_name: '';
-			$output .= '<tr><td><b>Panchayat Name :</b> ' . ucwords ( $panchayt_name) . '<br></td></tr>';
+			$header1 .= '<tr><td><b>Panchayat Name :</b> ' . ucwords ( $panchayt_name) . '<br></td></tr>';
 			$_REQUEST ['page'] = 0;
 		}
 		if ($sector) {
@@ -249,7 +250,7 @@ EOF;
 			$intcal1 = db_query ( $intcal );
 			$ic = db_fetch_object ( $intcal1 );
 			$sector_name = isset ( $ic->sector_name ) ? $ic->sector_name : '';
-			$output .= '<tr><td><b>Sector Name :</b> ' . ucwords ( $sector_name ) . '<br></td></tr>';
+			$header1 .= '<tr><td><b>Sector Name :</b> ' . ucwords ( $sector_name ) . '<br></td></tr>';
 			$_REQUEST ['page'] = 0;
 		}
 		if ($scheme) {
@@ -257,33 +258,31 @@ EOF;
 			$intcal1 = db_query ( $intcal );
 			$ic = db_fetch_object ( $intcal1 );
 			$scheme_name = isset ( $ic->scheme_name ) ? $ic->scheme_name : '';
-			$output .= '<tr><td><b>Scheme Name :</b> ' . ucwords ( $scheme_name ) . '<br></td></tr>';
+			$header1 .= '<tr><td><b>Scheme Name :</b> ' . ucwords ( $scheme_name ) . '<br></td></tr>';
 			$_REQUEST ['page'] = 0;
 		}
 		if ($account) {
-			$output .= '<tr><td><b>Account Name :</b> ' . ucwords ( $account ) . '<br></td></tr>';
+			$header1 .= '<tr><td><b>Account Name :</b> ' . ucwords ( $account ) . '<br></td></tr>';
 			$_REQUEST ['page'] = 0;
 		}
 	}
 	
-	
-	
-		$output .= '<table cellpadding="2" cellspacing="2" id="wrapper" class="tbl_border">';
-		$output .= '<tr><td align="center" style="border:1px solid #fff;" width="'.$width.'" colspan="6" class="header2">Loanee Detail</td><td colspan="6" align="center" class="header2" width="14.5%" style="border:1px solid #fff;">Gaurantor Detail</td><td colspan="2" align="center" class="header2" width="15.7%" style="border:1px solid #fff;">Address Detail</td><td align="center" style="border:1px solid #fff;" colspan="6" class="header2" width="35.5%">Project Detail</td></tr>';
+		$header1 .= '<table cellpadding="2" cellspacing="2" id="wrapper" class="tbl_border">';
+		$header1 .= '<tr><td align="center" style="border:1px solid #fff;" width="'.$width.'" colspan="6" class="header2">Loanee Detail</td><td colspan="6" align="center" class="header2" width="14.5%" style="border:1px solid #fff;">Gaurantor Detail</td><td colspan="2" align="center" class="header2" width="18.0%" style="border:1px solid #fff;">Address Detail</td><td align="center" style="border:1px solid #fff;" colspan="6" class="header2" width="34.2%">Project Detail</td></tr>';
 		
-		$output .= '<tr><td width="2%" class="header2">S.No.</td>
+		$header1 .= '<tr><td width="2%" class="header2">S.No.</td>
 				<td width="5.0%" class="header2">A/c No.</td>
 				<td width="6.0%" class="header2">Name</td>
 				<td width="6.0%" class="header2">Father</td>
-				<td width="10.5%" class="header2">Address</td>
+				<td width="11.0%" class="header2">Address</td>
 				<td width="2.0%" class="header2">Sex</td>
 				<td width="3.5%" class="header2">Mobile</td>
 				<td width="4.5%" class="header2">Name</td>
-				<td width="10.5%" class="header2">Address</td>
-				<td width="5.5%" class="header2">District</td>
-				<td width="5.5%" class="header2">Tehsil</td>
-				<td width="4.7%" class="header2">Block</td>
-				<td width="5.0%" class="header2">Scheme</td>
+				<td width="11.0%" class="header2">Address</td>
+				<td width="6.0%" class="header2">District</td>
+				<td width="6.0%" class="header2">Tehsil</td>
+				<td width="6.0%" class="header2">Block</td>
+				<td width="4.2%" class="header2">Scheme</td>
 				<td width="4.8%" class="header2">Loan Sanctioned Amount</td>
 				<td width="5.4%" class="header2">Loan Sanctioned Date</td>
 				<td width="5.0%" class="header2">Recovered Amount</td>
@@ -299,6 +298,9 @@ EOF;
 		$allinterest_amount = 0;
 		$allld_amount = 0;		
 		$allbalance_amount = 0;
+		$output .= $header_css;
+		$output .= $header;
+		$output .= $header1;
 		while ( $rs = db_fetch_object ( $res ) ) {
 			$gender = getlookupName ( $rs->gender );
 			if($gender == 'Male') {
@@ -367,21 +369,20 @@ EOF;
 			}else {
 				$panchayat_row = '';
 			}
-			
 			$output .= '<tr>
 					  <td class="' . $class . '">' . $counter . '</td>
 					  <td class="' . $class . '">' . $accno . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->fname ) . '&nbsp;<br>' . ucwords ( $rs->lname ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->fh_name ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->address1 . " " . $rs->address2 ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $gender ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->mobile ) . '</td>
-					  <td class="' . $class . '" >' . ucwords ( $gname ) . '</td>
-					  <td class="' . $class . '" >' . ucwords ( $gaddress ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->district_name ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->tehsil_name ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->block_name ) . '</td>
-					  <td class="' . $class . '">' . ucwords ( $rs->schemename ) . '</td>
+					  <td class="' . $class . '">' . strtoupper( $rs->fname ) . '&nbsp;<br>' . strtoupper( $rs->lname ) . '</td>
+					  <td class="' . $class . '">' . strtoupper( $rs->fh_name ) . '</td>
+					  <td class="' . $class . '">' . strtoupper ( $rs->address1 . " " . $rs->address2 ) . '</td>
+					  <td class="' . $class . '">' . strtoupper ( $gender ) . '</td>
+					  <td class="' . $class . '">' .  $rs->mobile  . '</td>
+					  <td class="' . $class . '" >' . strtoupper ( $gname ) . '</td>
+					  <td class="' . $class . '" >' . strtoupper ( $gaddress ) . '</td>
+					  <td class="' . $class . '">' . strtoupper ( $rs->district_name ) . '</td>
+					  <td class="' . $class . '">' . strtoupper ( $rs->tehsil_name ) . '</td>
+					  <td class="' . $class . '">' . strtoupper ( $rs->block_name ) . '</td>
+					  <td class="' . $class . '">' . strtoupper ( $rs->schemename ) . '</td>
 					  <td class="' . $class . '" align="right">' . round ( $disbamount ) . '</td>
 				      <td class="' . $class . '" align="right">' . date ( 'd/m/Y', strtotime ( $rs->cheque_date ) ). '</td>
 					  <td class="' . $class . '" align="right">' . round ( abs ( $recovered_amount ) ). '</td>
@@ -389,12 +390,24 @@ EOF;
 					  <td class="' . $class . '" align="right">' . round ( abs ( $ld_amount ) ). '</td>
 					  <td class="' . $class . '" align="right">' . round ( abs ( $balamount ) ) . '</td>
 	                  </tr>';
-			$counter ++;
+			
 			$alldisbamount = $disbamount + $alldisbamount;
 			$allrecovered_amount = $recovered_amount + $allrecovered_amount;
 			$allinterest_amount = $interest_amount + $allinterest_amount;
 			$allld_amount = $ld_amount + $allld_amount;
 			$allbalance_amount = $balamount + $allbalance_amount;
+			if($counter % 6 == '0') {
+				// add a page
+				$pdf->AddPage ();
+				$output .= '</table>';
+				ob_end_clean ();
+				// print a block of text using Write()
+				$pdf->writeHTML ( $output, true, 0, true, true );
+				$output = '';
+				$output .= $header_css;
+				$output .= $header1;
+			}
+			$counter ++;
 		}
 		
 		if($cl == 'header4_1')
@@ -409,6 +422,7 @@ EOF;
 					<td colspan="1" align = "right" class="'.$cl.'"><strong>'.round($allld_amount).'</strong></td><td colspan="1" align = "right" class="'.$cl.'"><strong>'.round($allbalance_amount).'</strong></td>
 					</tr>';
 		$output .= '</table>';
+		$pdf->AddPage ();
 		ob_end_clean ();
 		
 		// print a block of text using Write()
