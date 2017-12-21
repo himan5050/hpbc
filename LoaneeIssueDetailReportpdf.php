@@ -132,9 +132,7 @@ EOF;
 	$header .='<table cellpadding="0" cellspacing="0" border="0">
 			   <tr><td class="header_report" width="68%">HIMACHAL BACKWARD CLASSES FINANCE AND DEVELOPMENT CORPORATION KANGRA (H.P.)</td><td class="header_report" width="30%" align="right">General Loanee Details Report ( ' .date('d/m/Y', strtotime($from_date)). ' To '.date('d/m/Y', strtotime($to_date)).' ) </td></tr><tr><td><strong>Date  : '.date('d/m/y').'</strong></td></tr><tr><td colspan="2">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</td></tr></table><br/>';
 	
-	if ($district == '' && $tehsil == '' && $panchayat == '' && $sector == '' && $account == '') {
-		form_set_error ( 'form', 'Please provide an input to generate report.' );
-	} else if ($from_date == '' || $to_date == '') {
+	if ($from_date == '' || $to_date == '') {
 		form_set_error ( 'form', 'Please select period to generate report.' );
 	} else if (strtotime ( $from_date ) > strtotime ( $to_date )) {
 		form_set_error ( 'form', 'Please select dates properly.' );
@@ -308,6 +306,8 @@ EOF;
 			} else {
 				$gender = 'F';
 			}
+			
+			
 			$intcal = "SELECT calculation_date FROM `tbl_loan_interestld` WHERE `account_id` = '" . $rs->account_id . "' ORDER BY calculation_date DESC LIMIT 1";
 			$intcal1 = db_query ( $intcal );
 			$ic = db_fetch_object ( $intcal1 );

@@ -49,11 +49,12 @@ function hpbc_cron_jobs_theme() {
  * Create custom cron jobs and check there execution
  */
 function hpbc_cron_jobs_cron() {
-    $quater_end_dates = array('31-03','30-06','01-07','31-12');
+    $quater_end_dates = array('31-03','30-06','01-07','31-12','30-09');
     $current_date = date('d-m');
-    
+    //print_r($current_date); exit;
     if (in_array($current_date, $quater_end_dates)) {
         $live_loan_accounts = filter_live_loan_accounts();
+
         if(empty($live_loan_accounts)){
             echo 'Sorry, No loan account is available for interest application';
             return;
@@ -118,7 +119,7 @@ function hpbc_cron_jobs_cron() {
  * Interact with database and create business logic to filter live loan accounts in an array.
  */
 function filter_live_loan_accounts() {
-    $current_date = '2017-03-31';
+    $current_date = '2017-09-30';
     //$current_date = date('Y-m-d');
     $sqlg = "SELECT `account_id`,`loan_id`,`o_principal`,`last_interest_calculated`,`ROI`,`project_cost`,`loanee_id`
 			 FROM `tbl_loan_detail` AS `tl`

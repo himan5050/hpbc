@@ -78,12 +78,10 @@ td.header1 {
 		font-size: 8pt;
 		font-weight: normal;
 }
-			
+
 td.header2 {
-border-bottom-color:#FFFFFF;
+border-bottom-color:#3b3c3c;
 border-left-color:#ffffff;
-color: #ffffff;
-background-color:#1D374C;
 font-family:Verdana;
 font-size: 8pt;
 font-weight: bold;
@@ -104,7 +102,7 @@ background-color:#eeeeee;
 }
 td.header4_1 {
 color:#222222;
-background-color:#9dcae7;
+background-color:#ffffff;
 font-family:Verdana;
 font-size: 8pt;
 font-weight: normal;

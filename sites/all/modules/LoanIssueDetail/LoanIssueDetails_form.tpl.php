@@ -78,9 +78,7 @@ if ($op == 'Generate Report') {
 	$from_date = date ( 'Y-m-d', strtotime ( $_REQUEST ['from_date'] ['date'] ) );
 	$to_date = date ( 'Y-m-d', strtotime ( $_REQUEST ['to_date'] ['date'] ) );
 	
-	if ($district == '' && $tehsil == '' && $panchayat == '' && $sector == '' && $account == '') {
-		form_set_error ( 'form', 'Please provide an input to generate report.' );
-	} else if ($from_date == '' || $to_date == '') {
+	if ($from_date == '' || $to_date == '') {
 		form_set_error ( 'form', 'Please select period to generate report.' );
 	} else if (strtotime ( $from_date ) > strtotime ( $to_date )) {
 		form_set_error ( 'form', 'Please select dates properly.' );

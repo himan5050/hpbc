@@ -5428,3 +5428,39 @@ function getRecovery ($scheme_id, $from_date, $to_date) {
 	
 	return $response;
 }
+
+
+
+/**
+ * Calculate Default Amount.
+ */
+
+function calculateDefaultAmount($emi_amount, $recovered_amount, $dis_date) {
+	$default = 0;
+	$current_date = date('Y-m-d');
+	$number_of_months = calculateNumberOfMonths($dis_date, $current_date);
+	$expected_amount = $emi_amount * $number_of_months;
+	$default_amount = $expected_amount - $recovered_amount;
+	if($default_amount > 0) {
+		$default = $default_amount;
+	}
+	return $default;
+}
+
+function calculateNumberOfMonths($start_date, $end_date) {
+	$ts1 = strtotime($start_date);
+	$ts2 = strtotime($end_date);
+	$year1 = date('Y', $ts1);
+	$year2 = date('Y', $ts2);
+	$month1 = date('m', $ts1);
+	$month2 = date('m', $ts2);
+	
+	$diff = (($year2 - $year1) * 12) + ($month2 - $month1);
+	return $diff;
+}
+
+
+
+
+
+

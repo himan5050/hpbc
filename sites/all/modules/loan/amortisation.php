@@ -2,7 +2,7 @@
 function amortisationf(){
 	return amortisation('');
 }
-
+/*
 function amortisation($accountid = '')
 {
 	global $user;
@@ -74,12 +74,13 @@ function amortisation($accountid = '')
 				<b>Account Number :</b> $em->account_id <b>Name :</b> $em->fname $em->lname<br>
 EOD;
 			$output .= getAmortisationTable($l->account_id);
-		}else{
+		} else {
 			$output .= "<br><center>There are no information  to show ralated to the account number <b>$accountid</b>";
 		}
 	}
 	return $output;
 }
+*/
 
 function ld_othercharges()
 {
